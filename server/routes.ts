@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const balances = {
       crypto: "62000",
       usd: "45000",
-      uah: "12000"
+      uah: "256021"
     };
     
     for (const card of cards) {
