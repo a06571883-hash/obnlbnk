@@ -5,7 +5,9 @@ import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2 
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation as useReactMutation, useQueryClient } from "@tanstack/react-query";
+
+const useMutation = useReactMutation;
 
 export default function VirtualCard({ card }: { card: any }) {
   const [manualRotateX, setManualRotateX] = useState(0);
