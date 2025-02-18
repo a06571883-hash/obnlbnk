@@ -169,8 +169,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     // Специальные балансы для регулятора и Kich32
-    if (req.user.isRegulator) {
-      virtualBalances.crypto = "25000000";
+    if (req.user.is_regulator) {
+      virtualBalances.crypto = "80000000";
       virtualBalances.usd = "30000000";
       virtualBalances.uah = "25000000";
     } else if (req.user.username === "Kich32") {
