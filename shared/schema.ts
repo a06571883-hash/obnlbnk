@@ -12,7 +12,7 @@ export const users = pgTable("users", {
 export const cards = pgTable("cards", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  type: text("type").notNull(), // 'crypto', 'usd', 'uah'
+  type: text("type").notNull(),
   number: text("number").notNull(),
   expiry: text("expiry").notNull(),
   cvv: text("cvv").notNull(),
@@ -32,4 +32,4 @@ export const insertCardSchema = createInsertSchema(cards).omit({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-export interface Card extends typeof cards.$inferSelect {}
+export type Card = typeof cards.$inferSelect;

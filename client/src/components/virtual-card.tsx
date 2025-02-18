@@ -61,6 +61,7 @@ export default function VirtualCard({ card }: { card: CardType }) {
             <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full filter blur-xl transform -translate-x-16 -translate-y-16" />
             <div className="absolute bottom-0 right-0 w-32 h-32 bg-white rounded-full filter blur-xl transform translate-x-16 translate-y-16" />
           </div>
+          <img src="/assets/logo.png" alt="Logo" className="w-16 h-16 opacity-50 absolute top-4 right-4" /> {/* Added logo */}
           <div className="absolute inset-0 flex items-center justify-center opacity-10">
             <img src="/assets/logo.png" alt="Logo" className="w-32 h-32 object-contain" />
           </div>
