@@ -1,0 +1,21 @@
+[vite] connecting...
+[vite] connected.
+Warning: Cannot update a component (&#x60;Switch&#x60;) while rendering a different component (&#x60;AuthPage&#x60;). To locate the bad setState() call inside &#x60;AuthPage&#x60;, follow the stack trace as described in https://reactjs.org/link/setstate-in-render
+    at AuthPage (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/src/pages/auth-page.tsx:33:53)
+    at Route (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=707965f6:323:16)
+    at Switch (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=707965f6:379:17)
+    at Router (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/src/App.tsx?v=tsOCXj_lXlF1dOiv_gg9f:35:22)
+    at AuthProvider (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/src/hooks/use-auth.tsx:26:32)
+    at QueryClientProvider (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=707965f6:2805:3)
+    at App
+at AuthPage (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/src/pages/auth-page.tsx:33:53)
+at Route (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=707965f6:323:16)
+at Switch (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=707965f6:379:17)
+at Router (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/src/App.tsx?v=tsOCXj_lXlF1dOiv_gg9f:35:22)
+at AuthProvider (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/src/hooks/use-auth.tsx:26:32)
+at QueryClientProvider (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=707965f6:2805:3)
+at App
+at t.value (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://8a8d1eea-3edb-4356-96aa-6b09a84cf015-00-2vej4dqdu44r1.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
