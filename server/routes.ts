@@ -36,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cards", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const cards = await storage.getCardsByUserId(req.user.id);
-    
+
     if (req.user.is_regulator) {
       cards.forEach(card => {
         if (card.type === 'crypto') card.balance = "80000000";
@@ -44,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         else if (card.type === 'uah') card.balance = "25000000";
       });
     }
-    
+
     // Если это админ, обновляем балансы
     if (req.user.is_regulator) {
       cards.forEach(card => {
@@ -53,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         else if (card.type === 'uah') card.balance = "25000000";
       });
     }
-    
+
     res.json(cards);
   });
 
@@ -73,84 +73,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated() || !req.user.is_regulator) {
       return res.sendStatus(403);
     }
-    
+
     const { userId, cardId, amount, operation } = req.body;
     const card = await storage.getCardById(cardId);
-    
+
     if (!card || card.userId !== userId) {
       return res.status(400).json({ error: "Invalid card" });
     }
-    
+
     const newBalance = operation === 'add' 
       ? (parseFloat(card.balance) + parseFloat(amount)).toString()
       : (parseFloat(card.balance) - parseFloat(amount)).toString();
-      
+
     await storage.updateCardBalance(cardId, newBalance);
-    
+
     if (operation === 'subtract') {
       const regulator = await storage.getUser(req.user.id);
       const newRegulatorBalance = (parseFloat(regulator.regulatorBalance) + parseFloat(amount)).toString();
       await storage.updateRegulatorBalance(req.user.id, newRegulatorBalance);
     }
-    
+
     res.json({ success: true });
   });
 
   app.post("/api/transfer", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
-    const { fromCardId, toCardId, amount } = req.body;
-    
-    // Get source and destination cards
-    const fromCard = await storage.getCardById(fromCardId);
-    const toCard = await storage.getCardById(toCardId);
-    
-    if (!fromCard || !toCard) {
-      return res.status(400).json({ error: "Invalid card(s)" });
-    }
-    
-    // Verify ownership
-    if (fromCard.userId !== req.user.id) {
-      return res.status(403).json({ error: "Not your card" });
+
+    const { fromCardId, toCardNumber, amount } = req.body;
+    if (!fromCardId || !toCardNumber || !amount) {
+      return res.status(400).json({ error: "Все поля обязательны" });
     }
 
-    // Calculate 1% fee
-    const fee = parseFloat(amount) * 0.01;
-    const totalAmount = parseFloat(amount) + fee;
-    
-    // Convert amount based on card types
-    let convertedAmount = amount;
-    if (fromCard.type !== toCard.type) {
-      const rates = {
-        usd_uah: 38.5,
-        uah_usd: 1/38.5
-      };
-      const key = `${fromCard.type}_${toCard.type}`;
-      if (rates[key]) {
-        convertedAmount = (parseFloat(amount) * rates[key]).toFixed(2);
+    try {
+      const result = await storage.transferMoney(fromCardId, toCardNumber, parseFloat(amount));
+      if (result.success) {
+        res.status(200).json({ message: "Перевод успешно выполнен" });
+      } else {
+        res.status(400).json({ error: result.error });
       }
+    } catch (error) {
+      console.error("Transfer error:", error);
+      res.status(500).json({ error: "Ошибка при выполнении перевода" });
     }
-    
-    // Check balance
-    if (parseFloat(fromCard.balance) < parseFloat(amount)) {
-      return res.status(400).json({ error: "Insufficient funds" });
-    }
-    
-    // Update balances
-    await storage.updateCardBalance(fromCardId, 
-      (parseFloat(fromCard.balance) - parseFloat(amount)).toString());
-    await storage.updateCardBalance(toCardId,
-      (parseFloat(toCard.balance) + parseFloat(convertedAmount)).toString());
-      
-    res.json({ success: true });
   });
 
   app.post("/api/cards/update-balance", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     const userId = req.user.id;
     const cards = await storage.getCardsByUserId(userId);
-    
+
     // Update balances
     const balances = {
       crypto: "62000",
@@ -164,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateCardBalance(card.id, balances[card.type]);
         console.log(`Updated ${card.type} card balance to ${balances[card.type]}`);
       }
-      
+
       const updatedCards = await storage.getCardsByUserId(userId);
       res.json(updatedCards);
     } catch (error) {
@@ -178,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const userId = req.user.id;
     const cardTypes = ['crypto', 'usd', 'uah'];
-    
+
     // Virtual test balances
     const virtualBalances = {
       crypto: "0",

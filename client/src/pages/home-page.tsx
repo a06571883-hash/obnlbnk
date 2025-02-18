@@ -95,23 +95,49 @@ export default function HomePage() {
                     <form onSubmit={async (e) => {
                       e.preventDefault();
                       const formData = new FormData(e.currentTarget);
-                      try {
-                        await apiRequest("/api/transfer", {
-                          method: "POST",
-                          body: {
-                            fromCardId: cards[0].id,
-                            toCardNumber: formData.get("cardNumber"),
-                            amount: formData.get("amount")
-                          }
-                        });
-                        toast({
-                          title: "Успех",
-                          description: "Перевод выполнен успешно"
-                        });
-                      } catch (error) {
+                      const amount = formData.get("amount");
+                      const cardNumber = formData.get("cardNumber");
+                      
+                      if (!amount || !cardNumber) {
                         toast({
                           title: "Ошибка",
-                          description: "Не удалось выполнить перевод",
+                          description: "Заполните все поля",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+
+                      try {
+                        const response = await apiRequest("/api/transfer", {
+                          method: "POST",
+                          body: JSON.stringify({
+                            fromCardId: cards[0].id,
+                            toCardNumber: cardNumber,
+                            amount: parseFloat(amount.toString())
+                          })
+                        });
+
+                        if (response.ok) {
+                          toast({
+                            title: "Успех",
+                            description: "Перевод выполнен успешно"
+                          });
+                          
+                          // Обновляем данные карт после успешного перевода
+                          queryClient.invalidateQueries(["/api/cards"]);
+                        } else {
+                          const error = await response.json();
+                          toast({
+                            title: "Ошибка",
+                            description: error.error || "Не удалось выполнить перевод",
+                            variant: "destructive"
+                          });
+                        }
+                      } catch (error) {
+                        console.error("Transfer error:", error);
+                        toast({
+                          title: "Ошибка",
+                          description: "Ошибка сети при выполнении перевода",
                           variant: "destructive"
                         });
                       }
