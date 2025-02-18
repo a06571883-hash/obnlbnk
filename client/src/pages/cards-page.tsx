@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useState } from "react";
-import { VirtualCard } from "@/components/virtual-card";
+import VirtualCard from "@/components/virtual-card";
 
 export default function CardsPage() {
   const { user } = useAuth();
