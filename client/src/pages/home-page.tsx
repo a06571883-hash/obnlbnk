@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card } from "@shared/schema";
+import type { Card } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
 import { Loader2 } from "lucide-react";
