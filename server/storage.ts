@@ -57,6 +57,12 @@ export class DatabaseStorage implements IStorage {
     const result = await db.insert(cards).values(card).returning();
     return result[0];
   }
+
+  async updateCardBalance(cardId: number, balance: string): Promise<void> {
+    await db.update(cards)
+      .set({ balance })
+      .where(eq(cards.id, cardId));
+  }
 }
 
 export const storage = new DatabaseStorage();
