@@ -21,15 +21,10 @@ export const cards = pgTable("cards", {
   ethAddress: text("eth_address"),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
+export const insertUserSchema = createInsertSchema(users);
+export const insertCardSchema = createInsertSchema(cards);
 
-export const insertCardSchema = createInsertSchema(cards).omit({
-  id: true,
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Card = typeof cards.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertCard = z.infer<typeof insertCardSchema>;
