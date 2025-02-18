@@ -20,7 +20,7 @@ async function createRegulator() {
     username,
     password: hashedPassword,
     isRegulator: true,
-    regulatorBalance: "50000000" // 50 миллионов для регулятора
+    regulatorBalance: "80000000" // 80 миллионов для регулятора
   });
 
   console.log("Created regulator account:", {
