@@ -40,10 +40,30 @@ import AnimatedBackground from "@/components/animated-background";
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
-  const [darkMode, setDarkMode] = useState(true);
-  const [notifications, setNotifications] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [language, setLanguage] = useState("ru");
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const [notifications, setNotifications] = useState(() => localStorage.getItem('notifications') === 'true');
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('soundEnabled') === 'true');
+  const [language, setLanguage] = useState(() => localStorage.getItem('language') || "ru");
+
+  const updateSetting = (key: string, value: any) => {
+    localStorage.setItem(key, value.toString());
+    switch(key) {
+      case 'darkMode':
+        setDarkMode(value);
+        document.documentElement.classList.toggle('dark', value);
+        break;
+      case 'notifications':
+        setNotifications(value);
+        break;
+      case 'soundEnabled':
+        setSoundEnabled(value);
+        break;
+      case 'language':
+        setLanguage(value);
+        // Here you would implement language change logic
+        break;
+    }
+  };
 
   const menuItems = [
     {

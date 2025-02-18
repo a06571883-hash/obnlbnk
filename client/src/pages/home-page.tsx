@@ -61,6 +61,56 @@ export default function HomePage() {
         {cards && cards.length > 0 ? (
           <div className="space-y-8">
             <CardCarousel cards={cards} />
+            
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              <Card className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
+                <CardContent className="p-2 flex flex-col items-center">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                    <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <h3 className="font-medium">Quick Transfer</h3>
+                </CardContent>
+              </Card>
+              
+              <Card className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
+                <CardContent className="p-2 flex flex-col items-center">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                    <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2m-4 0V3a1 1 0 00-1-1h-2a1 1 0 00-1 1v2H9z" strokeWidth="2"/>
+                    </svg>
+                  </div>
+                  <h3 className="font-medium">Scan QR</h3>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity Preview */}
+            <Card className="backdrop-blur-sm bg-background/80">
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {cards?.slice(0, 3).map((card) => (
+                    <div key={card.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-xs font-medium">{card.type.charAt(0).toUpperCase()}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Last transaction</p>
+                          <p className="text-xs text-muted-foreground">{card.number.slice(-4)}</p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium">{card.balance} {card.type}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           <div className="text-center py-12 px-4">

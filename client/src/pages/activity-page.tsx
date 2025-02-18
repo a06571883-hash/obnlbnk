@@ -12,8 +12,28 @@ import { useState } from "react";
 import TransactionReceipt from "@/components/transaction-receipt";
 import AnimatedBackground from "@/components/animated-background";
 
-// Временные данные для примера
-const transactions = [
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+
+const useTransactions = () => {
+  return useQuery({
+    queryKey: ["/api/transactions"],
+    queryFn: async () => {
+      const response = await fetch('/api/transactions');
+      if (!response.ok) return [];
+      return response.json();
+    }
+  });
+};
+
+const EmptyState = () => (
+  <div className="text-center py-12">
+    <p className="text-muted-foreground">No transactions yet</p>
+  </div>
+);
+
+// Demo transactions as fallback
+const demoTransactions: any[] = [
   {
     id: 1,
     type: "deposit",
