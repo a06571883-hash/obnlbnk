@@ -99,7 +99,7 @@ export default function VirtualCard({ card }: { card: any }) {
         transformStyle: 'preserve-3d'
       }}
     >
-      <UICard className={`w-full h-[280px] ${cardColors[card.type]} shadow-xl backdrop-blur-sm`}>
+      <UICard className={`w-full h-[200px] ${cardColors[card.type]} shadow-xl backdrop-blur-sm`}>
         <CardContent className="p-6 h-full flex flex-col justify-between relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full filter blur-xl transform -translate-x-16 -translate-y-16" />
