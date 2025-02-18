@@ -68,11 +68,11 @@ export default function VirtualCard({ card }: { card: any }) {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientY - rect.top) / rect.height;
-    const y = (e.clientX - rect.left) / rect.width;
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
 
-    setManualRotateX((0.5 - x) * 25);
-    setManualRotateY((y - 0.5) * 25);
+    setManualRotateX((0.5 - y) * 40);
+    setManualRotateY((x - 0.5) * 40);
   };
 
   const handleMouseLeave = () => {
@@ -80,8 +80,8 @@ export default function VirtualCard({ card }: { card: any }) {
     setManualRotateY(0);
   };
 
-  const rotateX = gyroscope ? -gyroscope.x * 20 : manualRotateX;
-  const rotateY = gyroscope ? -gyroscope.y * 20 : manualRotateY;
+  const rotateX = gyroscope ? gyroscope.beta : manualRotateX;
+  const rotateY = gyroscope ? gyroscope.gamma : manualRotateY;
 
   const handleTransfer = async () => {
     setIsTransferring(true);
@@ -100,12 +100,11 @@ export default function VirtualCard({ card }: { card: any }) {
   return (
     <motion.div
       className="perspective-1000"
-      animate={{ 
-        rotateX: rotateX,
-        rotateY: rotateY,
-        transition: { type: "spring", stiffness: 200, damping: 25 }
+      style={{
+        transformStyle: "preserve-3d",
+        transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+        transition: "transform 0.1s ease-out"
       }}
-      whileHover={{ scale: 1.02 }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
