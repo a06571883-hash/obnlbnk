@@ -9,21 +9,42 @@ import { useMutation as useReactMutation, useQueryClient } from "@tanstack/react
 
 const useMutation = useReactMutation;
 
+const cardColors = {
+  crypto: "bg-gradient-to-br from-yellow-400 to-yellow-600",
+  usd: "bg-gradient-to-br from-green-400 to-green-600",
+  uah: "bg-gradient-to-br from-blue-400 to-blue-600",
+};
+
 export default function VirtualCard({ card }: { card: any }) {
   const [manualRotateX, setManualRotateX] = useState(0);
   const [manualRotateY, setManualRotateY] = useState(0);
   const gyroscope = useGyroscope();
-  const queryClient = useQueryClient(); // Added for react-query
+  const queryClient = useQueryClient();
 
-  const [isTransferring, setIsTransferring] = useState(false); // State for transfer loading
+  const updateBalanceMutation = useMutation({
+    mutationFn: () => {
+      return fetch('/api/cards/update-balance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }).then(res => {
+        if (!res.ok) throw new Error('Failed to update balance');
+        return res.json();
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
+    }
+  });
+
+  const [isTransferring, setIsTransferring] = useState(false);
   const [transferAmount, setTransferAmount] = useState('');
   const [recipientCardNumber, setRecipientCardNumber] = useState('');
   const [transferError, setTransferError] = useState('');
 
-
   const transferMutation = useMutation({
     mutationFn: (data: any) => {
-      // Placeholder for actual API call.  Replace with your backend endpoint.
       return fetch('/api/transfer', {
         method: 'POST',
         headers: {
@@ -33,7 +54,7 @@ export default function VirtualCard({ card }: { card: any }) {
       }).then(res => res.json());
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['card']); // Assuming you have a query for card data
+      queryClient.invalidateQueries(['card']);
       setIsTransferring(false);
       setTransferAmount('');
       setRecipientCardNumber('');
@@ -45,27 +66,13 @@ export default function VirtualCard({ card }: { card: any }) {
     },
   });
 
-
-  const cardColors = {
-    crypto: "bg-gradient-to-r from-purple-600 via-indigo-500 to-pink-500",
-    usd: "bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500",
-    uah: "bg-gradient-to-r from-blue-500 via-cyan-500 to-sky-500",
-  };
-
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = e.currentTarget;
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientY - rect.top) / rect.height;
+    const y = (e.clientX - rect.left) / rect.width;
 
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-
-    const rotateX = (y - centerY) / 10;
-    const rotateY = -(x - centerX) / 10;
-
-    setManualRotateX(rotateX);
-    setManualRotateY(rotateY);
+    setManualRotateX((x - 0.5) * 20);
+    setManualRotateY((y - 0.5) * 20);
   };
 
   const handleMouseLeave = () => {
@@ -73,18 +80,17 @@ export default function VirtualCard({ card }: { card: any }) {
     setManualRotateY(0);
   };
 
-  // Combine manual rotation with gyroscope
-  const rotateX = manualRotateX || gyroscope.beta;
-  const rotateY = manualRotateY || gyroscope.gamma;
+  const rotateX = gyroscope ? -gyroscope.x * 20 : manualRotateX;
+  const rotateY = gyroscope ? -gyroscope.y * 20 : manualRotateY;
 
   const handleTransfer = async () => {
     setIsTransferring(true);
     try {
       await transferMutation.mutateAsync({
-        fromCard: card.id, // You'll need card IDs
+        fromCard: card.id,
         toCard: recipientCardNumber,
         amount: transferAmount,
-        currency: card.type, // Assumes currency is stored in card.type
+        currency: card.type,
       });
     } catch (error) {
       console.error("Transfer error:", error);
@@ -102,9 +108,8 @@ export default function VirtualCard({ card }: { card: any }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      <UICard className={`w-full h-[220px] ${cardColors[card.type as keyof typeof cardColors]} shadow-xl backdrop-blur-sm`}>
+      <UICard className={`w-full h-[220px] ${cardColors[card.type]} shadow-xl backdrop-blur-sm`}>
         <CardContent className="p-6 h-full flex flex-col justify-between relative overflow-hidden">
-          {/* Фоновые элементы */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full filter blur-xl transform -translate-x-16 -translate-y-16" />
             <div className="absolute bottom-0 right-0 w-32 h-32 bg-white rounded-full filter blur-xl transform translate-x-16 translate-y-16" />
@@ -117,8 +122,18 @@ export default function VirtualCard({ card }: { card: any }) {
                 {card.type === 'crypto' ? 'BTC/ETH' : card.type === 'usd' ? '$' : '₴'}
                 {card.balance.toString()}
               </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-2"
+                onClick={() => updateBalanceMutation.mutate()}
+                disabled={updateBalanceMutation.isPending}
+              >
+                {updateBalanceMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : "Update Balance"}
+              </Button>
             </div>
-
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
@@ -214,7 +229,6 @@ export default function VirtualCard({ card }: { card: any }) {
                   </div>
                 </DialogContent>
               </Dialog>
-
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20" onClick={() => {}}>
