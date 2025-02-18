@@ -30,6 +30,9 @@ export async function setupVite(app: Express, server: Server) {
       port: 5000,
       clientPort: 5000,
       host: '0.0.0.0',
+      timeout: 120000,
+      overlay: true,
+      path: '/@hmr'
     },
     allowedHosts: true,
   };

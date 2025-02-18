@@ -14,7 +14,9 @@ import { AuthProvider } from "./hooks/use-auth";
 import BottomNav from "@/components/bottom-nav";
 import { useLocation } from "wouter";
 
-const Router = React.memo(() => {
+import React from 'react';
+
+const Router = React.memo(function Router() {
   const [location] = useLocation();
   const showNav = location !== "/auth";
 
