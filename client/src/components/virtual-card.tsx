@@ -102,9 +102,9 @@ export default function VirtualCard({ card }: { card: any }) {
       className="perspective-1000"
       animate={{
         rotateX,
-        rotateY,
-        transition: { type: "spring", stiffness: 300, damping: 30 }
+        rotateY
       }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
