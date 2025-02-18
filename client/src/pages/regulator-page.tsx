@@ -15,7 +15,8 @@ export default function RegulatorPage() {
   
   const { data: users = [], refetch } = useQuery({
     queryKey: ["users"],
-    queryFn: () => apiRequest("/api/users")
+    queryFn: () => apiRequest("/api/users"),
+    refetchInterval: 5000
   });
 
   if (!user?.is_regulator) {
@@ -52,7 +53,7 @@ export default function RegulatorPage() {
         <CardHeader>
           <CardTitle className="text-primary-foreground">Панель регулятора</CardTitle>
           <div className="text-xl font-bold text-primary-foreground">
-            Баланс регулятора: ${user.regulatorBalance || '80000000'}
+            Баланс регулятора: ${user.regulator_balance || '80000000'}
           </div>
         </CardHeader>
       </Card>
