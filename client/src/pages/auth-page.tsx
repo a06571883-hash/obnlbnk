@@ -9,6 +9,8 @@ import { insertUserSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
+import { LogoFull } from "@/components/logo";
+import AnimatedBackground from "@/components/animated-background";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -20,20 +22,26 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="flex items-center justify-center p-8">
-        <Card className="w-full max-w-md">
+    <div className="relative min-h-screen grid lg:grid-cols-2">
+      <AnimatedBackground />
+
+      <div className="relative flex items-center justify-center p-8">
+        <Card className="w-full max-w-md backdrop-blur-sm bg-background/80">
           <CardContent className="pt-6">
+            <div className="flex justify-center mb-8">
+              <LogoFull />
+            </div>
+
             <Tabs defaultValue="login">
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="login">
                 <LoginForm />
               </TabsContent>
-              
+
               <TabsContent value="register">
                 <RegisterForm />
               </TabsContent>
@@ -41,17 +49,31 @@ export default function AuthPage() {
           </CardContent>
         </Card>
       </div>
-      
-      <div className="hidden lg:flex flex-col justify-center p-8 bg-primary text-primary-foreground">
-        <div className="max-w-md mx-auto">
+
+      <div className="hidden lg:flex relative flex-col justify-center p-8 bg-primary text-primary-foreground overflow-hidden">
+        <div className="relative z-10 max-w-md mx-auto">
           <h1 className="text-4xl font-bold mb-4">OOOBNAL Bank</h1>
-          <p className="text-lg mb-4">Your trusted partner for multi-currency banking solutions.</p>
-          <ul className="space-y-2">
-            <li>• Crypto-first approach</li>
-            <li>• Multiple currency support</li>
-            <li>• Secure transactions</li>
-          </ul>
+          <p className="text-lg mb-8">Your trusted partner for multi-currency banking solutions.</p>
+          <div className="space-y-4">
+            <Feature icon="🔒" title="Secure Transactions" description="End-to-end encryption for all your operations" />
+            <Feature icon="💎" title="Crypto Support" description="Full cryptocurrency integration" />
+            <Feature icon="🌍" title="Multi-Currency" description="Support for major world currencies" />
+            <Feature icon="🎯" title="Instant Transfers" description="Real-time transaction processing" />
+          </div>
         </div>
+        <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" />
+      </div>
+    </div>
+  );
+}
+
+function Feature({ icon, title, description }: { icon: string; title: string; description: string }) {
+  return (
+    <div className="flex items-start gap-4">
+      <div className="text-2xl">{icon}</div>
+      <div>
+        <h3 className="font-semibold">{title}</h3>
+        <p className="text-primary-foreground/80">{description}</p>
       </div>
     </div>
   );
@@ -83,7 +105,7 @@ function LoginForm() {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="password"
@@ -97,7 +119,7 @@ function LoginForm() {
             </FormItem>
           )}
         />
-        
+
         <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
           {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Login
@@ -133,7 +155,7 @@ function RegisterForm() {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="password"
@@ -147,7 +169,7 @@ function RegisterForm() {
             </FormItem>
           )}
         />
-        
+
         <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
           {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Register

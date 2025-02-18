@@ -6,8 +6,11 @@ import {
   RefreshCw,
   Bitcoin,
   DollarSign,
-  Coins // Заменяем CurrencyHryvnia на Coins
+  Coins
 } from "lucide-react";
+import { useState } from "react";
+import TransactionReceipt from "@/components/transaction-receipt";
+import AnimatedBackground from "@/components/animated-background";
 
 // Временные данные для примера
 const transactions = [
@@ -17,7 +20,9 @@ const transactions = [
     amount: "0.015",
     currency: "BTC",
     date: "2024-02-18",
-    status: "completed"
+    status: "completed",
+    to: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+    description: "Crypto deposit to wallet"
   },
   {
     id: 2,
@@ -25,7 +30,10 @@ const transactions = [
     amount: "1500",
     currency: "USD",
     date: "2024-02-17",
-    status: "completed"
+    status: "completed",
+    from: "Main USD Account",
+    to: "External Bank Account",
+    description: "Withdrawal to external account"
   },
   {
     id: 3,
@@ -33,11 +41,16 @@ const transactions = [
     amount: "25000",
     currency: "UAH",
     date: "2024-02-16",
-    status: "pending"
+    status: "pending",
+    from: "Main UAH Account",
+    to: "Savings Account",
+    description: "Internal transfer between accounts"
   },
 ];
 
 export default function ActivityPage() {
+  const [selectedTx, setSelectedTx] = useState<typeof transactions[0] | null>(null);
+
   const getCurrencyIcon = (currency: string) => {
     switch (currency) {
       case 'BTC':
@@ -45,7 +58,7 @@ export default function ActivityPage() {
       case 'USD':
         return <DollarSign className="h-5 w-5" />;
       case 'UAH':
-        return <Coins className="h-5 w-5" />; // Используем Coins вместо CurrencyHryvnia
+        return <Coins className="h-5 w-5" />;
       default:
         return null;
     }
@@ -66,13 +79,15 @@ export default function ActivityPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-primary text-primary-foreground p-8">
+      <AnimatedBackground />
+
+      <div className="bg-primary text-primary-foreground p-8 relative">
         <h1 className="text-2xl font-bold mb-2">Activity</h1>
         <p className="text-primary-foreground/80">Track your transactions</p>
       </div>
 
-      <div className="p-4 -mt-4">
-        <Card>
+      <div className="p-4 -mt-4 relative">
+        <Card className="backdrop-blur-sm bg-background/80">
           <CardContent className="p-6">
             <Tabs defaultValue="all" className="mb-4">
               <TabsList className="grid w-full grid-cols-3">
@@ -86,7 +101,8 @@ export default function ActivityPage() {
               {transactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="flex items-center p-4 rounded-lg bg-accent/50 hover:bg-accent transition-colors"
+                  className="flex items-center p-4 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer"
+                  onClick={() => setSelectedTx(tx)}
                 >
                   <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center mr-4">
                     {getTransactionIcon(tx.type)}
@@ -122,6 +138,14 @@ export default function ActivityPage() {
           </CardContent>
         </Card>
       </div>
+
+      {selectedTx && (
+        <TransactionReceipt
+          transaction={selectedTx}
+          open={!!selectedTx}
+          onOpenChange={(open) => !open && setSelectedTx(null)}
+        />
+      )}
     </div>
   );
 }

@@ -115,18 +115,76 @@ export default function VirtualCard({ card }: { card: CardType }) {
 
           <div className="flex flex-col space-y-4 relative z-10">
             <div className="flex space-x-2">
-              <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
-                <ArrowUpCircle className="h-4 w-4 mr-2" />
-                Deposit
-              </Button>
-              <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
-                <ArrowDownCircle className="h-4 w-4 mr-2" />
-                Withdraw
-              </Button>
-              <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Transfer
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
+                    <ArrowUpCircle className="h-4 w-4 mr-2" />
+                    Deposit
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Deposit Funds</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {card.type === 'crypto' ? (
+                      <>
+                        <div>
+                          <p className="text-sm text-muted-foreground">BTC Address</p>
+                          <p className="font-mono text-sm break-all">{card.btcAddress}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">ETH Address</p>
+                          <p className="font-mono text-sm break-all">{card.ethAddress}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Card Number</p>
+                        <p className="font-mono">{card.number}</p>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
+                    <ArrowDownCircle className="h-4 w-4 mr-2" />
+                    Withdraw
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Withdraw Funds</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-center text-muted-foreground">
+                      Contact support @KA7777AA to process your withdrawal
+                    </p>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Transfer
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Transfer Funds</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-center text-muted-foreground">
+                      Contact support @KA7777AA to process your transfer
+                    </p>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
 
             <div>
