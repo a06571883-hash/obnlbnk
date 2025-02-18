@@ -91,7 +91,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     // Get user cards and update their balances
-    const cards = await storage.getCardsByUserId(userId);
     for (const card of cards) {
       await storage.updateCardBalance(card.id, balances[card.type]);
     }
