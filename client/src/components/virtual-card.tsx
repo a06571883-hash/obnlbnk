@@ -99,7 +99,7 @@ export default function VirtualCard({ card }: { card: any }) {
         transformStyle: 'preserve-3d'
       }}
     >
-      <UICard className={`w-full h-[220px] ${cardColors[card.type]} shadow-xl backdrop-blur-sm`}>
+      <UICard className={`w-full h-[240px] ${cardColors[card.type]} shadow-xl backdrop-blur-sm`}>
         <CardContent className="p-6 h-full flex flex-col justify-between relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full filter blur-xl transform -translate-x-16 -translate-y-16" />
@@ -157,10 +157,10 @@ export default function VirtualCard({ card }: { card: any }) {
           </div>
 
           <div className="flex flex-col space-y-4 relative z-10">
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 mb-2">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20" data-dialog="deposit">
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="deposit">
                     <ArrowUpCircle className="h-4 w-4 mr-2" />
                     Deposit
                   </Button>
@@ -193,7 +193,7 @@ export default function VirtualCard({ card }: { card: any }) {
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20" data-dialog="withdraw">
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="withdraw">
                     <ArrowDownCircle className="h-4 w-4 mr-2" />
                     Withdraw
                   </Button>
@@ -211,7 +211,7 @@ export default function VirtualCard({ card }: { card: any }) {
               </Dialog>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20" data-dialog="transfer">
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="transfer">
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Transfer
                   </Button>
