@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { insertUserSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { Loader2 } from "lucide-react";
+import { Loader2, Shield, Globe, Wallet } from "lucide-react";
 import { LogoFull } from "@/components/logo";
 import AnimatedBackground from "@/components/animated-background";
 
@@ -26,16 +26,16 @@ export default function AuthPage() {
       <AnimatedBackground />
 
       <div className="relative flex items-center justify-center p-8">
-        <Card className="w-full max-w-md backdrop-blur-sm bg-background/80">
+        <Card className="w-full max-w-md backdrop-blur-sm bg-background/80 border-primary/20">
           <CardContent className="pt-6">
             <div className="flex justify-center mb-8">
               <LogoFull />
             </div>
 
-            <Tabs defaultValue="login">
+            <Tabs defaultValue="login" className="animate-in fade-in-50">
               <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsTrigger value="login">Вход</TabsTrigger>
+                <TabsTrigger value="register">Регистрация</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -50,29 +50,53 @@ export default function AuthPage() {
         </Card>
       </div>
 
-      <div className="hidden lg:flex relative flex-col justify-center p-8 bg-primary text-primary-foreground overflow-hidden">
-        <div className="relative z-10 max-w-md mx-auto">
-          <h1 className="text-4xl font-bold mb-4">OOOBNAL Bank</h1>
-          <p className="text-lg mb-8">Your trusted partner for multi-currency banking solutions.</p>
-          <div className="space-y-4">
-            <Feature icon="🔒" title="Secure Transactions" description="End-to-end encryption for all your operations" />
-            <Feature icon="💎" title="Crypto Support" description="Full cryptocurrency integration" />
-            <Feature icon="🌍" title="Multi-Currency" description="Support for major world currencies" />
-            <Feature icon="🎯" title="Instant Transfers" description="Real-time transaction processing" />
+      <div className="hidden lg:flex relative flex-col justify-center p-12 bg-primary text-primary-foreground overflow-hidden">
+        <div className="relative z-10 max-w-2xl mx-auto">
+          <LogoFull className="mb-8 w-48" />
+          <h1 className="text-4xl font-bold mb-6">BNAL Bank</h1>
+          <p className="text-xl mb-12 text-primary-foreground/90">
+            Ваш надёжный партнёр в мире современных финансовых технологий
+          </p>
+
+          <div className="space-y-8">
+            <Feature
+              icon={Shield}
+              title="Безопасность на высшем уровне"
+              description="Все транзакции защищены современными методами шифрования"
+            />
+            <Feature
+              icon={Globe}
+              title="Поддержка криптовалют"
+              description="Полная интеграция с основными криптовалютами"
+            />
+            <Feature
+              icon={Wallet}
+              title="Мультивалютные операции"
+              description="Поддержка основных мировых валют и мгновенные переводы"
+            />
+          </div>
+
+          <div className="mt-12 text-primary-foreground/80">
+            <p>Поддержка 24/7</p>
+            <p>Telegram: @KA7777AA</p>
           </div>
         </div>
+
+        {/* Декоративный фоновый элемент */}
         <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" />
       </div>
     </div>
   );
 }
 
-function Feature({ icon, title, description }: { icon: string; title: string; description: string }) {
+function Feature({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
   return (
-    <div className="flex items-start gap-4">
-      <div className="text-2xl">{icon}</div>
+    <div className="flex items-start gap-4 group">
+      <div className="p-2 rounded-lg bg-primary-foreground/10 backdrop-blur-sm">
+        <Icon className="h-6 w-6" />
+      </div>
       <div>
-        <h3 className="font-semibold">{title}</h3>
+        <h3 className="font-semibold text-lg group-hover:text-white transition-colors">{title}</h3>
         <p className="text-primary-foreground/80">{description}</p>
       </div>
     </div>
@@ -97,9 +121,9 @@ function LoginForm() {
           name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Имя пользователя</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} className="bg-background/50" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -111,9 +135,9 @@ function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Пароль</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input type="password" {...field} className="bg-background/50" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -122,7 +146,7 @@ function LoginForm() {
 
         <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
           {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Login
+          Войти
         </Button>
       </form>
     </Form>
@@ -147,9 +171,9 @@ function RegisterForm() {
           name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Имя пользователя</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} className="bg-background/50" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -161,9 +185,9 @@ function RegisterForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Пароль</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input type="password" {...field} className="bg-background/50" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -172,7 +196,7 @@ function RegisterForm() {
 
         <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
           {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Register
+          Зарегистрироваться
         </Button>
       </form>
     </Form>
