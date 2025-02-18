@@ -12,6 +12,8 @@ import { apiRequest } from "@/lib/queryClient";
 
 export default function CardsPage() {
   const { user } = useAuth();
+  const isAdmin = user?.username === 'admin';
+  const { user } = useAuth();
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
   

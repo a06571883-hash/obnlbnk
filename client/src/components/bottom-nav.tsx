@@ -14,7 +14,12 @@ export default function BottomNav() {
     { icon: CreditCard, label: "Cards", path: "/cards" },
     { icon: Activity, label: "Activity", path: "/activity" },
     { icon: User, label: "Profile", path: "/profile" },
-  ];
+  ].filter(item => {
+    if (user?.username === 'admin') {
+      return true; // Show all items for admin
+    }
+    return true; // Show all items for regular users too
+  });
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t z-50">
