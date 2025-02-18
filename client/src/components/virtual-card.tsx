@@ -68,11 +68,13 @@ export default function VirtualCard({ card }: { card: any }) {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const mouseX = e.clientX - centerX;
+    const mouseY = e.clientY - centerY;
 
-    setManualRotateX((0.5 - y) * 40);
-    setManualRotateY((x - 0.5) * 40);
+    setManualRotateX(-(mouseY / 30));
+    setManualRotateY(mouseX / 30);
   };
 
   const handleMouseLeave = () => {
@@ -80,8 +82,8 @@ export default function VirtualCard({ card }: { card: any }) {
     setManualRotateY(0);
   };
 
-  const rotateX = gyroscope ? gyroscope.beta : manualRotateX;
-  const rotateY = gyroscope ? gyroscope.gamma : manualRotateY;
+  const rotateX = gyroscope ? gyroscope.beta / 2 : manualRotateX;
+  const rotateY = gyroscope ? gyroscope.gamma / 2 : manualRotateY;
 
   const handleTransfer = async () => {
     setIsTransferring(true);
@@ -103,7 +105,7 @@ export default function VirtualCard({ card }: { card: any }) {
       style={{
         transformStyle: "preserve-3d",
         transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
-        transition: "transform 0.1s ease-out"
+        transition: "all 0.05s cubic-bezier(0.17, 0.67, 0.83, 0.67)"
       }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
