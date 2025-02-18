@@ -38,11 +38,9 @@ export default function CardsPage() {
 
   return (
     <div className="container pb-32 pt-8">
-      <h1 className="text-2xl font-bold mb-8">
-        {isAdmin ? "Управление картами (Регулятор)" : "Мои карты"}
-      </h1>
+      <h1 className="text-2xl font-bold mb-8">Мои карты</h1>
 
-      <div className="grid gap-4">
+      <div className="flex flex-col gap-4 md:grid md:grid-cols-1 lg:grid-cols-3">
         <VirtualCard
           card={{
             type: "crypto",
