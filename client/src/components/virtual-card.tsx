@@ -21,6 +21,7 @@ export default function VirtualCard({ card }: { card: any }) {
   const [transferAmount, setTransferAmount] = useState('');
   const [recipientCardNumber, setRecipientCardNumber] = useState('');
   const [transferError, setTransferError] = useState('');
+  const [isMobile] = useState(() => window.innerWidth < 768);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -92,8 +93,9 @@ export default function VirtualCard({ card }: { card: any }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
-        transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-        transition: 'transform 0.1s ease-out',
+        transform: isMobile ? `perspective(1000px) rotateX(${gyroscope ? gyroscope.beta / 4 : 0}deg) rotateY(${gyroscope ? gyroscope.gamma / 4 : 0}deg)` 
+                           : `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+        transition: 'transform 0.2s ease-out',
         transformStyle: 'preserve-3d'
       }}
     >
