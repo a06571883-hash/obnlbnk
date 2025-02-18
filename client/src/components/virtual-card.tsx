@@ -1,15 +1,48 @@
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw } from "lucide-react";
+import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function VirtualCard({ card }: { card: any }) {
   const [manualRotateX, setManualRotateX] = useState(0);
   const [manualRotateY, setManualRotateY] = useState(0);
   const gyroscope = useGyroscope();
+  const queryClient = useQueryClient(); // Added for react-query
+
+  const [isTransferring, setIsTransferring] = useState(false); // State for transfer loading
+  const [transferAmount, setTransferAmount] = useState('');
+  const [recipientCardNumber, setRecipientCardNumber] = useState('');
+  const [transferError, setTransferError] = useState('');
+
+
+  const [transferMutation] = useMutation({
+    mutationFn: (data: any) => {
+      // Placeholder for actual API call.  Replace with your backend endpoint.
+      return fetch('/api/transfer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(res => res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['card']); // Assuming you have a query for card data
+      setIsTransferring(false);
+      setTransferAmount('');
+      setRecipientCardNumber('');
+      setTransferError('');
+    },
+    onError: (error: any) => {
+      setIsTransferring(false);
+      setTransferError(error.message || 'Transfer failed.');
+    },
+  });
+
 
   const cardColors = {
     crypto: "bg-gradient-to-r from-purple-600 via-indigo-500 to-pink-500",
@@ -41,6 +74,20 @@ export default function VirtualCard({ card }: { card: any }) {
   // Combine manual rotation with gyroscope
   const rotateX = manualRotateX || gyroscope.beta;
   const rotateY = manualRotateY || gyroscope.gamma;
+
+  const handleTransfer = async () => {
+    setIsTransferring(true);
+    try {
+      await transferMutation.mutateAsync({
+        fromCard: card.id, // You'll need card IDs
+        toCard: recipientCardNumber,
+        amount: transferAmount,
+        currency: card.type, // Assumes currency is stored in card.type
+      });
+    } catch (error) {
+      console.error("Transfer error:", error);
+    }
+  };
 
   return (
     <motion.div
@@ -168,7 +215,7 @@ export default function VirtualCard({ card }: { card: any }) {
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20" onClick={() => {}}>
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Transfer
                   </Button>
@@ -178,9 +225,12 @@ export default function VirtualCard({ card }: { card: any }) {
                     <DialogTitle>Transfer Funds</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <p className="text-center text-muted-foreground">
-                      Contact support @KA7777AA to process your transfer
-                    </p>
+                    <input type="number" value={transferAmount} onChange={e => setTransferAmount(e.target.value)} placeholder="Amount" />
+                    <input type="text" value={recipientCardNumber} onChange={e => setRecipientCardNumber(e.target.value)} placeholder="Recipient Card Number" />
+                    {transferError && <p className="text-red-500">{transferError}</p>}
+                    <Button onClick={handleTransfer} disabled={isTransferring}>
+                      {isTransferring ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : "Transfer"}
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
