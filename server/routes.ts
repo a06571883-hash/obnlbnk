@@ -105,15 +105,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Необходима авторизация" });
+      }
+
       const result = await storage.transferMoney(fromCardId, toCardNumber, parseFloat(amount));
       if (result.success) {
         res.status(200).json({ message: "Перевод успешно выполнен" });
       } else {
-        res.status(400).json({ error: result.error });
+        res.status(400).json({ error: result.error || "Ошибка при переводе" });
       }
     } catch (error) {
       console.error("Transfer error:", error);
-      res.status(500).json({ error: "Ошибка при выполнении перевода" });
+      res.status(500).json({ error: "Ошибка сервера при выполнении перевода" });
     }
   });
 

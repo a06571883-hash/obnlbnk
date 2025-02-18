@@ -117,11 +117,21 @@ export default function HomePage() {
                       }
 
                       try {
+                        if (!navigator.onLine) {
+                          toast({
+                            title: "Ошибка",
+                            description: "Отсутствует подключение к интернету",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+
                         const response = await fetch("/api/transfer", {
                           method: "POST",
                           headers: {
                             'Content-Type': 'application/json'
                           },
+                          credentials: 'include',
                           body: JSON.stringify({
                             fromCardId: selectedCard?.id || cards[0].id,
                             toCardNumber: cardNumber,
