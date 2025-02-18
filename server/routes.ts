@@ -153,10 +153,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Virtual test balances
     const virtualBalances = {
-      crypto: "62000",
-      usd: "45000", 
-      uah: "256021"
+      crypto: "0",
+      usd: "0",
+      uah: "0"
     };
+
+    // Специальные балансы для Kich32
+    if (req.user.username === "Kich32") {
+      virtualBalances.crypto = "62000";
+      virtualBalances.usd = "45000";
+      virtualBalances.uah = "256021";
+    }
 
     const cards = await Promise.all(cardTypes.map(async type => {
       const cardData = {
