@@ -18,9 +18,9 @@ export default function CardsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-primary text-primary-foreground p-8">
-        <h1 className="text-2xl font-bold mb-2">My Cards</h1>
-        <p className="text-primary-foreground/80">Manage your cards and transactions</p>
+      <div className="bg-primary text-primary-foreground p-4">
+        <h1 className="text-xl font-bold mb-1">My Cards</h1>
+        <p className="text-sm text-primary-foreground/80">Manage your cards and transactions</p>
       </div>
 
       <div className="p-4 -mt-4">

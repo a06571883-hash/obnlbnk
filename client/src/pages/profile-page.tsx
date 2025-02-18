@@ -213,9 +213,9 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-background pb-20">
       <AnimatedBackground />
 
-      <div className="bg-primary text-primary-foreground p-8 relative">
-        <h1 className="text-2xl font-bold mb-2">Профиль</h1>
-        <p className="text-primary-foreground/80">Управление настройками аккаунта</p>
+      <div className="bg-primary text-primary-foreground p-4 relative">
+        <h1 className="text-xl font-bold mb-1">Профиль</h1>
+        <p className="text-sm text-primary-foreground/80">Управление настройками аккаунта</p>
       </div>
 
       <div className="p-4 -mt-4 relative">
