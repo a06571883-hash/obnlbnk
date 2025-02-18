@@ -1,4 +1,3 @@
-import { Card as CardType } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,7 +6,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
 
-export default function VirtualCard({ card }: { card: CardType }) {
+export default function VirtualCard({ card }: { card: any }) {
   const [manualRotateX, setManualRotateX] = useState(0);
   const [manualRotateY, setManualRotateY] = useState(0);
   const gyroscope = useGyroscope();
