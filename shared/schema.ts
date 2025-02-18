@@ -7,8 +7,8 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  isRegulator: boolean("is_regulator").notNull().default(false),
-  regulatorBalance: decimal("regulator_balance").notNull().default("0"),
+  is_regulator: boolean("is_regulator").notNull().default(false),
+  regulator_balance: decimal("regulator_balance", { precision: 10, scale: 2 }).notNull().default("0"),
 });
 
 export const cards = pgTable("cards", {
