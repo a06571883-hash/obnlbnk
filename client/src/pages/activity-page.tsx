@@ -15,25 +15,12 @@ import AnimatedBackground from "@/components/animated-background";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
-const useTransactions = () => {
-  return useQuery({
-    queryKey: ["/api/transactions"],
-    queryFn: async () => {
-      const response = await fetch('/api/transactions');
-      if (!response.ok) return [];
-      return response.json();
-    }
-  });
-};
 
 const EmptyState = () => (
   <div className="text-center py-12">
     <p className="text-muted-foreground">No transactions yet</p>
   </div>
 );
-
-// Using transactions from the hook
-const { data: transactions = [] } = useTransactions();
 
 // Demo transactions as fallback when no data
 const demoTransactions: any[] = [
@@ -72,6 +59,14 @@ const demoTransactions: any[] = [
 ];
 
 export default function ActivityPage() {
+  const { data: transactions = [] } = useQuery({
+    queryKey: ["/api/transactions"],
+    queryFn: async () => {
+      const response = await fetch('/api/transactions');
+      if (!response.ok) return [];
+      return response.json();
+    }
+  });
   const [selectedTx, setSelectedTx] = useState<typeof transactions[0] | null>(null);
 
   const getCurrencyIcon = (currency: string) => {
