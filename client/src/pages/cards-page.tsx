@@ -44,21 +44,32 @@ export default function CardsPage() {
 
       <div className="grid gap-4">
         <VirtualCard
-          type="crypto"
-          adjustBalance={isAdmin ? adjustBalance : undefined}
-          amount={amount}
-          setAmount={setAmount}
+          card={{
+            type: "crypto",
+            balance: 0,
+            number: "4111111111111111",
+            expiry: "12/25",
+            cvv: "123"
+          }}
         />
         <VirtualCard
-          type="usd" 
-          adjustBalance={isAdmin ? adjustBalance : undefined}
-          amount={amount}
-          setAmount={setAmount}
+          card={{
+            type: "usd",
+            balance: 0,
+            number: "4222222222222222",
+            expiry: "12/25",
+            cvv: "456"
+          }}
         />
         <VirtualCard
-          type="uah"
-          adjustBalance={isAdmin ? adjustBalance : undefined}
-          amount={amount}
+          card={{
+            type: "uah",
+            balance: 0,
+            number: "4333333333333333",
+            expiry: "12/25",
+            cvv: "789"
+          }}
+        />t={amount}
           setAmount={setAmount}
         />
       </div>
