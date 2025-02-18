@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertCardSchema } from "@shared/schema";
+import { insertCardSchema, cards } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
 function generateCardNumber(): string {
@@ -90,14 +91,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       uah: "256021"
     };
 
-    // Update each card balance
-    for (const card of cards) {
-      await storage.updateCardBalance(card.id, balances[card.type]);
-      console.log(`Updated ${card.type} card balance to ${balances[card.type]}`);
+    try {
+      // Update each card balance in database
+      for (const card of cards) {
+        await db.update(cards)
+          .set({ balance: balances[card.type] })
+          .where(eq(cards.id, card.id))
+          .execute();
+        
+        console.log(`Updated ${card.type} card balance to ${balances[card.type]}`);
+      }
+      
+      const updatedCards = await storage.getCardsByUserId(userId);
+      res.json(updatedCards);
+    } catch (error) {
+      console.error('Error updating balances:', error);
+      res.status(500).json({ error: 'Failed to update balances' });
     }
-    
-    const updatedCards = await storage.getCardsByUserId(userId);
-    res.json(updatedCards);
   });
 
   app.post("/api/cards/generate", async (req, res) => {
