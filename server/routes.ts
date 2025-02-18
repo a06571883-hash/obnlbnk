@@ -40,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/users", async (req, res) => {
-    if (!req.isAuthenticated() || !req.user.isRegulator) {
+    if (!req.isAuthenticated() || !req.user.is_regulator) {
       return res.sendStatus(403);
     }
     const users = await storage.getAllUsers();
@@ -52,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/regulator/adjust-balance", async (req, res) => {
-    if (!req.isAuthenticated() || !req.user.isRegulator) {
+    if (!req.isAuthenticated() || !req.user.is_regulator) {
       return res.sendStatus(403);
     }
     
