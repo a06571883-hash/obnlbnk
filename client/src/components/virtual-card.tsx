@@ -5,10 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useGyroscope } from "@/hooks/use-gyroscope";
 
 export default function VirtualCard({ card }: { card: CardType }) {
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
+  const [manualRotateX, setManualRotateX] = useState(0);
+  const [manualRotateY, setManualRotateY] = useState(0);
+  const gyroscope = useGyroscope();
 
   const cardColors = {
     crypto: "bg-gradient-to-r from-purple-600 via-indigo-500 to-pink-500",
@@ -28,14 +30,18 @@ export default function VirtualCard({ card }: { card: CardType }) {
     const rotateX = (y - centerY) / 10;
     const rotateY = -(x - centerX) / 10;
 
-    setRotateX(rotateX);
-    setRotateY(rotateY);
+    setManualRotateX(rotateX);
+    setManualRotateY(rotateY);
   };
 
   const handleMouseLeave = () => {
-    setRotateX(0);
-    setRotateY(0);
+    setManualRotateX(0);
+    setManualRotateY(0);
   };
+
+  // Combine manual rotation with gyroscope
+  const rotateX = manualRotateX || gyroscope.beta;
+  const rotateY = manualRotateY || gyroscope.gamma;
 
   return (
     <motion.div
