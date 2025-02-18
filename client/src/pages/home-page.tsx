@@ -108,8 +108,11 @@ export default function HomePage() {
                       }
 
                       try {
-                        const response = await apiRequest("/api/transfer", {
+                        const response = await fetch("/api/transfer", {
                           method: "POST",
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
                           body: JSON.stringify({
                             fromCardId: cards[0].id,
                             toCardNumber: cardNumber,
