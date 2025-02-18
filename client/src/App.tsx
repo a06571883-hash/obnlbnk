@@ -24,6 +24,7 @@ function Router() {
         <ProtectedRoute path="/cards" component={CardsPage} />
         <ProtectedRoute path="/activity" component={ActivityPage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
+        <ProtectedRoute path="/regulator" component={RegulatorPage} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>
