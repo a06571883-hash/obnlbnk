@@ -77,6 +77,37 @@ export class DatabaseStorage implements IStorage {
       .set({ regulatorBalance: balance })
       .where(eq(users.id, userId));
   }
+
+  async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      const fromCard = (await db.select().from(cards).where(eq(cards.id, fromCardId)))[0];
+      const toCard = (await db.select().from(cards).where(eq(cards.number, toCardNumber)))[0];
+
+      if (!fromCard || !toCard) {
+        return { success: false, error: "Карта не найдена" };
+      }
+
+      if (parseFloat(fromCard.balance) < amount) {
+        return { success: false, error: "Недостаточно средств" };
+      }
+
+      const newFromBalance = (parseFloat(fromCard.balance) - amount).toString();
+      const newToBalance = (parseFloat(toCard.balance) + amount).toString();
+
+      await db.update(cards)
+        .set({ balance: newFromBalance })
+        .where(eq(cards.id, fromCard.id));
+
+      await db.update(cards)
+        .set({ balance: newToBalance })
+        .where(eq(cards.id, toCard.id));
+
+      return { success: true };
+    } catch (error) {
+      console.error("Transfer error:", error);
+      return { success: false, error: "Ошибка при переводе" };
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
