@@ -38,7 +38,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.sendStatus(403);
     }
     const users = await storage.getAllUsers();
-    res.json(users);
+    const usersWithCards = await Promise.all(users.map(async (user) => {
+      const cards = await storage.getCardsByUserId(user.id);
+      return { ...user, cards };
+    }));
+    res.json(usersWithCards);
   });
 
   app.post("/api/regulator/adjust-balance", async (req, res) => {
