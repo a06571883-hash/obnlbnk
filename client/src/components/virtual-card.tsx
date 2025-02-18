@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw } from "lucide-react";
@@ -53,7 +53,7 @@ export default function VirtualCard({ card }: { card: any }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      <Card className={`w-full h-[220px] ${cardColors[card.type as keyof typeof cardColors]} shadow-xl backdrop-blur-sm`}>
+      <UICard className={`w-full h-[220px] ${cardColors[card.type as keyof typeof cardColors]} shadow-xl backdrop-blur-sm`}>
         <CardContent className="p-6 h-full flex flex-col justify-between relative overflow-hidden">
           {/* Фоновые элементы */}
           <div className="absolute inset-0 opacity-10">
@@ -196,7 +196,7 @@ export default function VirtualCard({ card }: { card: any }) {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </UICard>
     </motion.div>
   );
 }
