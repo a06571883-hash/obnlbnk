@@ -78,9 +78,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId));
   }
 
+  async getCardById(cardId: number): Promise<Card | undefined> {
+    const result = await db.select().from(cards).where(eq(cards.id, cardId));
+    return result[0];
+  }
+
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string }> {
     try {
-      const fromCard = (await db.select().from(cards).where(eq(cards.id, fromCardId)))[0];
+      const fromCard = await this.getCardById(fromCardId);
       const toCard = (await db.select().from(cards).where(eq(cards.number, toCardNumber)))[0];
 
       if (!fromCard || !toCard) {
@@ -94,13 +99,15 @@ export class DatabaseStorage implements IStorage {
       const newFromBalance = (parseFloat(fromCard.balance) - amount).toString();
       const newToBalance = (parseFloat(toCard.balance) + amount).toString();
 
-      await db.update(cards)
-        .set({ balance: newFromBalance })
-        .where(eq(cards.id, fromCard.id));
+      await db.transaction(async (tx) => {
+        await tx.update(cards)
+          .set({ balance: newFromBalance })
+          .where(eq(cards.id, fromCard.id));
 
-      await db.update(cards)
-        .set({ balance: newToBalance })
-        .where(eq(cards.id, toCard.id));
+        await tx.update(cards)
+          .set({ balance: newToBalance })
+          .where(eq(cards.id, toCard.id));
+      });
 
       return { success: true };
     } catch (error) {

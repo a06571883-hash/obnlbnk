@@ -98,6 +98,15 @@ export default function HomePage() {
                       const amount = formData.get("amount");
                       const cardNumber = formData.get("cardNumber");
                       
+                      if (!amount || !cardNumber || parseFloat(amount.toString()) <= 0) {
+                        toast({
+                          title: "Ошибка",
+                          description: "Введите корректную сумму и номер карты",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      
                       if (!amount || !cardNumber) {
                         toast({
                           title: "Ошибка",
@@ -114,7 +123,7 @@ export default function HomePage() {
                             'Content-Type': 'application/json'
                           },
                           body: JSON.stringify({
-                            fromCardId: cards[0].id,
+                            fromCardId: selectedCard?.id || cards[0].id,
                             toCardNumber: cardNumber,
                             amount: parseFloat(amount.toString())
                           })
