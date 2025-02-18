@@ -9,10 +9,10 @@ const floatingItems = [
 
 export default function AnimatedBackground() {
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+    <div className="fixed inset-0 overflow-hidden pointer-events-none bg-gradient-to-br from-indigo-900/50 via-purple-900/50 to-blue-900/50">
       {Array.from({ length: 15 }).map((_, index) => {
         const item = floatingItems[index % floatingItems.length];
-        
+
         return (
           <motion.div
             key={index}
