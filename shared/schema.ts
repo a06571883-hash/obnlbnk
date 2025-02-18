@@ -32,4 +32,4 @@ export const insertCardSchema = createInsertSchema(cards).omit({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-export type Card = typeof cards.$inferSelect;
+export interface Card extends typeof cards.$inferSelect {}
