@@ -90,13 +90,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       uah: "256021"
     };
 
-    // Get user cards and update their balances
+    // Update each card balance
     for (const card of cards) {
-      await storage.updateCardBalance(card.id, balances[card.type]);
-    }
-    
-    for (const card of cards) {
-      await storage.updateCardBalance(card.id, virtualBalances[card.type]);
+      await db.update(cards)
+        .set({ balance: balances[card.type] })
+        .where(eq(cards.id, card.id));
     }
     
     const updatedCards = await storage.getCardsByUserId(userId);
