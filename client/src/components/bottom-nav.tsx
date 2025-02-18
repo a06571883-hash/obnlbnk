@@ -17,8 +17,7 @@ export default function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t z-50">
       <div className="flex justify-around items-center py-2">
         {navItems.map((item) => (
-          <Link key={item.path} href={item.path}>
-            <a className="relative py-1 px-3 rounded-lg">
+          <Link key={item.path} href={item.path} className="relative py-1 px-3 rounded-lg">
               <div
                 className={cn(
                   "flex flex-col items-center transition-colors",
@@ -41,7 +40,6 @@ export default function BottomNav() {
                   }}
                 />
               )}
-            </a>
           </Link>
         ))}
       </div>
