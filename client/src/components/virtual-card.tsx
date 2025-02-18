@@ -71,8 +71,8 @@ export default function VirtualCard({ card }: { card: any }) {
     const x = (e.clientY - rect.top) / rect.height;
     const y = (e.clientX - rect.left) / rect.width;
 
-    setManualRotateX((x - 0.5) * 20);
-    setManualRotateY((y - 0.5) * 20);
+    setManualRotateX((0.5 - x) * 25);
+    setManualRotateY((y - 0.5) * 25);
   };
 
   const handleMouseLeave = () => {
@@ -100,14 +100,9 @@ export default function VirtualCard({ card }: { card: any }) {
   return (
     <motion.div
       className="perspective-1000"
-      animate={{
-        rotateX,
-        rotateY,
-        transition: {
-          type: "spring",
-          stiffness: 300,
-          damping: 30
-        }
+      style={{
+        transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+        transition: 'all 0.2s ease-out'
       }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
