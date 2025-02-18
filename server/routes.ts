@@ -27,6 +27,12 @@ function generateCryptoAddress(): string {
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
+  app.get("/api/user", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const user = await storage.getUser(req.user.id);
+    res.json(user);
+  });
+
   app.get("/api/cards", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const cards = await storage.getCardsByUserId(req.user.id);
