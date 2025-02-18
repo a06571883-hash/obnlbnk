@@ -69,8 +69,6 @@ export default function CardsPage() {
             expiry: "12/25",
             cvv: "789"
           }}
-        />t={amount}
-          setAmount={setAmount}
         />
       </div>
     </div>
