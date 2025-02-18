@@ -13,7 +13,7 @@ export default function BottomNav() {
     { icon: CreditCard, label: "Cards", path: "/cards" },
     { icon: Activity, label: "Activity", path: "/activity" },
     { icon: User, label: "Profile", path: "/profile" },
-    ...(user?.isRegulator ? [{ icon: Shield, label: "Regulator", path: "/regulator" }] : []),
+    ...(user?.is_regulator ? [{ icon: Shield, label: "Regulator", path: "/regulator" }] : []),
   ];
 
   return (
