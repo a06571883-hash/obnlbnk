@@ -22,6 +22,10 @@ export interface IStorage {
   getCardsByUserId(userId: number): Promise<Card[]>;
   createCard(card: Omit<Card, "id">): Promise<Card>;
   sessionStore: session.Store;
+  getAllUsers: () => Promise<User[]>; // Added
+  updateRegulatorBalance: (userId: number, balance: string) => Promise<void>; // Added
+  // Add methods for regulator to view user data and manage balances with 1% commission.  This is a placeholder.
+  // ... additional methods needed for regulator functionality ...
 }
 
 export class DatabaseStorage implements IStorage {
@@ -62,6 +66,16 @@ export class DatabaseStorage implements IStorage {
     await db.update(cards)
       .set({ balance })
       .where(eq(cards.id, cardId));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async updateRegulatorBalance(userId: number, balance: string): Promise<void> {
+    await db.update(users)
+      .set({ regulatorBalance: balance })
+      .where(eq(users.id, userId));
   }
 }
 

@@ -33,6 +33,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(cards);
   });
 
+  app.get("/api/users", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isRegulator) {
+      return res.sendStatus(403);
+    }
+    const users = await storage.getAllUsers();
+    res.json(users);
+  });
+
+  app.post("/api/regulator/adjust-balance", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isRegulator) {
+      return res.sendStatus(403);
+    }
+    
+    const { userId, cardId, amount, operation } = req.body;
+    const card = await storage.getCardById(cardId);
+    
+    if (!card || card.userId !== userId) {
+      return res.status(400).json({ error: "Invalid card" });
+    }
+    
+    const newBalance = operation === 'add' 
+      ? (parseFloat(card.balance) + parseFloat(amount)).toString()
+      : (parseFloat(card.balance) - parseFloat(amount)).toString();
+      
+    await storage.updateCardBalance(cardId, newBalance);
+    
+    if (operation === 'subtract') {
+      const regulator = await storage.getUser(req.user.id);
+      const newRegulatorBalance = (parseFloat(regulator.regulatorBalance) + parseFloat(amount)).toString();
+      await storage.updateRegulatorBalance(req.user.id, newRegulatorBalance);
+    }
+    
+    res.json({ success: true });
+  });
+
   app.post("/api/transfer", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
@@ -50,6 +85,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (fromCard.userId !== req.user.id) {
       return res.status(403).json({ error: "Not your card" });
     }
+
+    // Calculate 1% fee
+    const fee = parseFloat(amount) * 0.01;
+    const totalAmount = parseFloat(amount) + fee;
     
     // Convert amount based on card types
     let convertedAmount = amount;
