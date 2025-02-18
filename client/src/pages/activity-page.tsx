@@ -32,7 +32,10 @@ const EmptyState = () => (
   </div>
 );
 
-// Demo transactions as fallback
+// Using transactions from the hook
+const { data: transactions = [] } = useTransactions();
+
+// Demo transactions as fallback when no data
 const demoTransactions: any[] = [
   {
     id: 1,
@@ -118,7 +121,7 @@ export default function ActivityPage() {
             </Tabs>
 
             <div className="space-y-4">
-              {transactions.map((tx) => (
+              {(transactions.length > 0 ? transactions : demoTransactions).map((tx) => (
                 <div
                   key={tx.id}
                   className="flex items-center p-4 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer"
