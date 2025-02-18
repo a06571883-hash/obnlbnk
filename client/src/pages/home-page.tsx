@@ -90,8 +90,48 @@ export default function HomePage() {
                     <DialogTitle>Quick Transfer</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 p-4">
-                    <input type="number" placeholder="Amount" className="w-full p-2 border rounded" />
-                    <input type="text" placeholder="Card Number" className="w-full p-2 border rounded" />
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      try {
+                        await apiRequest("/api/transfer", {
+                          method: "POST",
+                          body: {
+                            fromCardId: cards[0].id,
+                            toCardNumber: formData.get("cardNumber"),
+                            amount: formData.get("amount")
+                          }
+                        });
+                        toast({
+                          title: "Успех",
+                          description: "Перевод выполнен успешно"
+                        });
+                      } catch (error) {
+                        toast({
+                          title: "Ошибка",
+                          description: "Не удалось выполнить перевод",
+                          variant: "destructive"
+                        });
+                      }
+                    }}>
+                      <input 
+                        type="number" 
+                        name="amount"
+                        placeholder="Сумма" 
+                        className="w-full p-2 border rounded mb-4" 
+                        required 
+                      />
+                      <input 
+                        type="text" 
+                        name="cardNumber"
+                        placeholder="Номер карты получателя" 
+                        className="w-full p-2 border rounded mb-4" 
+                        required
+                      />
+                      <Button type="submit" className="w-full">
+                        Перевести
+                      </Button>
+                    </form>
                     <Button className="w-full">Send Transfer</Button>
                   </div>
                 </DialogContent>
