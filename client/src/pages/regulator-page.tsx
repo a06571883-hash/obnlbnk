@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RegulatorPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [amount, setAmount] = useState("");
   
   const { data: users = [], refetch } = useQuery({
@@ -30,18 +32,26 @@ export default function RegulatorPage() {
         method: "POST",
         body: { userId, cardId, amount, operation }
       });
-      refetch();
+      await refetch();
+      toast({
+        title: "Успех",
+        description: "Баланс успешно изменен"
+      });
     } catch (error) {
-      console.error('Error adjusting balance:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось изменить баланс",
+        variant: "destructive"
+      });
     }
   };
 
   return (
     <div className="container p-4 space-y-4">
-      <Card className="bg-primary text-primary-foreground">
+      <Card className="bg-primary">
         <CardHeader>
-          <CardTitle>Панель регулятора</CardTitle>
-          <div className="text-2xl font-bold">
+          <CardTitle className="text-primary-foreground">Панель регулятора</CardTitle>
+          <div className="text-2xl font-bold text-primary-foreground">
             Баланс регулятора: ${user.regulatorBalance}
           </div>
         </CardHeader>
@@ -51,7 +61,7 @@ export default function RegulatorPage() {
         {users.map(user => (
           <Card key={user.id} className="border-2">
             <CardHeader>
-              <CardTitle className="flex justify-between">
+              <CardTitle className="flex justify-between items-center">
                 <span>
                   Пользователь: {user.username}
                   {user.isRegulator && " (Регулятор)"}
@@ -80,7 +90,7 @@ export default function RegulatorPage() {
                       <Button 
                         onClick={() => adjustBalance(user.id, card.id, 'add')}
                         variant="default"
-                        className="bg-green-500 hover:bg-green-600"
+                        className="bg-green-500 hover:bg-green-600 text-white"
                       >
                         Добавить
                       </Button>
