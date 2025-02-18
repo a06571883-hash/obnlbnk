@@ -32,6 +32,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(cards);
   });
 
+  app.post("/api/cards/update-balance", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const userId = req.user.id;
+    const cards = await storage.getCardsByUserId(userId);
+    
+    // Update balances
+    const balances = {
+      crypto: "62000",
+      usd: "45000",
+      uah: "12000"
+    };
+    
+    for (const card of cards) {
+      await db.update(cards)
+        .set({ balance: balances[card.type] })
+        .where(eq(cards.id, card.id));
+    }
+    
+    const updatedCards = await storage.getCardsByUserId(userId);
+    res.json(updatedCards);
+  });
+
   app.post("/api/cards/generate", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
