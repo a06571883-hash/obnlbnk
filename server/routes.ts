@@ -81,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "Invalid card" });
     }
 
-    const newBalance = operation === 'add' 
+    const newBalance = operation === 'add'
       ? (parseFloat(card.balance) + parseFloat(amount)).toString()
       : (parseFloat(card.balance) - parseFloat(amount)).toString();
 
