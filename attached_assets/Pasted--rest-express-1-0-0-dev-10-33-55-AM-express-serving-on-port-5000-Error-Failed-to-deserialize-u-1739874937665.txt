@@ -1,0 +1,42 @@
+> rest-express@1.0.0 dev
+10:33:55 AM [express] serving on port 5000
+Error: Failed to deserialize user out of session
+    at pass (/home/runner/workspace/node_modules/passport/lib/authenticator.js:359:19)
+    at deserialized (/home/runner/workspace/node_modules/passport/lib/authenticator.js:364:7)
+    at <anonymous> (/home/runner/workspace/server/auth.ts:58:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Error: Failed to deserialize user out of session
+    at pass (/home/runner/workspace/node_modules/passport/lib/authenticator.js:359:19)
+    at deserialized (/home/runner/workspace/node_modules/passport/lib/authenticator.js:364:7)
+    at <anonymous> (/home/runner/workspace/server/auth.ts:58:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Error: Failed to deserialize user out of session
+    at pass (/home/runner/workspace/node_modules/passport/lib/authenticator.js:359:19)
+    at deserialized (/home/runner/workspace/node_modules/passport/lib/authenticator.js:364:7)
+    at <anonymous> (/home/runner/workspace/server/auth.ts:58:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Error: Failed to deserialize user out of session
+    at pass (/home/runner/workspace/node_modules/passport/lib/authenticator.js:359:19)
+    at deserialized (/home/runner/workspace/node_modules/passport/lib/authenticator.js:364:7)
+    at <anonymous> (/home/runner/workspace/server/auth.ts:58:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Error: Failed to deserialize user out of session
+    at pass (/home/runner/workspace/node_modules/passport/lib/authenticator.js:359:19)
+    at deserialized (/home/runner/workspace/node_modules/passport/lib/authenticator.js:364:7)
+    at <anonymous> (/home/runner/workspace/server/auth.ts:58:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Error: Failed to deserialize user out of session
+    at pass (/home/runner/workspace/node_modules/passport/lib/authenticator.js:359:19)
+    at deserialized (/home/runner/workspace/node_modules/passport/lib/authenticator.js:364:7)
+    at <anonymous> (/home/runner/workspace/server/auth.ts:58:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Error: Failed to deserialize user out of session
+    at pass (/home/runner/workspace/node_modules/passport/lib/authenticator.js:359:19)
+    at deserialized (/home/runner/workspace/node_modules/passport/lib/authenticator.js:364:7)
+    at <anonymous> (/home/runner/workspace/server/auth.ts:58:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Error: Failed to deserialize user out of session
+    at pass (/home/runner/workspace/node_modules/passport/lib/authenticator.js:359:19)
+    at deserialized (/home/runner/workspace/node_modules/passport/lib/authenticator.js:364:7)
+    at <anonymous> (/home/runner/workspace/server/auth.ts:58:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
