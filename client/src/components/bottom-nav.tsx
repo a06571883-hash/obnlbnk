@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 export default function BottomNav() {
   const [location] = useLocation();
   const { user } = useAuth();
+  console.log("User in BottomNav:", user);
 
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
