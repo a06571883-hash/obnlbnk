@@ -100,10 +100,9 @@ export default function VirtualCard({ card }: { card: any }) {
   return (
     <motion.div
       className="perspective-1000"
-      animate={{
-        rotateX,
-        rotateY,
-        transition: { type: "spring", stiffness: 300, damping: 30 }
+      style={{
+        transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+        transition: 'transform 0.3s ease-out'
       }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -122,17 +121,6 @@ export default function VirtualCard({ card }: { card: any }) {
                 {card.type === 'crypto' ? 'BTC/ETH' : card.type === 'usd' ? '$' : '₴'}
                 {card.balance.toString()}
               </p>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="mt-2"
-                onClick={() => updateBalanceMutation.mutate()}
-                disabled={updateBalanceMutation.isPending}
-              >
-                {updateBalanceMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : "Update Balance"}
-              </Button>
             </div>
             <Dialog>
               <DialogTrigger asChild>
