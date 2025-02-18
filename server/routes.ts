@@ -92,12 +92,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Update each card balance
     for (const card of cards) {
-      const balance = balances[card.type];
-      await db.update(cards)
-        .set({ balance })
-        .where(eq(cards.id, card.id));
-      
-      console.log(`Updated ${card.type} card balance to ${balance}`);
+      await storage.updateCardBalance(card.id, balances[card.type]);
+      console.log(`Updated ${card.type} card balance to ${balances[card.type]}`);
     }
     
     const updatedCards = await storage.getCardsByUserId(userId);
