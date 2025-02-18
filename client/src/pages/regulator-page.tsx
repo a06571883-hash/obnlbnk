@@ -18,7 +18,7 @@ export default function RegulatorPage() {
     queryFn: () => apiRequest("/api/users")
   });
 
-  if (!user?.isRegulator) {
+  if (!user?.is_regulator) {
     return (
       <div className="container p-4">
         <h1 className="text-2xl text-red-500">Доступ запрещен</h1>
@@ -63,7 +63,7 @@ export default function RegulatorPage() {
             <CardHeader>
               <CardTitle>
                 Пользователь: {user.username}
-                {user.isRegulator && " (Регулятор)"}
+                {user.is_regulator && " (Регулятор)"}
               </CardTitle>
             </CardHeader>
             <CardContent>
