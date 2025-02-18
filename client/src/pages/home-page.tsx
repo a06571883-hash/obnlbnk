@@ -33,10 +33,10 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
-      <header className="p-4 flex justify-between items-center border-b backdrop-blur-sm bg-background/50 sticky top-0 z-50">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground">
-            OOOBNAL Bank
+      <header className="p-6 flex justify-between items-center border-b backdrop-blur-sm bg-background/50 sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground">
+            BNAL Bank
           </h1>
         </div>
         <Button 

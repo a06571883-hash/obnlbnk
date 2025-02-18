@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Bitcoin, DollarSign, CreditCard, Wallet, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const floatingItems = [
   { Icon: Bitcoin, color: "text-yellow-500", size: 24 },
@@ -10,6 +11,17 @@ const floatingItems = [
 ];
 
 export default function AnimatedBackground() {
+  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowHeight(window.innerHeight);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]">
       {/* Матричная сетка с повышенной контрастностью */}
@@ -62,7 +74,7 @@ export default function AnimatedBackground() {
               opacity: 0,
             }}
             animate={{
-              y: window.innerHeight + 50,
+              y: windowHeight + 50,
               rotate: 360,
               opacity: [0, 0.8 / depth, 0],
             }}
@@ -90,12 +102,12 @@ export default function AnimatedBackground() {
           key={`particle-${index}`}
           className="absolute w-1 h-1 bg-primary/40 rounded-full filter blur-sm"
           initial={{
-            x: Math.random() * window.innerWidth,
+            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 0),
             y: -10,
             scale: 0,
           }}
           animate={{
-            y: window.innerHeight + 10,
+            y: windowHeight + 10,
             scale: [0, 2, 0],
             opacity: [0, 0.8, 0]
           }}
