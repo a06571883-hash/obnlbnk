@@ -21,7 +21,7 @@ export default function VirtualCard({ card }: { card: any }) {
   const [transferError, setTransferError] = useState('');
 
 
-  const [transferMutation] = useMutation({
+  const transferMutation = useMutation({
     mutationFn: (data: any) => {
       // Placeholder for actual API call.  Replace with your backend endpoint.
       return fetch('/api/transfer', {
