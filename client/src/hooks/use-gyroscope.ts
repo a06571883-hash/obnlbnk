@@ -13,8 +13,8 @@ export function useGyroscope() {
       if (event.beta === null || event.gamma === null) return;
 
       // Normalize values to create smooth animation
-      const normalizedBeta = Math.min(Math.max(event.beta, -45), 45) / 3;
-      const normalizedGamma = Math.min(Math.max(event.gamma, -45), 45) / 3;
+      const normalizedBeta = Math.min(Math.max(event.beta, -90), 90) / 4;
+      const normalizedGamma = Math.min(Math.max(event.gamma, -90), 90) / 4;
 
       setRotation({
         beta: normalizedBeta,
