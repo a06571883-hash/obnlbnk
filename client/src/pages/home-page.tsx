@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
-  
+
   const { data: cards, isLoading } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
   });
@@ -26,37 +26,61 @@ export default function HomePage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="p-4 flex justify-between items-center border-b">
-        <h1 className="text-2xl font-bold">OOOBNAL Bank</h1>
-        <Button variant="ghost" onClick={() => logoutMutation.mutate()}>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+      <header className="p-4 flex justify-between items-center border-b backdrop-blur-sm bg-background/50 sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground">
+            OOOBNAL Bank
+          </h1>
+        </div>
+        <Button 
+          variant="ghost" 
+          onClick={() => logoutMutation.mutate()}
+          className="hover:bg-destructive/10 hover:text-destructive"
+        >
           Logout
         </Button>
       </header>
 
-      <main className="p-4 max-w-md mx-auto">
-        <h2 className="text-lg font-medium mb-4">Welcome, {user?.username}</h2>
-        
+      <main className="container mx-auto p-4 max-w-4xl">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-medium mb-2">
+            Welcome back, <span className="text-primary">{user?.username}</span>
+          </h2>
+          <p className="text-muted-foreground">
+            Manage your multi-currency cards and transactions
+          </p>
+        </div>
+
         {cards && cards.length > 0 ? (
-          <CardCarousel cards={cards} />
+          <div className="space-y-8">
+            <CardCarousel cards={cards} />
+          </div>
         ) : (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">No cards found</p>
-            <Button
-              onClick={() => generateCardsMutation.mutate()}
-              disabled={generateCardsMutation.isPending}
-            >
-              {generateCardsMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Generate Cards
-            </Button>
+          <div className="text-center py-12 px-4">
+            <div className="max-w-md mx-auto">
+              <h3 className="text-xl font-semibold mb-4">No Cards Found</h3>
+              <p className="text-muted-foreground mb-8">
+                Get started by generating your multi-currency cards
+              </p>
+              <Button
+                size="lg"
+                onClick={() => generateCardsMutation.mutate()}
+                disabled={generateCardsMutation.isPending}
+                className="bg-primary hover:bg-primary/90"
+              >
+                {generateCardsMutation.isPending && (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                )}
+                Generate Cards
+              </Button>
+            </div>
           </div>
         )}
       </main>
