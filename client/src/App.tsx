@@ -14,7 +14,7 @@ import { AuthProvider } from "./hooks/use-auth";
 import BottomNav from "@/components/bottom-nav";
 import { useLocation } from "wouter";
 
-function Router() {
+const Router = React.memo(() => {
   const [location] = useLocation();
   const showNav = location !== "/auth";
 
@@ -32,7 +32,7 @@ function Router() {
       {showNav && <BottomNav />}
     </>
   );
-}
+});
 
 function App() {
   return (
