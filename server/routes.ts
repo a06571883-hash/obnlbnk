@@ -96,9 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     for (const card of cards) {
-      await db.update(cards)
-        .set({ balance: balances[card.type] })
-        .where(eq(cards.id, card.id));
+      await storage.updateCardBalance(card.id, virtualBalances[card.type]);
     }
     
     const updatedCards = await storage.getCardsByUserId(userId);
@@ -114,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Virtual test balances
     const virtualBalances = {
       crypto: "62000",
-      usd: "45000",
+      usd: "45000", 
       uah: "256021"
     };
 
