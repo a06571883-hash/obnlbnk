@@ -1,13 +1,11 @@
+
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
-import { useMutation as useReactMutation, useQueryClient } from "@tanstack/react-query";
-
-const useMutation = useReactMutation;
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const cardColors = {
   crypto: "bg-gradient-to-br from-yellow-400 to-yellow-600",
@@ -16,32 +14,40 @@ const cardColors = {
 };
 
 export default function VirtualCard({ card }: { card: any }) {
-  const [manualRotateX, setManualRotateX] = useState(0);
-  const [manualRotateY, setManualRotateY] = useState(0);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const gyroscope = useGyroscope();
   const queryClient = useQueryClient();
-
-  const updateBalanceMutation = useMutation({
-    mutationFn: () => {
-      return fetch('/api/cards/update-balance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      }).then(res => {
-        if (!res.ok) throw new Error('Failed to update balance');
-        return res.json();
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
-    }
-  });
-
   const [isTransferring, setIsTransferring] = useState(false);
   const [transferAmount, setTransferAmount] = useState('');
   const [recipientCardNumber, setRecipientCardNumber] = useState('');
   const [transferError, setTransferError] = useState('');
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    
+    const rect = cardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 15;
+    const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 15;
+    
+    setRotation({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseLeave = () => {
+    setRotation({ x: 0, y: 0 });
+  };
+
+  useEffect(() => {
+    if (gyroscope) {
+      setRotation({
+        x: -gyroscope.beta / 3,
+        y: gyroscope.gamma / 3
+      });
+    }
+  }, [gyroscope]);
 
   const transferMutation = useMutation({
     mutationFn: (data: any) => {
@@ -66,25 +72,6 @@ export default function VirtualCard({ card }: { card: any }) {
     },
   });
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const mouseX = e.clientX - centerX;
-    const mouseY = e.clientY - centerY;
-
-    setManualRotateX(-(mouseY / 30));
-    setManualRotateY(mouseX / 30);
-  };
-
-  const handleMouseLeave = () => {
-    setManualRotateX(0);
-    setManualRotateY(0);
-  };
-
-  const rotateX = gyroscope ? gyroscope.beta / 2 : manualRotateX;
-  const rotateY = gyroscope ? gyroscope.gamma / 2 : manualRotateY;
-
   const handleTransfer = async () => {
     setIsTransferring(true);
     try {
@@ -100,15 +87,16 @@ export default function VirtualCard({ card }: { card: any }) {
   };
 
   return (
-    <motion.div
-      className="perspective-1000"
-      style={{
-        transformStyle: "preserve-3d",
-        transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
-        transition: "all 0.05s cubic-bezier(0.17, 0.67, 0.83, 0.67)"
-      }}
+    <div 
+      ref={cardRef}
+      className="perspective-[1000px]"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      style={{
+        transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+        transition: 'transform 0.1s ease-out',
+        transformStyle: 'preserve-3d'
+      }}
     >
       <UICard className={`w-full h-[220px] ${cardColors[card.type]} shadow-xl backdrop-blur-sm`}>
         <CardContent className="p-6 h-full flex flex-col justify-between relative overflow-hidden">
@@ -222,7 +210,7 @@ export default function VirtualCard({ card }: { card: any }) {
               </Dialog>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20" onClick={() => {}}>
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Transfer
                   </Button>
@@ -232,10 +220,22 @@ export default function VirtualCard({ card }: { card: any }) {
                     <DialogTitle>Transfer Funds</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <input type="number" value={transferAmount} onChange={e => setTransferAmount(e.target.value)} placeholder="Amount" />
-                    <input type="text" value={recipientCardNumber} onChange={e => setRecipientCardNumber(e.target.value)} placeholder="Recipient Card Number" />
+                    <input 
+                      type="number" 
+                      value={transferAmount} 
+                      onChange={e => setTransferAmount(e.target.value)} 
+                      placeholder="Amount" 
+                      className="w-full p-2 border rounded"
+                    />
+                    <input 
+                      type="text" 
+                      value={recipientCardNumber} 
+                      onChange={e => setRecipientCardNumber(e.target.value)} 
+                      placeholder="Recipient Card Number" 
+                      className="w-full p-2 border rounded"
+                    />
                     {transferError && <p className="text-red-500">{transferError}</p>}
-                    <Button onClick={handleTransfer} disabled={isTransferring}>
+                    <Button onClick={handleTransfer} disabled={isTransferring} className="w-full">
                       {isTransferring ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : "Transfer"}
                     </Button>
                   </div>
@@ -254,6 +254,6 @@ export default function VirtualCard({ card }: { card: any }) {
           </div>
         </CardContent>
       </UICard>
-    </motion.div>
+    </div>
   );
 }
