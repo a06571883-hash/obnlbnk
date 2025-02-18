@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { Card as CardType } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import CardCarousel from "@/components/card-carousel";
 import { Loader2 } from "lucide-react";
 
 export default function HomePage() {
+  const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
 
   const { data: cards, isLoading } = useQuery<Card[]>({
