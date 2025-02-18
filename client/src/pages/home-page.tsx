@@ -65,27 +65,56 @@ export default function HomePage() {
             
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-4 mt-8">
-              <Card className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
-                <CardContent className="p-2 flex flex-col items-center">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                    <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Card className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
+                    <CardContent className="p-2 flex flex-col items-center">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                        <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                      </div>
+                      <h3 className="font-medium">Quick Transfer</h3>
+                    </CardContent>
+                  </Card>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Quick Transfer</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 p-4">
+                    <input type="number" placeholder="Amount" className="w-full p-2 border rounded" />
+                    <input type="text" placeholder="Card Number" className="w-full p-2 border rounded" />
+                    <Button className="w-full">Send Transfer</Button>
                   </div>
-                  <h3 className="font-medium">Quick Transfer</h3>
-                </CardContent>
-              </Card>
+                </DialogContent>
+              </Dialog>
               
-              <Card className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
-                <CardContent className="p-2 flex flex-col items-center">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                    <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2m-4 0V3a1 1 0 00-1-1h-2a1 1 0 00-1 1v2H9z" strokeWidth="2"/>
-                    </svg>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Card className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
+                    <CardContent className="p-2 flex flex-col items-center">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                        <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2m-4 0V3a1 1 0 00-1-1h-2a1 1 0 00-1 1v2H9z" strokeWidth="2"/>
+                        </svg>
+                      </div>
+                      <h3 className="font-medium">Scan QR</h3>
+                    </CardContent>
+                  </Card>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Scan QR Code</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 p-4 text-center">
+                    <div className="bg-muted p-8 rounded-lg">
+                      <p>Camera access required</p>
+                    </div>
+                    <Button className="w-full">Enable Camera</Button>
                   </div>
-                  <h3 className="font-medium">Scan QR</h3>
-                </CardContent>
-              </Card>
+                </DialogContent>
+              </Dialog>
             </div>
 
             {/* Recent Activity Preview */}
