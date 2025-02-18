@@ -47,7 +47,7 @@ export default function RegulatorPage() {
   };
 
   return (
-    <div className="container p-4 space-y-4">
+    <div className="container p-4 space-y-4 pb-20">
       <Card className="bg-primary">
         <CardHeader>
           <CardTitle className="text-primary-foreground">Панель регулятора</CardTitle>
@@ -59,7 +59,7 @@ export default function RegulatorPage() {
       
       <div className="grid gap-4">
         {users.map((user) => (
-          <Card key={user.id} className="border-2">
+          <Card key={user.id}>
             <CardHeader>
               <CardTitle>
                 Пользователь: {user.username}
@@ -69,7 +69,7 @@ export default function RegulatorPage() {
             <CardContent>
               <div className="space-y-4">
                 {user.cards?.map((card) => (
-                  <div key={card.id} className="border p-4 rounded-lg bg-muted">
+                  <div key={card.id} className="border p-4 rounded-lg">
                     <div className="mb-4">
                       <p className="font-bold">Карта: {card.number}</p>
                       <p>Тип: {card.type.toUpperCase()}</p>
