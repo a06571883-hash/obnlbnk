@@ -110,6 +110,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const userId = req.user.id;
     const cardTypes = ['crypto', 'usd', 'uah'];
+    
+    // Virtual test balances
+    const virtualBalances = {
+      crypto: "62000",
+      usd: "45000",
+      uah: "256021"
+    };
 
     const cards = await Promise.all(cardTypes.map(async type => {
       const cardData = {
@@ -118,9 +125,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         number: generateCardNumber(),
         expiry: generateExpiry(),
         cvv: generateCVV(),
-        balance: "0",
+        balance: virtualBalances[type], // Set virtual balance for testing
         btcAddress: type === 'crypto' ? generateCryptoAddress() : null,
         ethAddress: type === 'crypto' ? generateCryptoAddress() : null,
+        isVirtual: true // Flag to identify virtual balance
       };
 
       return await storage.createCard(cardData);
