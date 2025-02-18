@@ -11,15 +11,24 @@ import { useLocation } from "wouter";
 import { Loader2, Shield, Globe, Wallet } from "lucide-react";
 import { LogoFull } from "@/components/logo";
 import AnimatedBackground from "@/components/animated-background";
+import { useEffect, useState } from 'react'; // Added import for useState and useEffect
+
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [, setLocation] = useLocation();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
+  const auth = useAuth();
+  //const { toast } = useToast();  // Removed as useToast is not imported or used
+  const [, navigate] = useLocation();
 
-  if (user) {
-    setLocation("/");
-    return null;
-  }
+  useEffect(() => {
+    if (auth.user) {
+      navigate("/");
+    }
+  }, [auth.user, navigate]);
 
   return (
     <div className="relative min-h-screen grid lg:grid-cols-2">
