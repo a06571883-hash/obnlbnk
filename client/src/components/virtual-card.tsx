@@ -1,4 +1,3 @@
-
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -25,14 +24,14 @@ export default function VirtualCard({ card }: { card: any }) {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
-    
+
     const rect = cardRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    
+
     const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 15;
     const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 15;
-    
+
     setRotation({ x: rotateX, y: rotateY });
   };
 
@@ -159,7 +158,7 @@ export default function VirtualCard({ card }: { card: any }) {
             <div className="flex space-x-2">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20" data-dialog="deposit">
                     <ArrowUpCircle className="h-4 w-4 mr-2" />
                     Deposit
                   </Button>
@@ -192,7 +191,7 @@ export default function VirtualCard({ card }: { card: any }) {
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20" data-dialog="withdraw">
                     <ArrowDownCircle className="h-4 w-4 mr-2" />
                     Withdraw
                   </Button>
@@ -210,7 +209,7 @@ export default function VirtualCard({ card }: { card: any }) {
               </Dialog>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20">
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20" data-dialog="transfer">
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Transfer
                   </Button>
