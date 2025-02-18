@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card as CardType } from "@shared/schema";
 import CardCarousel from "@/components/card-carousel";
 import { Loader2 } from "lucide-react";
 
 export default function CardsPage() {
-  const { data: cards, isLoading } = useQuery<CardType[]>({
+  const { data: cards, isLoading } = useQuery<any[]>({
     queryKey: ["/api/cards"],
   });
 

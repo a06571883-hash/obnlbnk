@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card as CardType } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
