@@ -1,17 +1,12 @@
 import { User, Card, InsertUser } from "@shared/schema";
 import session from "express-session";
-import pkg from "pg";
-const { Pool } = pkg;
+import connectPg from "connect-pg-simple";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { users, cards } from "@shared/schema";
-import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
 const PostgresSessionStore = connectPg(session);
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
 
 const db = drizzle(pool);
 
@@ -22,10 +17,8 @@ export interface IStorage {
   getCardsByUserId(userId: number): Promise<Card[]>;
   createCard(card: Omit<Card, "id">): Promise<Card>;
   sessionStore: session.Store;
-  getAllUsers: () => Promise<User[]>; // Added
-  updateRegulatorBalance: (userId: number, balance: string) => Promise<void>; // Added
-  // Add methods for regulator to view user data and manage balances with 1% commission.  This is a placeholder.
-  // ... additional methods needed for regulator functionality ...
+  getAllUsers: () => Promise<User[]>;
+  updateRegulatorBalance: (userId: number, balance: string) => Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -34,6 +27,7 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     this.sessionStore = new PostgresSessionStore({
       pool,
+      tableName: 'session',
       createTableIfMissing: true,
     });
   }
@@ -62,19 +56,13 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async updateCardBalance(cardId: number, balance: string): Promise<void> {
-    await db.update(cards)
-      .set({ balance })
-      .where(eq(cards.id, cardId));
-  }
-
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);
   }
 
   async updateRegulatorBalance(userId: number, balance: string): Promise<void> {
     await db.update(users)
-      .set({ regulatorBalance: balance })
+      .set({ regulator_balance: balance })
       .where(eq(users.id, userId));
   }
 
