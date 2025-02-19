@@ -19,6 +19,9 @@ export interface IStorage {
   sessionStore: session.Store;
   getAllUsers: () => Promise<User[]>;
   updateRegulatorBalance: (userId: number, balance: string) => Promise<void>;
+  updateCardBalance: (cardId: number, balance: string) => Promise<void>;
+  getCardById: (cardId: number) => Promise<Card | undefined>;
+  transferMoney: (fromCardId: number, toCardNumber: string, amount: number) => Promise<{ success: boolean; error?: string }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -64,6 +67,12 @@ export class DatabaseStorage implements IStorage {
     await db.update(users)
       .set({ regulator_balance: balance })
       .where(eq(users.id, userId));
+  }
+
+  async updateCardBalance(cardId: number, balance: string): Promise<void> {
+    await db.update(cards)
+      .set({ balance: balance })
+      .where(eq(cards.id, cardId));
   }
 
   async getCardById(cardId: number): Promise<Card | undefined> {
