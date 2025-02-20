@@ -23,12 +23,12 @@ const Router = React.memo(function Router() {
   return (
     <>
       <Switch>
-        <ProtectedRoute path="/" component={HomePage} />
-        <ProtectedRoute path="/cards" component={CardsPage} />
-        <ProtectedRoute path="/activity" component={ActivityPage} />
-        <ProtectedRoute path="/profile" component={ProfilePage} />
-        <ProtectedRoute path="/regulator" component={RegulatorPage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/" component={HomePage} />
+        <Route path="/cards" component={CardsPage} />
+        <Route path="/activity" component={ActivityPage} />
+        <Route path="/profile" component={ProfilePage} />
+        <Route path="/regulator" component={RegulatorPage} />
         <Route component={NotFound} />
       </Switch>
       {showNav && <BottomNav />}
