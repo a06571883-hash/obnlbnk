@@ -34,14 +34,12 @@ export function setupAuth(app: Express) {
 
   const sessionSettings: session.SessionOptions = {
     secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     store: storage.sessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === 'production', // Only use secure cookies in production
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+      secure: false,
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     },
     name: 'connect.sid'
   };

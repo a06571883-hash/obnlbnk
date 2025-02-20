@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@shared/schema";
 import VirtualCard from "@/components/virtual-card";
@@ -8,7 +7,8 @@ export default function CardsPage() {
   const { data: cards, isLoading, error } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
     refetchInterval: 5000,
-    retry: false,
+    refetchOnWindowFocus: true,
+    retry: 3,
     staleTime: 0
   });
 
