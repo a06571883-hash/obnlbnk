@@ -23,7 +23,7 @@ export default function AnimatedBackground() {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]">
+    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-50 bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]">
       {/* Матричная сетка с повышенной контрастностью */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff15_1px,transparent_1px),linear-gradient(to_bottom,#ffffff15_1px,transparent_1px)] bg-[size:14px_24px]" />
 
