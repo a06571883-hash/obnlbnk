@@ -27,6 +27,14 @@ export default function RegulatorPage() {
     );
   }
 
+  if (!users || users.length === 0) {
+    return (
+      <div className="container p-4">
+        <h1 className="text-2xl">Загрузка пользователей...</h1>
+      </div>
+    );
+  }
+
   const adjustBalance = async (userId: number, cardId: number, operation: 'add' | 'subtract') => {
     try {
       await apiRequest("/api/regulator/adjust-balance", {
