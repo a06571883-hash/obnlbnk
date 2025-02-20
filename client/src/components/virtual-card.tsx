@@ -1,3 +1,4 @@
+import { Card } from "@shared/schema";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,7 +13,7 @@ const cardColors = {
   uah: "bg-gradient-to-br from-blue-400 to-blue-600",
 };
 
-export default function VirtualCard({ card }: { card: any }) {
+export default function VirtualCard({ card }: { card: Card }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const gyroscope = useGyroscope();
@@ -86,175 +87,134 @@ export default function VirtualCard({ card }: { card: any }) {
     }
   };
 
+  const cardColor = {
+    crypto: "bg-gradient-to-br from-purple-500 to-pink-500",
+    usd: "bg-gradient-to-br from-green-500 to-emerald-500",
+    uah: "bg-gradient-to-br from-blue-500 to-cyan-500"
+  }[card.type];
+
   return (
-    <div 
+    <div
       ref={cardRef}
       className="perspective-[1000px]"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
-        transform: isMobile ? `perspective(1000px) rotateX(${gyroscope ? gyroscope.beta / 4 : 0}deg) rotateY(${gyroscope ? gyroscope.gamma / 4 : 0}deg)` 
+        transform: isMobile ? `perspective(1000px) rotateX(${gyroscope ? gyroscope.beta / 4 : 0}deg) rotateY(${gyroscope ? gyroscope.gamma / 4 : 0}deg)`
                            : `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
         transition: 'transform 0.2s ease-out',
         transformStyle: 'preserve-3d'
       }}
     >
-      <UICard className={`w-full h-[200px] ${cardColors[card.type]} shadow-xl backdrop-blur-sm`}>
-        <CardContent className="p-6 h-full flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full filter blur-xl transform -translate-x-16 -translate-y-16" />
-            <div className="absolute bottom-0 right-0 w-32 h-32 bg-white rounded-full filter blur-xl transform translate-x-16 translate-y-16" />
-          </div>
-
-          <div className="flex justify-between items-start relative z-10">
-            <div>
-              <p className="text-white/80 text-sm mb-1">Balance</p>
-              <p className="text-white text-xl font-bold tracking-wider">
-                {card.type === 'crypto' ? 'BTC/ETH' : card.type === 'usd' ? '$' : '₴'}
-                {card.balance.toString()}
-              </p>
+      <div className={`relative h-56 w-full rounded-xl ${cardColor} p-6 text-white shadow-xl`}>
+        <div className="flex flex-col justify-between h-full">
+          <div className="space-y-4">
+            <div className="text-xs opacity-80">Virtual Card</div>
+            <div className="text-2xl font-bold tracking-wider">
+              {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                  {card.type === 'crypto' ? <Wallet className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Card Details</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Card Number</p>
-                    <p className="font-mono">{card.number}</p>
-                  </div>
-                  <div className="flex gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Expiry</p>
-                      <p>{card.expiry}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">CVV</p>
-                      <p>{card.cvv}</p>
-                    </div>
-                  </div>
-                  {card.type === 'crypto' && (
-                    <>
-                      <div>
-                        <p className="text-sm text-muted-foreground">BTC Address</p>
-                        <p className="font-mono text-sm break-all">{card.btcAddress}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">ETH Address</p>
-                        <p className="font-mono text-sm break-all">{card.ethAddress}</p>
-                      </div>
-                    </>
-                  )}
+          </div>
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <div>
+                <div className="text-xs opacity-80">Balance</div>
+                <div className="font-semibold">
+                  {card.balance} {card.type.toUpperCase()}
                 </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="flex flex-col space-y-4 relative z-10">
-            <div className="flex space-x-2 mb-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="deposit">
-                    <ArrowUpCircle className="h-4 w-4 mr-2" />
-                    Deposit
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Deposit Funds</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    {card.type === 'crypto' ? (
-                      <>
-                        <div>
-                          <p className="text-sm text-muted-foreground">BTC Address</p>
-                          <p className="font-mono text-sm break-all">{card.btcAddress}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">ETH Address</p>
-                          <p className="font-mono text-sm break-all">{card.ethAddress}</p>
-                        </div>
-                      </>
-                    ) : (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Card Number</p>
-                        <p className="font-mono">{card.number}</p>
-                      </div>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="withdraw">
-                    <ArrowDownCircle className="h-4 w-4 mr-2" />
-                    Withdraw
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Withdraw Funds</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <p className="text-center text-muted-foreground">
-                      Contact support @KA7777AA to process your withdrawal
-                    </p>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="transfer">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Transfer
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Transfer Funds</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <input 
-                      type="number" 
-                      value={transferAmount} 
-                      onChange={e => setTransferAmount(e.target.value)} 
-                      placeholder="Amount" 
-                      className="w-full p-2 border rounded"
-                    />
-                    <input 
-                      type="text" 
-                      value={recipientCardNumber} 
-                      onChange={e => setRecipientCardNumber(e.target.value)} 
-                      placeholder="Recipient Card Number" 
-                      className="w-full p-2 border rounded"
-                    />
-                    {transferError && <p className="text-red-500">{transferError}</p>}
-                    <Button onClick={handleTransfer} disabled={isTransferring} className="w-full">
-                      {isTransferring ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : "Transfer"}
+              </div>
+              <div>
+                <div className="text-xs opacity-80">Expires</div>
+                <div className="font-semibold">{card.expiry}</div>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="deposit">
+                      <ArrowUpCircle className="h-4 w-4 mr-2" />
+                      Deposit
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            <div>
-              <p className="font-mono text-white/90 text-sm">
-                •••• {card.number.slice(-4)}
-              </p>
-              <p className="text-xs uppercase text-white/80">
-                {card.type === 'crypto' ? 'Crypto Card' : card.type === 'usd' ? 'USD Card' : 'UAH Card'}
-              </p>
-            </div>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Deposit Funds</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      {card.type === 'crypto' ? (
+                        <>
+                          <div>
+                            <p className="text-sm text-muted-foreground">BTC Address</p>
+                            <p className="font-mono text-sm break-all">{card.btcAddress}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">ETH Address</p>
+                            <p className="font-mono text-sm break-all">{card.ethAddress}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Card Number</p>
+                          <p className="font-mono">{card.number}</p>
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="withdraw">
+                      <ArrowDownCircle className="h-4 w-4 mr-2" />
+                      Withdraw
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Withdraw Funds</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <p className="text-center text-muted-foreground">
+                        Contact support @KA7777AA to process your withdrawal
+                      </p>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="transfer">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Transfer
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Transfer Funds</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <input
+                        type="number"
+                        value={transferAmount}
+                        onChange={e => setTransferAmount(e.target.value)}
+                        placeholder="Amount"
+                        className="w-full p-2 border rounded"
+                      />
+                      <input
+                        type="text"
+                        value={recipientCardNumber}
+                        onChange={e => setRecipientCardNumber(e.target.value)}
+                        placeholder="Recipient Card Number"
+                        className="w-full p-2 border rounded"
+                      />
+                      {transferError && <p className="text-red-500">{transferError}</p>}
+                      <Button onClick={handleTransfer} disabled={isTransferring} className="w-full">
+                        {isTransferring ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : "Transfer"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
           </div>
-        </CardContent>
-      </UICard>
+        </div>
+      </div>
     </div>
   );
 }
