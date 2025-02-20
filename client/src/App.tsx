@@ -40,7 +40,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div id="app-root">
+        <div id="app-root" className="min-h-screen bg-background">
           <Router />
           <Toaster />
         </div>
