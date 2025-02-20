@@ -106,7 +106,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         transformStyle: 'preserve-3d'
       }}
     >
-      <div className={`relative h-56 w-full rounded-xl ${cardColor} p-6 text-white shadow-xl`}>
+      <div className={`relative h-56 w-full rounded-xl ${cardColors[card.type]} p-6 text-white shadow-xl transform transition-transform duration-300 hover:scale-105`}>
         <div className="flex flex-col justify-between h-full">
           <div className="space-y-4">
             <div className="text-xs opacity-80">Virtual Card</div>
