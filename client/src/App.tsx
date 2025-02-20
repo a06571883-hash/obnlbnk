@@ -1,3 +1,4 @@
+
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Switch, Route } from "wouter";
@@ -14,9 +15,7 @@ import { AuthProvider } from "./hooks/use-auth";
 import BottomNav from "@/components/bottom-nav";
 import { useLocation } from "wouter";
 
-import React from 'react';
-
-const Router = React.memo(function Router() {
+const Router = () => {
   const [location] = useLocation();
   const showNav = location !== "/auth";
 
@@ -24,17 +23,17 @@ const Router = React.memo(function Router() {
     <>
       <Switch>
         <Route path="/auth" component={AuthPage} />
-        <Route path="/" component={HomePage} />
-        <Route path="/cards" component={CardsPage} />
-        <Route path="/activity" component={ActivityPage} />
-        <Route path="/profile" component={ProfilePage} />
-        <Route path="/regulator" component={RegulatorPage} />
+        <ProtectedRoute exact path="/" component={HomePage} />
+        <ProtectedRoute exact path="/cards" component={CardsPage} />
+        <ProtectedRoute exact path="/activity" component={ActivityPage} />
+        <ProtectedRoute exact path="/profile" component={ProfilePage} />
+        <ProtectedRoute exact path="/regulator" component={RegulatorPage} />
         <Route component={NotFound} />
       </Switch>
       {showNav && <BottomNav />}
     </>
   );
-});
+};
 
 function App() {
   return (
