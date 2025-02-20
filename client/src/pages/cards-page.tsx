@@ -8,7 +8,6 @@ export default function CardsPage() {
   const { data: cards, isLoading, error } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
     refetchInterval: 5000,
-    retry: 3
   });
 
   if (isLoading) {
@@ -33,11 +32,17 @@ export default function CardsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-8">Мои карты</h1>
+        <h1 className="text-2xl font-bold mb-8 text-foreground">Мои карты</h1>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {cards?.map((card) => (
-            <VirtualCard key={card.id} card={card} />
-          ))}
+          {cards && cards.length > 0 ? (
+            cards.map((card) => (
+              <VirtualCard key={card.id} card={card} />
+            ))
+          ) : (
+            <div className="col-span-full text-center text-muted-foreground">
+              У вас пока нет карт
+            </div>
+          )}
         </div>
       </div>
     </div>
