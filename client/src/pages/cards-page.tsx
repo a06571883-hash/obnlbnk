@@ -5,24 +5,36 @@ import VirtualCard from "@/components/virtual-card";
 import { Loader2 } from "lucide-react";
 
 export default function CardsPage() {
-  const { data: cards, isLoading } = useQuery<Card[]>({
+  const { data: cards, isLoading, error } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
-    refetchInterval: 5000
+    refetchInterval: 5000,
+    retry: 3
   });
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center">
+          <h2 className="text-xl text-red-500">Ошибка загрузки карт</h2>
+          <p className="text-muted-foreground">Попробуйте обновить страницу</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-8 text-black dark:text-white">Мои карты</h1>
-        <div className="grid gap-6">
+        <h1 className="text-2xl font-bold mb-8">Мои карты</h1>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {cards?.map((card) => (
             <VirtualCard key={card.id} card={card} />
           ))}
