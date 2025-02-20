@@ -62,7 +62,7 @@ export function setupAuth(app: Express) {
 
         if (!user) {
           console.log(`User not found: ${username}`);
-          return done(null, false, { message: "Неверное имя пользователя или пароль" });
+          return done(null, false, { message: "Пользователь не найден" });
         }
 
         const isValidPassword = await comparePasswords(password, user.password);

@@ -44,10 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      const message = error.response?.data?.message || error.message;
       toast({
-        title: "Login failed",
-        description: error.message,
+        title: "Ошибка входа",
+        description: message,
         variant: "destructive",
       });
     },
