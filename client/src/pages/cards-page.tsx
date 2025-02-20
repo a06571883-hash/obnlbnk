@@ -20,9 +20,8 @@ export default function CardsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative">
-      <AnimatedBackground />
-      <div className="container mx-auto px-4 py-8 relative z-10">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
+      <div className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-8">Мои карты</h1>
         <div className="grid gap-4 max-w-md mx-auto">
           {cards?.map((card) => (
