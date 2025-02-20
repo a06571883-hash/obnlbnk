@@ -1,73 +1,34 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card } from "@shared/schema";
 import VirtualCard from "@/components/virtual-card";
+import { Loader2 } from "lucide-react";
+import AnimatedBackground from "@/components/animated-background";
 
 export default function CardsPage() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [amount, setAmount] = useState("");
-  const isAdmin = user?.username === 'admin';
+  const { data: cards, isLoading } = useQuery<Card[]>({
+    queryKey: ["/api/cards"],
+  });
 
-  const adjustBalance = async (userId: number, cardId: number, operation: 'add' | 'subtract') => {
-    try {
-      await apiRequest.post('/api/regulator/adjust-balance', {
-        userId,
-        cardId,
-        amount,
-        operation
-      });
-
-      toast({
-        title: "Успешно",
-        description: "Баланс обновлен"
-      });
-
-      setAmount("");
-    } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось обновить баланс",
-        variant: "destructive"
-      });
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="container pb-32 pt-8">
-      <h1 className="text-2xl font-bold mb-8">Мои карты</h1>
+    <div className="min-h-screen bg-background">
+      <AnimatedBackground />
 
-      <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
-        <VirtualCard
-          card={{
-            type: "crypto",
-            balance: 0,
-            number: "4111111111111111",
-            expiry: "12/25",
-            cvv: "123"
-          }}
-        />
-        <VirtualCard
-          card={{
-            type: "usd",
-            balance: 0,
-            number: "4222222222222222",
-            expiry: "12/25",
-            cvv: "456"
-          }}
-        />
-        <VirtualCard
-          card={{
-            type: "uah",
-            balance: 0,
-            number: "4333333333333333",
-            expiry: "12/25",
-            cvv: "789"
-          }}
-        />
+      <div className="container mx-auto p-4">
+        <h1 className="text-2xl font-bold mb-8">Мои карты</h1>
+
+        <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+          {cards?.map((card) => (
+            <VirtualCard key={card.id} card={card} />
+          ))}
+        </div>
       </div>
     </div>
   );
