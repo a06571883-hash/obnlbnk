@@ -29,7 +29,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<SelectUser | undefined, Error>({
     queryKey: ["/api/user"],
     queryFn: () => getQueryFn({ on401: "returnNull" })("/api/user"),
-    retry: false, // Prevent retries on error
+    retry: false,
+    staleTime: 0,
+    refetchOnWindowFocus: true, // Prevent retries on error
     onError: (err) => {
       //Handle Error here
       console.error("Error fetching user data:", err);

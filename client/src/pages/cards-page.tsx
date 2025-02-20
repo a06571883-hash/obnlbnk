@@ -8,6 +8,8 @@ export default function CardsPage() {
   const { data: cards, isLoading, error } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
     refetchInterval: 5000,
+    retry: false,
+    staleTime: 0
   });
 
   if (isLoading) {
