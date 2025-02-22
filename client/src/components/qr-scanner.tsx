@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2 } from 'lucide-react';
-import { BrowserQRCodeReader } from '@zxing/library';
 
 interface QRScannerProps {
   onScanSuccess: (cardNumber: string, type: 'usd_card' | 'crypto_wallet') => void;
@@ -13,64 +12,67 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   const [isStarting, setIsStarting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const readerRef = useRef<BrowserQRCodeReader | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const startScanning = async () => {
     try {
       setIsStarting(true);
       setError(null);
 
-      // Создаем новый сканер
-      readerRef.current = new BrowserQRCodeReader();
-
-      // Получаем список камер
-      const videoInputDevices = await readerRef.current.listVideoInputDevices();
-
-      // Используем заднюю камеру на мобильных устройствах
-      const selectedDeviceId = videoInputDevices.find(device => 
-        device.label.toLowerCase().includes('back') || 
-        device.label.toLowerCase().includes('rear')
-      )?.deviceId || videoInputDevices[0]?.deviceId;
-
-      if (!selectedDeviceId) {
-        throw new Error('Камера не найдена');
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Ваше устройство не поддерживает доступ к камере');
       }
 
-      // Начинаем сканирование
-      await readerRef.current.decodeFromVideoDevice(
-        selectedDeviceId,
-        videoRef.current!,
-        (result) => {
-          if (result) {
-            try {
-              const data = JSON.parse(result.getText());
-              if (data.type === 'usd_card' || data.type === 'crypto_wallet') {
-                const recipient = data.type === 'usd_card' ? data.cardNumber : data.walletAddress;
-                onScanSuccess(recipient, data.type);
-              }
-            } catch (e) {
-              console.error('Invalid QR code format:', e);
-            }
-          }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         }
-      );
+      });
 
-      setIsScanning(true);
+      if (!videoRef.current) return;
+
+      videoRef.current.srcObject = stream;
+      streamRef.current = stream;
+
+      try {
+        await videoRef.current.play();
+        setIsScanning(true);
+      } catch (playError) {
+        throw new Error('Не удалось запустить видеопоток');
+      }
+
     } catch (err) {
-      console.error('Scanner error:', err);
-      setError('Ошибка при запуске камеры. Проверьте разрешения.');
+      console.error('Camera error:', err);
+      let errorMessage = 'Ошибка доступа к камере';
+
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          errorMessage = 'Пожалуйста, разрешите доступ к камере';
+        } else if (err.name === 'NotFoundError') {
+          errorMessage = 'Камера не найдена на устройстве';
+        } else if (err.name === 'NotReadableError') {
+          errorMessage = 'Камера уже используется другим приложением';
+        }
+      }
+
+      setError(errorMessage);
       setIsScanning(false);
     } finally {
       setIsStarting(false);
     }
   };
 
-  const stopScanning = async () => {
-    if (readerRef.current) {
-      await readerRef.current.reset();
-      readerRef.current = null;
-      setIsScanning(false);
+  const stopScanning = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsScanning(false);
   };
 
   useEffect(() => {
@@ -81,17 +83,22 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
 
   return (
     <div className="space-y-4">
-      <div className="relative w-full max-w-sm mx-auto bg-muted rounded-lg overflow-hidden" style={{ minHeight: '300px' }}>
+      <div 
+        className="relative w-full max-w-sm mx-auto bg-muted rounded-lg overflow-hidden" 
+        style={{ minHeight: '300px' }}
+      >
         <video
           ref={videoRef}
           className="w-full h-full object-cover"
           style={{ maxHeight: '300px' }}
+          playsInline
+          muted
         />
 
         {!isScanning && !error && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80">
             <p className="text-center px-4">
-              Нажмите "Начать сканирование" и разрешите доступ к камере
+              Нажмите кнопку "Начать сканирование" и разрешите доступ к камере
             </p>
           </div>
         )}
