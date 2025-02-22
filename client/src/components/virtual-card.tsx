@@ -196,9 +196,12 @@ export default function VirtualCard({ card }: { card: Card }) {
                     Withdraw
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md" aria-describedby="withdraw-description">
                   <DialogHeader>
                     <DialogTitle>Withdraw Funds</DialogTitle>
+                    <DialogDescription id="withdraw-description">
+                      Process your withdrawal request
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <p className="text-center text-muted-foreground">
@@ -214,9 +217,12 @@ export default function VirtualCard({ card }: { card: Card }) {
                     Transfer
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md" aria-describedby="transfer-description">
                   <DialogHeader>
                     <DialogTitle>Transfer Funds</DialogTitle>
+                    <DialogDescription id="transfer-description">
+                      Transfer funds to another card
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <input
