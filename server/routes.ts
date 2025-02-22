@@ -8,6 +8,10 @@ import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
 
+type BalanceType = {
+  [key in "crypto" | "usd" | "uah"]: string;
+};
+
 const EXCHANGE_RATES: Record<string, number> = {
   USD_UAH: 41.64,  // 1 USD = 41.64 UAH (Updated rate)
   CRYPTO_UAH: 1566075, // 1 BTC = 1,566,075 UAH
@@ -109,8 +113,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     if (operation === 'subtract') {
       const regulator = await storage.getUser(req.user.id);
-      const newRegulatorBalance = (parseFloat(regulator.regulatorBalance) + parseFloat(amount)).toString();
-      await storage.updateRegulatorBalance(req.user.id, newRegulatorBalance);
+      if (regulator) {
+        const newRegulatorBalance = (parseFloat(regulator.regulator_balance) + parseFloat(amount)).toString();
+        await storage.updateRegulatorBalance(req.user.id, newRegulatorBalance);
+      }
     }
 
     res.json({ success: true });
@@ -237,24 +243,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const balances: BalanceType = {
+    crypto: "62000",
+    usd: "45000",
+    uah: "256021"
+  };
+
   app.post("/api/cards/update-balance", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     const userId = req.user.id;
     const cards = await storage.getCardsByUserId(userId);
 
-    // Update balances
-    const balances = {
-      crypto: "62000",
-      usd: "45000",
-      uah: "256021"
-    };
-
     try {
       // Update each card balance using storage
       for (const card of cards) {
-        await storage.updateCardBalance(card.id, balances[card.type]);
-        console.log(`Updated ${card.type} card balance to ${balances[card.type]}`);
+        const balance = balances[card.type as keyof BalanceType];
+        if (balance) {
+          await storage.updateCardBalance(card.id, balance);
+          console.log(`Updated ${card.type} card balance to ${balance}`);
+        }
       }
 
       const updatedCards = await storage.getCardsByUserId(userId);
@@ -265,18 +273,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const virtualBalances: BalanceType = {
+    crypto: "0",
+    usd: "0",
+    uah: "0"
+  };
+
   app.post("/api/cards/generate", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     const userId = req.user.id;
-    const cardTypes = ['crypto', 'usd', 'uah'];
-
-    // Virtual test balances
-    const virtualBalances = {
-      crypto: "0",
-      usd: "0",
-      uah: "0"
-    };
+    const cardTypes = ['crypto', 'usd', 'uah'] as const;
 
     // Special balances for regulator and Kich32
     if (req.user.is_regulator) {
@@ -296,10 +303,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         number: generateCardNumber(),
         expiry: generateExpiry(),
         cvv: generateCVV(),
-        balance: virtualBalances[type], // Set virtual balance for testing
+        balance: virtualBalances[type],
         btcAddress: type === 'crypto' ? generateCryptoAddress() : null,
         ethAddress: type === 'crypto' ? generateCryptoAddress() : null,
-        isVirtual: true // Flag to identify virtual balance
+        isVirtual: true
       };
 
       return await storage.createCard(cardData);
