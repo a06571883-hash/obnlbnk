@@ -8,21 +8,33 @@ if (!process.env.DATABASE_URL) {
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 300000, // увеличиваем таймаут простоя до 5 минут
+  connectionTimeoutMillis: 10000, // увеличиваем таймаут подключения до 10 секунд
   ssl: {
-    rejectUnauthorized: false // Required for Replit's PostgreSQL
+    rejectUnauthorized: false
   }
 });
 
+// Обработка ошибок подключения
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
-  process.exit(-1);
+  // Не завершаем процесс при ошибке, пытаемся восстановить соединение
+  pool.connect().catch(connectErr => {
+    console.error('Failed to reconnect:', connectErr);
+  });
 });
 
 pool.on('connect', () => {
   console.log('Connected to PostgreSQL database');
 });
+
+// Проверяем подключение при старте
+pool.connect()
+  .then(() => console.log('Initial connection to PostgreSQL successful'))
+  .catch(err => {
+    console.error('Initial connection error:', err);
+    // Продолжаем работу, так как подключение может восстановиться
+  });
 
 export const db = drizzle(pool);
 
