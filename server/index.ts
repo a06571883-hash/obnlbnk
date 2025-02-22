@@ -42,7 +42,10 @@ app.use((req, res, next) => {
     sessionID: req.sessionID,
     session: req.session,
     isAuthenticated: req.isAuthenticated?.(),
-    user: req.user
+    user: req.user,
+    cookies: req.headers.cookie,
+    method: req.method,
+    path: req.path
   });
 
   const originalResJson = res.json;
@@ -54,9 +57,10 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     const authStatus = req.isAuthenticated?.() ? 'authenticated' : 'unauthenticated';
+    const sessionStatus = req.sessionID ? 'with session' : 'no session';
 
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} [${authStatus}] [sid:${sessionId}] in ${duration}ms`;
+      let logLine = `${req.method} ${path} ${res.statusCode} [${authStatus}] [${sessionStatus}] [sid:${sessionId}] in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -75,8 +79,6 @@ app.use((req, res, next) => {
 (async () => {
   try {
     console.log('Initializing database tables...');
-
-    // Use raw SQL to create session table if it doesn't exist
     await db.execute(`
       CREATE TABLE IF NOT EXISTS session (
         sid VARCHAR PRIMARY KEY,
@@ -84,7 +86,6 @@ app.use((req, res, next) => {
         expire TIMESTAMP(6) NOT NULL
       )
     `);
-
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);

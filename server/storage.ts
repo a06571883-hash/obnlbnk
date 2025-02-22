@@ -25,7 +25,8 @@ const sessionPool = new pg.Pool({
   max: 10,
   ssl: false,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000
+  connectionTimeoutMillis: 2000,
+  keepAlive: true
 });
 
 export interface IStorage {
@@ -49,12 +50,15 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
+    console.log('Initializing DatabaseStorage with session store...');
     this.sessionStore = new PostgresSessionStore({
       pool: sessionPool,
       createTableIfMissing: true,
       tableName: 'session',
-      pruneSessionInterval: 60
+      pruneSessionInterval: 60,
+      schemaName: 'public'
     });
+    console.log('Session store initialized');
   }
 
   private async withRetry<T>(operation: () => Promise<T>, context: string): Promise<T> {
@@ -76,13 +80,16 @@ export class DatabaseStorage implements IStorage {
 
   async getUser(id: number): Promise<User | undefined> {
     return this.withRetry(async () => {
+      console.log(`Getting user by ID: ${id}`);
       const [user] = await db.select().from(users).where(eq(users.id, id));
+      console.log(`User found: ${user ? 'yes' : 'no'}`);
       return user;
     }, 'Get user');
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return this.withRetry(async () => {
+      console.log(`Finding user by username: ${username}`);
       const [user] = await db.select().from(users).where(eq(users.username, username));
       console.log('Found user by username:', user ? 'yes' : 'no');
       return user;
@@ -92,12 +99,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     return this.withRetry(async () => {
       console.log('Creating user:', insertUser.username);
-      // Hash the password before storing
-      const hashedPassword = await hashPassword(insertUser.password);
-      const [user] = await db.insert(users).values({
-        ...insertUser,
-        password: hashedPassword
-      }).returning();
+      const [user] = await db.insert(users).values(insertUser).returning();
       console.log('User created successfully:', user.username);
       return user;
     }, 'Create user');

@@ -5,11 +5,11 @@ async function throwIfResNotOk(res: Response) {
     let errorMessage = res.statusText;
     try {
       const errorData = await res.json();
-      errorMessage = errorData.error?.message || errorData.message || errorMessage;
+      errorMessage = errorData.message || errorData.error?.message || errorMessage;
     } catch {
       // If parsing JSON fails, use the status text
     }
-    throw new Error(`${res.status}: ${errorMessage}`);
+    throw new Error(errorMessage);
   }
 }
 

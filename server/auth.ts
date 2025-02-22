@@ -46,17 +46,18 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   console.log('Setting up authentication...');
 
-  // Initialize session before anything else
+  // Initialize session middleware with debug-friendly settings
   app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    name: 'sid',
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Allow non-HTTPS in development
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+      sameSite: 'lax'
     }
   }));
 
@@ -97,20 +98,6 @@ export function setupAuth(app: Express) {
           return done(null, false, { message: "Неверный пароль" });
         }
 
-        // If the password was in plain text, update it to hashed version
-        if (!user.password.includes('.')) {
-          try {
-            const hashedPassword = await hashPassword(password);
-            await db.update(users)
-              .set({ password: hashedPassword })
-              .where(eq(users.id, user.id));
-            console.log(`[Auth] Updated password hash for user: ${username}`);
-          } catch (error) {
-            console.error('[Auth] Failed to update password hash:', error);
-            // Continue login even if hash update fails
-          }
-        }
-
         console.log(`[Auth] Successful login for user: ${username}`);
         return done(null, user);
       } catch (err) {
@@ -139,6 +126,36 @@ export function setupAuth(app: Express) {
       console.error('[Auth] Deserialization error:', err);
       done(err);
     }
+  });
+
+  app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
+    console.log('[Auth] Login request received:', req.body.username);
+    console.log('[Auth] Session ID before login:', req.sessionID);
+
+    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
+      if (err) {
+        console.error('[Auth] Authentication error:', err);
+        return next(err);
+      }
+
+      if (!user) {
+        console.log('[Auth] Authentication failed:', info?.message);
+        return res.status(401).json({ message: info?.message || "Ошибка аутентификации" });
+      }
+
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error('[Auth] Login error:', err);
+          return next(err);
+        }
+        console.log('[Auth] User successfully logged in:', {
+          username: user.username,
+          sessionID: req.sessionID,
+          isAuthenticated: req.isAuthenticated()
+        });
+        res.json(user);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
@@ -182,36 +199,6 @@ export function setupAuth(app: Express) {
       console.error('[Auth] Registration error:', error);
       next(error);
     }
-  });
-
-  app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
-    console.log('[Auth] Login request received:', req.body.username);
-    console.log('[Auth] Session ID before login:', req.sessionID);
-
-    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
-      if (err) {
-        console.error('[Auth] Authentication error:', err);
-        return next(err);
-      }
-
-      if (!user) {
-        console.log('[Auth] Authentication failed:', info?.message);
-        return res.status(401).json({ message: info?.message || "Ошибка аутентификации" });
-      }
-
-      req.logIn(user, (err) => {
-        if (err) {
-          console.error('[Auth] Login error:', err);
-          return next(err);
-        }
-        console.log('[Auth] User successfully logged in:', {
-          username: user.username,
-          sessionID: req.sessionID,
-          isAuthenticated: req.isAuthenticated()
-        });
-        res.json(user);
-      });
-    })(req, res, next);
   });
 
   app.post("/api/logout", (req: Request, res: Response, next: NextFunction) => {
