@@ -6,7 +6,6 @@ import {
 } from "@/components/ui/dialog";
 import Logo from "@/components/logo";
 import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 
 interface ReceiptProps {
   transaction: {
@@ -15,7 +14,7 @@ interface ReceiptProps {
     amount: string;
     currency: string;
     date: string;
-    status: string;
+    status?: string;
     from?: string;
     to?: string;
     description?: string;
@@ -27,32 +26,31 @@ interface ReceiptProps {
 export default function TransactionReceipt({ transaction, open, onOpenChange }: ReceiptProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-sm mx-auto">
         <DialogHeader>
-          <DialogTitle className="text-center">Чек транзакции</DialogTitle>
+          <DialogTitle className="text-center">Чек</DialogTitle>
         </DialogHeader>
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div className="flex justify-center">
-            <Logo size={60} className="text-primary" />
+            <Logo size={40} className="text-primary" />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 text-sm">
             <div className="flex justify-between items-center pb-2 border-b">
-              <span className="text-sm text-muted-foreground">ID транзакции</span>
-              <span className="font-mono">{transaction.id}</span>
+              <span className="text-muted-foreground">ID</span>
+              <span className="font-mono text-xs">{transaction.id}</span>
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Тип</span>
-              <span className="capitalize">
-                {transaction.type === 'deposit' && 'Пополнение'}
-                {transaction.type === 'withdraw' && 'Вывод'}
+              <span className="text-muted-foreground">Тип</span>
+              <span>
                 {transaction.type === 'transfer' && 'Перевод'}
+                {transaction.type === 'deposit' && 'Пополнение'}
               </span>
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Сумма</span>
+              <span className="text-muted-foreground">Сумма</span>
               <span className="font-semibold">
                 {transaction.currency === 'BTC' && '₿'}
                 {transaction.currency === 'USD' && '$'}
@@ -63,41 +61,43 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             {transaction.from && (
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Откуда</span>
-                <span className="font-mono text-sm">{transaction.from}</span>
+                <span className="text-muted-foreground">Откуда</span>
+                <span className="font-mono text-xs">{transaction.from}</span>
               </div>
             )}
 
             {transaction.to && (
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Куда</span>
-                <span className="font-mono text-sm">{transaction.to}</span>
+                <span className="text-muted-foreground">Куда</span>
+                <span className="font-mono text-xs">{transaction.to}</span>
               </div>
             )}
 
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Дата</span>
-              <span>
-                {format(new Date(transaction.date), "PPpp", { locale: ru })}
+              <span className="text-muted-foreground">Дата</span>
+              <span className="text-xs">
+                {format(new Date(transaction.date), 'dd.MM.yyyy HH:mm')}
               </span>
             </div>
 
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Статус</span>
-              <span className={transaction.status === "completed" ? "text-emerald-500" : "text-amber-500"}>
-                {transaction.status === "completed" ? "Выполнено" : "В обработке"}
-              </span>
-            </div>
+            {transaction.status && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Статус</span>
+                <span className={transaction.status === "completed" ? "text-emerald-500" : "text-amber-500"}>
+                  {transaction.status === "completed" ? "Выполнено" : "В обработке"}
+                </span>
+              </div>
+            )}
 
             {transaction.description && (
-              <div className="pt-4 border-t">
-                <span className="text-sm text-muted-foreground">Описание</span>
-                <p className="mt-1">{transaction.description}</p>
+              <div className="pt-2 border-t">
+                <span className="text-xs text-muted-foreground">Описание</span>
+                <p className="mt-1 text-xs">{transaction.description}</p>
               </div>
             )}
           </div>
 
-          <div className="text-center text-xs text-muted-foreground">
+          <div className="text-center text-[10px] text-muted-foreground pt-2 border-t">
             <p>Поддержка: @KA7777AA</p>
             <p>BNAL Bank © {new Date().getFullYear()}</p>
           </div>

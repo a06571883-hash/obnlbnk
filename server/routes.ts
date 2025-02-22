@@ -96,6 +96,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   });
 
+  app.get("/api/transactions", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      // Get user's cards
+      const userCards = await storage.getCardsByUserId(req.user.id);
+      if (!userCards.length) {
+        return res.json([]);
+      }
+
+      // Get transactions for all user's cards
+      const cardIds = userCards.map(card => card.id);
+      const transactions = [];
+
+      for (const cardId of cardIds) {
+        const cardTransactions = await storage.getTransactionsByCardId(cardId);
+        transactions.push(...cardTransactions);
+      }
+
+      // Sort by date descending and remove duplicates
+      const uniqueTransactions = Array.from(
+        new Map(transactions.map(t => [t.id, t])).values()
+      ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      res.json(uniqueTransactions);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
   app.post("/api/transfer", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -115,13 +146,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const result = await storage.transferMoney(fromCardId, cleanToCardNumber, amount);
       if (result.success) {
-        res.status(200).json({ message: "Перевод успешно выполнен" });
+        res.status(200).json({ 
+          message: "Перевод успешно выполнен",
+          transaction: result.transaction 
+        });
       } else {
         res.status(400).json({ error: result.error || "Ошибка при переводе" });
       }
     } catch (error) {
       console.error("Transfer error:", error);
-      res.status(500).json({ error: "Ошибка сервера при выполнении перевода" });
+      res.status(500).json({ error: "Ошибка при выполнении перевода" });
     }
   });
 

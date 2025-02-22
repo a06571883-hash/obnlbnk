@@ -2,33 +2,41 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import type { Card } from "../../shared/schema";
+import type { Card, Transaction } from "../../shared/schema";
 import { Card as CardUI, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
+import TransactionReceipt from "@/components/transaction-receipt";
 
 export default function HomePage() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
   const [showWelcome, setShowWelcome] = useState(true);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
-  const { data: cards, isLoading } = useQuery<Card[]>({
+  const { data: cards, isLoading: isLoadingCards } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
     retry: 3,
     staleTime: 0,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+
+  const { data: transactions, isLoading: isLoadingTransactions } = useQuery<Transaction[]>({
+    queryKey: ["/api/transactions"],
+    enabled: !!cards?.length,
+    refetchInterval: 5000,
   });
 
   useEffect(() => {
@@ -48,7 +56,7 @@ export default function HomePage() {
     },
   });
 
-  if (isLoading) {
+  if (isLoadingCards) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -141,6 +149,8 @@ export default function HomePage() {
                           amount: parseFloat(amount.toString())
                         });
 
+                        const data = await response.json();
+
                         toast({
                           title: "Успех",
                           description: "Перевод выполнен успешно"
@@ -149,8 +159,9 @@ export default function HomePage() {
                         // Очищаем форму
                         e.currentTarget.reset();
 
-                        // Обновляем данные карт
+                        // Обновляем данные карт и транзакций
                         queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
+                        queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
                       } catch (error: any) {
                         console.error("Transfer error:", error);
                         toast({
@@ -213,30 +224,70 @@ export default function HomePage() {
               </Dialog>
             </div>
 
-            {/* Recent Activity Preview */}
+            {/* Recent Activity */}
             <CardUI className="backdrop-blur-sm bg-background/80">
               <CardHeader>
                 <CardTitle className="text-lg">Recent Activity</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {cards?.slice(0, 3).map((card) => (
-                    <div key={card.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-xs font-medium">{card.type.charAt(0).toUpperCase()}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">Last transaction</p>
-                          <p className="text-xs text-muted-foreground">{card.number.slice(-4)}</p>
-                        </div>
-                      </div>
-                      <span className="text-sm font-medium">{card.balance} {card.type}</span>
+                  {isLoadingTransactions ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
-                  ))}
+                  ) : transactions && transactions.length > 0 ? (
+                    transactions.slice(0, 5).map((transaction) => (
+                      <div
+                        key={transaction.id}
+                        onClick={() => setSelectedTransaction(transaction)}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            {transaction.type === 'transfer' && (
+                              <ArrowUpRight className="h-4 w-4 text-primary" />
+                            )}
+                            {transaction.type === 'deposit' && (
+                              <ArrowDownLeft className="h-4 w-4 text-emerald-500" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">
+                              {transaction.type === 'transfer' ? 'Перевод' : 'Пополнение'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(transaction.createdAt), 'dd.MM.yyyy HH:mm')}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-medium">
+                          {transaction.amount} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No transactions yet
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </CardUI>
+
+            {/* Transaction Receipt Dialog */}
+            {selectedTransaction && (
+              <TransactionReceipt
+                transaction={{
+                  ...selectedTransaction,
+                  currency: cards.find(c => c.id === selectedTransaction.fromCardId)?.type || 'Unknown',
+                  from: cards.find(c => c.id === selectedTransaction.fromCardId)?.number || 'Unknown',
+                  to: cards.find(c => c.id === selectedTransaction.toCardId)?.number || 'Unknown',
+                  date: selectedTransaction.createdAt,
+                }}
+                open={!!selectedTransaction}
+                onOpenChange={(open) => !open && setSelectedTransaction(null)}
+              />
+            )}
           </div>
         ) : (
           <div className="text-center py-12 px-4">
