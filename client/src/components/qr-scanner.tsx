@@ -18,30 +18,67 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
       setIsStarting(true);
       setError(null);
 
-      // Запрашиваем доступ к камере
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
+      console.log('Starting camera...');
 
-      // Сохраняем поток
-      streamRef.current = stream;
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Ваш браузер не поддерживает доступ к камере');
+      }
 
-      // Подключаем поток к видео элементу
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+
+      console.log('Requesting camera with constraints:', constraints);
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('Camera stream obtained:', stream);
+
       if (videoRef.current) {
+        console.log('Setting video source');
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        streamRef.current = stream;
+
+        // Важно: добавляем обработчик события loadedmetadata
+        videoRef.current.onloadedmetadata = async () => {
+          console.log('Video metadata loaded');
+          try {
+            await videoRef.current?.play();
+            console.log('Video playback started');
+          } catch (playError) {
+            console.error('Error playing video:', playError);
+            setError('Ошибка воспроизведения видео');
+          }
+        };
       }
     } catch (err) {
       console.error('Camera error:', err);
-      setError('Ошибка доступа к камере. Пожалуйста, разрешите доступ.');
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          setError('Пожалуйста, разрешите доступ к камере в настройках браузера');
+        } else if (err.name === 'NotFoundError') {
+          setError('Камера не найдена на вашем устройстве');
+        } else {
+          setError(`Ошибка камеры: ${err.message}`);
+        }
+      } else {
+        setError('Произошла неизвестная ошибка при доступе к камере');
+      }
     } finally {
       setIsStarting(false);
     }
   };
 
   const stopCamera = () => {
+    console.log('Stopping camera...');
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach(track => {
+        console.log('Stopping track:', track.label);
+        track.stop();
+      });
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -50,12 +87,6 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   };
 
   useEffect(() => {
-    // Проверяем поддержку getUserMedia
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setError('Ваш браузер не поддерживает доступ к камере');
-      return;
-    }
-
     return () => {
       stopCamera();
     };
@@ -81,7 +112,14 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
 
       <div className="flex gap-2">
         <Button
-          onClick={streamRef.current ? stopCamera : startCamera}
+          onClick={() => {
+            console.log('Camera button clicked');
+            if (streamRef.current) {
+              stopCamera();
+            } else {
+              startCamera();
+            }
+          }}
           disabled={isStarting}
           className="w-full"
           variant={streamRef.current ? "destructive" : "default"}
