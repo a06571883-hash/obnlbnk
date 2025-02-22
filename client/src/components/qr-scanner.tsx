@@ -1,60 +1,111 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2 } from 'lucide-react';
-import Webcam from 'react-webcam';
+import jsQR from 'jsqr';
 
 interface QRScannerProps {
   onScanSuccess: (cardNumber: string, type: 'usd_card' | 'crypto_wallet') => void;
   onClose: () => void;
 }
 
-const videoConstraints = {
-  width: 1280,
-  height: 720,
-  facingMode: { ideal: 'environment' }
-};
-
 export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const webcamRef = useRef<Webcam>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number>();
 
-  const handleUserMedia = useCallback(() => {
-    setIsScanning(true);
-    setError(null);
-  }, []);
+  const startScanning = async () => {
+    try {
+      setIsStarting(true);
+      setError(null);
 
-  const handleUserMediaError = useCallback((error: string | DOMException) => {
-    console.error('Camera error:', error);
-    let errorMessage = 'Ошибка доступа к камере';
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Ваше устройство не поддерживает доступ к камере');
+      }
 
-    if (error instanceof DOMException) {
-      if (error.name === 'NotAllowedError') {
-        errorMessage = 'Пожалуйста, разрешите доступ к камере';
-      } else if (error.name === 'NotFoundError') {
-        errorMessage = 'Камера не найдена на устройстве';
-      } else if (error.name === 'NotReadableError') {
-        errorMessage = 'Камера уже используется другим приложением';
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+
+      if (!videoRef.current) return;
+
+      videoRef.current.srcObject = stream;
+      streamRef.current = stream;
+      await videoRef.current.play();
+
+      setIsScanning(true);
+      scanQRCode();
+
+    } catch (err) {
+      console.error('Camera error:', err);
+      let errorMessage = 'Ошибка доступа к камере';
+
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          errorMessage = 'Пожалуйста, разрешите доступ к камере';
+        } else if (err.name === 'NotFoundError') {
+          errorMessage = 'Камера не найдена на устройстве';
+        } else if (err.name === 'NotReadableError') {
+          errorMessage = 'Камера уже используется другим приложением';
+        }
+      }
+
+      setError(errorMessage);
+      setIsScanning(false);
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  const scanQRCode = () => {
+    if (!videoRef.current || !canvasRef.current || !isScanning) return;
+
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    const context = canvas.getContext('2d');
+
+    if (!context) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+    if (code) {
+      try {
+        const data = JSON.parse(code.data);
+        if (data.type === 'usd_card' || data.type === 'crypto_wallet') {
+          const recipient = data.type === 'usd_card' ? data.cardNumber : data.walletAddress;
+          onScanSuccess(recipient, data.type);
+          return;
+        }
+      } catch (e) {
+        console.error('Invalid QR code format:', e);
       }
     }
 
-    setError(errorMessage);
-    setIsScanning(false);
-  }, []);
-
-  const startScanning = async () => {
-    setIsStarting(true);
-    setError(null);
-    setIsScanning(true);
+    animationFrameRef.current = requestAnimationFrame(scanQRCode);
   };
 
   const stopScanning = () => {
-    if (webcamRef.current) {
-      const stream = webcamRef.current.video?.srcObject as MediaStream;
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
     }
     setIsScanning(false);
   };
@@ -71,18 +122,17 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
         className="relative w-full max-w-sm mx-auto bg-muted rounded-lg overflow-hidden" 
         style={{ minHeight: '300px' }}
       >
-        {isScanning && (
-          <Webcam
-            ref={webcamRef}
-            audio={false}
-            screenshotFormat="image/jpeg"
-            videoConstraints={videoConstraints}
-            onUserMedia={handleUserMedia}
-            onUserMediaError={handleUserMediaError}
-            className="w-full h-full object-cover"
-            style={{ maxHeight: '300px' }}
-          />
-        )}
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          style={{ maxHeight: '300px' }}
+          playsInline
+          muted
+        />
+        <canvas
+          ref={canvasRef}
+          className="hidden"
+        />
 
         {!isScanning && !error && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80">
