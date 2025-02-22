@@ -126,7 +126,7 @@ export default function HomePage() {
                   <DialogHeader>
                     <DialogTitle>Quick Transfer</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4 p-4">
+                  <div className="space-y-4">
                     <form onSubmit={async (e) => {
                       e.preventDefault();
                       const formData = new FormData(e.currentTarget);
