@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import { Loader2, Camera } from 'lucide-react';
@@ -11,46 +11,30 @@ interface QRScannerProps {
 export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [isCameraReady, setCameraReady] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  useEffect(() => {
-    // Check if the browser supports getUserMedia
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setError('Ваш браузер не поддерживает доступ к камере');
-      return;
-    }
-
-    const initializeScanner = async () => {
-      try {
-        // Request camera permission first
-        await navigator.mediaDevices.getUserMedia({ video: true });
-
-        scannerRef.current = new Html5Qrcode('qr-reader');
-        setCameraReady(true);
-        setError(null);
-      } catch (err) {
-        console.error('Camera init error:', err);
-        setError('Пожалуйста, разрешите доступ к камере');
-      }
-    };
-
-    initializeScanner();
-
-    return () => {
-      if (scannerRef.current?.isScanning) {
-        scannerRef.current.stop();
-      }
-    };
-  }, []);
-
   const startScanning = async () => {
-    if (!scannerRef.current || !isCameraReady) return;
-
     try {
-      const cameras = await Html5Qrcode.getCameras();
-      if (cameras && cameras.length > 0) {
-        const cameraId = cameras[0].id;
+      // Check if browser supports getUserMedia
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setError('Ваш браузер не поддерживает доступ к камере');
+        return;
+      }
+
+      // Request camera permission
+      await navigator.mediaDevices.getUserMedia({ video: true });
+
+      // Initialize scanner
+      if (!scannerRef.current) {
+        scannerRef.current = new Html5Qrcode('qr-reader');
+      }
+
+      // Get available cameras
+      const devices = await Html5Qrcode.getCameras();
+      console.log('Available cameras:', devices);
+
+      if (devices && devices.length > 0) {
+        const cameraId = devices[0].id;
         await scannerRef.current.start(
           cameraId,
           {
@@ -69,10 +53,13 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
                 onClose();
               }
             } catch (e) {
+              console.error('QR decode error:', e);
               setError('Неверный формат QR-кода');
             }
           },
-          () => {} // Ignore errors in qr processing
+          (errorMessage) => {
+            console.error('QR scan error:', errorMessage);
+          }
         );
         setIsScanning(true);
         setError(null);
@@ -80,8 +67,8 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
         setError('Камера не найдена');
       }
     } catch (err) {
-      console.error('Scanning error:', err);
-      setError('Ошибка при запуске сканера');
+      console.error('Camera initialization error:', err);
+      setError('Ошибка доступа к камере. Пожалуйста, разрешите доступ к камере.');
     }
   };
 
@@ -91,6 +78,14 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
       setIsScanning(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current?.isScanning) {
+        scannerRef.current.stop();
+      }
+    };
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -114,15 +109,9 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
               startScanning();
             }
           }}
-          disabled={!isCameraReady}
           className="w-full"
         >
-          {!isCameraReady ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Подключение к камере...
-            </>
-          ) : isScanning ? (
+          {isScanning ? (
             'Остановить сканирование'
           ) : (
             <>
