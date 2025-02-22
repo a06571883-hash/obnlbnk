@@ -1,10 +1,14 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
-// Создаем локальную SQLite базу данных
-const sqlite = new Database('sqlite.db');
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is required");
+}
 
-// Создаем подключение к базе данных
-export const db = drizzle(sqlite, { schema });
-export { sqlite as pool };
+// Create a new postgres connection
+const client = postgres(process.env.DATABASE_URL);
+
+// Create a drizzle database instance
+export const db = drizzle(client, { schema });
+export { client as pool };

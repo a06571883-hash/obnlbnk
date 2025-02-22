@@ -1,14 +1,12 @@
 import session from "express-session";
-import SQLiteStore from "better-sqlite3-session-store";
-import { db } from "./db";
+import { db } from "./database/connection";
 import { cards, users, transactions } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction } from "@shared/schema";
 import { eq, and, or, desc } from "drizzle-orm";
 import { pool } from "./database/connection";
+import connectPg from "connect-pg-simple";
 
-const SQLiteSessionStore = SQLiteStore(session);
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 1000;
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -22,7 +20,6 @@ export interface IStorage {
   updateCardBalance(cardId: number, balance: string): Promise<void>;
   getCardById(cardId: number): Promise<Card | undefined>;
   getCardByNumber(cardNumber: string): Promise<Card | undefined>;
-  transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
   createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction>;
 }
@@ -31,34 +28,32 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new SQLiteSessionStore({
-      client: pool,
-      expired: {
-        clear: true,
-        intervalMs: 60000
-      }
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
+      tableName: 'session'
     });
   }
 
   private async withRetry<T>(operation: () => Promise<T>, context: string): Promise<T> {
     let lastError: Error | undefined;
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const result = await operation();
         return result;
       } catch (error) {
         lastError = error as Error;
-        console.error(`${context} failed (attempt ${attempt + 1}/${MAX_RETRIES}):`, error);
+        console.error(`${context} failed (attempt ${attempt + 1}/3):`, error);
 
-        if (attempt < MAX_RETRIES - 1) {
-          const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt);
+        if (attempt < 2) {
+          const delay = 1000 * Math.pow(2, attempt);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
 
-    throw lastError || new Error(`${context} failed after ${MAX_RETRIES} attempts`);
+    throw lastError || new Error(`${context} failed after 3 attempts`);
   }
 
   async getUser(id: number): Promise<User | undefined> {

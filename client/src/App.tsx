@@ -22,11 +22,11 @@ const Router = () => {
     <>
       <Switch>
         <Route path="/auth" component={AuthPage} />
-        <ProtectedRoute exact path="/" component={HomePage} />
-        <ProtectedRoute exact path="/cards" component={CardsPage} />
-        <ProtectedRoute exact path="/activity" component={ActivityPage} />
-        <ProtectedRoute exact path="/profile" component={ProfilePage} />
-        <ProtectedRoute exact path="/regulator" component={RegulatorPage} />
+        <ProtectedRoute path="/" component={HomePage} />
+        <ProtectedRoute path="/cards" component={CardsPage} />
+        <ProtectedRoute path="/activity" component={ActivityPage} />
+        <ProtectedRoute path="/profile" component={ProfilePage} />
+        <ProtectedRoute path="/regulator" component={RegulatorPage} />
         <Route component={NotFound} />
       </Switch>
       {showNav && <BottomNav />}
@@ -38,7 +38,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div id="app-root" className="min-h-[100dvh] bg-background pb-safe pt-safe-top">
+        <div id="app-root" className="min-h-screen bg-background overflow-auto">
           <Router />
           <Toaster />
         </div>

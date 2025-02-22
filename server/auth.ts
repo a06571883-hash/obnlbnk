@@ -6,7 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import SQLiteStore from "better-sqlite3-session-store";
+import connectPg from "connect-pg-simple";
 import { pool } from "./database/connection";
 
 declare global {
@@ -16,7 +16,7 @@ declare global {
 }
 
 const scryptAsync = promisify(scrypt);
-const SQLiteStoreSession = SQLiteStore(session);
+const PostgresSessionStore = connectPg(session);
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -39,12 +39,10 @@ export function setupAuth(app: Express) {
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    store: new SQLiteStoreSession({
-      client: pool,
-      expired: {
-        clear: true,
-        intervalMs: 900000 //ms = 15min
-      }
+    store: new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
+      tableName: 'session'
     }),
     cookie: {
       secure: process.env.NODE_ENV === 'production',
@@ -81,12 +79,6 @@ export function setupAuth(app: Express) {
         if (!user) {
           console.log(`[Auth] User not found: ${username}`);
           return done(null, false, { message: "Пользователь не найден" });
-        }
-
-        // Special case for testing
-        if (username === 'admin' && password === 'admin123') {
-          console.log('[Auth] Admin test login successful');
-          return done(null, user);
         }
 
         const isValidPassword = await comparePasswords(password, user.password);

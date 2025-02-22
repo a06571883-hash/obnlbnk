@@ -41,6 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
       queryClient.invalidateQueries({ queryKey: ["/api"] });
+      toast({
+        title: "Успешный вход",
+        description: `Добро пожаловать, ${user.username}!`,
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -59,6 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
       queryClient.invalidateQueries({ queryKey: ["/api"] });
+      toast({
+        title: "Регистрация успешна",
+        description: `Аккаунт ${user.username} создан!`,
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -76,6 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
       queryClient.invalidateQueries();
+      toast({
+        title: "Выход выполнен",
+        description: "Вы успешно вышли из системы",
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -91,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user: user ?? null,
+        user: user || null,
         isLoading,
         error,
         loginMutation,
