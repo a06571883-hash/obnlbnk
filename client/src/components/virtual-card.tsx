@@ -126,15 +126,15 @@ export default function VirtualCard({ card }: { card: Card }) {
       >
         <div className="flex flex-col justify-between h-full">
           <div className="space-y-1 sm:space-y-2">
-            <div className="text-[10px] sm:text-xs opacity-80">Virtual Card</div>
+            <div className="text-[10px] sm:text-xs opacity-80">OOO BNAL BANK</div>
             <div className="text-sm sm:text-2xl font-bold tracking-wider">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
           </div>
-          <div className="space-y-2 sm:space-y-4">
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex justify-between">
               {card.type === 'crypto' ? (
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 sm:space-y-1">
                   <div className="flex items-center">
                     <Bitcoin className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
                     <div className="text-[9px] sm:text-[11px] opacity-80">BTC Balance</div>
@@ -317,9 +317,9 @@ export default function VirtualCard({ card }: { card: Card }) {
                         required
                       />
                       {transferError && <p className="text-red-500 text-sm mt-2">{transferError}</p>}
-                      <Button 
-                        type="submit" 
-                        disabled={isTransferring} 
+                      <Button
+                        type="submit"
+                        disabled={isTransferring}
                         className="w-full"
                       >
                         {isTransferring ? (
