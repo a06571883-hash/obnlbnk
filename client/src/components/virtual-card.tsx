@@ -134,19 +134,19 @@ export default function VirtualCard({ card }: { card: Card }) {
           <div className="space-y-2 sm:space-y-4">
             <div className="flex justify-between">
               {card.type === 'crypto' ? (
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <div className="flex items-center">
-                    <Bitcoin className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                    <div className="text-[10px] sm:text-xs opacity-80">BTC Balance</div>
+                    <Bitcoin className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                    <div className="text-[9px] sm:text-[11px] opacity-80">BTC Balance</div>
                   </div>
-                  <div className="text-xs sm:text-base font-semibold">
+                  <div className="text-[11px] sm:text-sm font-semibold">
                     {card.btcBalance} BTC
                   </div>
-                  <div className="flex items-center mt-1">
-                    <Coins className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                    <div className="text-[10px] sm:text-xs opacity-80">ETH Balance</div>
+                  <div className="flex items-center mt-0.5">
+                    <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                    <div className="text-[9px] sm:text-[11px] opacity-80">ETH Balance</div>
                   </div>
-                  <div className="text-xs sm:text-base font-semibold">
+                  <div className="text-[11px] sm:text-sm font-semibold">
                     {card.ethBalance} ETH
                   </div>
                 </div>
