@@ -199,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateCardBalance(toCard.id, newToBalance);
 
       // Создаем запись о транзакции
-      await storage.db.insert(transactions).values({
+      const transaction = await storage.createTransactionRecord({
         fromCardId: fromCard.id,
         toCardId: toCard.id,
         amount: fromAmount.toString(),
