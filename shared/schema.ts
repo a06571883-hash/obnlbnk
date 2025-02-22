@@ -17,7 +17,7 @@ export const cards = pgTable("cards", {
   number: text("number").notNull(),
   expiry: text("expiry").notNull(),
   cvv: text("cvv").notNull(),
-  balance: decimal("balance").notNull().default("0"),
+  balance: decimal("balance", { precision: 10, scale: 2 }).notNull().default("0"),
   btcAddress: text("btc_address"),
   ethAddress: text("eth_address"),
 });
@@ -27,10 +27,13 @@ export const transactions = pgTable("transactions", {
   fromCardId: integer("from_card_id").notNull(),
   toCardId: integer("to_card_id").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  convertedAmount: decimal("converted_amount", { precision: 10, scale: 2 }).notNull(),
   type: text("type").notNull(), // 'transfer', 'deposit', 'withdraw'
   status: text("status").notNull(), // 'pending', 'completed', 'failed'
   createdAt: timestamp("created_at").notNull().defaultNow(),
   description: text("description"),
+  fromCardNumber: text("from_card_number"),
+  toCardNumber: text("to_card_number"),
 });
 
 export const insertUserSchema = createInsertSchema(users);

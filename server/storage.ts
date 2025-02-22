@@ -227,7 +227,18 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       console.log('Creating transaction:', transactionData);
       const [transaction] = await db.insert(transactions)
-        .values(transactionData)
+        .values({
+          fromCardId: transactionData.fromCardId,
+          toCardId: transactionData.toCardId,
+          amount: transactionData.amount,
+          convertedAmount: transactionData.convertedAmount || transactionData.amount,
+          type: transactionData.type,
+          status: transactionData.status,
+          createdAt: new Date(),
+          description: transactionData.description,
+          fromCardNumber: transactionData.fromCardNumber,
+          toCardNumber: transactionData.toCardNumber,
+        })
         .returning();
       console.log('Transaction created:', transaction);
       return transaction;

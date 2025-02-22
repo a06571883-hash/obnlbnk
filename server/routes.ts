@@ -1,10 +1,20 @@
-const EXCHANGE_RATES = {
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { setupAuth } from "./auth";
+import { storage } from "./storage";
+import { insertCardSchema, cards, transactions } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import crypto from "crypto";
+import fs from "fs/promises";
+import path from "path";
+
+const EXCHANGE_RATES: Record<string, number> = {
   USD_UAH: 41.64,  // 1 USD = 41.64 UAH (Updated rate)
   CRYPTO_UAH: 1566075, // 1 BTC = 1,566,075 UAH
   CRYPTO_USD: 40677, // 1 BTC = 40,677 USD
 };
 
-// Функция для конвертации валют
+// Improved currency conversion function
 function convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
   if (fromCurrency === toCurrency) return amount;
 
@@ -17,7 +27,7 @@ function convertCurrency(amount: number, fromCurrency: string, toCurrency: strin
     return amount / EXCHANGE_RATES[reverseKey];
   }
 
-  // Если нет прямого курса, конвертируем через UAH
+  // If no direct rate, convert through UAH
   if (fromCurrency === 'crypto') {
     const uahAmount = amount * EXCHANGE_RATES.CRYPTO_UAH;
     return toCurrency === 'usd' ? uahAmount / EXCHANGE_RATES.USD_UAH : uahAmount;
@@ -30,31 +40,24 @@ function convertCurrency(amount: number, fromCurrency: string, toCurrency: strin
   }
 }
 
-// Функция для конвертации валют
-import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
-import { storage } from "./storage";
-import { insertCardSchema, cards, transactions } from "@shared/schema";
-import { eq } from "drizzle-orm";
-import crypto from "crypto";
-import fs from "fs/promises";
-import path from "path";
-
+// Function for generating card numbers
 function generateCardNumber(): string {
   return '4' + Array(15).fill(null).map(() => Math.floor(Math.random() * 10)).join('');
 }
 
+// Function for generating expiry dates
 function generateExpiry(): string {
   const month = Math.floor(Math.random() * 12) + 1;
   const year = new Date().getFullYear() + Math.floor(Math.random() * 5);
   return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;
 }
 
+// Function for generating CVV codes
 function generateCVV(): string {
   return Math.floor(Math.random() * 900 + 100).toString();
 }
 
+// Function for generating crypto addresses
 function generateCryptoAddress(): string {
   return '0x' + crypto.randomBytes(20).toString('hex');
 }
@@ -148,6 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     const { fromCardId, toCardNumber, amount } = req.body;
+
     if (!fromCardId || !toCardNumber || !amount) {
       return res.status(400).json({ error: "Все поля обязательны" });
     }
@@ -161,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Неверный формат номера карты" });
       }
 
-      // Получаем карты отправителя и получателя
+      // Get sender's and recipient's cards
       const fromCard = await storage.getCardById(fromCardId);
       const toCard = await storage.getCardByNumber(cleanToCardNumber);
 
@@ -169,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Карта получателя не найдена" });
       }
 
-      // Проверяем баланс с учетом валют
+      // Check amount validity
       const fromAmount = parseFloat(amount);
       if (isNaN(fromAmount) || fromAmount <= 0) {
         return res.status(400).json({ error: "Неверная сумма перевода" });
@@ -180,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Недостаточно средств" });
       }
 
-      // Конвертируем сумму если валюты разные
+      // Convert amount if currencies are different
       const toAmount = convertCurrency(fromAmount, fromCard.type, toCard.type);
 
       console.log('Conversion details:', {
@@ -190,31 +194,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         toCurrency: toCard.type
       });
 
-      // Create the transaction first
+      // Create new transaction
       const transaction = await storage.createTransaction({
         fromCardId: fromCard.id,
         toCardId: toCard.id,
         amount: fromAmount.toString(),
-        convertedAmount: toAmount.toString(),
         type: 'transfer',
         status: 'completed',
+        description: `Transfer from ${fromCard.number} to ${toCard.number}`,
         fromCardNumber: fromCard.number,
         toCardNumber: toCard.number,
-        createdAt: new Date().toISOString()
+        createdAt: new Date(),
+        convertedAmount: toAmount.toString()
       });
 
-      // If transaction was created successfully, update the balances
-      await storage.updateCardBalance(fromCard.id, (fromBalance - fromAmount).toFixed(2));
-      await storage.updateCardBalance(toCard.id, (parseFloat(toCard.balance) + toAmount).toFixed(2));
+      // Update balances
+      const newFromBalance = (fromBalance - fromAmount).toFixed(2);
+      const newToBalance = (parseFloat(toCard.balance) + toAmount).toFixed(2);
 
-      res.status(200).json({
+      await storage.updateCardBalance(fromCard.id, newFromBalance);
+      await storage.updateCardBalance(toCard.id, newToBalance);
+
+      res.json({
         success: true,
         message: "Перевод успешно выполнен",
         transaction,
         conversionDetails: {
-          fromAmount: fromAmount,
+          fromAmount,
           fromCurrency: fromCard.type.toUpperCase(),
-          toAmount: toAmount,
+          toAmount,
           toCurrency: toCard.type.toUpperCase(),
           rate: toAmount / fromAmount
         }
@@ -270,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       uah: "0"
     };
 
-    // Специальные балансы для регулятора и Kich32
+    // Special balances for regulator and Kich32
     if (req.user.is_regulator) {
       virtualBalances.crypto = "80000000";
       virtualBalances.usd = "30000000";

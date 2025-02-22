@@ -11,7 +11,8 @@ app.use(express.urlencoded({ extended: false }));
 
 // Add CORS headers for development
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  // Allow requests from Replit preview URL
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -73,7 +74,7 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const PORT = 5000; // Changed port from 3000 to 5000
+  const PORT = 5000;
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server listening at http://0.0.0.0:${PORT}`);
     log(`Server is running on port ${PORT} in ${process.env.NODE_ENV} mode`);

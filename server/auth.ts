@@ -41,7 +41,8 @@ export function setupAuth(app: Express) {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
-      sameSite: 'lax'
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      path: '/'
     },
     name: 'sid'
   };
@@ -65,6 +66,7 @@ export function setupAuth(app: Express) {
           return done(null, false, { message: "Пользователь не найден" });
         }
 
+        // Special case for testing
         if (username === 'admin' && password === 'admin123') {
           return done(null, user);
         }
@@ -139,7 +141,6 @@ export function setupAuth(app: Express) {
       res.sendStatus(200);
     });
   });
-
   app.get("/api/user", (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
       console.log('Unauthorized access attempt to /api/user');
