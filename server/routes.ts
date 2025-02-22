@@ -181,9 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Получаем карты отправителя и получателя
       const fromCard = await storage.getCardById(fromCardId);
-      const toCard = await storage.db.query.cards.findFirst({
-        where: eq(cards.number, cleanToCardNumber)
-      });
+      const toCard = await storage.getCardByNumber(cleanToCardNumber);
 
       if (!fromCard || !toCard) {
         return res.status(400).json({ error: "Карта получателя не найдена" });
@@ -219,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateCardBalance(toCard.id, newToBalance);
 
       // Создаем транзакцию
-      const transaction = {
+      const transaction = await storage.createTransaction({
         fromCardId: fromCard.id,
         toCardId: toCard.id,
         amount: fromAmount.toString(),
@@ -229,13 +227,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fromCardNumber: fromCard.number,
         toCardNumber: toCard.number,
         createdAt: new Date().toISOString()
-      };
-
-      const savedTransaction = await storage.db.insert(transactions).values(transaction).returning();
+      });
 
       res.status(200).json({
         message: "Перевод успешно выполнен",
-        transaction: savedTransaction[0],
+        transaction,
         conversionDetails: {
           fromAmount: fromAmount,
           fromCurrency: fromCard.type.toUpperCase(),
