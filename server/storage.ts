@@ -136,7 +136,7 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       console.log(`Attempting transfer: from card ${fromCardId} to card number ${toCardNumber}, amount: ${amount}`);
 
-      // Clean the card number
+      // Clean card number
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
 
       const fromCard = await this.getCardById(fromCardId);

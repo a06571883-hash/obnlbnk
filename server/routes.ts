@@ -107,7 +107,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Transfer request received:', { fromCardId, toCardNumber, amount });
 
-      const result = await storage.transferMoney(fromCardId, toCardNumber, parseFloat(amount));
+      // Clean card number
+      const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
+      if (cleanToCardNumber.length !== 16) {
+        return res.status(400).json({ error: "Неверный формат номера карты" });
+      }
+
+      const result = await storage.transferMoney(fromCardId, cleanToCardNumber, amount);
       if (result.success) {
         res.status(200).json({ message: "Перевод успешно выполнен" });
       } else {

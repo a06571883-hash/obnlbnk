@@ -13,6 +13,7 @@ import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2 
 import { useEffect, useRef, useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 const cardColors = {
   crypto: "bg-gradient-to-br from-yellow-400 to-yellow-600",
@@ -65,20 +66,15 @@ export default function VirtualCard({ card }: { card: Card }) {
   }, [gyroscope, isMobile]);
 
   const transferMutation = useMutation({
-    mutationFn: async (data: { fromCardId: number; toCardNumber: string; amount: string }) => {
-      const response = await fetch('/api/transfer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-        // Add retry logic for fetch
-        retry: 3,
-        retryDelay: (retryCount) => Math.min(1000 * 2 ** retryCount, 30000),
+    mutationFn: async ({ fromCardId, toCardNumber, amount }: { fromCardId: number; toCardNumber: string; amount: string }) => {
+      const response = await apiRequest("POST", "/api/transfer", {
+        fromCardId,
+        toCardNumber: toCardNumber.replace(/\s+/g, ''),
+        amount: parseFloat(amount)
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Ошибка при переводе');
       }
 
@@ -92,11 +88,9 @@ export default function VirtualCard({ card }: { card: Card }) {
       setTransferError('');
     },
     onError: (error: Error) => {
+      setTransferError(error.message);
       setIsTransferring(false);
-      setTransferError(error.message || 'Ошибка при переводе.');
-    },
-    retry: 3,
-    retryDelay: (retryCount) => Math.min(1000 * 2 ** retryCount, 30000),
+    }
   });
 
   return (
@@ -219,17 +213,14 @@ export default function VirtualCard({ card }: { card: Card }) {
                   <div className="space-y-4">
                     <form onSubmit={async (e) => {
                       e.preventDefault();
-                      const formData = new FormData(e.currentTarget);
-                      const amount = formData.get("amount")?.toString();
-                      const cardNumber = formData.get("cardNumber")?.toString();
 
-                      if (!amount || !cardNumber || parseFloat(amount) <= 0) {
+                      if (!transferAmount || !recipientCardNumber || parseFloat(transferAmount) <= 0) {
                         setTransferError('Пожалуйста, введите корректную сумму и номер карты');
                         return;
                       }
 
                       // Clean the card number before sending
-                      const cleanCardNumber = cardNumber.replace(/\s+/g, '');
+                      const cleanCardNumber = recipientCardNumber.replace(/\s+/g, '');
                       if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
                         setTransferError('Номер карты должен состоять из 16 цифр');
                         return;
@@ -242,11 +233,9 @@ export default function VirtualCard({ card }: { card: Card }) {
                         await transferMutation.mutateAsync({
                           fromCardId: card.id,
                           toCardNumber: cleanCardNumber,
-                          amount: amount
+                          amount: transferAmount
                         });
-
-                        // Dialog will be closed automatically on success
-                      } catch (error) {
+                      } catch (error: any) {
                         console.error("Transfer error:", error);
                         setTransferError(error.message || "Произошла ошибка при переводе");
                       } finally {
@@ -258,11 +247,10 @@ export default function VirtualCard({ card }: { card: Card }) {
                         value={transferAmount}
                         onChange={e => setTransferAmount(e.target.value)}
                         placeholder="Сумма"
-                        className="w-full p-2 border rounded"
+                        className="w-full p-2 border rounded mb-4"
                         step="0.01"
                         min="0.01"
                         required
-                        name="amount"
                       />
                       <input
                         type="text"
@@ -274,18 +262,17 @@ export default function VirtualCard({ card }: { card: Card }) {
                           setRecipientCardNumber(parts.join(' '));
                         }}
                         placeholder="Номер карты получателя"
-                        className="w-full p-2 border rounded"
+                        className="w-full p-2 border rounded mb-4"
                         pattern="\d{4}\s?\d{4}\s?\d{4}\s?\d{4}"
                         title="Номер карты должен состоять из 16 цифр"
                         maxLength={19} // 16 digits + 3 spaces
                         required
-                        name="cardNumber"
                       />
                       {transferError && <p className="text-red-500 text-sm mt-2">{transferError}</p>}
                       <Button 
                         type="submit" 
                         disabled={isTransferring} 
-                        className="w-full mt-4"
+                        className="w-full"
                       >
                         {isTransferring ? (
                           <>
