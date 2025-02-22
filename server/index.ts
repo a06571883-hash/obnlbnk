@@ -78,8 +78,7 @@ app.use((req, res, next) => {
 
     // Use raw SQL to create session table if it doesn't exist
     await db.execute(`
-      DROP TABLE IF EXISTS session;
-      CREATE TABLE session (
+      CREATE TABLE IF NOT EXISTS session (
         sid VARCHAR PRIMARY KEY,
         sess JSON NOT NULL,
         expire TIMESTAMP(6) NOT NULL
