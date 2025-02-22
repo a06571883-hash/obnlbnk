@@ -109,7 +109,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-36 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 sm:p-6 text-white shadow-xl transform transition-all duration-300`}
+        className={`relative h-40 sm:h-52 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 sm:p-6 text-white shadow-xl transform transition-all duration-300`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
