@@ -1,87 +1,48 @@
-import pg from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from "ws";
+import * as schema from "@shared/schema";
+
+neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is required");
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
 }
 
-const pool = new pg.Pool({
+// Configure pool with optimal settings
+const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 5, // уменьшаем максимальное количество соединений
-  idleTimeoutMillis: 30000, // уменьшаем время простоя до 30 секунд
-  connectionTimeoutMillis: 5000,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  connectionTimeoutMillis: 10000,
+  max: 20,
+  idleTimeoutMillis: 10000,
+  allowExitOnIdle: false
 });
 
-let isReconnecting = false;
-
-// Функция для переподключения
-async function reconnect() {
-  if (isReconnecting) return;
-
-  try {
-    isReconnecting = true;
-    console.log('Attempting to reconnect to database...');
-
-    // Закрываем все текущие клиенты
-    await pool.end();
-
-    // Создаем новый пул
-    const newPool = new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
-      max: 5,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-      ssl: {
-        rejectUnauthorized: false
-      }
-    });
-
-    // Проверяем подключение
-    await newPool.query('SELECT 1');
-
-    Object.assign(pool, newPool);
-    console.log('Successfully reconnected to database');
-  } catch (err) {
-    console.error('Failed to reconnect:', err);
-    // Пробуем переподключиться через 5 секунд
-    setTimeout(reconnect, 5000);
-  } finally {
-    isReconnecting = false;
-  }
-}
-
-// Обработка ошибок подключения
-pool.on('error', async (err) => {
+// Add error handling
+pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
-  await reconnect();
+  process.exit(-1); // Let the process manager handle restart
 });
 
-// Мониторинг состояния подключения
+// Add health check
 setInterval(async () => {
   try {
-    await pool.query('SELECT 1');
+    const client = await pool.connect();
+    const result = await client.query('SELECT 1 as value');
+    client.release();
+
+    if (!result.rows[0] || result.rows[0].value !== 1) {
+      throw new Error('Health check failed');
+    }
   } catch (err) {
-    console.error('Connection check failed:', err);
-    await reconnect();
+    console.error('Health check failed:', err);
+    process.exit(-1); // Let the process manager handle restart
   }
-}, 30000); // Проверяем каждые 30 секунд
+}, 5000);
 
-pool.on('connect', () => {
-  console.log('Connected to PostgreSQL database');
-});
-
-// Проверяем подключение при старте
-pool.connect()
-  .then(() => console.log('Initial connection to PostgreSQL successful'))
-  .catch(async (err) => {
-    console.error('Initial connection error:', err);
-    await reconnect();
-  });
-
-export const db = drizzle(pool);
+export const db = drizzle(pool, { schema });
 
 // Export pool for session store usage
 export { pool };

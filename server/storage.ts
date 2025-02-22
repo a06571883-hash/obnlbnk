@@ -36,13 +36,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0];
+    try {
+      const result = await db.select().from(users).where(eq(users.id, id));
+      return result[0];
+    } catch (error) {
+      console.error('Error getting user:', error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username));
-    return result[0];
+    try {
+      const result = await db.select().from(users).where(eq(users.username, username));
+      return result[0];
+    } catch (error) {
+      console.error('Error getting user by username:', error);
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -51,7 +61,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCardsByUserId(userId: number): Promise<Card[]> {
-    return await db.select().from(cards).where(eq(cards.userId, userId));
+    try {
+      return await db.select().from(cards).where(eq(cards.userId, userId));
+    } catch (error) {
+      console.error('Error getting cards by user ID:', error);
+      return [];
+    }
   }
 
   async createCard(card: Omit<Card, "id">): Promise<Card> {
@@ -60,41 +75,67 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    try {
+      return await db.select().from(users);
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      return [];
+    }
   }
 
   async updateRegulatorBalance(userId: number, balance: string): Promise<void> {
-    await db.update(users)
-      .set({ regulator_balance: balance })
-      .where(eq(users.id, userId));
+    try {
+      await db.update(users)
+        .set({ regulator_balance: balance })
+        .where(eq(users.id, userId));
+    } catch (error) {
+      console.error('Error updating regulator balance:', error);
+      throw error;
+    }
   }
 
   async updateCardBalance(cardId: number, balance: string): Promise<void> {
-    await db.update(cards)
-      .set({ balance: balance })
-      .where(eq(cards.id, cardId));
+    try {
+      await db.update(cards)
+        .set({ balance: balance })
+        .where(eq(cards.id, cardId));
+    } catch (error) {
+      console.error('Error updating card balance:', error);
+      throw error;
+    }
   }
 
   async getCardById(cardId: number): Promise<Card | undefined> {
-    const result = await db.select().from(cards).where(eq(cards.id, cardId));
-    return result[0];
+    try {
+      const result = await db.select().from(cards).where(eq(cards.id, cardId));
+      return result[0];
+    } catch (error) {
+      console.error('Error getting card by ID:', error);
+      return undefined;
+    }
   }
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string }> {
     try {
       const fromCard = await this.getCardById(fromCardId);
-      const toCard = (await db.select().from(cards).where(eq(cards.number, toCardNumber)))[0];
+      const [toCard] = await db.select().from(cards).where(eq(cards.number, toCardNumber));
 
       if (!fromCard || !toCard) {
         return { success: false, error: "Карта не найдена" };
       }
 
-      if (parseFloat(fromCard.balance) < amount) {
+      const fromBalance = parseFloat(fromCard.balance);
+      if (isNaN(fromBalance) || fromBalance < amount) {
         return { success: false, error: "Недостаточно средств" };
       }
 
-      const newFromBalance = (parseFloat(fromCard.balance) - amount).toString();
-      const newToBalance = (parseFloat(toCard.balance) + amount).toString();
+      const toBalance = parseFloat(toCard.balance);
+      if (isNaN(toBalance)) {
+        return { success: false, error: "Ошибка в балансе получателя" };
+      }
+
+      const newFromBalance = (fromBalance - amount).toFixed(2);
+      const newToBalance = (toBalance + amount).toFixed(2);
 
       await db.transaction(async (tx) => {
         await tx.update(cards)
