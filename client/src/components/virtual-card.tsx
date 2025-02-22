@@ -1,4 +1,4 @@
-import { Card } from "../../shared/schema";
+import { Card } from "@shared/schema";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,13 +54,15 @@ export default function VirtualCard({ card }: { card: Card }) {
 
   useEffect(() => {
     if (gyroscope && isMobile) {
-      const targetX = -gyroscope.beta / 3;
-      const targetY = gyroscope.gamma / 3;
+      const targetX = -gyroscope.beta;
+      const targetY = gyroscope.gamma;
 
-      setRotation(prev => ({
-        x: prev.x + (targetX - prev.x) * 0.1,
-        y: prev.y + (targetY - prev.y) * 0.1
-      }));
+      requestAnimationFrame(() => {
+        setRotation(prev => ({
+          x: prev.x + (targetX - prev.x) * 0.1,
+          y: prev.y + (targetY - prev.y) * 0.1
+        }));
+      });
     }
   }, [gyroscope, isMobile]);
 
@@ -109,7 +111,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-44 sm:h-52 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 sm:p-6 text-white shadow-xl transform transition-all duration-300`}
+        className={`relative h-48 sm:h-56 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 sm:p-6 text-white shadow-xl transform transition-all duration-300`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 

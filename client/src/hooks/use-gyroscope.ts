@@ -12,44 +12,55 @@ export function useGyroscope() {
   const [permission, setPermission] = useState<PermissionState>('prompt');
 
   useEffect(() => {
-    // Проверяем, поддерживается ли гироскоп
     if (typeof window === 'undefined' || !window.DeviceOrientationEvent) return;
 
+    let animationFrameId: number;
+    let lastUpdate = 0;
+    const minUpdateInterval = 16; // ~60fps
+
     const requestPermission = async () => {
-      // Для iOS устройств требуется запрос разрешения
       if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
         try {
           const permissionState = await (DeviceOrientationEvent as any).requestPermission();
           setPermission(permissionState);
           if (permissionState === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation, true);
+            window.addEventListener('deviceorientation', handleOrientation);
           }
         } catch (error) {
           console.error('Error requesting device orientation permission:', error);
         }
       } else {
-        // Для Android и других устройств разрешение не требуется
-        window.addEventListener('deviceorientation', handleOrientation, true);
+        window.addEventListener('deviceorientation', handleOrientation);
       }
     };
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
+      const now = Date.now();
+      if (now - lastUpdate < minUpdateInterval) return;
+      lastUpdate = now;
+
       if (event.beta === null || event.gamma === null) return;
 
       // Ограничиваем значения для более плавной анимации
       const beta = Math.max(-45, Math.min(45, event.beta));
       const gamma = Math.max(-45, Math.min(45, event.gamma));
 
-      setRotation({
-        beta: beta * 0.5, // Уменьшаем чувствительность
-        gamma: gamma * 0.5
+      // Используем requestAnimationFrame для плавной анимации
+      animationFrameId = requestAnimationFrame(() => {
+        setRotation({
+          beta: beta * 0.7, // Увеличиваем чувствительность
+          gamma: gamma * 0.7
+        });
       });
     };
 
     requestPermission();
 
     return () => {
-      window.removeEventListener('deviceorientation', handleOrientation, true);
+      window.removeEventListener('deviceorientation', handleOrientation);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
     };
   }, []);
 
