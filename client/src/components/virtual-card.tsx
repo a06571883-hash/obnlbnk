@@ -9,11 +9,13 @@ import {
   DialogDescription,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins } from "lucide-react";
+import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins, QrCode } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import QRScanner from "./qr-scanner";
+import { QRCodeSVG } from 'qrcode.react';
 
 // Add recipient type enum
 type RecipientType = 'usd_card' | 'crypto_wallet';
@@ -23,6 +25,30 @@ const cardColors = {
   usd: "bg-gradient-to-br from-green-400 to-green-600",
   uah: "bg-gradient-to-br from-blue-400 to-blue-600",
 } as const;
+
+const QRCodeGenerator = ({ card, type }: { card: Card; type: 'btc' | 'eth' | 'card' }) => {
+  const data = {
+    type: type === 'card' ? 'usd_card' : 'crypto_wallet',
+    ...(type === 'card' 
+      ? { cardNumber: card.number }
+      : { walletAddress: type === 'btc' ? card.btcAddress : card.ethAddress }
+    )
+  };
+
+  return (
+    <div className="flex justify-center">
+      <QRCodeSVG 
+        value={JSON.stringify(data)} 
+        size={200}
+        level="H"
+        includeMargin
+        bgColor="#ffffff"
+        fgColor="#000000"
+      />
+    </div>
+  );
+};
+
 
 export default function VirtualCard({ card }: { card: Card }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -38,6 +64,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
   const [recipientType, setRecipientType] = useState<RecipientType>('usd_card');
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || isMobile) return;
@@ -185,18 +212,21 @@ export default function VirtualCard({ card }: { card: Card }) {
                     {card.type === 'crypto' ? (
                       <>
                         <div>
-                          <p className="text-sm text-muted-foreground">BTC Address</p>
+                          <p className="text-sm text-muted-foreground mb-2">BTC Address</p>
                           <p className="font-mono text-sm break-all">{card.btcAddress}</p>
+                          <QRCodeGenerator card={card} type="btc" />
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">ETH Address</p>
+                          <p className="text-sm text-muted-foreground mb-2">ETH Address</p>
                           <p className="font-mono text-sm break-all">{card.ethAddress}</p>
+                          <QRCodeGenerator card={card} type="eth" />
                         </div>
                       </>
                     ) : (
                       <div>
-                        <p className="text-sm text-muted-foreground">Card Number</p>
+                        <p className="text-sm text-muted-foreground mb-2">Card Number</p>
                         <p className="font-mono">{card.number}</p>
+                        <QRCodeGenerator card={card} type="card" />
                       </div>
                     )}
                   </div>
@@ -222,6 +252,31 @@ export default function VirtualCard({ card }: { card: Card }) {
                       Contact support @KA7777AA to process your withdrawal
                     </p>
                   </div>
+                </DialogContent>
+              </Dialog>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-6 sm:h-8">
+                    <QrCode className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Scan QR</span>
+                    <span className="sm:hidden">Scan</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Scan QR Code</DialogTitle>
+                    <DialogDescription>
+                      Отсканируйте QR-код для быстрого перевода
+                    </DialogDescription>
+                  </DialogHeader>
+                  <QRScanner
+                    onScanSuccess={(recipient, type) => {
+                      setRecipientType(type);
+                      setRecipientCardNumber(recipient);
+                      setShowQRScanner(false);
+                    }}
+                    onClose={() => setShowQRScanner(false)}
+                  />
                 </DialogContent>
               </Dialog>
               <Dialog>
