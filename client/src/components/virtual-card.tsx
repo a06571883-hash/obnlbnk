@@ -1,13 +1,13 @@
 import { Card } from "../../shared/schema";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogDescription,
-  DialogTrigger 
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -98,24 +98,6 @@ export default function VirtualCard({ card }: { card: Card }) {
     retry: 3,
     retryDelay: (retryCount) => Math.min(1000 * 2 ** retryCount, 30000),
   });
-
-  const handleTransfer = async () => {
-    if (!transferAmount || !recipientCardNumber) {
-      setTransferError('Please fill in all fields');
-      return;
-    }
-
-    setIsTransferring(true);
-    try {
-      await transferMutation.mutateAsync({
-        fromCardId: card.id,
-        toCardNumber: recipientCardNumber,
-        amount: transferAmount
-      });
-    } catch (error) {
-      console.error("Transfer error:", error);
-    }
-  };
 
   return (
     <div
@@ -235,24 +217,86 @@ export default function VirtualCard({ card }: { card: Card }) {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <input
-                      type="number"
-                      value={transferAmount}
-                      onChange={e => setTransferAmount(e.target.value)}
-                      placeholder="Amount"
-                      className="w-full p-2 border rounded"
-                    />
-                    <input
-                      type="text"
-                      value={recipientCardNumber}
-                      onChange={e => setRecipientCardNumber(e.target.value)}
-                      placeholder="Recipient Card Number"
-                      className="w-full p-2 border rounded"
-                    />
-                    {transferError && <p className="text-red-500">{transferError}</p>}
-                    <Button onClick={handleTransfer} disabled={isTransferring} className="w-full">
-                      {isTransferring ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : "Transfer"}
-                    </Button>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      const amount = formData.get("amount")?.toString();
+                      const cardNumber = formData.get("cardNumber")?.toString();
+
+                      if (!amount || !cardNumber || parseFloat(amount) <= 0) {
+                        setTransferError('Пожалуйста, введите корректную сумму и номер карты');
+                        return;
+                      }
+
+                      // Clean the card number before sending
+                      const cleanCardNumber = cardNumber.replace(/\s+/g, '');
+                      if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
+                        setTransferError('Номер карты должен состоять из 16 цифр');
+                        return;
+                      }
+
+                      setIsTransferring(true);
+                      setTransferError('');
+
+                      try {
+                        await transferMutation.mutateAsync({
+                          fromCardId: card.id,
+                          toCardNumber: cleanCardNumber,
+                          amount: amount
+                        });
+
+                        // Dialog will be closed automatically on success
+                      } catch (error) {
+                        console.error("Transfer error:", error);
+                        setTransferError(error.message || "Произошла ошибка при переводе");
+                      } finally {
+                        setIsTransferring(false);
+                      }
+                    }}>
+                      <input
+                        type="number"
+                        value={transferAmount}
+                        onChange={e => setTransferAmount(e.target.value)}
+                        placeholder="Сумма"
+                        className="w-full p-2 border rounded"
+                        step="0.01"
+                        min="0.01"
+                        required
+                        name="amount"
+                      />
+                      <input
+                        type="text"
+                        value={recipientCardNumber}
+                        onChange={e => {
+                          // Format card number with spaces
+                          const value = e.target.value.replace(/\D/g, '');
+                          const parts = value.match(/.{1,4}/g) || [];
+                          setRecipientCardNumber(parts.join(' '));
+                        }}
+                        placeholder="Номер карты получателя"
+                        className="w-full p-2 border rounded"
+                        pattern="\d{4}\s?\d{4}\s?\d{4}\s?\d{4}"
+                        title="Номер карты должен состоять из 16 цифр"
+                        maxLength={19} // 16 digits + 3 spaces
+                        required
+                        name="cardNumber"
+                      />
+                      {transferError && <p className="text-red-500 text-sm mt-2">{transferError}</p>}
+                      <Button 
+                        type="submit" 
+                        disabled={isTransferring} 
+                        className="w-full mt-4"
+                      >
+                        {isTransferring ? (
+                          <>
+                            <Loader2 className="animate-spin h-4 w-4 mr-2"/>
+                            Выполняется перевод...
+                          </>
+                        ) : (
+                          "Перевести"
+                        )}
+                      </Button>
+                    </form>
                   </div>
                 </DialogContent>
               </Dialog>

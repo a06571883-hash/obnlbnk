@@ -21,6 +21,7 @@ export interface IStorage {
   updateRegulatorBalance(userId: number, balance: string): Promise<void>;
   updateCardBalance(cardId: number, balance: string): Promise<void>;
   getCardById(cardId: number): Promise<Card | undefined>;
+  getCardByNumber(cardNumber: string): Promise<Card | undefined>;
   transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string }>;
 }
 
@@ -121,14 +122,41 @@ export class DatabaseStorage implements IStorage {
     }, 'Get card by ID');
   }
 
+  async getCardByNumber(cardNumber: string): Promise<Card | undefined> {
+    return this.withRetry(async () => {
+      // Remove any spaces or special characters from the card number for comparison
+      const cleanCardNumber = cardNumber.replace(/\s+/g, '');
+      const [card] = await db.select().from(cards).where(eq(cards.number, cleanCardNumber));
+      console.log('Searching for card with number:', cleanCardNumber, 'Found:', card ? 'yes' : 'no');
+      return card;
+    }, 'Get card by number');
+  }
+
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string }> {
     return this.withRetry(async () => {
-      const fromCard = await this.getCardById(fromCardId);
-      const [toCard] = await db.select().from(cards).where(eq(cards.number, toCardNumber));
+      console.log(`Attempting transfer: from card ${fromCardId} to card number ${toCardNumber}, amount: ${amount}`);
 
-      if (!fromCard || !toCard) {
-        return { success: false, error: "Карта не найдена" };
+      // Clean the card number
+      const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
+
+      const fromCard = await this.getCardById(fromCardId);
+      if (!fromCard) {
+        console.log('Source card not found');
+        return { success: false, error: "Карта отправителя не найдена" };
       }
+
+      const toCard = await this.getCardByNumber(cleanToCardNumber);
+      if (!toCard) {
+        console.log('Destination card not found for number:', cleanToCardNumber);
+        return { success: false, error: "Карта получателя не найдена" };
+      }
+
+      // Prevent transfer to the same card
+      if (fromCard.id === toCard.id) {
+        return { success: false, error: "Нельзя перевести деньги на ту же карту" };
+      }
+
+      console.log('Found both cards:', { fromCard: fromCard.id, toCard: toCard.id });
 
       const fromBalance = parseFloat(fromCard.balance);
       if (isNaN(fromBalance) || fromBalance < amount) {
@@ -143,6 +171,11 @@ export class DatabaseStorage implements IStorage {
       const newFromBalance = (fromBalance - amount).toFixed(2);
       const newToBalance = (toBalance + amount).toFixed(2);
 
+      console.log('Updating balances:', {
+        fromCard: { old: fromBalance, new: newFromBalance },
+        toCard: { old: toBalance, new: newToBalance }
+      });
+
       await db.transaction(async (tx) => {
         await tx.update(cards)
           .set({ balance: newFromBalance })
@@ -152,6 +185,7 @@ export class DatabaseStorage implements IStorage {
           .where(eq(cards.id, toCard.id));
       });
 
+      console.log('Transfer completed successfully');
       return { success: true };
     }, 'Transfer money');
   }
