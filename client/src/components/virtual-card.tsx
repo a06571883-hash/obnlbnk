@@ -378,7 +378,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                               <DialogHeader>
                                 <DialogTitle>Сканировать QR-код</DialogTitle>
                                 <DialogDescription>
-                                  Отсканируйте QR-код для быстрого перевода
+                                  Наведите камеру на QR-код карты или кошелька
                                 </DialogDescription>
                               </DialogHeader>
                               <QRScanner
