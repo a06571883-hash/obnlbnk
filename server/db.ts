@@ -6,11 +6,16 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is required");
 }
 
-// Create a new postgres connection with proper configuration
+// Create a new postgres connection with proper configuration for mobile devices
 const client = postgres(process.env.DATABASE_URL, {
-  max: 1,
-  idle_timeout: 20,
-  max_lifetime: 60 * 30
+  max: 1, // Уменьшаем количество соединений для мобильных устройств
+  idle_timeout: 20, // Уменьшаем время простоя
+  max_lifetime: 60 * 30, // Максимальное время жизни соединения - 30 минут
+  connect_timeout: 10, // Таймаут подключения
+  keepalive: true, // Держим соединение активным
+  connection: {
+    application_name: 'banking-app' // Имя приложения для логов
+  }
 });
 
 // Create a drizzle database instance
