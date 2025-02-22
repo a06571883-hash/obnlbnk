@@ -65,7 +65,7 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
       }
     };
 
-    if (isScanning && !scanner) {
+    if (isScanning) {
       startScanning();
     }
 
@@ -78,22 +78,14 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
 
   return (
     <div className="p-4">
-      <div id="qr-reader" className="w-full max-w-sm mx-auto rounded-lg overflow-hidden" />
+      <div id="qr-reader" className="w-full max-w-sm mx-auto bg-muted rounded-lg overflow-hidden" />
 
       {error && (
         <p className="text-red-500 text-sm text-center mt-4">{error}</p>
       )}
 
       <Button
-        variant="outline"
-        onClick={() => {
-          if (isScanning) {
-            setIsScanning(false);
-            onClose();
-          } else {
-            setIsScanning(true);
-          }
-        }}
+        onClick={() => setIsScanning(!isScanning)}
         disabled={isLoading}
         className="w-full mt-4"
       >

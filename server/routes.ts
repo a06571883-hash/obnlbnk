@@ -14,8 +14,8 @@ type BalanceType = {
 
 const EXCHANGE_RATES: Record<string, number> = {
   USD_UAH: 41.64,  // 1 USD = 41.64 UAH (Updated rate)
-  CRYPTO_UAH: 1566075, // 1 BTC = 1,566,075 UAH
-  CRYPTO_USD: 40677, // 1 BTC = 40,677 USD
+  CRYPTO_UAH: 4002660, // 1 BTC = 4 002 660,38 UAH
+  CRYPTO_USD: 96683, // 1 BTC = 96 683,27 USD
 };
 
 // Improved currency conversion function

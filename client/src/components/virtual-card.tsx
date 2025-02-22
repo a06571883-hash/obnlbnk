@@ -374,7 +374,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                         {showQRScanner && (
                           <Dialog open={showQRScanner} onOpenChange={setShowQRScanner}>
-                            <DialogContent>
+                            <DialogContent className="sm:max-w-md">
                               <DialogHeader>
                                 <DialogTitle>Сканировать QR-код</DialogTitle>
                                 <DialogDescription>
