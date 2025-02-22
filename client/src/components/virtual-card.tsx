@@ -57,7 +57,6 @@ export default function VirtualCard({ card }: { card: Card }) {
       const targetX = -gyroscope.beta / 3;
       const targetY = gyroscope.gamma / 3;
 
-      // Плавная анимация для мобильных устройств
       setRotation(prev => ({
         x: prev.x + (targetX - prev.x) * 0.1,
         y: prev.y + (targetY - prev.y) * 0.1
@@ -110,7 +109,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-48 sm:h-56 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-4 sm:p-6 text-white shadow-xl transform transition-all duration-300`}
+        className={`relative h-36 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 sm:p-6 text-white shadow-xl transform transition-all duration-300`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
@@ -120,30 +119,30 @@ export default function VirtualCard({ card }: { card: Card }) {
         }}
       >
         <div className="flex flex-col justify-between h-full">
-          <div className="space-y-2 sm:space-y-4">
-            <div className="text-xs opacity-80">Virtual Card</div>
-            <div className="text-lg sm:text-2xl font-bold tracking-wider">
+          <div className="space-y-1 sm:space-y-4">
+            <div className="text-[10px] sm:text-xs opacity-80">Virtual Card</div>
+            <div className="text-sm sm:text-2xl font-bold tracking-wider">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
           </div>
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-2 sm:space-y-4">
             <div className="flex justify-between">
               <div>
-                <div className="text-xs opacity-80">Balance</div>
-                <div className="text-sm sm:text-base font-semibold">
+                <div className="text-[10px] sm:text-xs opacity-80">Balance</div>
+                <div className="text-xs sm:text-base font-semibold">
                   {card.balance} {card.type.toUpperCase()}
                 </div>
               </div>
               <div>
-                <div className="text-xs opacity-80">Expires</div>
-                <div className="text-sm sm:text-base font-semibold">{card.expiry}</div>
+                <div className="text-[10px] sm:text-xs opacity-80">Expires</div>
+                <div className="text-xs sm:text-base font-semibold">{card.expiry}</div>
               </div>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex space-x-1 sm:space-x-2">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-xs sm:text-sm py-1 h-8">
-                    <ArrowUpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-6 sm:h-8">
+                    <ArrowUpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
                     <span className="hidden sm:inline">Deposit</span>
                     <span className="sm:hidden">Dep</span>
                   </Button>
@@ -175,8 +174,8 @@ export default function VirtualCard({ card }: { card: Card }) {
               </Dialog>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-xs sm:text-sm py-1 h-8">
-                    <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-6 sm:h-8">
+                    <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
                     <span className="hidden sm:inline">Withdraw</span>
                     <span className="sm:hidden">With</span>
                   </Button>
@@ -197,8 +196,8 @@ export default function VirtualCard({ card }: { card: Card }) {
               </Dialog>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-xs sm:text-sm py-1 h-8">
-                    <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-6 sm:h-8">
+                    <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
                     <span className="hidden sm:inline">Transfer</span>
                     <span className="sm:hidden">Trans</span>
                   </Button>
