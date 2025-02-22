@@ -11,20 +11,20 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Configure pool with optimal settings
-const pool = new Pool({ 
+// Create a connection pool with optimal settings for Neon
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 30000, // Increased timeout
-  max: 10, // Reduced max connections
-  idleTimeoutMillis: 60000, // Increased idle timeout
-  allowExitOnIdle: false
+  max: 5, // Reduce max connections
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  maxUses: 100, // Close connection after 100 queries
+  allowExitOnIdle: true
 });
 
-// Add error handling
+// Handle pool errors
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
-  // Don't exit process, just log the error
-  console.error('Database error occurred:', err);
+  // Don't exit process on error
 });
 
 // Add health check with longer interval

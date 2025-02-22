@@ -7,8 +7,8 @@ import { users, cards } from "@shared/schema";
 import { pool } from "./db";
 
 const PostgresSessionStore = connectPg(session);
-
-const db = drizzle(pool);
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000;
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -26,6 +26,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
+  private db: ReturnType<typeof drizzle>;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({
@@ -33,89 +34,96 @@ export class DatabaseStorage implements IStorage {
       tableName: 'session',
       createTableIfMissing: true,
     });
+    this.db = drizzle(pool);
   }
 
-  private async executeWithRetry<T>(operation: () => Promise<T>, retries = 3): Promise<T> {
-    let lastError;
-    for (let i = 0; i < retries; i++) {
+  private async withRetry<T>(operation: () => Promise<T>): Promise<T> {
+    let lastError: Error | undefined;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
         return await operation();
       } catch (error) {
-        lastError = error;
-        console.error(`Operation failed (attempt ${i + 1}/${retries}):`, error);
-        if (i < retries - 1) await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        lastError = error as Error;
+        console.error(`Operation failed (attempt ${attempt + 1}/${MAX_RETRIES}):`, error);
+
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
     }
+
     throw lastError;
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.executeWithRetry(async () => {
-      const [result] = await db.select().from(users).where(eq(users.id, id));
-      return result;
+    return this.withRetry(async () => {
+      const [user] = await this.db.select().from(users).where(eq(users.id, id));
+      return user;
     });
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return this.executeWithRetry(async () => {
-      const [result] = await db.select().from(users).where(eq(users.username, username));
-      return result;
+    return this.withRetry(async () => {
+      const [user] = await this.db.select().from(users).where(eq(users.username, username));
+      return user;
     });
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    return this.executeWithRetry(async () => {
-      const [result] = await db.insert(users).values(insertUser).returning();
-      return result;
+    return this.withRetry(async () => {
+      const [user] = await this.db.insert(users).values(insertUser).returning();
+      return user;
     });
   }
 
   async getCardsByUserId(userId: number): Promise<Card[]> {
-    return this.executeWithRetry(async () => {
-      return await db.select().from(cards).where(eq(cards.userId, userId));
+    return this.withRetry(async () => {
+      return await this.db.select().from(cards).where(eq(cards.userId, userId));
     });
   }
 
   async createCard(card: Omit<Card, "id">): Promise<Card> {
-    return this.executeWithRetry(async () => {
-      const [result] = await db.insert(cards).values(card).returning();
+    return this.withRetry(async () => {
+      const [result] = await this.db.insert(cards).values(card).returning();
       return result;
     });
   }
 
   async getAllUsers(): Promise<User[]> {
-    return this.executeWithRetry(async () => {
-      return await db.select().from(users);
+    return this.withRetry(async () => {
+      return await this.db.select().from(users);
     });
   }
 
   async updateRegulatorBalance(userId: number, balance: string): Promise<void> {
-    await this.executeWithRetry(async () => {
-      await db.update(users)
+    await this.withRetry(async () => {
+      await this.db.update(users)
         .set({ regulator_balance: balance })
         .where(eq(users.id, userId));
     });
   }
 
   async updateCardBalance(cardId: number, balance: string): Promise<void> {
-    await this.executeWithRetry(async () => {
-      await db.update(cards)
+    await this.withRetry(async () => {
+      await this.db.update(cards)
         .set({ balance: balance })
         .where(eq(cards.id, cardId));
     });
   }
 
   async getCardById(cardId: number): Promise<Card | undefined> {
-    return this.executeWithRetry(async () => {
-      const [result] = await db.select().from(cards).where(eq(cards.id, cardId));
-      return result;
+    return this.withRetry(async () => {
+      const [card] = await this.db.select().from(cards).where(eq(cards.id, cardId));
+      return card;
     });
   }
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string }> {
-    return this.executeWithRetry(async () => {
+    return this.withRetry(async () => {
       const fromCard = await this.getCardById(fromCardId);
-      const [toCard] = await db.select().from(cards).where(eq(cards.number, toCardNumber));
+      const [toCard] = await this.db.select().from(cards).where(eq(cards.number, toCardNumber));
 
       if (!fromCard || !toCard) {
         return { success: false, error: "Карта не найдена" };
@@ -134,7 +142,7 @@ export class DatabaseStorage implements IStorage {
       const newFromBalance = (fromBalance - amount).toFixed(2);
       const newToBalance = (toBalance + amount).toFixed(2);
 
-      await db.transaction(async (tx) => {
+      await this.db.transaction(async (tx) => {
         await tx.update(cards)
           .set({ balance: newFromBalance })
           .where(eq(cards.id, fromCard.id));
