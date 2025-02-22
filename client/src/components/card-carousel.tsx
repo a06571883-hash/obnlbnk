@@ -1,4 +1,4 @@
-import { Card } from "@shared/schema";
+import { Card } from "../../shared/schema";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import VirtualCard from "./virtual-card";

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "@shared/schema";
+import { Card } from "../../shared/schema";
 import VirtualCard from "@/components/virtual-card";
 import { Loader2 } from "lucide-react";
 

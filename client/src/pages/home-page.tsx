@@ -2,13 +2,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import type { Card as CardType } from "@shared/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Card } from "../../shared/schema";
+import { Card as CardUI, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -76,7 +77,7 @@ export default function HomePage() {
             <div className="grid grid-cols-2 gap-4 mt-8">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Card className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
+                  <CardUI className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
                     <CardContent className="p-2 flex flex-col items-center">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                         <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -85,7 +86,7 @@ export default function HomePage() {
                       </div>
                       <h3 className="font-medium">Quick Transfer</h3>
                     </CardContent>
-                  </Card>
+                  </CardUI>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -189,7 +190,7 @@ export default function HomePage() {
               
               <Dialog>
                 <DialogTrigger asChild>
-                  <Card className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
+                  <CardUI className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
                     <CardContent className="p-2 flex flex-col items-center">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                         <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -198,7 +199,7 @@ export default function HomePage() {
                       </div>
                       <h3 className="font-medium">Scan QR</h3>
                     </CardContent>
-                  </Card>
+                  </CardUI>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -215,7 +216,7 @@ export default function HomePage() {
             </div>
 
             {/* Recent Activity Preview */}
-            <Card className="backdrop-blur-sm bg-background/80">
+            <CardUI className="backdrop-blur-sm bg-background/80">
               <CardHeader>
                 <CardTitle className="text-lg">Recent Activity</CardTitle>
               </CardHeader>
@@ -237,7 +238,7 @@ export default function HomePage() {
                   ))}
                 </div>
               </CardContent>
-            </Card>
+            </CardUI>
           </div>
         ) : (
           <div className="text-center py-12 px-4">
