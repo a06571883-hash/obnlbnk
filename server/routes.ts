@@ -198,8 +198,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateCardBalance(fromCard.id, newFromBalance);
       await storage.updateCardBalance(toCard.id, newToBalance);
 
-      // Создаем транзакцию
-      const transaction = await storage.createTransaction({
+      // Создаем запись о транзакции
+      await storage.db.insert(transactions).values({
         fromCardId: fromCard.id,
         toCardId: toCard.id,
         amount: fromAmount.toString(),
@@ -213,7 +213,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(200).json({
         message: "Перевод успешно выполнен",
-        transaction,
         conversionDetails: {
           fromAmount: fromAmount,
           fromCurrency: fromCard.type.toUpperCase(),
