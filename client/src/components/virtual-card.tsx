@@ -32,6 +32,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [transferError, setTransferError] = useState('');
   const [isMobile] = useState(() => window.innerWidth < 768);
   const [isHovered, setIsHovered] = useState(false);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || isMobile) return;
@@ -54,17 +55,18 @@ export default function VirtualCard({ card }: { card: Card }) {
 
   useEffect(() => {
     if (gyroscope && isMobile) {
-      const targetX = -gyroscope.beta;
-      const targetY = gyroscope.gamma;
+      const sensitivity = isIOS ? 0.5 : 0.7; // Меньшая чувствительность для iOS
+      const targetX = -gyroscope.beta * sensitivity;
+      const targetY = gyroscope.gamma * sensitivity;
 
       requestAnimationFrame(() => {
         setRotation(prev => ({
-          x: prev.x + (targetX - prev.x) * 0.1,
-          y: prev.y + (targetY - prev.y) * 0.1
+          x: prev.x + (targetX - prev.x) * (isIOS ? 0.05 : 0.1), // Более плавная анимация для iOS
+          y: prev.y + (targetY - prev.y) * (isIOS ? 0.05 : 0.1)
         }));
       });
     }
-  }, [gyroscope, isMobile]);
+  }, [gyroscope, isMobile, isIOS]);
 
   const transferMutation = useMutation({
     mutationFn: async ({ fromCardId, toCardNumber, amount }: { fromCardId: number; toCardNumber: string; amount: string }) => {

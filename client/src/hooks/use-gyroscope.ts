@@ -18,8 +18,12 @@ export function useGyroscope() {
     let lastUpdate = 0;
     const minUpdateInterval = 16; // ~60fps
 
+    // Определяем iOS устройство
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
     const requestPermission = async () => {
-      if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      if (isIOS && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
         try {
           const permissionState = await (DeviceOrientationEvent as any).requestPermission();
           setPermission(permissionState);
@@ -30,6 +34,7 @@ export function useGyroscope() {
           console.error('Error requesting device orientation permission:', error);
         }
       } else {
+        // Для не iOS устройств
         window.addEventListener('deviceorientation', handleOrientation);
       }
     };
@@ -41,6 +46,9 @@ export function useGyroscope() {
 
       if (event.beta === null || event.gamma === null) return;
 
+      // Настройка чувствительности в зависимости от устройства
+      const sensitivity = isIOS ? 0.5 : 0.7;
+
       // Ограничиваем значения для более плавной анимации
       const beta = Math.max(-45, Math.min(45, event.beta));
       const gamma = Math.max(-45, Math.min(45, event.gamma));
@@ -48,13 +56,23 @@ export function useGyroscope() {
       // Используем requestAnimationFrame для плавной анимации
       animationFrameId = requestAnimationFrame(() => {
         setRotation({
-          beta: beta * 0.7, // Увеличиваем чувствительность
-          gamma: gamma * 0.7
+          beta: beta * sensitivity,
+          gamma: gamma * sensitivity
         });
       });
     };
 
-    requestPermission();
+    // Автоматически запрашиваем разрешение при монтировании
+    if (isIOS && isSafari) {
+      // Для Safari на iOS требуется взаимодействие пользователя
+      const handleUserInteraction = () => {
+        requestPermission();
+        document.removeEventListener('touchend', handleUserInteraction);
+      };
+      document.addEventListener('touchend', handleUserInteraction);
+    } else {
+      requestPermission();
+    }
 
     return () => {
       window.removeEventListener('deviceorientation', handleOrientation);
