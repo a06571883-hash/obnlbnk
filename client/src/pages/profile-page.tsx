@@ -277,10 +277,12 @@ export default function ProfilePage() {
                 </Card>
               </DialogTrigger>
 
-              <DialogContent className="sm:max-w-md">
+              <DialogContent aria-describedby={`${item.title}-description`}>
                 <DialogHeader>
                   <DialogTitle>{item.title}</DialogTitle>
-                  <DialogDescription>{item.description}</DialogDescription>
+                  <DialogDescription id={`${item.title}-description`}>
+                    {item.title} settings and options
+                  </DialogDescription>
                 </DialogHeader>
                 {item.content}
               </DialogContent>
