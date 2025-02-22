@@ -1,39 +1,40 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from "ws";
 import * as schema from "@shared/schema";
 
+neonConfig.webSocketConstructor = ws;
+
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is required");
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
 }
 
-// Create a new postgres connection with proper configuration for mobile devices
-const client = postgres(process.env.DATABASE_URL, {
-  max: 1, // Уменьшаем количество соединений для мобильных устройств
-  idle_timeout: 20, // Уменьшаем время простоя
-  max_lifetime: 60 * 30, // Максимальное время жизни соединения - 30 минут
-  connect_timeout: 10, // Таймаут подключения
-  keepalive: true, // Держим соединение активным
-  connection: {
-    application_name: 'banking-app' // Имя приложения для логов
-  }
+// Configure pool with mobile-friendly settings
+export const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  connectionTimeoutMillis: 5000,
+  max: 2,
+  idleTimeoutMillis: 30000
+});
+
+// Handle pool errors
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
 });
 
 // Create a drizzle database instance
-const db = drizzle(client, { schema });
+export const db = drizzle(pool, { schema });
 
-// Improved error handling (adapted from original)
-client.on('error', (err) => {
-  console.error('Unexpected database error:', err);
-  // Don't end the pool on every error, only try to reconnect if needed
-  if (!client.connected) {
-    console.log('Attempting to reconnect...');
-    client.connect().catch(console.error);
-  }
+// Ensure the pool is terminated when the application exits
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM. Closing pool...');
+  pool.end();
 });
 
-client.on('connect', () => {
-  console.log('Database connection established');
+process.on('SIGINT', () => {
+  console.log('Received SIGINT. Closing pool...');
+  pool.end();
 });
-
-
-export { db, client as pool };

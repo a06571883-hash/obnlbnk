@@ -1,9 +1,9 @@
 import session from "express-session";
-import { db } from "./database/connection";
+import { db } from "./db";
 import { cards, users, transactions } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction } from "@shared/schema";
 import { eq, and, or, desc } from "drizzle-orm";
-import { pool } from "./database/connection";
+import { pool } from "./db";
 import connectPg from "connect-pg-simple";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -16,10 +16,10 @@ const PostgresSessionStore = connectPg(session);
 // Create a proper connection pool for sessions using node-postgres
 const sessionPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 10,
+  max: 2,
   ssl: false,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 5000,
   keepAlive: true
 });
 
@@ -168,23 +168,13 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       console.log('Creating transaction:', transactionData);
       const [transaction] = await db.insert(transactions)
-        .values({
-          fromCardId: transactionData.fromCardId,
-          toCardId: transactionData.toCardId,
-          amount: transactionData.amount,
-          convertedAmount: transactionData.convertedAmount || transactionData.amount,
-          type: transactionData.type,
-          status: transactionData.status,
-          createdAt: new Date(),
-          description: transactionData.description,
-          fromCardNumber: transactionData.fromCardNumber,
-          toCardNumber: transactionData.toCardNumber,
-        })
+        .values(transactionData)
         .returning();
       console.log('Transaction created:', transaction);
       return transaction;
     }, 'Create transaction');
   }
+
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withRetry(async () => {
       console.log(`Attempting transfer: from card ${fromCardId} to card number ${toCardNumber}, amount: ${amount}`);
@@ -229,23 +219,21 @@ export class DatabaseStorage implements IStorage {
         toCard: { old: toBalance, new: newToBalance }
       });
 
-      let transaction: Transaction;
-
-      // Use a transaction to ensure atomic updates
-      await db.transaction(async (tx) => {
+      const transaction = await db.transaction(async (tx) => {
         // Create transaction record first
         const [newTransaction] = await tx.insert(transactions)
           .values({
             fromCardId: fromCard.id,
             toCardId: toCard.id,
             amount: amount.toString(),
+            convertedAmount: amount.toString(),
             type: 'transfer',
             status: 'completed',
-            description: `Transfer from card ${fromCard.number} to ${toCard.number}`
+            description: `Transfer from card ${fromCard.number} to ${toCard.number}`,
+            fromCardNumber: fromCard.number,
+            toCardNumber: toCard.number
           })
           .returning();
-
-        transaction = newTransaction;
 
         // Update card balances
         await tx.update(cards)
@@ -255,6 +243,8 @@ export class DatabaseStorage implements IStorage {
         await tx.update(cards)
           .set({ balance: newToBalance })
           .where(eq(cards.id, toCard.id));
+
+        return newTransaction;
       });
 
       console.log('Transfer completed successfully');
