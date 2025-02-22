@@ -5,6 +5,8 @@ import { storage } from "./storage";
 import { insertCardSchema, cards } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import fs from "fs/promises";
+import path from "path";
 
 function generateCardNumber(): string {
   return '4' + Array(15).fill(null).map(() => Math.floor(Math.random() * 10)).join('');
@@ -146,9 +148,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const result = await storage.transferMoney(fromCardId, cleanToCardNumber, amount);
       if (result.success) {
-        res.status(200).json({ 
+        res.status(200).json({
           message: "Перевод успешно выполнен",
-          transaction: result.transaction 
+          transaction: result.transaction
         });
       } else {
         res.status(400).json({ error: result.error || "Ошибка при переводе" });
@@ -228,6 +230,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }));
 
     res.json(cards);
+  });
+
+  app.post("/api/theme", async (req, res) => {
+    try {
+      const { appearance } = req.body;
+      if (!appearance || !['light', 'dark', 'system'].includes(appearance)) {
+        return res.status(400).json({ error: 'Invalid appearance value' });
+      }
+
+      const themePath = path.join(process.cwd(), 'theme.json');
+      const themeContent = await fs.readFile(themePath, 'utf-8');
+      const theme = JSON.parse(themeContent);
+
+      theme.appearance = appearance;
+
+      await fs.writeFile(themePath, JSON.stringify(theme, null, 2));
+
+      res.json({ success: true, appearance });
+    } catch (error) {
+      console.error('Error updating theme:', error);
+      res.status(500).json({ error: 'Failed to update theme' });
+    }
   });
 
   const httpServer = createServer(app);

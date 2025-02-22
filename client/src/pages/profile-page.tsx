@@ -35,35 +35,79 @@ import {
   Volume2,
   MessageSquare
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AnimatedBackground from "@/components/animated-background";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const { toast } = useToast();
+  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [notifications, setNotifications] = useState(() => localStorage.getItem('notifications') === 'true');
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('soundEnabled') === 'true');
   const [language, setLanguage] = useState(() => localStorage.getItem('language') || "ru");
 
-  const updateSetting = (key: string, value: any) => {
+  const updateSetting = async (key: string, value: any) => {
     localStorage.setItem(key, value.toString());
     switch(key) {
       case 'darkMode':
         setDarkMode(value);
         document.documentElement.classList.toggle('dark', value);
+        // Обновляем тему в theme.json через API
+        try {
+          await fetch('/api/theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ appearance: value ? 'dark' : 'light' })
+          });
+        } catch (error) {
+          console.error('Failed to update theme:', error);
+        }
         break;
       case 'notifications':
-        setNotifications(value);
+        if (value) {
+          // Запрашиваем разрешение на уведомления
+          if ('Notification' in window) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+              setNotifications(true);
+              toast({
+                title: "Уведомления включены",
+                description: "Вы будете получать уведомления о важных событиях"
+              });
+            } else {
+              setNotifications(false);
+              toast({
+                title: "Ошибка",
+                description: "Необходимо разрешить уведомления в браузере",
+                variant: "destructive"
+              });
+            }
+          }
+        } else {
+          setNotifications(false);
+        }
         break;
       case 'soundEnabled':
         setSoundEnabled(value);
         break;
       case 'language':
         setLanguage(value);
-        // Here you would implement language change logic
+        document.documentElement.setAttribute('lang', value);
+        // В будущем здесь будет логика смены языка
+        toast({
+          title: value === 'ru' ? "Язык изменен" : "Language changed",
+          description: value === 'ru' ? "Приложение теперь на русском языке" : "Application is now in English"
+        });
         break;
     }
   };
+
+  // Эффект для инициализации темы при загрузке
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setDarkMode(isDark);
+  }, []);
 
   const menuItems = [
     {
@@ -81,7 +125,7 @@ export default function ProfilePage() {
             </div>
             <Switch
               checked={darkMode}
-              onCheckedChange={setDarkMode}
+              onCheckedChange={(checked) => updateSetting('darkMode', checked)}
             />
           </div>
 
@@ -90,7 +134,7 @@ export default function ProfilePage() {
             <select
               className="w-full p-2 rounded-md border bg-background"
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              onChange={(e) => updateSetting('language', e.target.value)}
             >
               <option value="ru">Русский</option>
               <option value="en">English</option>
@@ -106,7 +150,7 @@ export default function ProfilePage() {
             </div>
             <Switch
               checked={soundEnabled}
-              onCheckedChange={setSoundEnabled}
+              onCheckedChange={(checked) => updateSetting('soundEnabled', checked)}
             />
           </div>
         </div>
@@ -152,7 +196,7 @@ export default function ProfilePage() {
             </div>
             <Switch
               checked={notifications}
-              onCheckedChange={setNotifications}
+              onCheckedChange={(checked) => updateSetting('notifications', checked)}
             />
           </div>
 
@@ -281,7 +325,7 @@ export default function ProfilePage() {
                 <DialogHeader>
                   <DialogTitle>{item.title}</DialogTitle>
                   <DialogDescription id={`${item.title}-description`}>
-                    {item.title} settings and options
+                    {item.description}
                   </DialogDescription>
                 </DialogHeader>
                 {item.content}
