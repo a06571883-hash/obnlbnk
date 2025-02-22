@@ -35,88 +35,85 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async getUser(id: number): Promise<User | undefined> {
-    try {
-      const result = await db.select().from(users).where(eq(users.id, id));
-      return result[0];
-    } catch (error) {
-      console.error('Error getting user:', error);
-      return undefined;
+  private async executeWithRetry<T>(operation: () => Promise<T>, retries = 3): Promise<T> {
+    let lastError;
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+        console.error(`Operation failed (attempt ${i + 1}/${retries}):`, error);
+        if (i < retries - 1) await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
     }
+    throw lastError;
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
+    return this.executeWithRetry(async () => {
+      const [result] = await db.select().from(users).where(eq(users.id, id));
+      return result;
+    });
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    try {
-      const result = await db.select().from(users).where(eq(users.username, username));
-      return result[0];
-    } catch (error) {
-      console.error('Error getting user by username:', error);
-      return undefined;
-    }
+    return this.executeWithRetry(async () => {
+      const [result] = await db.select().from(users).where(eq(users.username, username));
+      return result;
+    });
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(insertUser).returning();
-    return result[0];
+    return this.executeWithRetry(async () => {
+      const [result] = await db.insert(users).values(insertUser).returning();
+      return result;
+    });
   }
 
   async getCardsByUserId(userId: number): Promise<Card[]> {
-    try {
+    return this.executeWithRetry(async () => {
       return await db.select().from(cards).where(eq(cards.userId, userId));
-    } catch (error) {
-      console.error('Error getting cards by user ID:', error);
-      return [];
-    }
+    });
   }
 
   async createCard(card: Omit<Card, "id">): Promise<Card> {
-    const result = await db.insert(cards).values(card).returning();
-    return result[0];
+    return this.executeWithRetry(async () => {
+      const [result] = await db.insert(cards).values(card).returning();
+      return result;
+    });
   }
 
   async getAllUsers(): Promise<User[]> {
-    try {
+    return this.executeWithRetry(async () => {
       return await db.select().from(users);
-    } catch (error) {
-      console.error('Error getting all users:', error);
-      return [];
-    }
+    });
   }
 
   async updateRegulatorBalance(userId: number, balance: string): Promise<void> {
-    try {
+    await this.executeWithRetry(async () => {
       await db.update(users)
         .set({ regulator_balance: balance })
         .where(eq(users.id, userId));
-    } catch (error) {
-      console.error('Error updating regulator balance:', error);
-      throw error;
-    }
+    });
   }
 
   async updateCardBalance(cardId: number, balance: string): Promise<void> {
-    try {
+    await this.executeWithRetry(async () => {
       await db.update(cards)
         .set({ balance: balance })
         .where(eq(cards.id, cardId));
-    } catch (error) {
-      console.error('Error updating card balance:', error);
-      throw error;
-    }
+    });
   }
 
   async getCardById(cardId: number): Promise<Card | undefined> {
-    try {
-      const result = await db.select().from(cards).where(eq(cards.id, cardId));
-      return result[0];
-    } catch (error) {
-      console.error('Error getting card by ID:', error);
-      return undefined;
-    }
+    return this.executeWithRetry(async () => {
+      const [result] = await db.select().from(cards).where(eq(cards.id, cardId));
+      return result;
+    });
   }
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string }> {
-    try {
+    return this.executeWithRetry(async () => {
       const fromCard = await this.getCardById(fromCardId);
       const [toCard] = await db.select().from(cards).where(eq(cards.number, toCardNumber));
 
@@ -148,10 +145,7 @@ export class DatabaseStorage implements IStorage {
       });
 
       return { success: true };
-    } catch (error) {
-      console.error("Transfer error:", error);
-      return { success: false, error: "Ошибка при переводе" };
-    }
+    });
   }
 }
 

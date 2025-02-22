@@ -14,33 +14,48 @@ if (!process.env.DATABASE_URL) {
 // Configure pool with optimal settings
 const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 10000,
-  max: 20,
-  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 30000, // Increased timeout
+  max: 10, // Reduced max connections
+  idleTimeoutMillis: 60000, // Increased idle timeout
   allowExitOnIdle: false
 });
 
 // Add error handling
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
-  process.exit(-1); // Let the process manager handle restart
+  // Don't exit process, just log the error
+  console.error('Database error occurred:', err);
 });
 
-// Add health check
-setInterval(async () => {
-  try {
-    const client = await pool.connect();
-    const result = await client.query('SELECT 1 as value');
-    client.release();
+// Add health check with longer interval
+let lastHealthCheck = Date.now();
+const HEALTH_CHECK_INTERVAL = 60000; // 1 minute
 
-    if (!result.rows[0] || result.rows[0].value !== 1) {
-      throw new Error('Health check failed');
+async function performHealthCheck() {
+  try {
+    const now = Date.now();
+    if (now - lastHealthCheck < HEALTH_CHECK_INTERVAL) {
+      return; // Skip if too soon
+    }
+
+    const client = await pool.connect();
+    try {
+      const result = await client.query('SELECT 1 as value');
+      if (!result.rows[0] || result.rows[0].value !== 1) {
+        console.error('Health check returned unexpected result');
+      }
+    } finally {
+      client.release();
+      lastHealthCheck = now;
     }
   } catch (err) {
     console.error('Health check failed:', err);
-    process.exit(-1); // Let the process manager handle restart
+    // Don't exit process, just log the error
   }
-}, 5000);
+}
+
+// Reduced frequency of health checks
+setInterval(performHealthCheck, HEALTH_CHECK_INTERVAL);
 
 export const db = drizzle(pool, { schema });
 
