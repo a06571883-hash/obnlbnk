@@ -199,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateCardBalance(toCard.id, newToBalance);
 
       // Создаем запись о транзакции
-      const transaction = await storage.createTransactionRecord({
+      const transaction = {
         fromCardId: fromCard.id,
         toCardId: toCard.id,
         amount: fromAmount.toString(),
@@ -209,10 +209,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fromCardNumber: fromCard.number,
         toCardNumber: toCard.number,
         createdAt: new Date().toISOString()
-      });
+      };
+
+      // Сохраняем транзакцию с помощью storage
+      const savedTransaction = await storage.createTransaction(transaction);
 
       res.status(200).json({
         message: "Перевод успешно выполнен",
+        transaction: savedTransaction,
         conversionDetails: {
           fromAmount: fromAmount,
           fromCurrency: fromCard.type.toUpperCase(),
@@ -225,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Transfer error:", error);
       res.status(500).json({ 
-        error: "Ошибка при выполнении перевода. Пожалуйста, проверьте номер карты получателя и сумму перевода."
+        error: "Произошла ошибка при выполнении перевода. Пожалуйста, попробуйте позже."
       });
     }
   });
