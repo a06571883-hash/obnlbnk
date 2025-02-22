@@ -73,7 +73,7 @@ export default function HomePage() {
         </Button>
       </header>
 
-      <main className="container mx-auto p-4 max-w-4xl">
+      <main className="container mx-auto p-4 pt-8 max-w-4xl">
         <div className={`mb-8 text-center transition-all duration-500 ease-in-out transform ${showWelcome ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full h-0 overflow-hidden'}`}>
           <h2 className="text-2xl font-medium mb-2">
             Welcome back, <span className="text-primary">{user?.username}</span>
@@ -84,7 +84,7 @@ export default function HomePage() {
         </div>
 
         {cards && cards.length > 0 ? (
-          <div className={`space-y-8 transition-all duration-500 ease-in-out transform ${!showWelcome ? '-translate-y-16' : ''}`}>
+          <div className={`space-y-8 transition-all duration-500 ease-in-out transform mt-6 ${!showWelcome ? '-translate-y-16' : ''}`}>
             <CardCarousel cards={cards} />
 
             {/* Quick Actions */}
