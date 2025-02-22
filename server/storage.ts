@@ -24,6 +24,7 @@ export interface IStorage {
   getCardByNumber(cardNumber: string): Promise<Card | undefined>;
   transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
+  createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -221,6 +222,16 @@ export class DatabaseStorage implements IStorage {
       console.log('Transfer completed successfully');
       return { success: true, transaction };
     }, 'Transfer money');
+  }
+  async createTransaction(transactionData: Omit<Transaction, "id">): Promise<Transaction> {
+    return this.withRetry(async () => {
+      console.log('Creating transaction:', transactionData);
+      const [transaction] = await db.insert(transactions)
+        .values(transactionData)
+        .returning();
+      console.log('Transaction created:', transaction);
+      return transaction;
+    }, 'Create transaction');
   }
 }
 
