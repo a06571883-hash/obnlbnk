@@ -12,6 +12,7 @@ interface ReceiptProps {
     id: number;
     type: string;
     amount: string;
+    convertedAmount?: string;
     currency: string;
     date: string;
     status?: string;
@@ -50,14 +51,23 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Сумма</span>
+              <span className="text-muted-foreground">Сумма списания</span>
               <span className="font-semibold">
-                {transaction.currency === 'BTC' && '₿'}
-                {transaction.currency === 'USD' && '$'}
-                {transaction.currency === 'UAH' && '₴'}
+                {transaction.currency === 'crypto' && '₿'}
+                {transaction.currency === 'usd' && '$'}
+                {transaction.currency === 'uah' && '₴'}
                 {transaction.amount}
               </span>
             </div>
+
+            {transaction.convertedAmount && transaction.convertedAmount !== transaction.amount && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Сумма зачисления</span>
+                <span className="font-semibold">
+                  {parseFloat(transaction.convertedAmount).toFixed(2)}
+                </span>
+              </div>
+            )}
 
             {transaction.from && (
               <div className="flex justify-between items-center">

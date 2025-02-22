@@ -1,3 +1,35 @@
+const EXCHANGE_RATES = {
+  USD_UAH: 38.5,  // 1 USD = 38.5 UAH
+  CRYPTO_UAH: 1566075, // 1 BTC = 1,566,075 UAH
+  CRYPTO_USD: 40677, // 1 BTC = 40,677 USD
+};
+
+// Функция для конвертации валют
+function convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
+  if (fromCurrency === toCurrency) return amount;
+
+  const key = `${fromCurrency.toUpperCase()}_${toCurrency.toUpperCase()}`;
+  const reverseKey = `${toCurrency.toUpperCase()}_${fromCurrency.toUpperCase()}`;
+
+  if (EXCHANGE_RATES[key]) {
+    return amount * EXCHANGE_RATES[key];
+  } else if (EXCHANGE_RATES[reverseKey]) {
+    return amount / EXCHANGE_RATES[reverseKey];
+  }
+
+  // Если нет прямого курса, конвертируем через UAH
+  if (fromCurrency === 'crypto') {
+    const uahAmount = amount * EXCHANGE_RATES.CRYPTO_UAH;
+    return toCurrency === 'usd' ? uahAmount / EXCHANGE_RATES.USD_UAH : uahAmount;
+  } else if (toCurrency === 'crypto') {
+    const uahAmount = fromCurrency === 'usd' ? amount * EXCHANGE_RATES.USD_UAH : amount;
+    return uahAmount / EXCHANGE_RATES.CRYPTO_UAH;
+  } else {
+    // USD to UAH or UAH to USD
+    return fromCurrency === 'usd' ? amount * EXCHANGE_RATES.USD_UAH : amount / EXCHANGE_RATES.USD_UAH;
+  }
+}
+
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
@@ -146,15 +178,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Неверный формат номера карты" });
       }
 
-      const result = await storage.transferMoney(fromCardId, cleanToCardNumber, amount);
-      if (result.success) {
-        res.status(200).json({
-          message: "Перевод успешно выполнен",
-          transaction: result.transaction
-        });
-      } else {
-        res.status(400).json({ error: result.error || "Ошибка при переводе" });
+      // Получаем карты отправителя и получателя
+      const fromCard = await storage.getCardById(fromCardId);
+      const toCard = await storage.getCardById(cleanToCardNumber);
+
+      if (!fromCard || !toCard) {
+        return res.status(400).json({ error: "Карта не найдена" });
       }
+
+      // Проверяем баланс с учетом валют
+      const fromAmount = parseFloat(amount);
+      if (isNaN(fromAmount) || fromAmount <= 0) {
+        return res.status(400).json({ error: "Неверная сумма перевода" });
+      }
+
+      const fromBalance = parseFloat(fromCard.balance);
+      if (fromBalance < fromAmount) {
+        return res.status(400).json({ error: "Недостаточно средств" });
+      }
+
+      // Конвертируем сумму если валюты разные
+      const toAmount = convertCurrency(fromAmount, fromCard.type, toCard.type);
+
+      // Обновляем балансы
+      const newFromBalance = (fromBalance - fromAmount).toFixed(2);
+      const newToBalance = (parseFloat(toCard.balance) + toAmount).toFixed(2);
+
+      // Сохраняем изменения
+      await storage.updateCardBalance(fromCard.id, newFromBalance);
+      await storage.updateCardBalance(toCard.id, newToBalance);
+
+      // Создаем транзакцию
+      const transaction = await storage.createTransaction({
+        fromCardId: fromCard.id,
+        toCardId: toCard.id,
+        amount: fromAmount.toString(),
+        convertedAmount: toAmount.toString(),
+        type: 'transfer',
+        status: 'completed',
+        fromCardNumber: fromCard.number,
+        toCardNumber: toCard.number,
+        createdAt: new Date().toISOString()
+      });
+
+      res.status(200).json({
+        message: "Перевод успешно выполнен",
+        transaction,
+        conversionDetails: {
+          fromAmount: fromAmount,
+          fromCurrency: fromCard.type.toUpperCase(),
+          toAmount: toAmount,
+          toCurrency: toCard.type.toUpperCase(),
+          rate: toAmount / fromAmount
+        }
+      });
+
     } catch (error) {
       console.error("Transfer error:", error);
       res.status(500).json({ error: "Ошибка при выполнении перевода" });
