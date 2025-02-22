@@ -1,6 +1,7 @@
 import { Card } from "@shared/schema";
 import { useState } from "react";
 import { Button } from "./ui/button";
+import VirtualCard from "./virtual-card";
 
 export default function CardCarousel({ cards }: { cards: Card[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
