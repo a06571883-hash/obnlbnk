@@ -11,45 +11,29 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 2,
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 10000,
-  maxUses: 7500,
-  allowExitOnIdle: true,
+  max: 1, // Reduce connection pool size
+  connectionTimeoutMillis: 30000,
+  idleTimeoutMillis: 30000,
   ssl: {
     rejectUnauthorized: false
   }
 });
 
+// Improved error handling
 pool.on('error', (err) => {
-  console.error('Database pool error:', err.message);
-  try {
-    pool.end().catch(console.error);
-    console.log('Attempting to reconnect to database...');
+  console.error('Unexpected database error:', err);
+  // Don't end the pool on every error, only try to reconnect if needed
+  if (!pool.totalCount) {
+    console.log('Attempting to reconnect...');
     pool.connect().catch(console.error);
-  } catch (e) {
-    console.error('Failed to handle pool error:', e);
   }
 });
 
 pool.on('connect', () => {
-  console.log('New database connection established');
+  console.log('Database connection established');
 });
 
-pool.on('acquire', () => {
-  console.log('Connection acquired from pool');
-});
-
-pool.on('remove', () => {
-  console.log('Connection removed from pool');
-});
-
-pool.connect()
-  .then(() => console.log('Initial database connection successful'))
-  .catch(err => {
-    console.error('Initial database connection failed:', err);
-    process.exit(1);
-  });
-
+// Export the db instance
 export const db = drizzle(pool, { schema });
+// Export pool for session store
 export { pool };
