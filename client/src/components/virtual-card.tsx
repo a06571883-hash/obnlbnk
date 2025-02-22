@@ -115,7 +115,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-48 sm:h-56 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 sm:p-6 text-white shadow-xl transform transition-all duration-300`}
+        className={`relative h-40 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 sm:p-6 text-white shadow-xl transform transition-all duration-300`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
@@ -125,7 +125,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         }}
       >
         <div className="flex flex-col justify-between h-full">
-          <div className="space-y-1 sm:space-y-4">
+          <div className="space-y-1 sm:space-y-2">
             <div className="text-[10px] sm:text-xs opacity-80">Virtual Card</div>
             <div className="text-sm sm:text-2xl font-bold tracking-wider">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
