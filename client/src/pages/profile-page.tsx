@@ -38,44 +38,64 @@ import {
 import { useEffect, useState } from "react";
 import AnimatedBackground from "@/components/animated-background";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/api";
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
-  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
-  const [notifications, setNotifications] = useState(() => localStorage.getItem('notifications') === 'true');
-  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('soundEnabled') === 'true');
-  const [language, setLanguage] = useState(() => localStorage.getItem('language') || "ru");
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [language, setLanguage] = useState("ru");
+
+  // Загрузка начальных настроек
+  useEffect(() => {
+    setDarkMode(document.documentElement.classList.contains('dark'));
+    setNotifications(localStorage.getItem('notifications') === 'true');
+    setSoundEnabled(localStorage.getItem('soundEnabled') === 'true');
+    setLanguage(localStorage.getItem('language') || 'ru');
+  }, []);
 
   const updateSetting = async (key: string, value: any) => {
-    localStorage.setItem(key, value.toString());
-    switch(key) {
-      case 'darkMode':
-        setDarkMode(value);
-        document.documentElement.classList.toggle('dark', value);
-        // Обновляем тему в theme.json через API
-        try {
-          await fetch('/api/theme', {
+    try {
+      switch(key) {
+        case 'darkMode':
+          document.documentElement.classList.toggle('dark', value);
+          localStorage.setItem('darkMode', value.toString());
+          setDarkMode(value);
+
+          const response = await fetch('/api/theme', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ appearance: value ? 'dark' : 'light' })
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              appearance: value ? 'dark' : 'light'
+            })
           });
-        } catch (error) {
-          console.error('Failed to update theme:', error);
-        }
-        break;
-      case 'notifications':
-        if (value) {
-          // Запрашиваем разрешение на уведомления
-          if ('Notification' in window) {
+
+          if (!response.ok) {
+            throw new Error('Failed to update theme');
+          }
+
+          toast({
+            title: "Тема изменена",
+            description: value ? "Тёмная тема включена" : "Светлая тема включена"
+          });
+          break;
+
+        case 'notifications':
+          if (value && 'Notification' in window) {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
+              localStorage.setItem('notifications', 'true');
               setNotifications(true);
               toast({
                 title: "Уведомления включены",
                 description: "Вы будете получать уведомления о важных событиях"
               });
             } else {
+              localStorage.setItem('notifications', 'false');
               setNotifications(false);
               toast({
                 title: "Ошибка",
@@ -83,31 +103,40 @@ export default function ProfilePage() {
                 variant: "destructive"
               });
             }
+          } else {
+            localStorage.setItem('notifications', 'false');
+            setNotifications(false);
           }
-        } else {
-          setNotifications(false);
-        }
-        break;
-      case 'soundEnabled':
-        setSoundEnabled(value);
-        break;
-      case 'language':
-        setLanguage(value);
-        document.documentElement.setAttribute('lang', value);
-        // В будущем здесь будет логика смены языка
-        toast({
-          title: value === 'ru' ? "Язык изменен" : "Language changed",
-          description: value === 'ru' ? "Приложение теперь на русском языке" : "Application is now in English"
-        });
-        break;
+          break;
+
+        case 'language':
+          localStorage.setItem('language', value);
+          setLanguage(value);
+          document.documentElement.setAttribute('lang', value);
+          toast({
+            title: value === 'ru' ? "Язык изменен" : "Language changed",
+            description: value === 'ru' ? "Приложение теперь на русском языке" : "Application is now in English"
+          });
+          break;
+
+        case 'soundEnabled':
+          localStorage.setItem('soundEnabled', value.toString());
+          setSoundEnabled(value);
+          toast({
+            title: value ? "Звуки включены" : "Звуки выключены",
+            description: value ? "Звуковые эффекты активированы" : "Звуковые эффекты отключены"
+          });
+          break;
+      }
+    } catch (error) {
+      console.error('Failed to update setting:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить настройки",
+        variant: "destructive"
+      });
     }
   };
-
-  // Эффект для инициализации темы при загрузке
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
-    setDarkMode(isDark);
-  }, []);
 
   const menuItems = [
     {
@@ -321,10 +350,10 @@ export default function ProfilePage() {
                 </Card>
               </DialogTrigger>
 
-              <DialogContent aria-describedby={`${item.title}-description`}>
+              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{item.title}</DialogTitle>
-                  <DialogDescription id={`${item.title}-description`}>
+                  <DialogDescription>
                     {item.description}
                   </DialogDescription>
                 </DialogHeader>
