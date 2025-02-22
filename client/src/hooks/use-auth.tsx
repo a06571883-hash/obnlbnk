@@ -1,12 +1,11 @@
-import { createContext, ReactNode, useContext } from "react";
-import {
-  useQuery,
-  useMutation,
-  UseMutationResult,
-} from "@tanstack/react-query";
+
+import { createContext, ReactNode, useContext, useState } from "react";
+import { useQuery, useMutation, UseMutationResult } from "@tanstack/react-query";
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "./use-toast";
+
+type LoginData = Pick<InsertUser, "username" | "password">;
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -17,11 +16,12 @@ type AuthContextType = {
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
 };
 
-type LoginData = Pick<InsertUser, "username" | "password">;
-
 export const AuthContext = createContext<AuthContextType | null>(null);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const {
     data: user,
     error,
@@ -31,11 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryFn: () => getQueryFn({ on401: "returnNull" })("/api/user"),
     retry: false,
     staleTime: 0,
-    refetchOnWindowFocus: true, // Prevent retries on error
-    onError: (err) => {
-      //Handle Error here
-      console.error("Error fetching user data:", err);
-    }
+    refetchOnWindowFocus: true,
   });
 
   const loginMutation = useMutation({
@@ -46,11 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || error.message;
+    onError: (error: Error) => {
       toast({
-        title: "Ошибка входа",
-        description: message,
+        title: "Login failed",
+        description: error.message,
         variant: "destructive",
       });
     },
