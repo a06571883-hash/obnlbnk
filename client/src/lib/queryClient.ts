@@ -2,8 +2,14 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    let errorMessage = res.statusText;
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.error?.message || errorData.message || errorMessage;
+    } catch {
+      // If parsing JSON fails, use the status text
+    }
+    throw new Error(`${res.status}: ${errorMessage}`);
   }
 }
 
@@ -20,6 +26,7 @@ export async function apiRequest(
     },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
+    cache: "no-cache", // Add this to prevent caching
   });
 
   await throwIfResNotOk(res);
@@ -32,19 +39,25 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
-      credentials: "include",
-      headers: {
-        "Accept": "application/json",
-      },
-    });
+    try {
+      const res = await fetch(queryKey[0] as string, {
+        credentials: "include",
+        cache: "no-cache", // Add this to prevent caching
+        headers: {
+          "Accept": "application/json",
+        },
+      });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        return null;
+      }
+
+      await throwIfResNotOk(res);
+      return await res.json();
+    } catch (error) {
+      console.error('Query error:', error);
+      throw error;
     }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
 
 export const queryClient = new QueryClient({
@@ -53,11 +66,12 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: true,
-      staleTime: 30000, // 30 seconds
-      retry: false,
+      staleTime: 0, // Set to 0 to always fetch fresh data
+      retry: 1, // Retry once on failure
+      gcTime: 0, // Disable garbage collection
     },
     mutations: {
-      retry: false,
+      retry: 1, // Retry once on failure
     },
   },
 });

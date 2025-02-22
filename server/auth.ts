@@ -6,6 +6,8 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import SQLiteStore from "better-sqlite3-session-store";
+import { pool } from "./database/connection";
 
 declare global {
   namespace Express {
@@ -14,6 +16,7 @@ declare global {
 }
 
 const scryptAsync = promisify(scrypt);
+const SQLiteStoreSession = SQLiteStore(session);
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -36,7 +39,13 @@ export function setupAuth(app: Express) {
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
+    store: new SQLiteStoreSession({
+      client: pool,
+      expired: {
+        clear: true,
+        intervalMs: 900000 //ms = 15min
+      }
+    }),
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days

@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext } from "react";
 import { useQuery, useMutation, UseMutationResult, useQueryClient } from "@tanstack/react-query";
-import { insertUserSchema, type User as SelectUser, type InsertUser } from "../../shared/schema";
+import { insertUserSchema, type User as SelectUser, type InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { useToast } from "./use-toast";
 
@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      queryClient.invalidateQueries({ queryKey: ["/api"] });
     },
     onError: (error: Error) => {
       toast({
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      queryClient.invalidateQueries({ queryKey: ["/api"] });
     },
     onError: (error: Error) => {
       toast({
@@ -73,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      queryClient.invalidateQueries();
     },
     onError: (error: Error) => {
       toast({
@@ -80,6 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: error.message,
         variant: "destructive",
       });
+      // Force clear user data even if logout fails
+      queryClient.setQueryData(["/api/user"], null);
     },
   });
 

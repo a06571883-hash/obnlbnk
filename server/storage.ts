@@ -1,12 +1,12 @@
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import SQLiteStore from "better-sqlite3-session-store";
 import { db } from "./db";
 import { cards, users, transactions } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction } from "@shared/schema";
 import { eq, and, or, desc } from "drizzle-orm";
+import { pool } from "./database/connection";
 
-const PostgresSessionStore = connectPg(session);
+const SQLiteSessionStore = SQLiteStore(session);
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000;
 
@@ -31,12 +31,12 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      tableName: 'session',
-      createTableIfMissing: true,
-      pruneSessionInterval: 60,
-      errorLog: console.error
+    this.sessionStore = new SQLiteSessionStore({
+      client: pool,
+      expired: {
+        clear: true,
+        intervalMs: 60000
+      }
     });
   }
 
