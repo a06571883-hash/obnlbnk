@@ -11,8 +11,7 @@ import { useLocation } from "wouter";
 import { Loader2, Shield, Globe, Wallet } from "lucide-react";
 import { LogoFull } from "@/components/logo";
 import AnimatedBackground from "@/components/animated-background";
-import { useEffect, useState } from 'react'; // Added import for useState and useEffect
-
+import { useEffect, useState } from 'react'; 
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -21,7 +20,6 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const auth = useAuth();
-  //const { toast } = useToast();  // Removed as useToast is not imported or used
   const [, navigate] = useLocation();
 
   useEffect(() => {
@@ -62,7 +60,7 @@ export default function AuthPage() {
       <div className="hidden lg:flex relative flex-col justify-center p-12 bg-primary text-primary-foreground overflow-hidden">
         <div className="relative z-10 max-w-2xl mx-auto">
           <LogoFull className="mb-8 w-48" />
-          <h1 className="text-4xl font-bold mb-6">BNAL Bank</h1>
+          <h1 className="text-4xl font-bold mb-6">OOO BNAL BANK</h1>
           <p className="text-xl mb-12 text-primary-foreground/90">
             Ваш надёжный партнёр в мире современных финансовых технологий
           </p>

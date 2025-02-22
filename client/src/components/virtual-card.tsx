@@ -15,6 +15,9 @@ import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
+// Add recipient type enum
+type RecipientType = 'usd_card' | 'crypto_wallet';
+
 const cardColors = {
   crypto: "bg-gradient-to-br from-yellow-400 to-yellow-600",
   usd: "bg-gradient-to-br from-green-400 to-green-600",
@@ -34,6 +37,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [isHovered, setIsHovered] = useState(false);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
+  const [recipientType, setRecipientType] = useState<RecipientType>('usd_card');
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || isMobile) return;
@@ -70,12 +74,13 @@ export default function VirtualCard({ card }: { card: Card }) {
   }, [gyroscope, isMobile, isIOS]);
 
   const transferMutation = useMutation({
-    mutationFn: async ({ fromCardId, toCardNumber, amount, wallet }: { fromCardId: number; toCardNumber: string; amount: string; wallet?: 'btc' | 'eth' }) => {
+    mutationFn: async ({ fromCardId, toCardNumber, amount, wallet, recipientType }: { fromCardId: number; toCardNumber: string; amount: string; wallet?: 'btc' | 'eth'; recipientType: RecipientType }) => {
       const response = await apiRequest("POST", "/api/transfer", {
         fromCardId,
         toCardNumber: toCardNumber.replace(/\s+/g, ''),
         amount: parseFloat(amount),
-        wallet
+        wallet,
+        recipientType
       });
 
       if (!response.ok) {
@@ -231,7 +236,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                   <DialogHeader>
                     <DialogTitle>Transfer Funds</DialogTitle>
                     <DialogDescription>
-                      Transfer funds to another card
+                      Transfer funds to another card or wallet
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
@@ -239,14 +244,22 @@ export default function VirtualCard({ card }: { card: Card }) {
                       e.preventDefault();
 
                       if (!transferAmount || !recipientCardNumber || parseFloat(transferAmount) <= 0) {
-                        setTransferError('Пожалуйста, введите корректную сумму и номер карты');
+                        setTransferError('Пожалуйста, введите корректную сумму и номер карты/адрес кошелька');
                         return;
                       }
 
-                      const cleanCardNumber = recipientCardNumber.replace(/\s+/g, '');
-                      if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
-                        setTransferError('Номер карты должен состоять из 16 цифр');
-                        return;
+                      if (recipientType === 'usd_card') {
+                        const cleanCardNumber = recipientCardNumber.replace(/\s+/g, '');
+                        if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
+                          setTransferError('Номер карты должен состоять из 16 цифр');
+                          return;
+                        }
+                      } else {
+                        // Validate crypto wallet address
+                        if (recipientCardNumber.length < 26 || recipientCardNumber.length > 35) {
+                          setTransferError('Неверный формат адреса криптокошелька');
+                          return;
+                        }
                       }
 
                       setIsTransferring(true);
@@ -255,9 +268,10 @@ export default function VirtualCard({ card }: { card: Card }) {
                       try {
                         await transferMutation.mutateAsync({
                           fromCardId: card.id,
-                          toCardNumber: cleanCardNumber,
+                          toCardNumber: recipientCardNumber.replace(/\s+/g, ''),
                           amount: transferAmount,
-                          wallet: card.type === 'crypto' ? selectedWallet : undefined
+                          wallet: card.type === 'crypto' ? selectedWallet : undefined,
+                          recipientType
                         });
                       } catch (error: any) {
                         console.error("Transfer error:", error);
@@ -267,55 +281,93 @@ export default function VirtualCard({ card }: { card: Card }) {
                       }
                     }}>
                       {card.type === 'crypto' && (
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium mb-2">Выберите кошелек</label>
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              variant={selectedWallet === 'btc' ? 'default' : 'outline'}
-                              className="flex-1"
-                              onClick={() => setSelectedWallet('btc')}
-                            >
-                              <Bitcoin className="h-4 w-4 mr-2" />
-                              BTC
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={selectedWallet === 'eth' ? 'default' : 'outline'}
-                              className="flex-1"
-                              onClick={() => setSelectedWallet('eth')}
-                            >
-                              <Coins className="h-4 w-4 mr-2" />
-                              ETH
-                            </Button>
+                        <>
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Выберите кошелек отправителя</label>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant={selectedWallet === 'btc' ? 'default' : 'outline'}
+                                className="flex-1"
+                                onClick={() => setSelectedWallet('btc')}
+                              >
+                                <Bitcoin className="h-4 w-4 mr-2" />
+                                BTC
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={selectedWallet === 'eth' ? 'default' : 'outline'}
+                                className="flex-1"
+                                onClick={() => setSelectedWallet('eth')}
+                              >
+                                <Coins className="h-4 w-4 mr-2" />
+                                ETH
+                              </Button>
+                            </div>
                           </div>
-                        </div>
+
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Тип получателя</label>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant={recipientType === 'usd_card' ? 'default' : 'outline'}
+                                className="flex-1"
+                                onClick={() => setRecipientType('usd_card')}
+                              >
+                                <CreditCard className="h-4 w-4 mr-2" />
+                                USD Карта
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={recipientType === 'crypto_wallet' ? 'default' : 'outline'}
+                                className="flex-1"
+                                onClick={() => setRecipientType('crypto_wallet')}
+                              >
+                                <Wallet className="h-4 w-4 mr-2" />
+                                Крипто кошелек
+                              </Button>
+                            </div>
+                          </div>
+                        </>
                       )}
+
                       <input
                         type="number"
                         value={transferAmount}
                         onChange={e => setTransferAmount(e.target.value)}
-                        placeholder="Сумма"
+                        placeholder={recipientType === 'usd_card' ? 'Сумма в USD' : `Сумма в ${selectedWallet.toUpperCase()}`}
                         className="w-full p-2 border rounded mb-4"
                         step="0.01"
                         min="0.01"
                         required
                       />
-                      <input
-                        type="text"
-                        value={recipientCardNumber}
-                        onChange={e => {
-                          const value = e.target.value.replace(/\D/g, '');
-                          const parts = value.match(/.{1,4}/g) || [];
-                          setRecipientCardNumber(parts.join(' '));
-                        }}
-                        placeholder="Номер карты получателя"
-                        className="w-full p-2 border rounded mb-4"
-                        pattern="\d{4}\s?\d{4}\s?\d{4}\s?\d{4}"
-                        title="Номер карты должен состоять из 16 цифр"
-                        maxLength={19}
-                        required
-                      />
+
+                      <div className="mb-4">
+                        <input
+                          type="text"
+                          value={recipientCardNumber}
+                          onChange={e => {
+                            if (recipientType === 'usd_card') {
+                              const value = e.target.value.replace(/\D/g, '');
+                              const parts = value.match(/.{1,4}/g) || [];
+                              setRecipientCardNumber(parts.join(' '));
+                            } else {
+                              setRecipientCardNumber(e.target.value);
+                            }
+                          }}
+                          placeholder={recipientType === 'usd_card' ? 'Номер USD карты получателя' : `Адрес ${selectedWallet.toUpperCase()} кошелька`}
+                          className="w-full p-2 border rounded"
+                          maxLength={recipientType === 'usd_card' ? 19 : 35}
+                          required
+                        />
+                        {recipientType === 'usd_card' && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            * Для перевода с крипто карты, пожалуйста, введите USD карту получателя. Сумма будет автоматически сконвертирована.
+                          </p>
+                        )}
+                      </div>
+
                       {transferError && <p className="text-red-500 text-sm mt-2">{transferError}</p>}
                       <Button
                         type="submit"

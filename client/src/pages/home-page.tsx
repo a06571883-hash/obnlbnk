@@ -69,7 +69,7 @@ export default function HomePage() {
       <header className="p-4 flex justify-between items-center border-b backdrop-blur-sm bg-background/50 sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground">
-            BNAL Bank
+            OOO BNAL BANK
           </h1>
         </div>
         <Button 
