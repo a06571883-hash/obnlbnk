@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from './use-toast';
 
 export function useAuth() {
   const [isLoading, setIsLoading] = useState(false);
