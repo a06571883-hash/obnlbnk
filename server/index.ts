@@ -11,12 +11,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // Add CORS headers for development
 app.use((req, res, next) => {
-  // Allow requests from our frontend origin
-  const origin = process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:5000' 
-    : 'https://yourproductionurl.com';
-
-  res.header('Access-Control-Allow-Origin', origin);
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -80,6 +75,7 @@ app.use((req, res, next) => {
 
   const PORT = parseInt(process.env.PORT || "5000", 10);
   server.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server listening at http://0.0.0.0:${PORT}`);
     log(`Server is running on port ${PORT} in ${process.env.NODE_ENV} mode`);
   });
 })();

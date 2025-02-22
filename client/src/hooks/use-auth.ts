@@ -1,20 +1,54 @@
-const login = async (username: string, password: string) => {
+
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/api';
+import { useToast } from '@/components/ui/use-toast';
+
+export function useAuth() {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: user } = useQuery({
+    queryKey: ['/api/user'],
+    retry: false,
+    refetchOnWindowFocus: true
+  });
+
+  const login = async (username: string, password: string) => {
     try {
-      const response = await fetch('/api/login', {
+      setIsLoading(true);
+      await apiRequest('/api/login', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password })
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Ошибка входа' }));
-        throw new Error(errorData.error || 'Ошибка при входе в систему');
-      }
-
-      return await response.json();
+      await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      return true;
     } catch (error) {
-      console.error('Login error:', error);
-      throw error instanceof Error ? error : new Error('Произошла ошибка при входе');
+      toast({
+        title: "Ошибка входа",
+        description: error instanceof Error ? error.message : "Неизвестная ошибка"
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  const logout = async () => {
+    try {
+      await apiRequest('/api/logout', { method: 'POST' });
+      await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  return {
+    user,
+    isLoading,
+    login,
+    logout,
+    isAuthenticated: !!user
+  };
+}
