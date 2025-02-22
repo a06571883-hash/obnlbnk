@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -30,22 +30,24 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
-  console.log('Setting up authentication with session secret');
+  console.log('Setting up authentication...');
 
   const sessionSettings: session.SessionOptions = {
     secret: sessionSecret,
-    resave: true,
-    saveUninitialized: true,
+    resave: false,
+    saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false,
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      httpOnly: true,
+      sameSite: 'lax'
     },
-    name: 'connect.sid'
+    name: 'sid'
   };
 
   if (process.env.NODE_ENV === 'production') {
-    app.set('trust proxy', 1); // Trust first proxy in production
+    app.set('trust proxy', 1);
   }
 
   app.use(session(sessionSettings));
@@ -53,7 +55,7 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
+    new LocalStrategy(async (username: string, password: string, done) => {
       try {
         console.log(`Attempting login for user: ${username}`);
         const user = await storage.getUserByUsername(username);
@@ -66,7 +68,7 @@ export function setupAuth(app: Express) {
         if (username === 'admin' && password === 'admin123') {
           return done(null, user);
         }
-        
+
         const isValidPassword = await comparePasswords(password, user.password);
         if (!isValidPassword) {
           console.log(`Invalid password for user: ${username}`);
@@ -102,10 +104,10 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
     console.log('Login attempt received:', req.body.username);
 
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
       if (err) {
         console.error('Authentication error:', err);
         return next(err);
@@ -127,7 +129,7 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res, next) => {
+  app.post("/api/logout", (req: Request, res: Response, next: NextFunction) => {
     console.log(`Logging out user: ${req.user?.username}`);
     req.logout((err) => {
       if (err) {
@@ -138,7 +140,7 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/user", (req, res) => {
+  app.get("/api/user", (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
       console.log('Unauthorized access attempt to /api/user');
       return res.sendStatus(401);
@@ -146,7 +148,7 @@ export function setupAuth(app: Express) {
     res.json(req.user);
   });
 
-  app.post("/api/register", async (req, res, next) => {
+  app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
     try {
       console.log('Registration attempt:', req.body.username);
 
@@ -166,8 +168,10 @@ export function setupAuth(app: Express) {
 
       const hashedPassword = await hashPassword(req.body.password);
       const user = await storage.createUser({
-        ...req.body,
+        username: req.body.username,
         password: hashedPassword,
+        is_regulator: false,
+        regulator_balance: "0"
       });
 
       console.log(`User registered successfully: ${user.username}`);

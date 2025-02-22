@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000;
+const INITIAL_RETRY_DELAY = 1000;
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -32,63 +32,70 @@ export class DatabaseStorage implements IStorage {
       pool,
       tableName: 'session',
       createTableIfMissing: true,
+      pruneSessionInterval: 60,
+      errorLog: console.error
     });
   }
 
-  private async withRetry<T>(operation: () => Promise<T>): Promise<T> {
+  private async withRetry<T>(operation: () => Promise<T>, context: string): Promise<T> {
+    let lastError: Error | undefined;
+
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
-        return await operation();
+        const result = await operation();
+        return result;
       } catch (error) {
-        console.error(`Database operation failed (attempt ${attempt + 1}/${MAX_RETRIES}):`, error);
+        lastError = error as Error;
+        console.error(`${context} failed (attempt ${attempt + 1}/${MAX_RETRIES}):`, error);
+
         if (attempt < MAX_RETRIES - 1) {
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, attempt)));
-        } else {
-          throw error;
+          const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
-    throw new Error('Maximum retry attempts reached');
+
+    throw lastError || new Error(`${context} failed after ${MAX_RETRIES} attempts`);
   }
 
   async getUser(id: number): Promise<User | undefined> {
     return this.withRetry(async () => {
       const [user] = await db.select().from(users).where(eq(users.id, id));
       return user;
-    });
+    }, 'Get user');
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return this.withRetry(async () => {
       const [user] = await db.select().from(users).where(eq(users.username, username));
       return user;
-    });
+    }, 'Get user by username');
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     return this.withRetry(async () => {
       const [user] = await db.insert(users).values(insertUser).returning();
       return user;
-    });
+    }, 'Create user');
   }
 
   async getCardsByUserId(userId: number): Promise<Card[]> {
     return this.withRetry(async () => {
       return await db.select().from(cards).where(eq(cards.userId, userId));
-    });
+    }, 'Get cards by user ID');
   }
 
   async createCard(card: Omit<Card, "id">): Promise<Card> {
     return this.withRetry(async () => {
       const [result] = await db.insert(cards).values(card).returning();
       return result;
-    });
+    }, 'Create card');
   }
 
   async getAllUsers(): Promise<User[]> {
     return this.withRetry(async () => {
       return await db.select().from(users);
-    });
+    }, 'Get all users');
   }
 
   async updateRegulatorBalance(userId: number, balance: string): Promise<void> {
@@ -96,7 +103,7 @@ export class DatabaseStorage implements IStorage {
       await db.update(users)
         .set({ regulator_balance: balance })
         .where(eq(users.id, userId));
-    });
+    }, 'Update regulator balance');
   }
 
   async updateCardBalance(cardId: number, balance: string): Promise<void> {
@@ -104,14 +111,14 @@ export class DatabaseStorage implements IStorage {
       await db.update(cards)
         .set({ balance: balance })
         .where(eq(cards.id, cardId));
-    });
+    }, 'Update card balance');
   }
 
   async getCardById(cardId: number): Promise<Card | undefined> {
     return this.withRetry(async () => {
       const [card] = await db.select().from(cards).where(eq(cards.id, cardId));
       return card;
-    });
+    }, 'Get card by ID');
   }
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string }> {
@@ -146,7 +153,7 @@ export class DatabaseStorage implements IStorage {
       });
 
       return { success: true };
-    });
+    }, 'Transfer money');
   }
 }
 
