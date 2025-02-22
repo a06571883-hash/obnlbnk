@@ -9,12 +9,11 @@ import {
   DialogDescription,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins, QrCode } from "lucide-react";
+import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import QRScanner from "./qr-scanner";
 import { QRCodeSVG } from 'qrcode.react';
 
 // Add recipient type enum
@@ -29,7 +28,7 @@ const cardColors = {
 const QRCodeGenerator = ({ card, type }: { card: Card; type: 'btc' | 'eth' | 'card' }) => {
   const data = {
     type: type === 'card' ? 'usd_card' : 'crypto_wallet',
-    ...(type === 'card' 
+    ...(type === 'card'
       ? { cardNumber: card.number }
       : { walletAddress: type === 'btc' ? card.btcAddress : card.ethAddress }
     )
@@ -37,8 +36,8 @@ const QRCodeGenerator = ({ card, type }: { card: Card; type: 'btc' | 'eth' | 'ca
 
   return (
     <div className="flex justify-center">
-      <QRCodeSVG 
-        value={JSON.stringify(data)} 
+      <QRCodeSVG
+        value={JSON.stringify(data)}
         size={200}
         level="H"
         includeMargin
@@ -48,7 +47,6 @@ const QRCodeGenerator = ({ card, type }: { card: Card; type: 'btc' | 'eth' | 'ca
     </div>
   );
 };
-
 
 export default function VirtualCard({ card }: { card: Card }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -61,10 +59,9 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [transferError, setTransferError] = useState('');
   const [isMobile] = useState(() => window.innerWidth < 768);
   const [isHovered, setIsHovered] = useState(false);
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
   const [recipientType, setRecipientType] = useState<RecipientType>('usd_card');
-  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || isMobile) return;
@@ -257,31 +254,6 @@ export default function VirtualCard({ card }: { card: Card }) {
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-6 sm:h-8">
-                    <QrCode className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
-                    <span className="hidden sm:inline">Scan QR</span>
-                    <span className="sm:hidden">Scan</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Scan QR Code</DialogTitle>
-                    <DialogDescription>
-                      Отсканируйте QR-код для быстрого перевода
-                    </DialogDescription>
-                  </DialogHeader>
-                  <QRScanner
-                    onScanSuccess={(recipient, type) => {
-                      setRecipientType(type);
-                      setRecipientCardNumber(recipient);
-                      setShowQRScanner(false);
-                    }}
-                    onClose={() => setShowQRScanner(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-6 sm:h-8">
                     <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
                     <span className="hidden sm:inline">Transfer</span>
                     <span className="sm:hidden">Trans</span>
@@ -431,7 +403,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                       >
                         {isTransferring ? (
                           <>
-                            <Loader2 className="animate-spin h-4 w-4 mr-2"/>
+                            <Loader2 className="animate-spin h-4 w-4 mr-2" />
                             Выполняется перевод...
                           </>
                         ) : (
