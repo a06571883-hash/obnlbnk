@@ -24,48 +24,15 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
         throw new Error('Ваш браузер не поддерживает доступ к камере');
       }
 
-      const constraints = {
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 720 },
-          height: { ideal: 720 }
-        }
-      };
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true
+      });
 
-      console.log('Requesting camera with constraints:', constraints);
-
-      // Проверяем и останавливаем предыдущий стрим, если он существует
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       console.log('Camera stream obtained:', stream);
 
       if (videoRef.current) {
-        console.log('Setting video source');
-
-        // Устанавливаем обработчики событий до установки srcObject
-        videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded, attempting to play');
-          // Используем Promise для отлова ошибок воспроизведения
-          videoRef.current?.play()
-            .then(() => console.log('Video playback started'))
-            .catch(err => {
-              console.error('Error playing video:', err);
-              setError('Ошибка воспроизведения видео');
-            });
-        };
-
-        videoRef.current.onerror = (e) => {
-          console.error('Video element error:', e);
-          setError('Ошибка видео элемента');
-        };
-
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
-      } else {
-        throw new Error('Video element not found');
       }
     } catch (err) {
       console.error('Camera error:', err);
