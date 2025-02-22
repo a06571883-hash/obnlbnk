@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@shared/schema";
 import VirtualCard from "@/components/virtual-card";
@@ -10,7 +9,8 @@ export default function CardsPage() {
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
     retry: 3,
-    staleTime: 0
+    staleTime: 0,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 
   if (isLoading) {

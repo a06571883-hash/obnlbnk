@@ -65,10 +65,14 @@ export default function VirtualCard({ card }: { card: Card }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
+        // Add retry logic for fetch
+        retry: 3,
+        retryDelay: (retryCount) => Math.min(1000 * 2 ** retryCount, 30000),
       });
 
       if (!response.ok) {
-        throw new Error('Transfer failed');
+        const errorData = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
+        throw new Error(errorData.error || 'Ошибка при переводе');
       }
 
       return response.json();
@@ -82,8 +86,10 @@ export default function VirtualCard({ card }: { card: Card }) {
     },
     onError: (error: Error) => {
       setIsTransferring(false);
-      setTransferError(error.message || 'Transfer failed.');
+      setTransferError(error.message || 'Ошибка при переводе.');
     },
+    retry: 3,
+    retryDelay: (retryCount) => Math.min(1000 * 2 ** retryCount, 30000),
   });
 
   const handleTransfer = async () => {
@@ -120,7 +126,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         transformStyle: 'preserve-3d'
       }}
     >
-      <div 
+      <div
         className={`relative h-56 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-6 text-white shadow-xl transform transition-all duration-300`}
         style={{
           boxShadow: `
