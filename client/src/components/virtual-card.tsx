@@ -374,11 +374,11 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                         {showQRScanner && (
                           <Dialog open={showQRScanner} onOpenChange={setShowQRScanner}>
-                            <DialogContent className="sm:max-w-md">
+                            <DialogContent className="sm:max-w-lg">
                               <DialogHeader>
                                 <DialogTitle>Сканировать QR-код</DialogTitle>
                                 <DialogDescription>
-                                  Наведите камеру на QR-код карты или кошелька
+                                  Разрешите доступ к камере и наведите её на QR-код карты или кошелька
                                 </DialogDescription>
                               </DialogHeader>
                               <QRScanner
