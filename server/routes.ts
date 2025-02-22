@@ -1,5 +1,5 @@
 const EXCHANGE_RATES = {
-  USD_UAH: 38.5,  // 1 USD = 38.5 UAH
+  USD_UAH: 41.64,  // 1 USD = 41.64 UAH (Updated rate)
   CRYPTO_UAH: 1566075, // 1 BTC = 1,566,075 UAH
   CRYPTO_USD: 40677, // 1 BTC = 40,677 USD
 };
@@ -30,11 +30,12 @@ function convertCurrency(amount: number, fromCurrency: string, toCurrency: strin
   }
 }
 
+// Функция для конвертации валют
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertCardSchema, cards } from "@shared/schema";
+import { insertCardSchema, cards, transactions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import fs from "fs/promises";
@@ -180,10 +181,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Получаем карты отправителя и получателя
       const fromCard = await storage.getCardById(fromCardId);
-      const toCard = await storage.getCardById(cleanToCardNumber);
+      const toCard = await storage.db.query.cards.findFirst({
+        where: eq(cards.number, cleanToCardNumber)
+      });
 
       if (!fromCard || !toCard) {
-        return res.status(400).json({ error: "Карта не найдена" });
+        return res.status(400).json({ error: "Карта получателя не найдена" });
       }
 
       // Проверяем баланс с учетом валют
@@ -200,6 +203,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Конвертируем сумму если валюты разные
       const toAmount = convertCurrency(fromAmount, fromCard.type, toCard.type);
 
+      console.log('Conversion details:', {
+        fromAmount,
+        fromCurrency: fromCard.type,
+        toAmount,
+        toCurrency: toCard.type
+      });
+
       // Обновляем балансы
       const newFromBalance = (fromBalance - fromAmount).toFixed(2);
       const newToBalance = (parseFloat(toCard.balance) + toAmount).toFixed(2);
@@ -209,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateCardBalance(toCard.id, newToBalance);
 
       // Создаем транзакцию
-      const transaction = await storage.createTransaction({
+      const transaction = {
         fromCardId: fromCard.id,
         toCardId: toCard.id,
         amount: fromAmount.toString(),
@@ -219,11 +229,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fromCardNumber: fromCard.number,
         toCardNumber: toCard.number,
         createdAt: new Date().toISOString()
-      });
+      };
+
+      const savedTransaction = await storage.db.insert(transactions).values(transaction).returning();
 
       res.status(200).json({
         message: "Перевод успешно выполнен",
-        transaction,
+        transaction: savedTransaction[0],
         conversionDetails: {
           fromAmount: fromAmount,
           fromCurrency: fromCard.type.toUpperCase(),
@@ -235,7 +247,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("Transfer error:", error);
-      res.status(500).json({ error: "Ошибка при выполнении перевода" });
+      res.status(500).json({ 
+        error: "Ошибка при выполнении перевода. Пожалуйста, проверьте номер карты получателя и сумму перевода."
+      });
     }
   });
 
