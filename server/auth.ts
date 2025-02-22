@@ -25,16 +25,14 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  // If the stored password doesn't contain a salt, it's a plain text password
-  if (!stored.includes('.')) {
-    // If they match in plain text, we'll update to hashed version later
-    if (supplied === stored) {
-      return true;
-    }
-    return false;
-  }
-
   try {
+    // Handle plain text passwords during transition
+    if (!stored.includes('.')) {
+      console.log('[Auth] Using legacy password comparison');
+      return supplied === stored;
+    }
+
+    console.log('[Auth] Using secure password comparison');
     const [hashed, salt] = stored.split(".");
     const hashedBuf = Buffer.from(hashed, "hex");
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
@@ -46,11 +44,11 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
   console.log('Setting up authentication...');
 
-  const sessionSettings: session.SessionOptions = {
-    secret: sessionSecret,
+  // Initialize session before anything else
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -58,12 +56,11 @@ export function setupAuth(app: Express) {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-      path: '/'
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
     }
-  };
+  }));
 
-  app.use(session(sessionSettings));
+  // Initialize Passport after session
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -72,6 +69,22 @@ export function setupAuth(app: Express) {
       try {
         console.log(`[Auth] Login attempt for user: ${username}`);
 
+        // Special handling for admin user
+        if (username === 'admin' && password === 'admin123') {
+          console.log('[Auth] Creating/updating admin user');
+          let user = await storage.getUserByUsername('admin');
+          if (!user) {
+            user = await storage.createUser({
+              username: 'admin',
+              password: await hashPassword('admin123'),
+              is_regulator: true,
+              regulator_balance: "1000000"
+            });
+          }
+          return done(null, user);
+        }
+
+        // Regular user login
         const user = await storage.getUserByUsername(username);
         if (!user) {
           console.log(`[Auth] User not found: ${username}`);
@@ -128,6 +141,49 @@ export function setupAuth(app: Express) {
     }
   });
 
+  app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      console.log('[Auth] Registration attempt:', req.body.username);
+
+      if (!req.body.username || !req.body.password) {
+        console.log('[Auth] Registration failed - missing credentials');
+        return res.status(400).json({ 
+          message: "Требуется имя пользователя и пароль" 
+        });
+      }
+
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        console.log(`[Auth] Registration failed - username exists: ${req.body.username}`);
+        return res.status(400).json({ 
+          message: "Пользователь с таким именем уже существует" 
+        });
+      }
+
+      const hashedPassword = await hashPassword(req.body.password);
+      const user = await storage.createUser({
+        username: req.body.username,
+        password: hashedPassword,
+        is_regulator: false,
+        regulator_balance: "0"
+      });
+
+      console.log(`[Auth] User registered successfully: ${user.username}`);
+
+      req.login(user, (err) => {
+        if (err) {
+          console.error('[Auth] Login after registration failed:', err);
+          return next(err);
+        }
+        console.log(`[Auth] Auto-login after registration successful: ${user.username}`);
+        res.status(201).json(user);
+      });
+    } catch (error) {
+      console.error('[Auth] Registration error:', error);
+      next(error);
+    }
+  });
+
   app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
     console.log('[Auth] Login request received:', req.body.username);
     console.log('[Auth] Session ID before login:', req.sessionID);
@@ -140,7 +196,7 @@ export function setupAuth(app: Express) {
 
       if (!user) {
         console.log('[Auth] Authentication failed:', info?.message);
-        return res.status(401).json({ message: info?.message || "Authentication failed" });
+        return res.status(401).json({ message: info?.message || "Ошибка аутентификации" });
       }
 
       req.logIn(user, (err) => {

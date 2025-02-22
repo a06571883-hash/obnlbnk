@@ -4,7 +4,6 @@ import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./database/connection";
 import * as schema from "@shared/schema";
 import passport from "passport";
-import session from "express-session";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 
@@ -31,30 +30,20 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize session before anything else
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  store: storage.sessionStore,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
-  }
-}));
-
-// Initialize Passport after session
-app.use(passport.initialize());
-app.use(passport.session());
-
 // Request logging middleware with detailed session info
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
   const sessionId = req.sessionID;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
+
+  // Add session debugging
+  console.log('Session debug:', {
+    sessionID: req.sessionID,
+    session: req.session,
+    isAuthenticated: req.isAuthenticated?.(),
+    user: req.user
+  });
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
@@ -89,7 +78,8 @@ app.use((req, res, next) => {
 
     // Use raw SQL to create session table if it doesn't exist
     await db.execute(`
-      CREATE TABLE IF NOT EXISTS session (
+      DROP TABLE IF EXISTS session;
+      CREATE TABLE session (
         sid VARCHAR PRIMARY KEY,
         sess JSON NOT NULL,
         expire TIMESTAMP(6) NOT NULL
