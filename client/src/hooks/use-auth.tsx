@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext } from "react";
 import { useQuery, useMutation, UseMutationResult, useQueryClient } from "@tanstack/react-query";
-import { insertUserSchema, type User as SelectUser, type InsertUser } from "@shared/schema";
+import { insertUserSchema, type User as SelectUser, type InsertUser } from "../../shared/schema";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { useToast } from "./use-toast";
 
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
   } = useQuery({
     queryKey: ["/api/user"],
-    queryFn: () => getQueryFn({ on401: "returnNull" })("/api/user"),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
     staleTime: 0,
     refetchOnWindowFocus: true,
