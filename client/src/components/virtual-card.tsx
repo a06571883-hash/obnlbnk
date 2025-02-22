@@ -11,7 +11,7 @@ const cardColors = {
   crypto: "bg-gradient-to-br from-yellow-400 to-yellow-600",
   usd: "bg-gradient-to-br from-green-400 to-green-600",
   uah: "bg-gradient-to-br from-blue-400 to-blue-600",
-};
+} as const;
 
 export default function VirtualCard({ card }: { card: Card }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -23,9 +23,10 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [recipientCardNumber, setRecipientCardNumber] = useState('');
   const [transferError, setTransferError] = useState('');
   const [isMobile] = useState(() => window.innerWidth < 768);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || isMobile) return;
 
     const rect = cardRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -35,63 +36,73 @@ export default function VirtualCard({ card }: { card: Card }) {
     const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 15;
 
     setRotation({ x: rotateX, y: rotateY });
+    setIsHovered(true);
   };
 
   const handleMouseLeave = () => {
     setRotation({ x: 0, y: 0 });
+    setIsHovered(false);
   };
 
   useEffect(() => {
-    if (gyroscope) {
-      setRotation({
-        x: -gyroscope.beta / 3,
-        y: gyroscope.gamma / 3
-      });
+    if (gyroscope && isMobile) {
+      const targetX = -gyroscope.beta / 3;
+      const targetY = gyroscope.gamma / 3;
+
+      // Плавная анимация для мобильных устройств
+      setRotation(prev => ({
+        x: prev.x + (targetX - prev.x) * 0.1,
+        y: prev.y + (targetY - prev.y) * 0.1
+      }));
     }
-  }, [gyroscope]);
+  }, [gyroscope, isMobile]);
 
   const transferMutation = useMutation({
-    mutationFn: (data: any) => {
-      return fetch('/api/transfer', {
+    mutationFn: async (data: { fromCardId: number; toCardNumber: string; amount: string }) => {
+      const response = await fetch('/api/transfer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
-      }).then(res => res.json());
+      });
+
+      if (!response.ok) {
+        throw new Error('Transfer failed');
+      }
+
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['card']);
+      queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
       setIsTransferring(false);
       setTransferAmount('');
       setRecipientCardNumber('');
       setTransferError('');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       setIsTransferring(false);
       setTransferError(error.message || 'Transfer failed.');
     },
   });
 
   const handleTransfer = async () => {
+    if (!transferAmount || !recipientCardNumber) {
+      setTransferError('Please fill in all fields');
+      return;
+    }
+
     setIsTransferring(true);
     try {
       await transferMutation.mutateAsync({
-        fromCard: card.id,
-        toCard: recipientCardNumber,
-        amount: transferAmount,
-        currency: card.type,
+        fromCardId: card.id,
+        toCardNumber: recipientCardNumber,
+        amount: transferAmount
       });
     } catch (error) {
       console.error("Transfer error:", error);
     }
   };
-
-  const cardColor = {
-    crypto: "bg-gradient-to-br from-purple-500 to-pink-500",
-    usd: "bg-gradient-to-br from-green-500 to-emerald-500",
-    uah: "bg-gradient-to-br from-blue-500 to-cyan-500"
-  }[card.type];
 
   return (
     <div
@@ -100,13 +111,25 @@ export default function VirtualCard({ card }: { card: Card }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
-        transform: isMobile ? `perspective(1000px) rotateX(${gyroscope ? gyroscope.beta / 4 : 0}deg) rotateY(${gyroscope ? gyroscope.gamma / 4 : 0}deg)`
-                           : `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-        transition: 'transform 0.2s ease-out',
+        transform: `
+          perspective(1000px) 
+          rotateX(${rotation.x}deg) 
+          rotateY(${rotation.y}deg)
+        `,
+        transition: isHovered ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out',
         transformStyle: 'preserve-3d'
       }}
     >
-      <div className={`relative h-56 w-full rounded-xl ${cardColors[card.type]} p-6 text-white shadow-xl transform transition-transform duration-300 hover:scale-105`}>
+      <div 
+        className={`relative h-56 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-6 text-white shadow-xl transform transition-all duration-300 hover:scale-105`}
+        style={{
+          boxShadow: `
+            0 10px 20px rgba(0,0,0,0.19), 
+            0 6px 6px rgba(0,0,0,0.23),
+            ${Math.abs(rotation.y)}px ${Math.abs(rotation.x)}px 20px rgba(0,0,0,0.1)
+          `
+        }}
+      >
         <div className="flex flex-col justify-between h-full">
           <div className="space-y-4">
             <div className="text-xs opacity-80">Virtual Card</div>
@@ -128,90 +151,90 @@ export default function VirtualCard({ card }: { card: Card }) {
               </div>
             </div>
             <div className="flex space-x-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="deposit">
-                      <ArrowUpCircle className="h-4 w-4 mr-2" />
-                      Deposit
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Deposit Funds</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      {card.type === 'crypto' ? (
-                        <>
-                          <div>
-                            <p className="text-sm text-muted-foreground">BTC Address</p>
-                            <p className="font-mono text-sm break-all">{card.btcAddress}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">ETH Address</p>
-                            <p className="font-mono text-sm break-all">{card.ethAddress}</p>
-                          </div>
-                        </>
-                      ) : (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm">
+                    <ArrowUpCircle className="h-4 w-4 mr-2" />
+                    Deposit
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Deposit Funds</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {card.type === 'crypto' ? (
+                      <>
                         <div>
-                          <p className="text-sm text-muted-foreground">Card Number</p>
-                          <p className="font-mono">{card.number}</p>
+                          <p className="text-sm text-muted-foreground">BTC Address</p>
+                          <p className="font-mono text-sm break-all">{card.btcAddress}</p>
                         </div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="withdraw">
-                      <ArrowDownCircle className="h-4 w-4 mr-2" />
-                      Withdraw
+                        <div>
+                          <p className="text-sm text-muted-foreground">ETH Address</p>
+                          <p className="font-mono text-sm break-all">{card.ethAddress}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Card Number</p>
+                        <p className="font-mono">{card.number}</p>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm">
+                    <ArrowDownCircle className="h-4 w-4 mr-2" />
+                    Withdraw
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Withdraw Funds</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-center text-muted-foreground">
+                      Contact support @KA7777AA to process your withdrawal
+                    </p>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Transfer
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Transfer Funds</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <input
+                      type="number"
+                      value={transferAmount}
+                      onChange={e => setTransferAmount(e.target.value)}
+                      placeholder="Amount"
+                      className="w-full p-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      value={recipientCardNumber}
+                      onChange={e => setRecipientCardNumber(e.target.value)}
+                      placeholder="Recipient Card Number"
+                      className="w-full p-2 border rounded"
+                    />
+                    {transferError && <p className="text-red-500">{transferError}</p>}
+                    <Button onClick={handleTransfer} disabled={isTransferring} className="w-full">
+                      {isTransferring ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : "Transfer"}
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Withdraw Funds</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <p className="text-center text-muted-foreground">
-                        Contact support @KA7777AA to process your withdrawal
-                      </p>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm" data-dialog="transfer">
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Transfer
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Transfer Funds</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <input
-                        type="number"
-                        value={transferAmount}
-                        onChange={e => setTransferAmount(e.target.value)}
-                        placeholder="Amount"
-                        className="w-full p-2 border rounded"
-                      />
-                      <input
-                        type="text"
-                        value={recipientCardNumber}
-                        onChange={e => setRecipientCardNumber(e.target.value)}
-                        placeholder="Recipient Card Number"
-                        className="w-full p-2 border rounded"
-                      />
-                      {transferError && <p className="text-red-500">{transferError}</p>}
-                      <Button onClick={handleTransfer} disabled={isTransferring} className="w-full">
-                        {isTransferring ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : "Transfer"}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
       </div>
