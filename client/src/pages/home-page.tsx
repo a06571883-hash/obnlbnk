@@ -15,14 +15,28 @@ import {
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
+  const [showWelcome, setShowWelcome] = useState(true);
 
   const { data: cards, isLoading } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+    retry: 3,
+    staleTime: 0,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowWelcome(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const generateCardsMutation = useMutation({
     mutationFn: async () => {
@@ -30,7 +44,7 @@ export default function HomePage() {
       return await res.json();
     },
     onSuccess: (newCards) => {
-      queryClient.setQueryData(["/api/cards"], newCards);
+      queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
     },
   });
 
@@ -60,7 +74,7 @@ export default function HomePage() {
       </header>
 
       <main className="container mx-auto p-4 max-w-4xl">
-        <div className="mb-8 text-center">
+        <div className={`mb-8 text-center transition-all duration-500 ease-in-out transform ${showWelcome ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full h-0 overflow-hidden'}`}>
           <h2 className="text-2xl font-medium mb-2">
             Welcome back, <span className="text-primary">{user?.username}</span>
           </h2>
@@ -70,9 +84,9 @@ export default function HomePage() {
         </div>
 
         {cards && cards.length > 0 ? (
-          <div className="space-y-8">
+          <div className={`space-y-8 transition-all duration-500 ease-in-out transform ${!showWelcome ? '-translate-y-16' : ''}`}>
             <CardCarousel cards={cards} />
-            
+
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-4 mt-8">
               <Dialog>
@@ -98,7 +112,7 @@ export default function HomePage() {
                       const formData = new FormData(e.currentTarget);
                       const amount = formData.get("amount");
                       const cardNumber = formData.get("cardNumber");
-                      
+
                       if (!amount || !cardNumber || parseFloat(amount.toString()) <= 0) {
                         toast({
                           title: "Ошибка",
@@ -107,60 +121,29 @@ export default function HomePage() {
                         });
                         return;
                       }
-                      
-                      if (!amount || !cardNumber) {
-                        toast({
-                          title: "Ошибка",
-                          description: "Заполните все поля",
-                          variant: "destructive"
-                        });
-                        return;
-                      }
 
                       try {
-                        if (!navigator.onLine) {
-                          toast({
-                            title: "Ошибка",
-                            description: "Отсутствует подключение к интернету",
-                            variant: "destructive"
-                          });
-                          return;
-                        }
-
-                        const response = await fetch("/api/transfer", {
-                          method: "POST",
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          credentials: 'include',
-                          body: JSON.stringify({
-                            fromCardId: selectedCard?.id || cards[0].id,
-                            toCardNumber: cardNumber,
-                            amount: parseFloat(amount.toString())
-                          })
+                        const response = await apiRequest("POST", "/api/transfer", {
+                          fromCardId: cards[0].id,
+                          toCardNumber: cardNumber,
+                          amount: parseFloat(amount.toString())
                         });
 
-                        if (response.ok) {
-                          toast({
-                            title: "Успех",
-                            description: "Перевод выполнен успешно"
-                          });
-                          
-                          // Обновляем данные карт после успешного перевода
-                          queryClient.invalidateQueries(["/api/cards"]);
-                        } else {
-                          const error = await response.json();
-                          toast({
-                            title: "Ошибка",
-                            description: error.error || "Не удалось выполнить перевод",
-                            variant: "destructive"
-                          });
-                        }
-                      } catch (error) {
+                        toast({
+                          title: "Успех",
+                          description: "Перевод выполнен успешно"
+                        });
+
+                        // Очищаем форму
+                        e.currentTarget.reset();
+
+                        // Обновляем данные карт
+                        queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
+                      } catch (error: any) {
                         console.error("Transfer error:", error);
                         toast({
-                          title: "Ошибка",
-                          description: "Ошибка сети при выполнении перевода",
+                          title: "Ошибка перевода",
+                          description: error.message || "Произошла ошибка при переводе",
                           variant: "destructive"
                         });
                       }
@@ -170,24 +153,27 @@ export default function HomePage() {
                         name="amount"
                         placeholder="Сумма" 
                         className="w-full p-2 border rounded mb-4" 
+                        step="0.01"
+                        min="0.01"
                         required 
                       />
                       <input 
                         type="text" 
                         name="cardNumber"
                         placeholder="Номер карты получателя" 
-                        className="w-full p-2 border rounded mb-4" 
+                        className="w-full p-2 border rounded mb-4"
+                        pattern="\d{16}"
+                        title="Номер карты должен состоять из 16 цифр"
                         required
                       />
                       <Button type="submit" className="w-full">
                         Перевести
                       </Button>
                     </form>
-                    <Button className="w-full">Send Transfer</Button>
                   </div>
                 </DialogContent>
               </Dialog>
-              
+
               <Dialog>
                 <DialogTrigger asChild>
                   <CardUI className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
