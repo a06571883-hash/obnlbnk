@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
-import { Loader2, Camera } from 'lucide-react';
+import { Camera, Loader2 } from 'lucide-react';
 
 interface QRScannerProps {
   onScanSuccess: (cardNumber: string, type: 'usd_card' | 'crypto_wallet') => void;
@@ -10,113 +9,94 @@ interface QRScannerProps {
 
 export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const startScanning = async () => {
+  const startCamera = async () => {
     try {
-      // Check if browser supports getUserMedia
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setError('Ваш браузер не поддерживает доступ к камере');
-        return;
-      }
+      setIsStarting(true);
+      setError(null);
 
-      // Request camera permission
-      await navigator.mediaDevices.getUserMedia({ video: true });
+      // Запрашиваем доступ к камере
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
 
-      // Initialize scanner
-      if (!scannerRef.current) {
-        scannerRef.current = new Html5Qrcode('qr-reader');
-      }
+      // Сохраняем поток
+      streamRef.current = stream;
 
-      // Get available cameras
-      const devices = await Html5Qrcode.getCameras();
-      console.log('Available cameras:', devices);
-
-      if (devices && devices.length > 0) {
-        const cameraId = devices[0].id;
-        await scannerRef.current.start(
-          cameraId,
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-          },
-          (decodedText) => {
-            try {
-              const data = JSON.parse(decodedText);
-              if (data.type && (data.cardNumber || data.walletAddress)) {
-                scannerRef.current?.stop();
-                onScanSuccess(
-                  data.cardNumber || data.walletAddress,
-                  data.type as 'usd_card' | 'crypto_wallet'
-                );
-                onClose();
-              }
-            } catch (e) {
-              console.error('QR decode error:', e);
-              setError('Неверный формат QR-кода');
-            }
-          },
-          (errorMessage) => {
-            console.error('QR scan error:', errorMessage);
-          }
-        );
-        setIsScanning(true);
-        setError(null);
-      } else {
-        setError('Камера не найдена');
+      // Подключаем поток к видео элементу
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
       }
     } catch (err) {
-      console.error('Camera initialization error:', err);
-      setError('Ошибка доступа к камере. Пожалуйста, разрешите доступ к камере.');
+      console.error('Camera error:', err);
+      setError('Ошибка доступа к камере. Пожалуйста, разрешите доступ.');
+    } finally {
+      setIsStarting(false);
     }
   };
 
-  const stopScanning = async () => {
-    if (scannerRef.current?.isScanning) {
-      await scannerRef.current.stop();
-      setIsScanning(false);
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
   };
 
   useEffect(() => {
+    // Проверяем поддержку getUserMedia
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('Ваш браузер не поддерживает доступ к камере');
+      return;
+    }
+
     return () => {
-      if (scannerRef.current?.isScanning) {
-        scannerRef.current.stop();
-      }
+      stopCamera();
     };
   }, []);
 
   return (
     <div className="space-y-4">
-      <div 
-        id="qr-reader" 
-        className="w-full max-w-sm mx-auto bg-muted rounded-lg overflow-hidden"
-        style={{ minHeight: '300px' }}
-      />
+      <div className="relative w-full max-w-sm mx-auto bg-muted rounded-lg overflow-hidden" style={{ minHeight: '300px' }}>
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          playsInline
+          autoPlay
+          muted
+        />
 
-      {error && (
-        <p className="text-destructive text-sm text-center mt-2">{error}</p>
-      )}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+            <p className="text-destructive text-sm text-center px-4">{error}</p>
+          </div>
+        )}
+      </div>
 
       <div className="flex gap-2">
         <Button
-          variant={isScanning ? "destructive" : "default"}
-          onClick={() => {
-            if (isScanning) {
-              stopScanning();
-            } else {
-              startScanning();
-            }
-          }}
+          onClick={streamRef.current ? stopCamera : startCamera}
+          disabled={isStarting}
           className="w-full"
+          variant={streamRef.current ? "destructive" : "default"}
         >
-          {isScanning ? (
-            'Остановить сканирование'
+          {isStarting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Подключение к камере...
+            </>
+          ) : streamRef.current ? (
+            'Остановить камеру'
           ) : (
             <>
               <Camera className="mr-2 h-4 w-4" />
-              Начать сканирование
+              Включить камеру
             </>
           )}
         </Button>
