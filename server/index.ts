@@ -44,7 +44,7 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    const authStatus = req.isAuthenticated ? 'authenticated' : 'unauthenticated';
+    const authStatus = req.isAuthenticated() ? 'authenticated' : 'unauthenticated';
 
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} [${authStatus}] [sid:${sessionId}] in ${duration}ms`;
@@ -64,15 +64,17 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize database tables
   try {
     console.log('Initializing database tables...');
-    // Push schema changes to the database
-    await db.query(`CREATE TABLE IF NOT EXISTS session (
-      sid VARCHAR PRIMARY KEY,
-      sess JSON NOT NULL,
-      expire TIMESTAMP(6) NOT NULL
-    )`);
+
+    // Use raw SQL to create session table
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS session (
+        sid VARCHAR PRIMARY KEY,
+        sess JSON NOT NULL,
+        expire TIMESTAMP(6) NOT NULL
+      )
+    `);
 
     console.log('Database initialized successfully');
   } catch (error) {

@@ -25,7 +25,15 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  if (!stored || !stored.includes('.')) {
+    console.error('[Auth] Invalid stored password format');
+    return false;
+  }
   const [hashed, salt] = stored.split(".");
+  if (!hashed || !salt) {
+    console.error('[Auth] Missing hash or salt');
+    return false;
+  }
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
@@ -84,7 +92,7 @@ export function setupAuth(app: Express) {
         const isValidPassword = await comparePasswords(password, user.password);
         if (!isValidPassword) {
           console.log(`[Auth] Invalid password for user: ${username}`);
-          return done(null, false, { message: "Неверное имя пользователя или пароль" });
+          return done(null, false, { message: "Неверный пароль" });
         }
 
         console.log(`[Auth] Successful login for user: ${username}`);
@@ -114,6 +122,49 @@ export function setupAuth(app: Express) {
     } catch (err) {
       console.error('[Auth] Deserialization error:', err);
       done(err);
+    }
+  });
+
+  app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      console.log('[Auth] Registration attempt:', req.body.username);
+
+      if (!req.body.username || !req.body.password) {
+        console.log('[Auth] Registration failed - missing credentials');
+        return res.status(400).json({ 
+          message: "Требуется имя пользователя и пароль" 
+        });
+      }
+
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        console.log(`[Auth] Registration failed - username exists: ${req.body.username}`);
+        return res.status(400).json({ 
+          message: "Пользователь с таким именем уже существует" 
+        });
+      }
+
+      const hashedPassword = await hashPassword(req.body.password);
+      const user = await storage.createUser({
+        username: req.body.username,
+        password: hashedPassword,
+        is_regulator: false,
+        regulator_balance: "0"
+      });
+
+      console.log(`[Auth] User registered successfully: ${user.username}`);
+
+      req.login(user, (err) => {
+        if (err) {
+          console.error('[Auth] Login after registration failed:', err);
+          return next(err);
+        }
+        console.log(`[Auth] Auto-login after registration successful: ${user.username}`);
+        res.status(201).json(user);
+      });
+    } catch (error) {
+      console.error('[Auth] Registration error:', error);
+      next(error);
     }
   });
 
@@ -167,56 +218,5 @@ export function setupAuth(app: Express) {
     }
     console.log('[Auth] Returning user info:', req.user);
     res.json(req.user);
-  });
-
-  // Add request logging middleware for auth-related routes
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.path.startsWith('/api/')) {
-      console.log(`[Auth] ${req.method} ${req.path} - Session ID: ${req.sessionID}, Authenticated: ${req.isAuthenticated()}`);
-    }
-    next();
-  });
-
-  app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      console.log('[Auth] Registration attempt:', req.body.username);
-
-      if (!req.body.username || !req.body.password) {
-        console.log('[Auth] Registration failed - missing credentials');
-        return res.status(400).json({ 
-          message: "Требуется имя пользователя и пароль" 
-        });
-      }
-
-      const existingUser = await storage.getUserByUsername(req.body.username);
-      if (existingUser) {
-        console.log(`[Auth] Registration failed - username exists: ${req.body.username}`);
-        return res.status(400).json({ 
-          message: "Пользователь с таким именем уже существует" 
-        });
-      }
-
-      const hashedPassword = await hashPassword(req.body.password);
-      const user = await storage.createUser({
-        username: req.body.username,
-        password: hashedPassword,
-        is_regulator: false,
-        regulator_balance: "0"
-      });
-
-      console.log(`[Auth] User registered successfully: ${user.username}`);
-
-      req.login(user, (err) => {
-        if (err) {
-          console.error('[Auth] Login after registration failed:', err);
-          return next(err);
-        }
-        console.log(`[Auth] Auto-login after registration successful: ${user.username}`);
-        res.status(201).json(user);
-      });
-    } catch (error) {
-      console.error('[Auth] Registration error:', error);
-      next(error);
-    }
   });
 }

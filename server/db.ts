@@ -1,39 +1,34 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
-neonConfig.webSocketConstructor = ws;
-
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set. Please create a database in Replit.");
+  throw new Error("DATABASE_URL is required");
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 1, // Reduce connection pool size
-  connectionTimeoutMillis: 30000,
-  idleTimeoutMillis: 30000,
-  ssl: {
-    rejectUnauthorized: false
-  }
+// Create a new postgres connection with proper configuration
+const client = postgres(process.env.DATABASE_URL, {
+  max: 1,
+  idle_timeout: 20,
+  max_lifetime: 60 * 30
 });
 
-// Improved error handling
-pool.on('error', (err) => {
+// Create a drizzle database instance
+const db = drizzle(client, { schema });
+
+// Improved error handling (adapted from original)
+client.on('error', (err) => {
   console.error('Unexpected database error:', err);
   // Don't end the pool on every error, only try to reconnect if needed
-  if (!pool.totalCount) {
+  if (!client.connected) {
     console.log('Attempting to reconnect...');
-    pool.connect().catch(console.error);
+    client.connect().catch(console.error);
   }
 });
 
-pool.on('connect', () => {
+client.on('connect', () => {
   console.log('Database connection established');
 });
 
-// Export the db instance
-export const db = drizzle(pool, { schema });
-// Export pool for session store
-export { pool };
+
+export { db, client as pool };
