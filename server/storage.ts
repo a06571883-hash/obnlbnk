@@ -2,9 +2,9 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { db } from "./db";
-import { cards, users } from "@shared/schema";
-import type { User, Card, InsertUser } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { cards, users, transactions } from "@shared/schema";
+import type { User, Card, InsertUser, Transaction } from "@shared/schema";
+import { eq, and, or, desc } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
 const MAX_RETRIES = 3;
@@ -22,7 +22,8 @@ export interface IStorage {
   updateCardBalance(cardId: number, balance: string): Promise<void>;
   getCardById(cardId: number): Promise<Card | undefined>;
   getCardByNumber(cardNumber: string): Promise<Card | undefined>;
-  transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string }>;
+  transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -124,7 +125,6 @@ export class DatabaseStorage implements IStorage {
 
   async getCardByNumber(cardNumber: string): Promise<Card | undefined> {
     return this.withRetry(async () => {
-      // Remove any spaces or special characters from the card number for comparison
       const cleanCardNumber = cardNumber.replace(/\s+/g, '');
       const [card] = await db.select().from(cards).where(eq(cards.number, cleanCardNumber));
       console.log('Searching for card with number:', cleanCardNumber, 'Found:', card ? 'yes' : 'no');
@@ -132,7 +132,21 @@ export class DatabaseStorage implements IStorage {
     }, 'Get card by number');
   }
 
-  async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string }> {
+  async getTransactionsByCardId(cardId: number): Promise<Transaction[]> {
+    return this.withRetry(async () => {
+      return await db.select()
+        .from(transactions)
+        .where(
+          or(
+            eq(transactions.fromCardId, cardId),
+            eq(transactions.toCardId, cardId)
+          )
+        )
+        .orderBy(desc(transactions.createdAt));
+    }, 'Get transactions by card ID');
+  }
+
+  async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withRetry(async () => {
       console.log(`Attempting transfer: from card ${fromCardId} to card number ${toCardNumber}, amount: ${amount}`);
 
@@ -176,17 +190,36 @@ export class DatabaseStorage implements IStorage {
         toCard: { old: toBalance, new: newToBalance }
       });
 
+      let transaction: Transaction;
+
+      // Use a transaction to ensure atomic updates
       await db.transaction(async (tx) => {
+        // Create transaction record first
+        const [newTransaction] = await tx.insert(transactions)
+          .values({
+            fromCardId: fromCard.id,
+            toCardId: toCard.id,
+            amount: amount.toString(),
+            type: 'transfer',
+            status: 'completed',
+            description: `Transfer from card ${fromCard.number} to ${toCard.number}`
+          })
+          .returning();
+
+        transaction = newTransaction;
+
+        // Update card balances
         await tx.update(cards)
           .set({ balance: newFromBalance })
           .where(eq(cards.id, fromCard.id));
+
         await tx.update(cards)
           .set({ balance: newToBalance })
           .where(eq(cards.id, toCard.id));
       });
 
       console.log('Transfer completed successfully');
-      return { success: true };
+      return { success: true, transaction };
     }, 'Transfer money');
   }
 }

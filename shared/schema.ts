@@ -1,5 +1,4 @@
-
-import { pgTable, text, serial, integer, decimal, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, decimal, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -23,10 +22,24 @@ export const cards = pgTable("cards", {
   ethAddress: text("eth_address"),
 });
 
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  fromCardId: integer("from_card_id").notNull(),
+  toCardId: integer("to_card_id").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  type: text("type").notNull(), // 'transfer', 'deposit', 'withdraw'
+  status: text("status").notNull(), // 'pending', 'completed', 'failed'
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  description: text("description"),
+});
+
 export const insertUserSchema = createInsertSchema(users);
 export const insertCardSchema = createInsertSchema(cards);
+export const insertTransactionSchema = createInsertSchema(transactions);
 
 export type User = typeof users.$inferSelect;
 export type Card = typeof cards.$inferSelect;
+export type Transaction = typeof transactions.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertCard = z.infer<typeof insertCardSchema>;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;

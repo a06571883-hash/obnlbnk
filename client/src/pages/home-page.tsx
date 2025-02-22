@@ -28,7 +28,7 @@ export default function HomePage() {
     refetchOnWindowFocus: true,
     retry: 3,
     staleTime: 0,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   useEffect(() => {
@@ -74,17 +74,29 @@ export default function HomePage() {
       </header>
 
       <main className="container mx-auto p-4 pt-8 max-w-4xl">
-        <div className={`mb-8 text-center transition-all duration-500 ease-in-out transform ${showWelcome ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full h-0 overflow-hidden'}`}>
-          <h2 className="text-2xl font-medium mb-2">
+        <div 
+          className={`
+            transition-all duration-500 ease-in-out transform
+            ${showWelcome 
+              ? 'opacity-100 translate-y-0 h-[100px] mb-8' 
+              : 'opacity-0 -translate-y-full h-0 overflow-hidden mb-0'
+            }
+          `}
+        >
+          <h2 className="text-2xl font-medium mb-2 text-center">
             Welcome back, <span className="text-primary">{user?.username}</span>
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-center">
             Manage your multi-currency cards and transactions
           </p>
         </div>
 
         {cards && cards.length > 0 ? (
-          <div className={`space-y-8 transition-all duration-500 ease-in-out transform mt-6 ${!showWelcome ? '-translate-y-16' : ''}`}>
+          <div className={`
+            space-y-8 transition-all duration-500 ease-in-out transform
+            ${!showWelcome ? '-translate-y-16' : ''}
+            mt-16 pt-8
+          `}>
             <CardCarousel cards={cards} />
 
             {/* Quick Actions */}
