@@ -71,24 +71,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cards", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const cards = await storage.getCardsByUserId(req.user.id);
-
-    if (req.user.is_regulator) {
-      cards.forEach(card => {
-        if (card.type === 'crypto') card.balance = "80000000";
-        else if (card.type === 'usd') card.balance = "30000000";
-        else if (card.type === 'uah') card.balance = "25000000";
-      });
-    }
-
-    // Если это админ, обновляем балансы
-    if (req.user.is_regulator) {
-      cards.forEach(card => {
-        if (card.type === 'crypto') card.balance = "80000000";
-        else if (card.type === 'usd') card.balance = "30000000";
-        else if (card.type === 'uah') card.balance = "25000000";
-      });
-    }
-
     res.json(cards);
   });
 
