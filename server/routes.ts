@@ -105,10 +105,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Необходима авторизация" });
-      }
-
       const result = await storage.transferMoney(fromCardId, toCardNumber, parseFloat(amount));
       if (result.success) {
         res.status(200).json({ message: "Перевод успешно выполнен" });

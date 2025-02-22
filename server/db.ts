@@ -7,7 +7,7 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 10, // уменьшаем максимальное количество соединений
+  max: 5, // уменьшаем максимальное количество соединений
   idleTimeoutMillis: 30000, // уменьшаем время простоя до 30 секунд
   connectionTimeoutMillis: 5000,
   ssl: {
@@ -15,16 +15,41 @@ const pool = new pg.Pool({
   }
 });
 
+let isReconnecting = false;
+
 // Функция для переподключения
 async function reconnect() {
+  if (isReconnecting) return;
+
   try {
+    isReconnecting = true;
+    console.log('Attempting to reconnect to database...');
+
+    // Закрываем все текущие клиенты
     await pool.end();
-    await pool.connect();
+
+    // Создаем новый пул
+    const newPool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
+
+    // Проверяем подключение
+    await newPool.query('SELECT 1');
+
+    Object.assign(pool, newPool);
     console.log('Successfully reconnected to database');
   } catch (err) {
     console.error('Failed to reconnect:', err);
     // Пробуем переподключиться через 5 секунд
     setTimeout(reconnect, 5000);
+  } finally {
+    isReconnecting = false;
   }
 }
 
@@ -33,6 +58,16 @@ pool.on('error', async (err) => {
   console.error('Unexpected error on idle client', err);
   await reconnect();
 });
+
+// Мониторинг состояния подключения
+setInterval(async () => {
+  try {
+    await pool.query('SELECT 1');
+  } catch (err) {
+    console.error('Connection check failed:', err);
+    await reconnect();
+  }
+}, 30000); // Проверяем каждые 30 секунд
 
 pool.on('connect', () => {
   console.log('Connected to PostgreSQL database');
