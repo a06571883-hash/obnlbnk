@@ -73,7 +73,7 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const PORT = parseInt(process.env.PORT || "5000", 10);
+  const PORT = parseInt(process.env.PORT || "3000", 10);
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server listening at http://0.0.0.0:${PORT}`);
     log(`Server is running on port ${PORT} in ${process.env.NODE_ENV} mode`);
