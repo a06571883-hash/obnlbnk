@@ -5,8 +5,31 @@ import type { User, Card, InsertUser, Transaction } from "@shared/schema";
 import { eq, and, or, desc } from "drizzle-orm";
 import { pool } from "./database/connection";
 import connectPg from "connect-pg-simple";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import { users, type User, type InsertUser } from "@shared/schema";
+import { db as drizzleDb } from "./database/connection"; //Renamed to avoid conflict
+import { eq as drizzleEq } from "drizzle-orm";
+import postgres from 'postgres';
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 const PostgresSessionStore = connectPg(session);
+
+// Create a separate connection pool for sessions
+const sessionPool = postgres(process.env.DATABASE_URL!, {
+  max: 10,
+  ssl: false,
+  connection: {
+    application_name: "session_store"
+  }
+});
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -22,6 +45,7 @@ export interface IStorage {
   getCardByNumber(cardNumber: string): Promise<Card | undefined>;
   getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
   createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction>;
+  transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -29,7 +53,7 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({
-      pool,
+      pool: sessionPool,
       createTableIfMissing: true,
       tableName: 'session'
     });
@@ -58,28 +82,33 @@ export class DatabaseStorage implements IStorage {
 
   async getUser(id: number): Promise<User | undefined> {
     return this.withRetry(async () => {
-      const [user] = await db.select().from(users).where(eq(users.id, id));
+      const [user] = await db.select().from(users).where(drizzleEq(users.id, id));
       return user;
     }, 'Get user');
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return this.withRetry(async () => {
-      const [user] = await db.select().from(users).where(eq(users.username, username));
+      const [user] = await db.select().from(users).where(drizzleEq(users.username, username));
       return user;
     }, 'Get user by username');
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     return this.withRetry(async () => {
-      const [user] = await db.insert(users).values(insertUser).returning();
+      // Hash the password before storing
+      const hashedPassword = await hashPassword(insertUser.password);
+      const [user] = await db.insert(users).values({
+        ...insertUser,
+        password: hashedPassword
+      }).returning();
       return user;
     }, 'Create user');
   }
 
   async getCardsByUserId(userId: number): Promise<Card[]> {
     return this.withRetry(async () => {
-      return await db.select().from(cards).where(eq(cards.userId, userId));
+      return await db.select().from(cards).where(drizzleEq(cards.userId, userId));
     }, 'Get cards by user ID');
   }
 
@@ -100,7 +129,7 @@ export class DatabaseStorage implements IStorage {
     await this.withRetry(async () => {
       await db.update(users)
         .set({ regulator_balance: balance })
-        .where(eq(users.id, userId));
+        .where(drizzleEq(users.id, userId));
     }, 'Update regulator balance');
   }
 
@@ -108,13 +137,13 @@ export class DatabaseStorage implements IStorage {
     await this.withRetry(async () => {
       await db.update(cards)
         .set({ balance: balance })
-        .where(eq(cards.id, cardId));
+        .where(drizzleEq(cards.id, cardId));
     }, 'Update card balance');
   }
 
   async getCardById(cardId: number): Promise<Card | undefined> {
     return this.withRetry(async () => {
-      const [card] = await db.select().from(cards).where(eq(cards.id, cardId));
+      const [card] = await db.select().from(cards).where(drizzleEq(cards.id, cardId));
       return card;
     }, 'Get card by ID');
   }
@@ -122,7 +151,7 @@ export class DatabaseStorage implements IStorage {
   async getCardByNumber(cardNumber: string): Promise<Card | undefined> {
     return this.withRetry(async () => {
       const cleanCardNumber = cardNumber.replace(/\s+/g, '');
-      const [card] = await db.select().from(cards).where(eq(cards.number, cleanCardNumber));
+      const [card] = await db.select().from(cards).where(drizzleEq(cards.number, cleanCardNumber));
       console.log('Searching for card with number:', cleanCardNumber, 'Found:', card ? 'yes' : 'no');
       return card;
     }, 'Get card by number');
@@ -134,8 +163,8 @@ export class DatabaseStorage implements IStorage {
         .from(transactions)
         .where(
           or(
-            eq(transactions.fromCardId, cardId),
-            eq(transactions.toCardId, cardId)
+            drizzleEq(transactions.fromCardId, cardId),
+            drizzleEq(transactions.toCardId, cardId)
           )
         )
         .orderBy(desc(transactions.createdAt));
@@ -207,11 +236,11 @@ export class DatabaseStorage implements IStorage {
         // Update card balances
         await tx.update(cards)
           .set({ balance: newFromBalance })
-          .where(eq(cards.id, fromCard.id));
+          .where(drizzleEq(cards.id, fromCard.id));
 
         await tx.update(cards)
           .set({ balance: newToBalance })
-          .where(eq(cards.id, toCard.id));
+          .where(drizzleEq(cards.id, toCard.id));
       });
 
       console.log('Transfer completed successfully');

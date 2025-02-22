@@ -6,8 +6,9 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import connectPg from "connect-pg-simple";
-import { pool } from "./database/connection";
+import { users } from "@shared/schema";
+import { db } from "./database/connection";
+import { eq } from "drizzle-orm";
 
 declare global {
   namespace Express {
@@ -16,7 +17,6 @@ declare global {
 }
 
 const scryptAsync = promisify(scrypt);
-const PostgresSessionStore = connectPg(session);
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -25,18 +25,24 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  if (!stored || !stored.includes('.')) {
-    console.error('[Auth] Invalid stored password format');
+  // If the stored password doesn't contain a salt, it's a plain text password
+  if (!stored.includes('.')) {
+    // If they match in plain text, we'll update to hashed version later
+    if (supplied === stored) {
+      return true;
+    }
     return false;
   }
-  const [hashed, salt] = stored.split(".");
-  if (!hashed || !salt) {
-    console.error('[Auth] Missing hash or salt');
+
+  try {
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('[Auth] Error comparing passwords:', error);
     return false;
   }
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
 export function setupAuth(app: Express) {
@@ -47,32 +53,15 @@ export function setupAuth(app: Express) {
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    store: new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true,
-      tableName: 'session'
-    }),
+    store: storage.sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
       sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       path: '/'
-    },
-    name: 'sid'
+    }
   };
-
-  console.log('Session configuration:', {
-    secure: sessionSettings.cookie?.secure,
-    sameSite: sessionSettings.cookie?.sameSite,
-    maxAge: sessionSettings.cookie?.maxAge,
-    environment: process.env.NODE_ENV
-  });
-
-  if (process.env.NODE_ENV === 'production') {
-    app.set('trust proxy', 1);
-    console.log('Trust proxy enabled for production');
-  }
 
   app.use(session(sessionSettings));
   app.use(passport.initialize());
@@ -82,8 +71,8 @@ export function setupAuth(app: Express) {
     new LocalStrategy(async (username: string, password: string, done) => {
       try {
         console.log(`[Auth] Login attempt for user: ${username}`);
-        const user = await storage.getUserByUsername(username);
 
+        const user = await storage.getUserByUsername(username);
         if (!user) {
           console.log(`[Auth] User not found: ${username}`);
           return done(null, false, { message: "Пользователь не найден" });
@@ -95,13 +84,27 @@ export function setupAuth(app: Express) {
           return done(null, false, { message: "Неверный пароль" });
         }
 
+        // If the password was in plain text, update it to hashed version
+        if (!user.password.includes('.')) {
+          try {
+            const hashedPassword = await hashPassword(password);
+            await db.update(users)
+              .set({ password: hashedPassword })
+              .where(eq(users.id, user.id));
+            console.log(`[Auth] Updated password hash for user: ${username}`);
+          } catch (error) {
+            console.error('[Auth] Failed to update password hash:', error);
+            // Continue login even if hash update fails
+          }
+        }
+
         console.log(`[Auth] Successful login for user: ${username}`);
         return done(null, user);
       } catch (err) {
         console.error('[Auth] Login error:', err);
         return done(err);
       }
-    }),
+    })
   );
 
   passport.serializeUser((user, done) => {
@@ -122,49 +125,6 @@ export function setupAuth(app: Express) {
     } catch (err) {
       console.error('[Auth] Deserialization error:', err);
       done(err);
-    }
-  });
-
-  app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      console.log('[Auth] Registration attempt:', req.body.username);
-
-      if (!req.body.username || !req.body.password) {
-        console.log('[Auth] Registration failed - missing credentials');
-        return res.status(400).json({ 
-          message: "Требуется имя пользователя и пароль" 
-        });
-      }
-
-      const existingUser = await storage.getUserByUsername(req.body.username);
-      if (existingUser) {
-        console.log(`[Auth] Registration failed - username exists: ${req.body.username}`);
-        return res.status(400).json({ 
-          message: "Пользователь с таким именем уже существует" 
-        });
-      }
-
-      const hashedPassword = await hashPassword(req.body.password);
-      const user = await storage.createUser({
-        username: req.body.username,
-        password: hashedPassword,
-        is_regulator: false,
-        regulator_balance: "0"
-      });
-
-      console.log(`[Auth] User registered successfully: ${user.username}`);
-
-      req.login(user, (err) => {
-        if (err) {
-          console.error('[Auth] Login after registration failed:', err);
-          return next(err);
-        }
-        console.log(`[Auth] Auto-login after registration successful: ${user.username}`);
-        res.status(201).json(user);
-      });
-    } catch (error) {
-      console.error('[Auth] Registration error:', error);
-      next(error);
     }
   });
 

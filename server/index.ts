@@ -3,6 +3,10 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./database/connection";
 import * as schema from "@shared/schema";
+import passport from "passport";
+import session from "express-session";
+import { storage } from "./storage";
+import { setupAuth } from "./auth";
 
 // Set development mode explicitly
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
@@ -14,7 +18,6 @@ app.use(express.urlencoded({ extended: false }));
 // Add CORS headers for development
 app.use((req, res, next) => {
   const origin = req.headers.origin || '';
-  // Only allow requests from known origins
   if (origin.includes('.replit.dev') || origin.includes('replit.com') || process.env.NODE_ENV !== 'production') {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
@@ -25,9 +28,26 @@ app.use((req, res, next) => {
       return res.sendStatus(200);
     }
   }
-
   next();
 });
+
+// Initialize session before anything else
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  store: storage.sessionStore,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+  }
+}));
+
+// Initialize Passport after session
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Request logging middleware with detailed session info
 app.use((req, res, next) => {
@@ -44,7 +64,7 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    const authStatus = req.isAuthenticated() ? 'authenticated' : 'unauthenticated';
+    const authStatus = req.isAuthenticated?.() ? 'authenticated' : 'unauthenticated';
 
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} [${authStatus}] [sid:${sessionId}] in ${duration}ms`;
@@ -67,7 +87,7 @@ app.use((req, res, next) => {
   try {
     console.log('Initializing database tables...');
 
-    // Use raw SQL to create session table
+    // Use raw SQL to create session table if it doesn't exist
     await db.execute(`
       CREATE TABLE IF NOT EXISTS session (
         sid VARCHAR PRIMARY KEY,
@@ -80,6 +100,9 @@ app.use((req, res, next) => {
   } catch (error) {
     console.error('Error initializing database:', error);
   }
+
+  // Setup authentication after database is initialized
+  setupAuth(app);
 
   const server = await registerRoutes(app);
 
@@ -104,7 +127,6 @@ app.use((req, res, next) => {
     });
   });
 
-  // Setup Vite middleware in development
   if (process.env.NODE_ENV !== 'production') {
     await setupVite(app, server);
   } else {
