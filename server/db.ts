@@ -7,21 +7,31 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 300000, // увеличиваем таймаут простоя до 5 минут
-  connectionTimeoutMillis: 10000, // увеличиваем таймаут подключения до 10 секунд
+  max: 10, // уменьшаем максимальное количество соединений
+  idleTimeoutMillis: 30000, // уменьшаем время простоя до 30 секунд
+  connectionTimeoutMillis: 5000,
   ssl: {
     rejectUnauthorized: false
   }
 });
 
+// Функция для переподключения
+async function reconnect() {
+  try {
+    await pool.end();
+    await pool.connect();
+    console.log('Successfully reconnected to database');
+  } catch (err) {
+    console.error('Failed to reconnect:', err);
+    // Пробуем переподключиться через 5 секунд
+    setTimeout(reconnect, 5000);
+  }
+}
+
 // Обработка ошибок подключения
-pool.on('error', (err) => {
+pool.on('error', async (err) => {
   console.error('Unexpected error on idle client', err);
-  // Не завершаем процесс при ошибке, пытаемся восстановить соединение
-  pool.connect().catch(connectErr => {
-    console.error('Failed to reconnect:', connectErr);
-  });
+  await reconnect();
 });
 
 pool.on('connect', () => {
@@ -31,9 +41,9 @@ pool.on('connect', () => {
 // Проверяем подключение при старте
 pool.connect()
   .then(() => console.log('Initial connection to PostgreSQL successful'))
-  .catch(err => {
+  .catch(async (err) => {
     console.error('Initial connection error:', err);
-    // Продолжаем работу, так как подключение может восстановиться
+    await reconnect();
   });
 
 export const db = drizzle(pool);
