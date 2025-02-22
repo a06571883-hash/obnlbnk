@@ -18,6 +18,8 @@ export const cards = pgTable("cards", {
   expiry: text("expiry").notNull(),
   cvv: text("cvv").notNull(),
   balance: decimal("balance", { precision: 10, scale: 2 }).notNull().default("0"),
+  btcBalance: decimal("btc_balance", { precision: 10, scale: 8 }).notNull().default("0"),
+  ethBalance: decimal("eth_balance", { precision: 10, scale: 8 }).notNull().default("0"),
   btcAddress: text("btc_address"),
   ethAddress: text("eth_address"),
 });
@@ -29,6 +31,7 @@ export const transactions = pgTable("transactions", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   convertedAmount: decimal("converted_amount", { precision: 10, scale: 2 }).notNull(),
   type: text("type").notNull(), // 'transfer', 'deposit', 'withdraw'
+  wallet: text("wallet"), // 'btc' или 'eth' для крипто-транзакций
   status: text("status").notNull(), // 'pending', 'completed', 'failed'
   createdAt: timestamp("created_at").notNull().defaultNow(),
   description: text("description"),

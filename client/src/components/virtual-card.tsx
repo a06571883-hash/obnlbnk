@@ -9,7 +9,7 @@ import {
   DialogDescription,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2 } from "lucide-react";
+import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +33,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [isMobile] = useState(() => window.innerWidth < 768);
   const [isHovered, setIsHovered] = useState(false);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || isMobile) return;
@@ -55,13 +56,13 @@ export default function VirtualCard({ card }: { card: Card }) {
 
   useEffect(() => {
     if (gyroscope && isMobile) {
-      const sensitivity = isIOS ? 0.5 : 0.7; // Меньшая чувствительность для iOS
+      const sensitivity = isIOS ? 0.5 : 0.7;
       const targetX = -gyroscope.beta * sensitivity;
       const targetY = gyroscope.gamma * sensitivity;
 
       requestAnimationFrame(() => {
         setRotation(prev => ({
-          x: prev.x + (targetX - prev.x) * (isIOS ? 0.05 : 0.1), // Более плавная анимация для iOS
+          x: prev.x + (targetX - prev.x) * (isIOS ? 0.05 : 0.1),
           y: prev.y + (targetY - prev.y) * (isIOS ? 0.05 : 0.1)
         }));
       });
@@ -69,11 +70,12 @@ export default function VirtualCard({ card }: { card: Card }) {
   }, [gyroscope, isMobile, isIOS]);
 
   const transferMutation = useMutation({
-    mutationFn: async ({ fromCardId, toCardNumber, amount }: { fromCardId: number; toCardNumber: string; amount: string }) => {
+    mutationFn: async ({ fromCardId, toCardNumber, amount, wallet }: { fromCardId: number; toCardNumber: string; amount: string; wallet?: 'btc' | 'eth' }) => {
       const response = await apiRequest("POST", "/api/transfer", {
         fromCardId,
         toCardNumber: toCardNumber.replace(/\s+/g, ''),
-        amount: parseFloat(amount)
+        amount: parseFloat(amount),
+        wallet
       });
 
       if (!response.ok) {
@@ -131,12 +133,31 @@ export default function VirtualCard({ card }: { card: Card }) {
           </div>
           <div className="space-y-2 sm:space-y-4">
             <div className="flex justify-between">
-              <div>
-                <div className="text-[10px] sm:text-xs opacity-80">Balance</div>
-                <div className="text-xs sm:text-base font-semibold">
-                  {card.balance} {card.type.toUpperCase()}
+              {card.type === 'crypto' ? (
+                <div className="space-y-1">
+                  <div className="flex items-center">
+                    <Bitcoin className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                    <div className="text-[10px] sm:text-xs opacity-80">BTC Balance</div>
+                  </div>
+                  <div className="text-xs sm:text-base font-semibold">
+                    {card.btcBalance} BTC
+                  </div>
+                  <div className="flex items-center mt-1">
+                    <Coins className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                    <div className="text-[10px] sm:text-xs opacity-80">ETH Balance</div>
+                  </div>
+                  <div className="text-xs sm:text-base font-semibold">
+                    {card.ethBalance} ETH
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <div className="text-[10px] sm:text-xs opacity-80">Balance</div>
+                  <div className="text-xs sm:text-base font-semibold">
+                    {card.balance} {card.type.toUpperCase()}
+                  </div>
+                </div>
+              )}
               <div>
                 <div className="text-[10px] sm:text-xs opacity-80">Expires</div>
                 <div className="text-xs sm:text-base font-semibold">{card.expiry}</div>
@@ -222,7 +243,6 @@ export default function VirtualCard({ card }: { card: Card }) {
                         return;
                       }
 
-                      // Clean the card number before sending
                       const cleanCardNumber = recipientCardNumber.replace(/\s+/g, '');
                       if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
                         setTransferError('Номер карты должен состоять из 16 цифр');
@@ -236,7 +256,8 @@ export default function VirtualCard({ card }: { card: Card }) {
                         await transferMutation.mutateAsync({
                           fromCardId: card.id,
                           toCardNumber: cleanCardNumber,
-                          amount: transferAmount
+                          amount: transferAmount,
+                          wallet: card.type === 'crypto' ? selectedWallet : undefined
                         });
                       } catch (error: any) {
                         console.error("Transfer error:", error);
@@ -245,6 +266,31 @@ export default function VirtualCard({ card }: { card: Card }) {
                         setIsTransferring(false);
                       }
                     }}>
+                      {card.type === 'crypto' && (
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium mb-2">Выберите кошелек</label>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant={selectedWallet === 'btc' ? 'default' : 'outline'}
+                              className="flex-1"
+                              onClick={() => setSelectedWallet('btc')}
+                            >
+                              <Bitcoin className="h-4 w-4 mr-2" />
+                              BTC
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={selectedWallet === 'eth' ? 'default' : 'outline'}
+                              className="flex-1"
+                              onClick={() => setSelectedWallet('eth')}
+                            >
+                              <Coins className="h-4 w-4 mr-2" />
+                              ETH
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                       <input
                         type="number"
                         value={transferAmount}
@@ -259,7 +305,6 @@ export default function VirtualCard({ card }: { card: Card }) {
                         type="text"
                         value={recipientCardNumber}
                         onChange={e => {
-                          // Format card number with spaces
                           const value = e.target.value.replace(/\D/g, '');
                           const parts = value.match(/.{1,4}/g) || [];
                           setRecipientCardNumber(parts.join(' '));
@@ -268,7 +313,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                         className="w-full p-2 border rounded mb-4"
                         pattern="\d{4}\s?\d{4}\s?\d{4}\s?\d{4}"
                         title="Номер карты должен состоять из 16 цифр"
-                        maxLength={19} // 16 digits + 3 spaces
+                        maxLength={19}
                         required
                       />
                       {transferError && <p className="text-red-500 text-sm mt-2">{transferError}</p>}

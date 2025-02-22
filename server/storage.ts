@@ -37,7 +37,7 @@ export interface IStorage {
   getCardByNumber(cardNumber: string): Promise<Card | undefined>;
   getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
   createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction>;
-  transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -175,9 +175,9 @@ export class DatabaseStorage implements IStorage {
     }, 'Create transaction');
   }
 
-  async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
+  async transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withRetry(async () => {
-      console.log(`Attempting transfer: from card ${fromCardId} to card number ${toCardNumber}, amount: ${amount}`);
+      console.log(`Attempting transfer: from card ${fromCardId} to card number ${toCardNumber}, amount: ${amount}, wallet: ${wallet}`);
 
       // Clean card number
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
@@ -201,18 +201,33 @@ export class DatabaseStorage implements IStorage {
 
       console.log('Found both cards:', { fromCard: fromCard.id, toCard: toCard.id });
 
-      const fromBalance = parseFloat(fromCard.balance);
+      // Check balance based on wallet type for crypto cards
+      let fromBalance: number;
+      let toBalance: number;
+
+      if (fromCard.type === 'crypto' && wallet) {
+        // Для крипто-карт проверяем баланс соответствующего кошелька
+        fromBalance = parseFloat(wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance);
+      } else {
+        fromBalance = parseFloat(fromCard.balance);
+      }
+
+      if (toCard.type === 'crypto' && wallet) {
+        toBalance = parseFloat(wallet === 'btc' ? toCard.btcBalance : toCard.ethBalance);
+      } else {
+        toBalance = parseFloat(toCard.balance);
+      }
+
       if (isNaN(fromBalance) || fromBalance < amount) {
         return { success: false, error: "Недостаточно средств" };
       }
 
-      const toBalance = parseFloat(toCard.balance);
       if (isNaN(toBalance)) {
         return { success: false, error: "Ошибка в балансе получателя" };
       }
 
-      const newFromBalance = (fromBalance - amount).toFixed(2);
-      const newToBalance = (toBalance + amount).toFixed(2);
+      const newFromBalance = (fromBalance - amount).toFixed(8);
+      const newToBalance = (toBalance + amount).toFixed(8);
 
       console.log('Updating balances:', {
         fromCard: { old: fromBalance, new: newFromBalance },
@@ -228,6 +243,7 @@ export class DatabaseStorage implements IStorage {
             amount: amount.toString(),
             convertedAmount: amount.toString(),
             type: 'transfer',
+            wallet: wallet,
             status: 'completed',
             description: `Transfer from card ${fromCard.number} to ${toCard.number}`,
             fromCardNumber: fromCard.number,
@@ -235,14 +251,34 @@ export class DatabaseStorage implements IStorage {
           })
           .returning();
 
-        // Update card balances
-        await tx.update(cards)
-          .set({ balance: newFromBalance })
-          .where(eq(cards.id, fromCard.id));
+        // Update card balances based on wallet type
+        if (fromCard.type === 'crypto' && wallet) {
+          const updateData = wallet === 'btc' 
+            ? { btcBalance: newFromBalance }
+            : { ethBalance: newFromBalance };
 
-        await tx.update(cards)
-          .set({ balance: newToBalance })
-          .where(eq(cards.id, toCard.id));
+          await tx.update(cards)
+            .set(updateData)
+            .where(eq(cards.id, fromCard.id));
+        } else {
+          await tx.update(cards)
+            .set({ balance: newFromBalance })
+            .where(eq(cards.id, fromCard.id));
+        }
+
+        if (toCard.type === 'crypto' && wallet) {
+          const updateData = wallet === 'btc'
+            ? { btcBalance: newToBalance }
+            : { ethBalance: newToBalance };
+
+          await tx.update(cards)
+            .set(updateData)
+            .where(eq(cards.id, toCard.id));
+        } else {
+          await tx.update(cards)
+            .set({ balance: newToBalance })
+            .where(eq(cards.id, toCard.id));
+        }
 
         return newTransaction;
       });
