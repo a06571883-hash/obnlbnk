@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2 } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { BrowserQRCodeReader } from '@zxing/library';
 
 interface QRScannerProps {
   onScanSuccess: (cardNumber: string, type: 'usd_card' | 'crypto_wallet') => void;
@@ -12,72 +12,64 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const html5QrCode = useRef<Html5Qrcode | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const readerRef = useRef<BrowserQRCodeReader | null>(null);
 
   const startScanning = async () => {
     try {
       setIsStarting(true);
       setError(null);
 
-      if (!containerRef.current) return;
+      // Создаем новый сканер
+      readerRef.current = new BrowserQRCodeReader();
 
-      // Initialize scanner
-      html5QrCode.current = new Html5Qrcode("qr-reader");
+      // Получаем список камер
+      const videoInputDevices = await readerRef.current.listVideoInputDevices();
 
-      const qrCodeSuccessCallback = (decodedText: string) => {
-        try {
-          const data = JSON.parse(decodedText);
-          if (data.type === 'usd_card' || data.type === 'crypto_wallet') {
-            const recipient = data.type === 'usd_card' ? data.cardNumber : data.walletAddress;
-            onScanSuccess(recipient, data.type);
-          } else {
-            setError("Invalid QR code data");
+      // Используем заднюю камеру на мобильных устройствах
+      const selectedDeviceId = videoInputDevices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('rear')
+      )?.deviceId || videoInputDevices[0]?.deviceId;
+
+      if (!selectedDeviceId) {
+        throw new Error('Камера не найдена');
+      }
+
+      // Начинаем сканирование
+      await readerRef.current.decodeFromVideoDevice(
+        selectedDeviceId,
+        videoRef.current!,
+        (result) => {
+          if (result) {
+            try {
+              const data = JSON.parse(result.getText());
+              if (data.type === 'usd_card' || data.type === 'crypto_wallet') {
+                const recipient = data.type === 'usd_card' ? data.cardNumber : data.walletAddress;
+                onScanSuccess(recipient, data.type);
+              }
+            } catch (e) {
+              console.error('Invalid QR code format:', e);
+            }
           }
-        } catch (e) {
-          console.error('Invalid QR code format:', e);
-          setError("Invalid QR code format");
-        }
-      };
-
-      const config = { 
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1
-      };
-
-      await html5QrCode.current.start(
-        { facingMode: "environment" },
-        config,
-        qrCodeSuccessCallback,
-        (errorMessage) => {
-          setError(errorMessage);
-          console.error("QR code scan error:", errorMessage);
         }
       );
 
       setIsScanning(true);
     } catch (err) {
-      console.error('QR Scanner error:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Произошла ошибка при запуске сканера');
-      }
+      console.error('Scanner error:', err);
+      setError('Ошибка при запуске камеры. Проверьте разрешения.');
+      setIsScanning(false);
     } finally {
       setIsStarting(false);
     }
   };
 
   const stopScanning = async () => {
-    if (html5QrCode.current && isScanning) {
-      try {
-        await html5QrCode.current.stop();
-        html5QrCode.current = null;
-        setIsScanning(false);
-      } catch (err) {
-        console.error('Error stopping scanner:', err);
-      }
+    if (readerRef.current) {
+      await readerRef.current.reset();
+      readerRef.current = null;
+      setIsScanning(false);
     }
   };
 
@@ -89,28 +81,31 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
 
   return (
     <div className="space-y-4">
-      <div 
-        id="qr-reader" 
-        ref={containerRef}
-        className="relative w-full max-w-sm mx-auto bg-muted rounded-lg overflow-hidden" 
-        style={{ minHeight: '300px' }}
-      />
+      <div className="relative w-full max-w-sm mx-auto bg-muted rounded-lg overflow-hidden" style={{ minHeight: '300px' }}>
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          style={{ maxHeight: '300px' }}
+        />
 
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/80">
-          <p className="text-destructive text-sm text-center px-4">{error}</p>
-        </div>
-      )}
+        {!isScanning && !error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+            <p className="text-center px-4">
+              Нажмите "Начать сканирование" и разрешите доступ к камере
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+            <p className="text-destructive text-sm text-center px-4">{error}</p>
+          </div>
+        )}
+      </div>
 
       <div className="flex gap-2">
         <Button
-          onClick={() => {
-            if (isScanning) {
-              stopScanning();
-            } else {
-              startScanning();
-            }
-          }}
+          onClick={isScanning ? stopScanning : startScanning}
           disabled={isStarting}
           className="w-full"
           variant={isScanning ? "destructive" : "default"}
