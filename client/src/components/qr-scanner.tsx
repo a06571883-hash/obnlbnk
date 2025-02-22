@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2 } from 'lucide-react';
+import Webcam from 'react-webcam';
 
 interface QRScannerProps {
   onScanSuccess: (cardNumber: string, type: 'usd_card' | 'crypto_wallet') => void;
@@ -10,42 +11,18 @@ interface QRScannerProps {
 export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const webcamRef = useRef<Webcam>(null);
+  const [cameraEnabled, setCameraEnabled] = useState(false);
 
   const startCamera = async () => {
     try {
       setIsStarting(true);
       setError(null);
-
-      console.log('Starting camera...');
-
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error('Ваш браузер не поддерживает доступ к камере');
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true
-      });
-
-      console.log('Camera stream obtained:', stream);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-      }
+      setCameraEnabled(true);
     } catch (err) {
       console.error('Camera error:', err);
       if (err instanceof Error) {
-        if (err.name === 'NotAllowedError') {
-          setError('Пожалуйста, разрешите доступ к камере в настройках браузера');
-        } else if (err.name === 'NotFoundError') {
-          setError('Камера не найдена на вашем устройстве');
-        } else if (err.name === 'NotReadableError') {
-          setError('Камера уже используется другим приложением');
-        } else {
-          setError(`Ошибка камеры: ${err.message}`);
-        }
+        setError(err.message);
       } else {
         setError('Произошла неизвестная ошибка при доступе к камере');
       }
@@ -55,35 +32,32 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
   };
 
   const stopCamera = () => {
-    console.log('Stopping camera...');
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => {
-        console.log('Stopping track:', track.label);
-        track.stop();
-      });
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
+    setCameraEnabled(false);
   };
 
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
+  const videoConstraints = {
+    width: 720,
+    height: 720,
+    facingMode: 'environment'
+  };
 
   return (
     <div className="space-y-4">
       <div className="relative w-full max-w-sm mx-auto bg-muted rounded-lg overflow-hidden" style={{ minHeight: '300px' }}>
-        <video
-          ref={videoRef}
-          className="w-full h-full object-cover"
-          playsInline
-          autoPlay
-          muted
-        />
+        {cameraEnabled && (
+          <Webcam
+            ref={webcamRef}
+            audio={false}
+            screenshotFormat="image/jpeg"
+            videoConstraints={videoConstraints}
+            onUserMediaError={(err) => {
+              console.error('Webcam error:', err);
+              setError('Ошибка доступа к камере. Пожалуйста, разрешите доступ.');
+              setCameraEnabled(false);
+            }}
+            className="w-full h-full object-cover"
+          />
+        )}
 
         {error && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80">
@@ -95,8 +69,7 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
       <div className="flex gap-2">
         <Button
           onClick={() => {
-            console.log('Camera button clicked');
-            if (streamRef.current) {
+            if (cameraEnabled) {
               stopCamera();
             } else {
               startCamera();
@@ -104,14 +77,14 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
           }}
           disabled={isStarting}
           className="w-full"
-          variant={streamRef.current ? "destructive" : "default"}
+          variant={cameraEnabled ? "destructive" : "default"}
         >
           {isStarting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Подключение к камере...
             </>
-          ) : streamRef.current ? (
+          ) : cameraEnabled ? (
             'Остановить камеру'
           ) : (
             <>
