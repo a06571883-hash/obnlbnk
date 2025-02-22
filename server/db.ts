@@ -9,36 +9,52 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set. Please create a database in Replit.");
 }
 
+// Create a connection pool with optimized settings for high reliability
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 5,
-  idleTimeoutMillis: 30000,
+  max: 3, // Reduce max connections to prevent connection exhaustion
   connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 30000,
+  maxUses: 7500, // Close connections after 7500 queries
+  allowExitOnIdle: true,
   ssl: {
     rejectUnauthorized: false
   }
 });
 
-// Better error handling
+// Enhanced error handling for pool events
 pool.on('error', (err) => {
-  console.error('Database pool error:', err);
-  // Attempt to reconnect
-  pool.end().catch(console.error);
-  setTimeout(() => {
+  console.error('Database pool error:', err.message);
+  // Attempt to clean up and reconnect
+  try {
+    pool.end().catch(console.error);
     console.log('Attempting to reconnect to database...');
     pool.connect().catch(console.error);
-  }, 5000);
+  } catch (e) {
+    console.error('Failed to handle pool error:', e);
+  }
 });
 
-// Connection success
+// Connection monitoring
 pool.on('connect', () => {
-  console.log('Database connected successfully');
+  console.log('New database connection established');
 });
 
-// Test the connection
+pool.on('acquire', () => {
+  console.log('Connection acquired from pool');
+});
+
+pool.on('remove', () => {
+  console.log('Connection removed from pool');
+});
+
+// Initial connection test
 pool.connect()
   .then(() => console.log('Initial database connection successful'))
-  .catch(err => console.error('Initial database connection failed:', err));
+  .catch(err => {
+    console.error('Initial database connection failed:', err);
+    process.exit(1); // Exit if initial connection fails
+  });
 
 export const db = drizzle(pool, { schema });
 export { pool };
