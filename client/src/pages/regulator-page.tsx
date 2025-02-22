@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/api";
 import { useState } from "react";
 
 export default function RegulatorPage() {
@@ -27,41 +27,33 @@ export default function RegulatorPage() {
     );
   }
 
-  if (!users || users.length === 0) {
-    return (
-      <div className="container p-4">
-        <h1 className="text-2xl">Загрузка пользователей...</h1>
-      </div>
-    );
-  }
-
   const adjustBalance = async (userId: number, cardId: number, operation: 'add' | 'subtract') => {
     try {
       await apiRequest("/api/regulator/adjust-balance", {
         method: "POST",
-        body: { userId, cardId, amount, operation }
+        body: JSON.stringify({ userId, cardId, amount, operation })
       });
       await refetch();
       toast({
         title: "Успех",
         description: "Баланс успешно изменен"
       });
+      setAmount("");
     } catch (error) {
       toast({
         title: "Ошибка",
-        description: "Не удалось изменить баланс",
-        variant: "destructive"
+        description: "Не удалось изменить баланс"
       });
     }
   };
 
   return (
-    <div className="container p-4 space-y-4 pb-20">
+    <div className="container p-4 space-y-4">
       <Card className="bg-primary">
         <CardHeader>
           <CardTitle className="text-primary-foreground">Панель регулятора</CardTitle>
           <div className="text-xl font-bold text-primary-foreground">
-            Баланс регулятора: ${user.regulator_balance || '80000000'}
+            Баланс регулятора: ${user.regulator_balance}
           </div>
         </CardHeader>
       </Card>
@@ -89,23 +81,19 @@ export default function RegulatorPage() {
                     <div className="flex gap-2">
                       <Input 
                         type="number"
-                        placeholder="Сумма"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className="max-w-[200px]"
+                        placeholder="Сумма"
+                        className="w-32"
                       />
-                      <Button 
-                        onClick={() => adjustBalance(user.id, card.id, 'add')}
-                        variant="default"
-                        className="bg-green-500 hover:bg-green-600 text-white"
-                      >
+                      <Button onClick={() => adjustBalance(user.id, card.id, 'add')}>
                         Добавить
                       </Button>
                       <Button 
-                        onClick={() => adjustBalance(user.id, card.id, 'subtract')}
                         variant="destructive"
+                        onClick={() => adjustBalance(user.id, card.id, 'subtract')}
                       >
-                        Вычесть
+                        Снять
                       </Button>
                     </div>
                   </div>
