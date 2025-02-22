@@ -9,12 +9,13 @@ import {
   DialogDescription,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins } from "lucide-react";
+import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins, QrCode } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { QRCodeSVG } from 'qrcode.react';
+import QRScanner from "./qr-scanner";
 
 // Add recipient type enum
 type RecipientType = 'usd_card' | 'crypto_wallet';
@@ -62,6 +63,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
   const [recipientType, setRecipientType] = useState<RecipientType>('usd_card');
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || isMobile) return;
@@ -359,18 +361,38 @@ export default function VirtualCard({ card }: { card: Card }) {
                         </>
                       )}
 
-                      <input
-                        type="number"
-                        value={transferAmount}
-                        onChange={e => setTransferAmount(e.target.value)}
-                        placeholder={recipientType === 'usd_card' ? 'Сумма в USD' : `Сумма в ${selectedWallet.toUpperCase()}`}
-                        className="w-full p-2 border rounded mb-4"
-                        step="0.01"
-                        min="0.01"
-                        required
-                      />
-
                       <div className="mb-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full mb-2"
+                          onClick={() => setShowQRScanner(true)}
+                        >
+                          <QrCode className="h-4 w-4 mr-2" />
+                          Сканировать QR-код
+                        </Button>
+
+                        {showQRScanner && (
+                          <Dialog open={showQRScanner} onOpenChange={setShowQRScanner}>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Сканировать QR-код</DialogTitle>
+                                <DialogDescription>
+                                  Отсканируйте QR-код для быстрого перевода
+                                </DialogDescription>
+                              </DialogHeader>
+                              <QRScanner
+                                onScanSuccess={(recipient, type) => {
+                                  setRecipientType(type);
+                                  setRecipientCardNumber(recipient);
+                                  setShowQRScanner(false);
+                                }}
+                                onClose={() => setShowQRScanner(false)}
+                              />
+                            </DialogContent>
+                          </Dialog>
+                        )}
+
                         <input
                           type="text"
                           value={recipientCardNumber}
@@ -388,12 +410,19 @@ export default function VirtualCard({ card }: { card: Card }) {
                           maxLength={recipientType === 'usd_card' ? 19 : 35}
                           required
                         />
-                        {recipientType === 'usd_card' && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            * Для перевода с крипто карты, пожалуйста, введите USD карту получателя. Сумма будет автоматически сконвертирована.
-                          </p>
-                        )}
                       </div>
+
+                      <input
+                        type="number"
+                        value={transferAmount}
+                        onChange={e => setTransferAmount(e.target.value)}
+                        placeholder={recipientType === 'usd_card' ? 'Сумма в USD' : `Сумма в ${selectedWallet.toUpperCase()}`}
+                        className="w-full p-2 border rounded mb-4"
+                        step="0.01"
+                        min="0.01"
+                        required
+                      />
+
 
                       {transferError && <p className="text-red-500 text-sm mt-2">{transferError}</p>}
                       <Button
