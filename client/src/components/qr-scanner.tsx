@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 interface QRScannerProps {
   onScanSuccess: (cardNumber: string, type: 'usd_card' | 'crypto_wallet') => void;
@@ -8,21 +9,23 @@ interface QRScannerProps {
 }
 
 export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    // Create instance
+    // Создаем сканер с базовыми настройками
     const scanner = new Html5QrcodeScanner(
       "qr-reader",
       {
         fps: 10,
         qrbox: 250,
+        aspectRatio: 1.0,
         rememberLastUsedCamera: true,
-        showTorchButtonIfSupported: true,
       },
       false
     );
 
-    // Success callback
-    const onScanSuccessCallback = (decodedText: string) => {
+    // Обработчик успешного сканирования
+    const onScanSuccess = (decodedText: string) => {
       try {
         const data = JSON.parse(decodedText);
         if (data.type && (data.cardNumber || data.walletAddress)) {
@@ -32,23 +35,26 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
             data.type as 'usd_card' | 'crypto_wallet'
           );
           onClose();
-        } else {
-          console.error('Invalid QR code format: Missing type or cardNumber/walletAddress');
         }
       } catch (error) {
-        console.error('Invalid QR code format:', error);
+        setError('Неверный формат QR-кода');
       }
     };
 
-    // Error callback
-    const onScanError = (error: string) => {
-      console.warn('QR scan error:', error);
+    // Обработчик ошибок
+    const onScanError = (errorMessage: string) => {
+      console.warn('QR ошибка:', errorMessage);
+      if (errorMessage.includes('NotAllowedError')) {
+        setError('Пожалуйста, разрешите доступ к камере');
+      } else if (errorMessage.includes('NotFoundError')) {
+        setError('Камера не найдена');
+      }
     };
 
-    // Render scanner
-    scanner.render(onScanSuccessCallback, onScanError);
+    // Запускаем сканер
+    scanner.render(onScanSuccess, onScanError);
 
-    // Cleanup
+    // Очистка при размонтировании
     return () => {
       scanner.clear();
     };
@@ -56,7 +62,10 @@ export default function QRScanner({ onScanSuccess, onClose }: QRScannerProps) {
 
   return (
     <div className="space-y-4">
-      <div id="qr-reader" className="w-full max-w-sm mx-auto" />
+      <div id="qr-reader" className="w-full max-w-sm mx-auto bg-background rounded-lg overflow-hidden" />
+      {error && (
+        <p className="text-destructive text-sm text-center mt-2">{error}</p>
+      )}
       <Button variant="outline" onClick={onClose} className="w-full">
         Закрыть сканер
       </Button>
