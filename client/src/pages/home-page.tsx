@@ -242,7 +242,7 @@ export default function HomePage() {
                         <div
                           key={transaction.id}
                           onClick={() => setSelectedTransaction(transaction)}
-                          className="flex items-center justify-between p-1 rounded-lg hover:bg-accent/50 cursor-pointer"
+                          className="flex items-center justify-between py-0.5 px-1 rounded-lg hover:bg-accent/50 cursor-pointer"
                         >
                           <div className="flex items-center gap-1">
                             <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center">
@@ -254,19 +254,19 @@ export default function HomePage() {
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-[10px] font-medium truncate">
+                              <p className="text-[8px] font-medium truncate">
                                 {transactionType}
                               </p>
-                              <p className="text-[8px] text-muted-foreground">
+                              <p className="text-[7px] text-muted-foreground">
                                 {format(new Date(transaction.createdAt), 'dd.MM.yyyy HH:mm')}
                               </p>
                             </div>
                           </div>
-                          <div className="text-right ml-2">
-                            <p className="text-[10px] font-medium whitespace-nowrap">
-                              {Number(transaction.amount).toFixed(8)} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
+                          <div className="text-right ml-1">
+                            <p className="text-[8px] font-medium whitespace-nowrap">
+                              {Number(transaction.amount).toFixed(2)} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
                             </p>
-                            <p className="text-[8px] text-muted-foreground">
+                            <p className="text-[7px] text-muted-foreground">
                               ≈ {(Number(transaction.amount) * 95652.99).toFixed(2)} USD
                             </p>
                           </div>
