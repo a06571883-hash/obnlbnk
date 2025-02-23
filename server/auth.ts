@@ -46,40 +46,23 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   console.log('Setting up authentication...');
 
-  // Initialize session middleware with proper settings
-  app.use(session({
+  const sessionConfig = {
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     name: 'sid',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
-    proxy: true,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
+      httpOnly: true,
       sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: '/',
-      httpOnly: true
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     }
-  }));
+  };
 
-  // Initialize Passport after session
+  app.use(session(sessionConfig));
   app.use(passport.initialize());
   app.use(passport.session());
-
-  // Add session debugging middleware
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    console.log('Session debug:', {
-      sessionID: req.sessionID,
-      session: req.session,
-      isAuthenticated: req.isAuthenticated(),
-      user: req.user,
-      cookies: req.headers.cookie,
-      method: req.method,
-      path: req.path
-    });
-    next();
-  });
 
   passport.use(
     new LocalStrategy(async (username: string, password: string, done) => {
@@ -101,7 +84,6 @@ export function setupAuth(app: Express) {
           return done(null, user);
         }
 
-        // Regular user login
         const user = await storage.getUserByUsername(username);
         if (!user) {
           console.log(`[Auth] User not found: ${username}`);
@@ -124,7 +106,7 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user: Express.User, done) => {
-    console.log(`[Auth] Serializing user: ${user.username} (${user.id})`);
+    console.log(`[Auth] Serializing user: ${user.username}`);
     done(null, user.id);
   });
 
@@ -136,7 +118,6 @@ export function setupAuth(app: Express) {
         console.log(`[Auth] User not found during deserialization: ${id}`);
         return done(null, false);
       }
-      console.log(`[Auth] Successfully deserialized user: ${user.username}`);
       done(null, user);
     } catch (err) {
       console.error('[Auth] Deserialization error:', err);
@@ -164,12 +145,7 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ message: "Ошибка при создании сессии" });
         }
 
-        console.log('[Auth] User successfully logged in:', {
-          username: user.username,
-          sessionID: req.sessionID
-        });
-
-        // Save session before sending response
+        // Save session explicitly before sending response
         req.session.save((err) => {
           if (err) {
             console.error('[Auth] Session save error:', err);
@@ -184,12 +160,6 @@ export function setupAuth(app: Express) {
   app.post("/api/register", async (req: Request, res: Response) => {
     try {
       console.log('[Auth] Registration attempt:', req.body.username);
-
-      if (!req.body.username || !req.body.password) {
-        return res.status(400).json({
-          message: "Требуется имя пользователя и пароль"
-        });
-      }
 
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
@@ -212,7 +182,7 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ message: "Ошибка при создании сессии" });
         }
 
-        // Save session before sending response
+        // Save session explicitly before sending response
         req.session.save((err) => {
           if (err) {
             console.error('[Auth] Session save error:', err);
@@ -228,8 +198,6 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/logout", (req: Request, res: Response) => {
-    console.log(`[Auth] Logout request received. User: ${req.user?.username}`);
-
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Вы не авторизованы" });
     }
@@ -251,8 +219,6 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req: Request, res: Response) => {
-    console.log(`[Auth] User info request. Authenticated: ${req.isAuthenticated()}`);
-
     if (!req.isAuthenticated()) {
       console.log('[Auth] Unauthorized access attempt to /api/user');
       return res.sendStatus(401);
@@ -263,7 +229,6 @@ export function setupAuth(app: Express) {
       return res.sendStatus(401);
     }
 
-    console.log('[Auth] Returning user info:', req.user);
     res.json(req.user);
   });
 }

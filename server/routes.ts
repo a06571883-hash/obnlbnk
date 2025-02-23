@@ -33,6 +33,7 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up CORS for WebSocket with specific origin
   app.use((req, res, next) => {
+    // Accept requests from any origin during development
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -44,8 +45,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/user", async (req, res) => {
     try {
-      console.log('[Auth] User info request. Authenticated:', req.isAuthenticated(), 'Session ID:', req.sessionID);
-
       if (!req.isAuthenticated()) {
         console.log('[Auth] Unauthorized access attempt to /api/user');
         return res.sendStatus(401);
