@@ -257,7 +257,7 @@ export default function HomePage() {
                               <p className="text-[8px] font-medium truncate">
                                 {transactionType}
                               </p>
-                              <p className="text-[7px] text-muted-foreground">
+                              <p className="text-[8px] text-muted-foreground">
                                 {format(new Date(transaction.createdAt), 'dd.MM.yyyy HH:mm')}
                               </p>
                             </div>
@@ -266,7 +266,7 @@ export default function HomePage() {
                             <p className="text-[8px] font-medium whitespace-nowrap">
                               {Number(transaction.amount).toFixed(2)} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
                             </p>
-                            <p className="text-[7px] text-muted-foreground">
+                            <p className="text-[8px] text-muted-foreground">
                               ≈ {(Number(transaction.amount) * 95652.99).toFixed(2)} USD
                             </p>
                           </div>
