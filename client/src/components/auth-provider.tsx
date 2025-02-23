@@ -13,7 +13,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { isLoading } = useQuery({
     queryKey: ["/api/user"],
     retry: false,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     staleTime: 30000, // Cache for 30 seconds
     refetchInterval: location === '/auth' ? false : 30000, // Only refetch if not on auth page
     onSettled: (data, error) => {

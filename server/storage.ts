@@ -177,15 +177,14 @@ export class DatabaseStorage implements IStorage {
       console.log('Creating transaction:', transaction);
       const [result] = await db.insert(transactions).values({
         fromCardId: transaction.fromCardId,
-        toCardId: transaction.toCardId || null,
+        toCardId: transaction.toCardId,
         amount: transaction.amount,
-        convertedAmount: transaction.convertedAmount || transaction.amount,
         type: transaction.type,
-        status: transaction.status || 'completed',
-        description: transaction.description || null,
-        wallet: transaction.wallet || null,
-        fromCardNumber: transaction.fromCardNumber || null,
-        toCardNumber: transaction.toCardNumber || null,
+        status: transaction.status,
+        description: transaction.description,
+        wallet: transaction.wallet,
+        fromCardNumber: transaction.fromCardNumber,
+        toCardNumber: transaction.toCardNumber,
         createdAt: transaction.createdAt || new Date()
       }).returning();
       console.log('Transaction created:', result);

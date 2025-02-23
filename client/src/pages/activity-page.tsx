@@ -40,6 +40,26 @@ interface Card {
   ethBalance?: string;
 }
 
+interface TransactionReceiptProps {
+  transaction: {
+    id: number;
+    type: string;
+    amount: string;
+    convertedAmount?: string;
+    currency: string;
+    date: string;
+    status: string;
+    from: string;
+    to: string;
+    description: string;
+    fromCard?: Card;
+    toCard?: Card;
+    wallet?: 'btc' | 'eth';
+  };
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
 const EmptyState = () => (
   <div className="text-center py-12">
     <p className="text-muted-foreground">Транзакций пока нет</p>
@@ -271,24 +291,4 @@ function TransactionList({
       })}
     </div>
   );
-}
-
-interface TransactionReceiptProps {
-  transaction: {
-    id: number;
-    type: string;
-    amount: string;
-    convertedAmount?: string;
-    currency: string;
-    date: string;
-    status: string;
-    from: string;
-    to: string;
-    description: string;
-    fromCard?: Card;
-    toCard?: Card;
-    wallet?: 'btc' | 'eth';
-  };
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
 }
