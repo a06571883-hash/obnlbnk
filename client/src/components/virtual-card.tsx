@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -103,31 +103,13 @@ export default function VirtualCard({ card }: { card: Card }) {
         throw new Error('Пожалуйста, введите корректную сумму');
       }
 
-      const amount = parseFloat(transferAmount);
-
-      // Prepare transfer request data
-      let transferRequest;
-      if (recipientType === 'usd_card') {
-        transferRequest = {
-          cardId: card.id,
-          recipientCard: recipientCardNumber.replace(/\s+/g, ''),
-          amount,
-          type: 'card'
-        };
-      } else {
-        // Handle crypto transfers
-        const cryptoAmount = selectedWallet === 'btc' 
-          ? amount / EXCHANGE_RATES.btcToUsd 
-          : amount / EXCHANGE_RATES.ethToUsd;
-
-        transferRequest = {
-          cardId: card.id,
-          recipientAddress: recipientCardNumber.trim(),
-          amount: cryptoAmount,
-          type: 'crypto',
-          cryptoCurrency: selectedWallet
-        };
-      }
+      // Simplified transfer request
+      const transferRequest = {
+        fromCardId: card.id,
+        amount: parseFloat(transferAmount),
+        recipientAddress: recipientCardNumber.trim(),
+        transferType: recipientType === 'usd_card' ? 'card' : selectedWallet
+      };
 
       console.log('Transfer request:', transferRequest);
 
@@ -173,7 +155,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       return;
     }
 
-    // Validation based on recipient type
+    // Basic validation based on recipient type
     if (recipientType === 'usd_card') {
       const cleanCardNumber = recipientCardNumber.replace(/\s+/g, '');
       if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
@@ -181,17 +163,9 @@ export default function VirtualCard({ card }: { card: Card }) {
         return;
       }
     } else {
-      // Validate crypto address format
-      const isValidAddress = selectedWallet === 'btc'
-        ? validateBtcAddress(recipientCardNumber.trim())
-        : validateEthAddress(recipientCardNumber.trim());
-
-      if (!isValidAddress) {
-        setTransferError(
-          selectedWallet === 'btc'
-            ? 'Неверный формат BTC адреса'
-            : 'Неверный формат ETH адреса'
-        );
+      // Simple crypto address validation
+      if (recipientCardNumber.trim().length < 20) {
+        setTransferError('Неверный формат адреса криптокошелька');
         return;
       }
     }
@@ -346,9 +320,9 @@ export default function VirtualCard({ card }: { card: Card }) {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[90%] max-h-[90vh] overflow-y-auto p-3 sm:p-4">
-                  <DialogHeader className="space-y-2 mb-2">
+                  <DialogHeader>
                     <DialogTitle>Transfer Funds</DialogTitle>
-                    <DialogDescription className="text-sm">
+                    <DialogDescription>
                       Transfer funds to another card or wallet
                     </DialogDescription>
                   </DialogHeader>
