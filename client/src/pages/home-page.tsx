@@ -59,16 +59,19 @@ export default function HomePage() {
 
   const { data: rates, isLoading: isLoadingRates } = useQuery<ExchangeRateResponse>({
     queryKey: ["/api/rates"],
-    refetchInterval: 10000,
-    staleTime: 0,
+    refetchInterval: 2000,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const [prevRates, setPrevRates] = useState<ExchangeRateResponse | null>(null);
 
+  // Update prevRates when new rates arrive
   useEffect(() => {
-    if (rates && rates !== prevRates) {
+    if (rates && (!prevRates || 
+      rates.btcToUsd !== prevRates.btcToUsd || 
+      rates.ethToUsd !== prevRates.ethToUsd || 
+      rates.usdToUah !== prevRates.usdToUah)) {
       setPrevRates(rates);
     }
   }, [rates]);

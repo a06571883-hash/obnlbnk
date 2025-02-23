@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { 
-  Card, 
+import {
+  Card,
   CardContent,
 } from "@/components/ui/card";
 import {
@@ -16,11 +16,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Settings, 
-  Shield, 
-  Bell, 
-  HelpCircle, 
+import {
+  Settings,
+  Shield,
+  Bell,
+  HelpCircle,
   LogOut,
   ChevronRight,
   Moon,
@@ -38,17 +38,32 @@ export default function ProfilePage() {
   const [notifications, setNotifications] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [language, setLanguage] = useState("ru");
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
-  // Загрузка начальных настроек
+  // Load initial settings
   useEffect(() => {
     setNotifications(localStorage.getItem('notifications') === 'true');
     setSoundEnabled(localStorage.getItem('soundEnabled') === 'true');
     setLanguage(localStorage.getItem('language') || 'ru');
+    const theme = localStorage.getItem('theme') || 'dark';
+    setIsDarkMode(theme === 'dark');
   }, []);
 
   const updateSetting = async (key: string, value: any) => {
     try {
       switch(key) {
+        case 'theme':
+          const newTheme = value ? 'dark' : 'light';
+          localStorage.setItem('theme', newTheme);
+          document.documentElement.classList.remove('light', 'dark');
+          document.documentElement.classList.add(newTheme);
+          setIsDarkMode(value);
+          toast({
+            title: value ? "Тёмная тема включена" : "Светлая тема включена",
+            description: value ? "Приложение переключено на тёмную тему" : "Приложение переключено на светлую тему"
+          });
+          break;
+
         case 'notifications':
           if (value && 'Notification' in window) {
             const permission = await Notification.requestPermission();
@@ -110,6 +125,26 @@ export default function ProfilePage() {
       description: "Персонализация и предпочтения",
       content: (
         <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                {isDarkMode ? (
+                  <Moon className="h-4 w-4" />
+                ) : (
+                  <Sun className="h-4 w-4" />
+                )}
+                <Label>Тема приложения</Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Переключение между тёмной и светлой темой
+              </p>
+            </div>
+            <Switch
+              checked={isDarkMode}
+              onCheckedChange={(checked) => updateSetting('theme', checked)}
+            />
+          </div>
+
           <div className="space-y-2">
             <Label>Язык</Label>
             <select
