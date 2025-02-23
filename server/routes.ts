@@ -35,45 +35,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Необходима авторизация" });
       }
 
-      const { fromCardId, toCardNumber, amount, wallet } = req.body;
+      const { fromCardId, toCardNumber, amount } = req.body;
 
-      // Базовая валидация
       if (!fromCardId || !toCardNumber || !amount) {
-        return res.status(400).json({ 
-          message: "Не указаны обязательные параметры перевода" 
-        });
+        return res.status(400).json({ message: "Не указаны обязательные параметры перевода" });
       }
 
-      // Валидация суммы
-      const transferAmount = parseFloat(amount);
-      if (isNaN(transferAmount) || transferAmount <= 0) {
-        return res.status(400).json({ 
-          message: "Некорректная сумма перевода" 
-        });
-      }
-
-      // Валидация адреса или номера карты
-      if (wallet) {
-        if (!validateCryptoAddress(toCardNumber, wallet)) {
-          return res.status(400).json({
-            message: `Неверный формат ${wallet.toUpperCase()} адреса`
-          });
-        }
-      } else {
-        const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
-        if (!/^\d{16}$/.test(cleanToCardNumber)) {
-          return res.status(400).json({ 
-            message: "Неверный формат номера карты" 
-          });
-        }
-      }
-
-      // Выполнение перевода
       const result = await storage.transferMoney(
         parseInt(fromCardId),
         toCardNumber.replace(/\s+/g, ''),
-        transferAmount,
-        wallet
+        parseFloat(amount)
       );
 
       if (!result.success) {
@@ -82,9 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       return res.json({
         success: true,
-        message: wallet 
-          ? `Перевод ${transferAmount} ${wallet.toUpperCase()} выполнен успешно`
-          : "Перевод успешно выполнен",
+        message: "Перевод успешно выполнен",
         transaction: result.transaction
       });
 
