@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 // Add recipient type enum
 type RecipientType = 'usd_card' | 'crypto_wallet';
@@ -42,6 +43,7 @@ function validateEthAddress(address: string): boolean {
 }
 
 export default function VirtualCard({ card }: { card: Card }) {
+  const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const gyroscope = useGyroscope();
@@ -124,6 +126,32 @@ export default function VirtualCard({ card }: { card: Card }) {
     onError: (error: Error) => {
       setTransferError(error.message);
       setIsTransferring(false);
+    }
+  });
+
+  // Add regenerate addresses mutation
+  const regenerateAddressesMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/cards/regenerate-addresses");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to regenerate addresses");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
+      toast({
+        title: "Успех",
+        description: "Адреса кошельков успешно обновлены",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
 
@@ -216,6 +244,24 @@ export default function VirtualCard({ card }: { card: Card }) {
                           <p className="text-sm text-muted-foreground mb-2">ETH Address</p>
                           <p className="font-mono text-sm break-all">{card.ethAddress}</p>
                         </div>
+                        {/* Add regenerate button */}
+                        <Button 
+                          className="w-full"
+                          disabled={regenerateAddressesMutation.isPending}
+                          onClick={() => regenerateAddressesMutation.mutate()}
+                        >
+                          {regenerateAddressesMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Обновление адресов...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Обновить адреса кошельков
+                            </>
+                          )}
+                        </Button>
                       </>
                     ) : (
                       <div>
