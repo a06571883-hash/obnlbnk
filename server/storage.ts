@@ -5,11 +5,8 @@ import { db } from "./db";
 import { cards, users, transactions } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction } from "@shared/schema";
 import { eq, and, or, desc } from "drizzle-orm";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
 
 const PostgresSessionStore = connectPg(session);
-const scryptAsync = promisify(scrypt);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -45,8 +42,7 @@ export class DatabaseStorage implements IStorage {
     let lastError: Error | undefined;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const result = await operation();
-        return result;
+        return await operation();
       } catch (error) {
         lastError = error as Error;
         console.error(`${context} failed (attempt ${attempt + 1}/3):`, error);
@@ -140,6 +136,8 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       const [result] = await db.insert(transactions).values({
         ...transaction,
+        toCardId: transaction.toCardId || null,
+        wallet: transaction.wallet || null,
         createdAt: transaction.createdAt || new Date()
       }).returning();
       return result;
@@ -150,7 +148,9 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       try {
         const fromCard = await this.getCardById(fromCardId);
-        if (!fromCard) return { success: false, error: "Карта отправителя не найдена" };
+        if (!fromCard) {
+          return { success: false, error: "Карта отправителя не найдена" };
+        }
 
         // Крипто-перевод
         if (wallet) {
@@ -190,13 +190,16 @@ export class DatabaseStorage implements IStorage {
           });
 
           // Обновляем баланс только после успешного создания транзакции
-          if (wallet === 'btc') {
-            await this.updateCardBtcBalance(fromCard.id, newBalance);
-          } else {
-            await this.updateCardEthBalance(fromCard.id, newBalance);
+          if (transaction) {
+            if (wallet === 'btc') {
+              await this.updateCardBtcBalance(fromCard.id, newBalance);
+            } else {
+              await this.updateCardEthBalance(fromCard.id, newBalance);
+            }
+            return { success: true, transaction };
           }
 
-          return { success: true, transaction };
+          return { success: false, error: "Ошибка при создании транзакции" };
         }
 
         // Фиатный перевод
@@ -244,10 +247,13 @@ export class DatabaseStorage implements IStorage {
         });
 
         // Обновляем балансы только после успешного создания транзакции
-        await this.updateCardBalance(fromCard.id, newFromBalance);
-        await this.updateCardBalance(toCard.id, newToBalance);
+        if (transaction) {
+          await this.updateCardBalance(fromCard.id, newFromBalance);
+          await this.updateCardBalance(toCard.id, newToBalance);
+          return { success: true, transaction };
+        }
 
-        return { success: true, transaction };
+        return { success: false, error: "Ошибка при создании транзакции" };
 
       } catch (error) {
         console.error('[Transfer] Error:', error);
