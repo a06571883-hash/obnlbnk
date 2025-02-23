@@ -282,6 +282,7 @@ export class DatabaseStorage implements IStorage {
         return { success: true, transaction };
       }
 
+      // Other types of transfers not supported yet
       return { success: false, error: "Неподдерживаемый тип перевода" };
     }, 'Transfer money');
   }

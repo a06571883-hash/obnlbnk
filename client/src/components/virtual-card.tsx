@@ -24,6 +24,12 @@ const cardColors = {
   uah: "bg-gradient-to-br from-blue-400 to-blue-600",
 } as const;
 
+// Exchange rates - using current market rates
+const EXCHANGE_RATES = {
+  btcToUsd: 96252.05, // Current BTC/USD rate
+  ethToUsd: 2950.00,  // Current ETH/USD rate
+};
+
 export default function VirtualCard({ card }: { card: Card }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -75,11 +81,18 @@ export default function VirtualCard({ card }: { card: Card }) {
 
   const transferMutation = useMutation({
     mutationFn: async ({ fromCardId, toCardNumber, amount, wallet, recipientType }: { fromCardId: number; toCardNumber: string; amount: string; wallet?: 'btc' | 'eth'; recipientType: RecipientType }) => {
+      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        throw new Error('Пожалуйста, введите корректную сумму');
+      }
+
+      // For crypto to USD transfers, amount is the target USD amount
+      const targetAmount = parseFloat(amount);
+
       const response = await apiRequest("POST", "/api/transfer", {
         fromCardId,
         toCardNumber: toCardNumber.replace(/\s+/g, ''),
-        amount: parseFloat(amount),
-        wallet,
+        amount: targetAmount,
+        wallet: card.type === 'crypto' ? selectedWallet : undefined,
         recipientType
       });
 
@@ -268,7 +281,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                       try {
                         await transferMutation.mutateAsync({
                           fromCardId: card.id,
-                          toCardNumber: recipientCardNumber.replace(/\s+/g, ''),
+                          toCardNumber: recipientCardNumber,
                           amount: transferAmount,
                           wallet: card.type === 'crypto' ? selectedWallet : undefined,
                           recipientType
@@ -276,8 +289,6 @@ export default function VirtualCard({ card }: { card: Card }) {
                       } catch (error: any) {
                         console.error("Transfer error:", error);
                         setTransferError(error.message || "Произошла ошибка при переводе");
-                      } finally {
-                        setIsTransferring(false);
                       }
                     }}>
                       {card.type === 'crypto' && (
@@ -333,6 +344,9 @@ export default function VirtualCard({ card }: { card: Card }) {
                       )}
 
                       <div className="mb-4">
+                        <label className="block text-sm font-medium mb-2">
+                          {recipientType === 'usd_card' ? 'Номер USD карты получателя' : `Адрес ${selectedWallet.toUpperCase()} кошелька`}
+                        </label>
                         <input
                           type="text"
                           value={recipientCardNumber}
@@ -345,23 +359,39 @@ export default function VirtualCard({ card }: { card: Card }) {
                               setRecipientCardNumber(e.target.value);
                             }
                           }}
-                          placeholder={recipientType === 'usd_card' ? 'Номер USD карты получателя' : `Адрес ${selectedWallet.toUpperCase()} кошелька`}
                           className="w-full p-2 border rounded"
                           maxLength={recipientType === 'usd_card' ? 19 : 35}
                           required
                         />
                       </div>
 
-                      <input
-                        type="number"
-                        value={transferAmount}
-                        onChange={e => setTransferAmount(e.target.value)}
-                        placeholder={recipientType === 'usd_card' ? 'Сумма в USD' : `Сумма в ${selectedWallet.toUpperCase()}`}
-                        className="w-full p-2 border rounded mb-4"
-                        step="0.01"
-                        min="0.01"
-                        required
-                      />
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-2">
+                          {card.type === 'crypto' && recipientType === 'usd_card'
+                            ? 'Сумма в USD (будет конвертирована из криптовалюты)'
+                            : `Сумма в ${card.type === 'crypto' ? selectedWallet.toUpperCase() : 'USD'}`
+                          }
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={transferAmount}
+                            onChange={e => setTransferAmount(e.target.value)}
+                            className="w-full p-2 border rounded pr-12"
+                            step="0.01"
+                            min="0.01"
+                            required
+                          />
+                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                            {card.type === 'crypto' && recipientType === 'usd_card' ? 'USD' : (card.type === 'crypto' ? selectedWallet.toUpperCase() : 'USD')}
+                          </span>
+                        </div>
+                        {card.type === 'crypto' && recipientType === 'usd_card' && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Будет списано: {transferAmount ? (parseFloat(transferAmount) / EXCHANGE_RATES[`${selectedWallet}ToUsd`]).toFixed(8) : '0.00'} {selectedWallet.toUpperCase()}
+                          </p>
+                        )}
+                      </div>
 
 
                       {transferError && <p className="text-red-500 text-sm mt-2">{transferError}</p>}
