@@ -42,8 +42,6 @@ function convertCurrency(amount: number, fromCurrency: string, toCurrency: strin
 
 // Function for validating crypto addresses
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
-  // Since we generate ETH-style addresses for both BTC and ETH,
-  // we'll validate them the same way
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
@@ -143,130 +141,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/transfer", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const { fromCardId, toCardNumber, amount, wallet, recipientType } = req.body;
+    const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
     if (!fromCardId || !toCardNumber || !amount) {
       return res.status(400).json({ error: "Все поля обязательны" });
     }
 
     try {
-      console.log('Transfer request received:', { fromCardId, toCardNumber, amount, wallet, recipientType });
+      console.log('Transfer request received:', { fromCardId, toCardNumber, amount, wallet });
 
-      // Validate crypto address if needed
-      if (recipientType === 'crypto_wallet' && wallet) {
+      const fromCard = await storage.getCardById(fromCardId);
+      if (!fromCard) {
+        return res.status(400).json({ error: "Карта отправителя не найдена" });
+      }
+
+      if (wallet) {
+        // Crypto transfer
         if (!validateCryptoAddress(toCardNumber, wallet as 'btc' | 'eth')) {
           return res.status(400).json({ 
             error: `Неверный формат ${wallet.toUpperCase()} адреса. Адрес должен начинаться с 0x`
           });
         }
+
+        const result = await storage.transferMoney(fromCardId, toCardNumber, parseFloat(amount), wallet as 'btc' | 'eth');
+        if (!result.success) {
+          return res.status(400).json({ error: result.error });
+        }
+
+        return res.json({
+          success: true,
+          message: "Перевод успешно выполнен",
+          transaction: result.transaction
+        });
       } else {
-        // Clean card number for regular transfers
+        // Regular card transfer
         const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
         if (cleanToCardNumber.length !== 16) {
           return res.status(400).json({ error: "Неверный формат номера карты" });
         }
-      }
 
-      const fromCard = await storage.getCardById(fromCardId);
-      let toCard;
-
-      if (recipientType === 'crypto_wallet') {
-        // For crypto transfers, find the card by BTC or ETH address
-        const cards = await storage.getAllCards();
-        toCard = cards.find(card => 
-          (wallet === 'btc' && card.btcAddress === toCardNumber) || 
-          (wallet === 'eth' && card.ethAddress === toCardNumber)
-        );
-      } else {
-        // For regular transfers, find by card number
-        toCard = await storage.getCardByNumber(toCardNumber);
-      }
-
-      if (!fromCard || !toCard) {
-        return res.status(400).json({ error: "Карта получателя не найдена" });
-      }
-
-      const requestedAmount = parseFloat(amount);
-      if (isNaN(requestedAmount) || requestedAmount <= 0) {
-        return res.status(400).json({ error: "Неверная сумма перевода" });
-      }
-
-      let fromAmount = requestedAmount;
-      let toAmount = requestedAmount;
-
-      // Handle conversions
-      if (fromCard.type !== toCard.type) {
-        if (recipientType === 'crypto_wallet' && fromCard.type === 'usd') {
-          // USD to Crypto conversion
-          const cryptoType = wallet?.toLowerCase() || 'btc';
-          const rate = cryptoType === 'btc' ? EXCHANGE_RATES.CRYPTO_USD : EXCHANGE_RATES.ETH_USD;
-          fromAmount = requestedAmount; // Amount in USD to deduct
-          toAmount = requestedAmount / rate; // Amount in crypto to add
-
-          console.log('USD to Crypto conversion:', {
-            usdAmount: fromAmount,
-            cryptoAmount: toAmount,
-            rate,
-            cryptoType
-          });
-
-        } else if (['usd', 'uah'].includes(fromCard.type) && ['usd', 'uah'].includes(toCard.type)) {
-          // Fiat to fiat conversion
-          toAmount = convertCurrency(requestedAmount, fromCard.type, toCard.type);
+        const result = await storage.transferMoney(fromCardId, cleanToCardNumber, parseFloat(amount));
+        if (!result.success) {
+          return res.status(400).json({ error: result.error });
         }
+
+        return res.json({
+          success: true,
+          message: "Перевод успешно выполнен",
+          transaction: result.transaction
+        });
       }
-
-      // Check balances
-      const fromBalance = parseFloat(fromCard.balance);
-      if (fromBalance < fromAmount) {
-        return res.status(400).json({ error: "Недостаточно средств" });
-      }
-
-      // Create transaction
-      const transaction = await storage.createTransaction({
-        fromCardId: fromCard.id,
-        toCardId: toCard.id,
-        amount: fromAmount.toString(),
-        type: 'transfer',
-        status: 'completed',
-        description: `Transfer from ${fromCard.number} to ${toCard.number}`,
-        fromCardNumber: fromCard.number,
-        toCardNumber: toCard.number,
-        createdAt: new Date(),
-        convertedAmount: toAmount.toString(),
-        wallet: recipientType === 'crypto_wallet' ? wallet! : null
-      });
-
-      // Update balances
-      if (recipientType === 'crypto_wallet') {
-        // Update USD balance (sender)
-        await storage.updateCardBalance(fromCard.id, (fromBalance - fromAmount).toFixed(2));
-
-        // Update crypto balance (recipient)
-        if (wallet === 'btc') {
-          await storage.updateCardBtcBalance(toCard.id, (parseFloat(toCard.btcBalance) + toAmount).toFixed(8));
-        } else {
-          await storage.updateCardEthBalance(toCard.id, (parseFloat(toCard.ethBalance) + toAmount).toFixed(8));
-        }
-      } else {
-        // Regular fiat transfer
-        await storage.updateCardBalance(fromCard.id, (fromBalance - fromAmount).toFixed(2));
-        await storage.updateCardBalance(toCard.id, (parseFloat(toCard.balance) + toAmount).toFixed(2));
-      }
-
-      res.json({
-        success: true,
-        message: "Перевод успешно выполнен",
-        transaction,
-        conversionDetails: {
-          fromAmount,
-          fromCurrency: fromCard.type.toUpperCase(),
-          toAmount,
-          toCurrency: toCard.type.toUpperCase(),
-          rate: toAmount / fromAmount
-        }
-      });
-
     } catch (error: any) {
       console.error("Transfer error:", error);
       res.status(500).json({ 
@@ -275,6 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
 
   app.get("/api/transactions", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
