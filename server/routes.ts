@@ -30,6 +30,15 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   }
 }
 
+interface Transaction {
+  id: number;
+  fromCardId: number;
+  toCardNumber: string;
+  amount: number;
+  wallet?: string;
+  createdAt: string;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
@@ -72,30 +81,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/transfer", async (req, res) => {
+  app.get("/api/transactions", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Необходима авторизация" });
+      if (!req.user?.id) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
+      const userCards = await storage.getCardsByUserId(req.user.id);
+      let allTransactions: Transaction[] = [];
+
+      for (const card of userCards) {
+        const cardTransactions = await storage.getTransactionsByCardId(card.id);
+        allTransactions = [...allTransactions, ...cardTransactions];
+      }
+
+      // Sort transactions by date
+      allTransactions.sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+
+      res.json(allTransactions);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.post("/api/transfer", async (req, res) => {
+    try {
       const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
-      // Basic validation
-      if (!fromCardId || !toCardNumber || !amount) {
+      // Базовая валидация
+      if (!fromCardId || !toCardNumber || amount === undefined) {
         return res.status(400).json({ 
           error: "Не указаны обязательные параметры перевода" 
         });
       }
 
-      // Amount validation
-      const transferAmount = parseFloat(amount);
+      // Валидация суммы
+      const transferAmount = Number(amount);
       if (isNaN(transferAmount) || transferAmount <= 0) {
         return res.status(400).json({ 
           error: "Сумма перевода должна быть положительным числом" 
         });
       }
 
-      // Get and validate sender's card
+      // Валидация карты отправителя
       const fromCard = await storage.getCardById(fromCardId);
       if (!fromCard) {
         return res.status(400).json({ 
@@ -103,13 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      if (fromCard.userId !== req.user.id) {
-        return res.status(403).json({ 
-          error: "У вас нет прав для использования этой карты" 
-        });
-      }
-
-      // Handle crypto transfer
+      // Крипто-перевод
       if (wallet) {
         if (fromCard.type !== 'crypto') {
           return res.status(400).json({
@@ -135,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Handle fiat transfer
+      // Фиатный перевод
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
       if (!/^\d{16}$/.test(cleanToCardNumber)) {
         return res.status(400).json({ 
@@ -154,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transaction: result.transaction
       });
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Transfer error:", error);
       res.status(500).json({
         success: false,
@@ -164,8 +189,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-
-  // Enable keep-alive for better connection stability
   httpServer.keepAliveTimeout = 65000;
   httpServer.headersTimeout = 66000;
 

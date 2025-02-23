@@ -213,11 +213,10 @@ export class DatabaseStorage implements IStorage {
 
         // Parse and validate crypto balance
         const balance = wallet === 'btc' ? 
-          parseFloat(fromCard.btcBalance || '0') :
-          parseFloat(fromCard.ethBalance || '0');
+          Number(fromCard.btcBalance || '0') :
+          Number(fromCard.ethBalance || '0');
 
-        // Additional validation for balance format
-        if (typeof balance !== 'number' || isNaN(balance)) {
+        if (isNaN(balance)) {
           return {
             success: false,
             error: `Ошибка формата баланса ${wallet.toUpperCase()}`
@@ -237,12 +236,12 @@ export class DatabaseStorage implements IStorage {
           // Create transaction record for crypto transfer
           const transaction = await this.createTransaction({
             fromCardId: fromCard.id,
-            toCardId: null, // External wallet transfer
+            toCardId: null,
             amount: amount.toString(),
             convertedAmount: amount.toString(),
             type: 'transfer',
             status: 'completed',
-            wallet: wallet, // Explicitly set wallet type
+            wallet: wallet,
             description: `Перевод ${amount.toFixed(8)} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
             fromCardNumber: fromCard.number,
             toCardNumber: toCardNumber,
@@ -270,13 +269,6 @@ export class DatabaseStorage implements IStorage {
       try {
         const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
 
-        if (cleanToCardNumber.length !== 16) {
-          return {
-            success: false,
-            error: "Неверный формат номера карты"
-          };
-        }
-
         const toCard = await this.getCardByNumber(cleanToCardNumber);
         if (!toCard) {
           return {
@@ -293,11 +285,10 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Parse and validate fiat balances
-        const fromBalance = parseFloat(fromCard.balance || '0');
-        const toBalance = parseFloat(toCard.balance || '0');
+        const fromBalance = Number(fromCard.balance || '0');
+        const toBalance = Number(toCard.balance || '0');
 
-        // Additional validation for balance format
-        if (typeof fromBalance !== 'number' || typeof toBalance !== 'number' || isNaN(fromBalance) || isNaN(toBalance)) {
+        if (isNaN(fromBalance) || isNaN(toBalance)) {
           return {
             success: false,
             error: "Ошибка формата баланса"
@@ -322,7 +313,7 @@ export class DatabaseStorage implements IStorage {
           convertedAmount: amount.toString(),
           type: 'transfer',
           status: 'completed',
-          wallet: null, // Explicitly set wallet as null for fiat transfers
+          wallet: null,
           description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
