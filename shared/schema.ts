@@ -70,6 +70,14 @@ export const insertTransactionSchema = z.object({
   createdAt: z.date().optional(),
 });
 
+export const exchangeRates = pgTable("exchange_rates", {
+  id: serial("id").primaryKey(),
+  usdToUah: decimal("usd_to_uah", { precision: 10, scale: 2 }).notNull(),
+  btcToUsd: decimal("btc_to_usd", { precision: 10, scale: 2 }).notNull(),
+  ethToUsd: decimal("eth_to_usd", { precision: 10, scale: 2 }).notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Экспорт типов
 export type User = typeof users.$inferSelect;
 export type Card = typeof cards.$inferSelect;
@@ -77,3 +85,4 @@ export type Transaction = typeof transactions.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertCard = z.infer<typeof insertCardSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type ExchangeRate = typeof exchangeRates.$inferSelect;

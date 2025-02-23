@@ -437,11 +437,9 @@ export default function VirtualCard({ card }: { card: Card }) {
                             {card.type.toUpperCase()}
                           </span>
                         </div>
-                        {recipientType === 'crypto_wallet' && (
+                        {recipientType === 'usd_card' && card.type === 'crypto' && transferAmount && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Получатель получит: {transferAmount ? (
-                              parseFloat(transferAmount) / (selectedWallet === 'btc' ? EXCHANGE_RATES.btcToUsd : EXCHANGE_RATES.ethToUsd)
-                            ).toFixed(8) : '0.00000000'} {selectedWallet.toUpperCase()}
+                            Получатель получит примерно: {(parseFloat(transferAmount) * EXCHANGE_RATES.btcToUsd).toFixed(2)} USD
                           </p>
                         )}
                       </div>

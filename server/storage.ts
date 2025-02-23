@@ -3,8 +3,8 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { db } from "./db";
-import { cards, users, transactions } from "@shared/schema";
-import type { User, Card, InsertUser, Transaction } from "@shared/schema";
+import { cards, users, transactions, exchangeRates } from "@shared/schema";
+import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
 import { eq, and, or, desc } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
@@ -27,6 +27,8 @@ export interface IStorage {
   createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction>;
   transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  getLatestExchangeRates(): Promise<ExchangeRate | undefined>;
+  updateExchangeRates(rates: { usdToUah: number; btcToUsd: number; ethToUsd: number }): Promise<ExchangeRate>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -182,25 +184,39 @@ export class DatabaseStorage implements IStorage {
           throw new Error(`Недостаточно средств на балансе (${fromBalance} ${fromCard.type.toUpperCase()})`);
         }
 
-        // Apply conversion rates if cards have different types
-        let convertedAmount = amount;
-        if (fromCard.type !== toCard.type) {
-          // Conversion rates (simplified for demo)
-          const rates = {
-            usd: { uah: 38.5, crypto: 0.000025 },
-            uah: { usd: 0.026, crypto: 0.00000065 },
-            crypto: { usd: 40000, uah: 1540000 }
-          };
-
-          if (!rates[fromCard.type]?.[toCard.type]) {
-            throw new Error("Неподдерживаемая конвертация валют");
-          }
-
-          convertedAmount = amount * rates[fromCard.type][toCard.type];
+        // Get latest exchange rates
+        const rates = await this.getLatestExchangeRates();
+        if (!rates) {
+          throw new Error("Не удалось получить актуальные курсы валют");
         }
 
-        const newFromBalance = (fromBalance - amount).toFixed(2);
-        const newToBalance = (toBalance + convertedAmount).toFixed(2);
+        // Calculate conversion rates based on latest exchange rates
+        const conversionRates = {
+          usd: {
+            uah: parseFloat(rates.usdToUah),
+            crypto: 1 / parseFloat(rates.btcToUsd)
+          },
+          uah: {
+            usd: 1 / parseFloat(rates.usdToUah),
+            crypto: 1 / (parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah))
+          },
+          crypto: {
+            usd: parseFloat(rates.btcToUsd),
+            uah: parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)
+          }
+        };
+
+        // Calculate converted amount
+        let convertedAmount = amount;
+        if (fromCard.type !== toCard.type) {
+          if (!conversionRates[fromCard.type]?.[toCard.type]) {
+            throw new Error("Неподдерживаемая конвертация валют");
+          }
+          convertedAmount = amount * conversionRates[fromCard.type][toCard.type];
+        }
+
+        const newFromBalance = (fromBalance - amount).toFixed(8);
+        const newToBalance = (toBalance + convertedAmount).toFixed(8);
 
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
@@ -210,7 +226,7 @@ export class DatabaseStorage implements IStorage {
           type: 'transfer',
           status: 'completed',
           wallet: null,
-          description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} -> ${convertedAmount.toFixed(2)} ${toCard.type.toUpperCase()}`,
+          description: `Перевод ${amount.toFixed(8)} ${fromCard.type.toUpperCase()} -> ${convertedAmount.toFixed(8)} ${toCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
           createdAt: new Date()
@@ -239,8 +255,8 @@ export class DatabaseStorage implements IStorage {
         // Check recipient's card if it's an internal transfer
         let toCard = null;
         const allCards = await db.select().from(cards);
-        toCard = allCards.find(card => 
-          card.btcAddress === recipientAddress || 
+        toCard = allCards.find(card =>
+          card.btcAddress === recipientAddress ||
           card.ethAddress === recipientAddress
         );
 
@@ -332,6 +348,32 @@ export class DatabaseStorage implements IStorage {
       }
     }
     throw lastError || new Error(`${context} failed after ${maxAttempts} attempts`);
+  }
+
+  async getLatestExchangeRates(): Promise<ExchangeRate | undefined> {
+    return this.withRetry(async () => {
+      const [rates] = await db
+        .select()
+        .from(exchangeRates)
+        .orderBy(desc(exchangeRates.updatedAt))
+        .limit(1);
+      return rates;
+    }, 'Get latest exchange rates');
+  }
+
+  async updateExchangeRates(rates: { usdToUah: number; btcToUsd: number; ethToUsd: number }): Promise<ExchangeRate> {
+    return this.withRetry(async () => {
+      const [result] = await db
+        .insert(exchangeRates)
+        .values({
+          usdToUah: rates.usdToUah.toString(),
+          btcToUsd: rates.btcToUsd.toString(),
+          ethToUsd: rates.ethToUsd.toString(),
+          updatedAt: new Date()
+        })
+        .returning();
+      return result;
+    }, 'Update exchange rates');
   }
 }
 

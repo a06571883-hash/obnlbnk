@@ -30,6 +30,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize authentication
   setupAuth(app);
 
+  // Get latest exchange rates
+  app.get("/api/rates", async (req, res) => {
+    try {
+      const rates = await storage.getLatestExchangeRates();
+      res.json(rates);
+    } catch (error) {
+      console.error("Error fetching rates:", error);
+      res.status(500).json({ message: "Ошибка при получении курсов валют" });
+    }
+  });
+
+  // Update exchange rates (protected, only for regulators)
+  app.post("/api/rates", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+
+      if (!req.user.is_regulator) {
+        return res.status(403).json({ message: "Недостаточно прав" });
+      }
+
+      const { usdToUah, btcToUsd, ethToUsd } = req.body;
+
+      if (!usdToUah || !btcToUsd || !ethToUsd) {
+        return res.status(400).json({ message: "Не указаны все курсы валют" });
+      }
+
+      const rates = await storage.updateExchangeRates({
+        usdToUah: parseFloat(usdToUah),
+        btcToUsd: parseFloat(btcToUsd),
+        ethToUsd: parseFloat(ethToUsd)
+      });
+
+      res.json(rates);
+    } catch (error) {
+      console.error("Error updating rates:", error);
+      res.status(500).json({ message: "Ошибка при обновлении курсов валют" });
+    }
+  });
+
   // Get user cards
   app.get("/api/cards", async (req, res) => {
     try {
