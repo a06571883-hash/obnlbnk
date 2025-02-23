@@ -173,8 +173,14 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Карта получателя не найдена");
         }
 
-        const fromBalance = parseFloat(fromCard.balance);
-        const toBalance = parseFloat(toCard.balance);
+        // Parse balances to BigInt for more precise comparison
+        const fromBalanceStr = fromCard.type === 'crypto' ? 
+          (fromCard.btcBalance || '0') : 
+          fromCard.balance;
+        const toBalanceStr = toCard.balance;
+
+        const fromBalance = parseFloat(fromBalanceStr);
+        const toBalance = parseFloat(toBalanceStr);
 
         if (isNaN(fromBalance) || isNaN(toBalance)) {
           throw new Error("Ошибка формата баланса");
@@ -204,15 +210,19 @@ export class DatabaseStorage implements IStorage {
             usd: parseFloat(rates.btcToUsd),
             uah: parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)
           }
-        };
+        } as const;
 
         // Calculate converted amount
         let convertedAmount = amount;
         if (fromCard.type !== toCard.type) {
-          if (!conversionRates[fromCard.type]?.[toCard.type]) {
+          const fromType = fromCard.type.toLowerCase();
+          const toType = toCard.type.toLowerCase();
+          const rate = conversionRates[fromType as keyof typeof conversionRates]?.[toType as keyof (typeof conversionRates)[keyof typeof conversionRates]];
+
+          if (!rate) {
             throw new Error("Неподдерживаемая конвертация валют");
           }
-          convertedAmount = amount * conversionRates[fromCard.type][toCard.type];
+          convertedAmount = amount * rate;
         }
 
         const newFromBalance = (fromBalance - amount).toFixed(8);
