@@ -7,7 +7,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   is_regulator: boolean("is_regulator").notNull().default(false),
-  regulator_balance: decimal("regulator_balance", { precision: 10, scale: 2 }).notNull().default("0"),
+  regulator_balance: decimal("regulator_balance", { precision: 20, scale: 8 }).notNull().default("0"),
 });
 
 export const cards = pgTable("cards", {
@@ -17,7 +17,7 @@ export const cards = pgTable("cards", {
   number: text("number").notNull(),
   expiry: text("expiry").notNull(),
   cvv: text("cvv").notNull(),
-  balance: decimal("balance").notNull().default("0"),
+  balance: decimal("balance", { precision: 20, scale: 8 }).notNull().default("0"),
   btcBalance: decimal("btc_balance", { precision: 20, scale: 8 }).notNull().default("0"),
   ethBalance: decimal("eth_balance", { precision: 20, scale: 8 }).notNull().default("0"),
   btcAddress: text("btc_address"),
@@ -27,23 +27,35 @@ export const cards = pgTable("cards", {
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   fromCardId: integer("from_card_id").notNull(),
-  toCardId: integer("to_card_id"),
+  toCardId: integer("to_card_id"), // nullable для крипто-переводов
   amount: decimal("amount", { precision: 20, scale: 8 }).notNull(),
   convertedAmount: decimal("converted_amount", { precision: 20, scale: 8 }).notNull(),
   type: text("type").notNull(),
-  wallet: text("wallet"),
+  wallet: text("wallet"), // nullable для фиатных переводов
   status: text("status").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  description: text("description"),
+  description: text("description").notNull().default(""),
   fromCardNumber: text("from_card_number").notNull(),
   toCardNumber: text("to_card_number").notNull(),
 });
 
-// Base schemas with drizzle-zod
-export const insertUserSchema = createInsertSchema(users);
-export const insertCardSchema = createInsertSchema(cards);
+// Базовые схемы для пользователей и карт
+export const insertUserSchema = createInsertSchema(users, {
+  id: undefined,
+  regulator_balance: z.string().default("0"),
+  is_regulator: z.boolean().default(false),
+});
 
-// Custom transaction schema with proper validation
+export const insertCardSchema = createInsertSchema(cards, {
+  id: undefined,
+  balance: z.string().default("0"),
+  btcBalance: z.string().default("0"),
+  ethBalance: z.string().default("0"),
+  btcAddress: z.string().nullable(),
+  ethAddress: z.string().nullable(),
+});
+
+// Кастомная схема для транзакций
 export const insertTransactionSchema = z.object({
   fromCardId: z.number(),
   toCardId: z.number().nullable(),
@@ -52,13 +64,13 @@ export const insertTransactionSchema = z.object({
   type: z.string(),
   wallet: z.string().nullable(),
   status: z.string(),
-  createdAt: z.date().optional(),
-  description: z.string().nullable(),
+  description: z.string().default(""),
   fromCardNumber: z.string(),
-  toCardNumber: z.string()
+  toCardNumber: z.string(),
+  createdAt: z.date().optional(),
 });
 
-// Type exports
+// Экспорт типов
 export type User = typeof users.$inferSelect;
 export type Card = typeof cards.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;

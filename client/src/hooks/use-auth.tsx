@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useContext } from "react";
-import { useQuery, useMutation, UseMutationResult, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, UseMutationResult } from "@tanstack/react-query";
 import { insertUserSchema, type User as SelectUser, type InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { useToast } from "./use-toast";
@@ -20,16 +20,31 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
   const {
     data: user,
     error,
     isLoading,
-  } = useQuery<SelectUser>({
+  } = useQuery<SelectUser | null>({
     queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/user", {
+          credentials: "include"
+        });
+        if (response.status === 401) {
+          return null;
+        }
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+        return await response.json();
+      } catch (error) {
+        console.error("Auth error:", error);
+        return null;
+      }
+    },
     retry: false,
     staleTime: 30000,
     refetchOnWindowFocus: true,
@@ -46,8 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
-      queryClient.invalidateQueries({ queryKey: ["/api"] });
       toast({
         title: "Успешный вход",
         description: `Добро пожаловать, ${user.username}!`,
@@ -73,8 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
-      queryClient.invalidateQueries({ queryKey: ["/api"] });
       toast({
         title: "Регистрация успешна",
         description: `Аккаунт ${user.username} создан!`,
@@ -99,8 +110,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
-      queryClient.invalidateQueries();
       setLocation("/auth");
       toast({
         title: "Выход выполнен",
@@ -113,7 +122,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: error.message,
         variant: "destructive",
       });
-      queryClient.setQueryData(["/api/user"], null);
       setLocation("/auth");
     },
   });
@@ -123,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user: user || null,
         isLoading,
-        error,
+        error: error as Error | null,
         loginMutation,
         logoutMutation,
         registerMutation,

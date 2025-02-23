@@ -24,7 +24,6 @@ async function hashPassword(password: string) {
 async function comparePasswords(supplied: string, stored: string) {
   try {
     if (!stored.includes('.')) {
-      // Backwards compatibility for old passwords
       return supplied === stored;
     }
 
@@ -45,6 +44,8 @@ export function setupAuth(app: Express) {
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    proxy: true,
+    rolling: true,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
@@ -106,16 +107,28 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      done(null, user || false);
+      if (!user) {
+        return done(null, false);
+      }
+      done(null, user);
     } catch (error) {
       done(error);
     }
+  });
+
+  // Session cleanup middleware
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.session && !req.session.passport && req.session.cookie) {
+      req.session.destroy(() => {});
+    }
+    next();
   });
 
   // Authentication routes
   app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
       if (err) {
+        console.error("Login error:", err);
         return res.status(500).json({ message: "Ошибка сервера при входе" });
       }
       if (!user) {
@@ -123,6 +136,7 @@ export function setupAuth(app: Express) {
       }
       req.logIn(user, (err) => {
         if (err) {
+          console.error("Session error:", err);
           return res.status(500).json({ message: "Ошибка при создании сессии" });
         }
         res.json(user);
@@ -153,11 +167,13 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) {
+          console.error("Registration session error:", err);
           return res.status(500).json({ message: "Ошибка при создании сессии" });
         }
         res.status(201).json(user);
       });
     } catch (error) {
+      console.error("Registration error:", error);
       res.status(500).json({ message: "Ошибка при регистрации" });
     }
   });
@@ -165,9 +181,15 @@ export function setupAuth(app: Express) {
   app.post("/api/logout", (req, res) => {
     req.logout((err) => {
       if (err) {
+        console.error("Logout error:", err);
         return res.status(500).json({ message: "Ошибка при выходе" });
       }
-      res.sendStatus(200);
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destruction error:", err);
+        }
+        res.sendStatus(200);
+      });
     });
   });
 
@@ -178,7 +200,7 @@ export function setupAuth(app: Express) {
     res.json(req.user);
   });
 
-  // Protected API routes
+  // Protected API routes with proper error handling
   app.get("/api/cards", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
@@ -187,6 +209,7 @@ export function setupAuth(app: Express) {
       const cards = await storage.getCardsByUserId(req.user.id);
       res.json(cards);
     } catch (error) {
+      console.error("Cards fetch error:", error);
       res.status(500).json({ message: "Ошибка при получении карт" });
     }
   });
@@ -198,19 +221,20 @@ export function setupAuth(app: Express) {
       }
 
       const userCards = await storage.getCardsByUserId(req.user.id);
-      let allTransactions = [];
+      const allTransactions = [];
 
       for (const card of userCards) {
         const cardTransactions = await storage.getTransactionsByCardId(card.id);
-        allTransactions = [...allTransactions, ...cardTransactions];
+        allTransactions.push(...cardTransactions);
       }
 
-      allTransactions.sort((a, b) => {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
+      allTransactions.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
       res.json(allTransactions);
     } catch (error) {
+      console.error("Transactions fetch error:", error);
       res.status(500).json({ message: "Ошибка при получении транзакций" });
     }
   });

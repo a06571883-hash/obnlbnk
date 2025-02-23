@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 interface AuthProviderProps {
   children: ReactNode;

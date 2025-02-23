@@ -38,6 +38,22 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  private async withTransaction<T>(operation: () => Promise<T>, context: string): Promise<T> {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await operation();
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error(`${context} failed:`, error);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   private async withRetry<T>(operation: () => Promise<T>, context: string): Promise<T> {
     let lastError: Error | undefined;
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -136,126 +152,11 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       const [result] = await db.insert(transactions).values({
         ...transaction,
+        description: transaction.description || "",
         createdAt: new Date()
       }).returning();
       return result;
     }, 'Create transaction');
-  }
-
-  async transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
-    return this.withRetry(async () => {
-      const client = await pool.connect();
-      try {
-        await client.query('BEGIN');
-
-        const fromCard = await this.getCardById(fromCardId);
-        if (!fromCard) {
-          throw new Error("Карта отправителя не найдена");
-        }
-
-        // Крипто-перевод
-        if (wallet) {
-          if (fromCard.type !== 'crypto') {
-            throw new Error("Для крипто-перевода используйте крипто-карту");
-          }
-
-          const balance = wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance;
-          const numBalance = Number(balance || '0');
-
-          if (isNaN(numBalance)) {
-            throw new Error(`Ошибка формата баланса ${wallet.toUpperCase()}`);
-          }
-
-          if (numBalance < amount) {
-            throw new Error(`Недостаточно ${wallet.toUpperCase()}. Доступно: ${numBalance.toFixed(8)} ${wallet.toUpperCase()}`);
-          }
-
-          const newBalance = (numBalance - amount).toFixed(8);
-
-          // Создаём транзакцию
-          const transaction = await this.createTransaction({
-            fromCardId: fromCard.id,
-            toCardId: null,
-            amount: amount.toString(),
-            convertedAmount: amount.toString(),
-            type: 'transfer',
-            status: 'completed',
-            wallet: wallet,
-            description: `Перевод ${amount.toFixed(8)} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
-            fromCardNumber: fromCard.number,
-            toCardNumber: toCardNumber,
-            createdAt: new Date()
-          });
-
-          // Обновляем баланс
-          if (wallet === 'btc') {
-            await this.updateCardBtcBalance(fromCard.id, newBalance);
-          } else {
-            await this.updateCardEthBalance(fromCard.id, newBalance);
-          }
-
-          await client.query('COMMIT');
-          return { success: true, transaction };
-        }
-
-        // Фиатный перевод
-        const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
-        const toCard = await this.getCardByNumber(cleanToCardNumber);
-
-        if (!toCard) {
-          throw new Error("Карта получателя не найдена");
-        }
-
-        if (fromCard.id === toCard.id) {
-          throw new Error("Невозможно перевести на ту же карту");
-        }
-
-        const fromBalance = Number(fromCard.balance || '0');
-        const toBalance = Number(toCard.balance || '0');
-
-        if (isNaN(fromBalance) || isNaN(toBalance)) {
-          throw new Error("Ошибка формата баланса");
-        }
-
-        if (fromBalance < amount) {
-          throw new Error(`Недостаточно средств. Доступно: ${fromBalance.toFixed(2)} ${fromCard.type.toUpperCase()}`);
-        }
-
-        const newFromBalance = (fromBalance - amount).toFixed(2);
-        const newToBalance = (toBalance + amount).toFixed(2);
-
-        // Создаём транзакцию
-        const transaction = await this.createTransaction({
-          fromCardId: fromCard.id,
-          toCardId: toCard.id,
-          amount: amount.toString(),
-          convertedAmount: amount.toString(),
-          type: 'transfer',
-          status: 'completed',
-          wallet: null,
-          description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`,
-          fromCardNumber: fromCard.number,
-          toCardNumber: toCard.number,
-          createdAt: new Date()
-        });
-
-        // Обновляем балансы
-        await this.updateCardBalance(fromCard.id, newFromBalance);
-        await this.updateCardBalance(toCard.id, newToBalance);
-
-        await client.query('COMMIT');
-        return { success: true, transaction };
-
-      } catch (error) {
-        await client.query('ROLLBACK');
-        return { 
-          success: false, 
-          error: error instanceof Error ? error.message : "Произошла ошибка при переводе" 
-        };
-      } finally {
-        client.release();
-      }
-    }, 'Transfer money');
   }
 
   async updateCardBtcBalance(cardId: number, balance: string): Promise<void> {
@@ -272,6 +173,106 @@ export class DatabaseStorage implements IStorage {
         .set({ ethBalance: balance })
         .where(eq(cards.id, cardId));
     }, 'Update card ETH balance');
+  }
+
+  async transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
+    return this.withTransaction(async () => {
+      const fromCard = await this.getCardById(fromCardId);
+      if (!fromCard) {
+        throw new Error("Карта отправителя не найдена");
+      }
+
+      // Крипто-перевод
+      if (wallet) {
+        if (fromCard.type !== 'crypto') {
+          throw new Error("Для крипто-перевода используйте крипто-карту");
+        }
+
+        const balance = wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance;
+        const numBalance = Number(balance || '0');
+
+        if (isNaN(numBalance)) {
+          throw new Error(`Ошибка формата баланса ${wallet.toUpperCase()}`);
+        }
+
+        if (numBalance < amount) {
+          throw new Error(`Недостаточно ${wallet.toUpperCase()}. Доступно: ${numBalance.toFixed(8)} ${wallet.toUpperCase()}`);
+        }
+
+        const newBalance = (numBalance - amount).toFixed(8);
+
+        // Создаём транзакцию
+        const transaction = await this.createTransaction({
+          fromCardId: fromCard.id,
+          toCardId: null,
+          amount: amount.toString(),
+          convertedAmount: amount.toString(),
+          type: 'transfer',
+          status: 'completed',
+          wallet: wallet,
+          description: `Перевод ${amount.toFixed(8)} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
+          fromCardNumber: fromCard.number,
+          toCardNumber: toCardNumber,
+          createdAt: new Date()
+        });
+
+        // Обновляем баланс
+        if (wallet === 'btc') {
+          await this.updateCardBtcBalance(fromCard.id, newBalance);
+        } else {
+          await this.updateCardEthBalance(fromCard.id, newBalance);
+        }
+
+        return { success: true, transaction };
+      }
+
+      // Фиатный перевод
+      const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
+      const toCard = await this.getCardByNumber(cleanToCardNumber);
+
+      if (!toCard) {
+        throw new Error("Карта получателя не найдена");
+      }
+
+      if (fromCard.id === toCard.id) {
+        throw new Error("Невозможно перевести на ту же карту");
+      }
+
+      const fromBalance = Number(fromCard.balance || '0');
+      const toBalance = Number(toCard.balance || '0');
+
+      if (isNaN(fromBalance) || isNaN(toBalance)) {
+        throw new Error("Ошибка формата баланса");
+      }
+
+      if (fromBalance < amount) {
+        throw new Error(`Недостаточно средств. Доступно: ${fromBalance.toFixed(2)} ${fromCard.type.toUpperCase()}`);
+      }
+
+      const newFromBalance = (fromBalance - amount).toFixed(2);
+      const newToBalance = (toBalance + amount).toFixed(2);
+
+      // Создаём транзакцию
+      const transaction = await this.createTransaction({
+        fromCardId: fromCard.id,
+        toCardId: toCard.id,
+        amount: amount.toString(),
+        convertedAmount: amount.toString(),
+        type: 'transfer',
+        status: 'completed',
+        wallet: null,
+        description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`,
+        fromCardNumber: fromCard.number,
+        toCardNumber: toCard.number,
+        createdAt: new Date()
+      });
+
+      // Обновляем балансы
+      await this.updateCardBalance(fromCard.id, newFromBalance);
+      await this.updateCardBalance(toCard.id, newToBalance);
+
+      return { success: true, transaction };
+    }, 'Transfer money');
   }
 }
 

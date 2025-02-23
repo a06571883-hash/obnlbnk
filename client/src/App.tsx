@@ -10,7 +10,7 @@ import ActivityPage from "@/pages/activity-page";
 import ProfilePage from "@/pages/profile-page";
 import RegulatorPage from "@/pages/regulator-page";
 import { ProtectedRoute } from "./lib/protected-route";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider } from "./hooks/use-auth";
 import BottomNav from "@/components/bottom-nav";
 import { useLocation } from "wouter";
 
