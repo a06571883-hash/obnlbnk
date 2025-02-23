@@ -1,7 +1,8 @@
 import { storage } from "./storage";
 
 const COINGECKO_API_URL = "https://api.coingecko.com/api/v3";
-const UPDATE_INTERVAL = 2000; // 2 seconds
+const UPDATE_INTERVAL = 10000; // 10 seconds
+let lastSuccessfulRates = null;
 
 async function fetchRates() {
   try {
@@ -39,11 +40,14 @@ async function fetchRates() {
     }
 
     // Update rates in database
-    await storage.updateExchangeRates({
+    const rates = {
       usdToUah: usdData.rates.UAH.toString(),
       btcToUsd: cryptoData.bitcoin.usd.toString(),
       ethToUsd: cryptoData.ethereum.usd.toString(),
-    });
+    };
+
+    await storage.updateExchangeRates(rates);
+    lastSuccessfulRates = rates;
 
     console.log("Exchange rates updated successfully:", {
       usdToUah: usdData.rates.UAH,
@@ -52,6 +56,11 @@ async function fetchRates() {
     });
   } catch (error) {
     console.error("Error updating exchange rates:", error);
+    // If we have last successful rates, use them as fallback
+    if (lastSuccessfulRates) {
+      console.log("Using cached rates due to API error");
+      await storage.updateExchangeRates(lastSuccessfulRates);
+    }
     // Wait before retrying to avoid API rate limits
     await new Promise(resolve => setTimeout(resolve, 1000));
   }

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, Bitcoin, DollarSign, Coins } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins, Banknote } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // Create a key for sessionStorage to track welcome message state
@@ -42,20 +42,6 @@ export default function HomePage() {
     }
   }, [user]);
 
-  // Clear welcome flag on logout
-  useEffect(() => {
-    const cleanup = () => {
-      sessionStorage.removeItem(WELCOME_MESSAGE_KEY);
-    };
-
-    // Add cleanup to logout mutation
-    if (logoutMutation.isSuccess) {
-      cleanup();
-    }
-
-    return cleanup;
-  }, [logoutMutation.isSuccess]);
-
   const { data: cards, isLoading: isLoadingCards } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
     refetchInterval: 5000,
@@ -67,7 +53,10 @@ export default function HomePage() {
 
   const { data: rates, isLoading: isLoadingRates } = useQuery({
     queryKey: ["/api/rates"],
-    refetchInterval: 2000, // Changed to 2 seconds
+    refetchInterval: 10000,
+    staleTime: 0,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const [prevRates, setPrevRates] = useState<typeof rates>(null);
@@ -243,7 +232,7 @@ export default function HomePage() {
                             <Bitcoin className="h-5 w-5 text-amber-500" />
                             <span>BTC/USD</span>
                           </div>
-                          <span className={`font-medium ${getPriceChangeColor(rates?.btcToUsd || '0', prevRates?.btcToUsd)}`}>
+                          <span className={`font-medium transition-colors duration-300 ${getPriceChangeColor(rates?.btcToUsd || '0', prevRates?.btcToUsd)}`}>
                             ${parseFloat(rates?.btcToUsd || '0').toLocaleString()}
                           </span>
                         </div>
@@ -252,7 +241,7 @@ export default function HomePage() {
                             <Coins className="h-5 w-5 text-blue-500" />
                             <span>ETH/USD</span>
                           </div>
-                          <span className={`font-medium ${getPriceChangeColor(rates?.ethToUsd || '0', prevRates?.ethToUsd)}`}>
+                          <span className={`font-medium transition-colors duration-300 ${getPriceChangeColor(rates?.ethToUsd || '0', prevRates?.ethToUsd)}`}>
                             ${parseFloat(rates?.ethToUsd || '0').toLocaleString()}
                           </span>
                         </div>
@@ -261,7 +250,7 @@ export default function HomePage() {
                             <DollarSign className="h-5 w-5 text-green-500" />
                             <span>USD/UAH</span>
                           </div>
-                          <span className={`font-medium ${getPriceChangeColor(rates?.usdToUah || '0', prevRates?.usdToUah)}`}>
+                          <span className={`font-medium transition-colors duration-300 ${getPriceChangeColor(rates?.usdToUah || '0', prevRates?.usdToUah)}`}>
                             ₴{parseFloat(rates?.usdToUah || '0').toLocaleString()}
                           </span>
                         </div>
@@ -271,7 +260,7 @@ export default function HomePage() {
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">BTC/UAH</div>
-                          <div className={`font-medium ${getPriceChangeColor(
+                          <div className={`font-medium transition-colors duration-300 ${getPriceChangeColor(
                             (parseFloat(rates?.btcToUsd || '0') * parseFloat(rates?.usdToUah || '0')).toString(),
                             prevRates ? (parseFloat(prevRates.btcToUsd) * parseFloat(prevRates.usdToUah)).toString() : undefined
                           )}`}>
@@ -280,7 +269,7 @@ export default function HomePage() {
                         </div>
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">ETH/UAH</div>
-                          <div className={`font-medium ${getPriceChangeColor(
+                          <div className={`font-medium transition-colors duration-300 ${getPriceChangeColor(
                             (parseFloat(rates?.ethToUsd || '0') * parseFloat(rates?.usdToUah || '0')).toString(),
                             prevRates ? (parseFloat(prevRates.ethToUsd) * parseFloat(prevRates.usdToUah)).toString() : undefined
                           )}`}>
@@ -289,7 +278,7 @@ export default function HomePage() {
                         </div>
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">ETH/BTC</div>
-                          <div className={`font-medium ${getPriceChangeColor(
+                          <div className={`font-medium transition-colors duration-300 ${getPriceChangeColor(
                             (parseFloat(rates?.ethToUsd || '0') / parseFloat(rates?.btcToUsd || '1')).toString(),
                             prevRates ? (parseFloat(prevRates.ethToUsd) / parseFloat(prevRates.btcToUsd)).toString() : undefined
                           )}`}>
@@ -298,7 +287,7 @@ export default function HomePage() {
                         </div>
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">UAH/USD</div>
-                          <div className={`font-medium ${getPriceChangeColor(
+                          <div className={`font-medium transition-colors duration-300 ${getPriceChangeColor(
                             (1 / parseFloat(rates?.usdToUah || '1')).toString(),
                             prevRates ? (1 / parseFloat(prevRates.usdToUah)).toString() : undefined
                           )}`}>
