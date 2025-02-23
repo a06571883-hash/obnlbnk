@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,20 +21,18 @@ export default function RegulatorPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedCard, setSelectedCard] = useState(null);
   const [amount, setAmount] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch exchange rates
-  const { data: rates } = useQuery({
+  const { data: rates = {} } = useQuery({
     queryKey: ["/api/rates"],
-    refetchInterval: 2000,
+    refetchInterval: 30000,
   });
 
   // Fetch all users
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["/api/users"],
-    queryFn: () => apiRequest("GET", "/api/users").then(res => res.json()),
     enabled: user?.is_regulator,
     refetchInterval: 5000
   });
@@ -83,7 +81,6 @@ export default function RegulatorPage() {
       });
 
       setAmount("");
-      setSelectedCard(null);
     } catch (error) {
       toast({
         title: "Ошибка",
@@ -104,15 +101,15 @@ export default function RegulatorPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
             <div className="p-3 rounded-lg bg-primary-foreground/10">
               <div className="text-sm opacity-90">BTC/USD</div>
-              <div className="text-xl font-bold">${rates?.btcToUsd}</div>
+              <div className="text-xl font-bold">${rates.btcToUsd}</div>
             </div>
             <div className="p-3 rounded-lg bg-primary-foreground/10">
               <div className="text-sm opacity-90">ETH/USD</div>
-              <div className="text-xl font-bold">${rates?.ethToUsd}</div>
+              <div className="text-xl font-bold">${rates.ethToUsd}</div>
             </div>
             <div className="p-3 rounded-lg bg-primary-foreground/10">
               <div className="text-sm opacity-90">USD/UAH</div>
-              <div className="text-xl font-bold">₴{rates?.usdToUah}</div>
+              <div className="text-xl font-bold">₴{rates.usdToUah}</div>
             </div>
           </div>
         </CardHeader>
