@@ -5,44 +5,40 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { cards } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
 import { db } from './db';
 import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
+import * as bip39 from 'bip39';
+import HDKey from 'hdkey';
 
 const ECPair = ECPairFactory(ecc);
 
 // Function for generating BTC addresses
 function generateBtcAddress(): string {
   try {
-    // Generate a key pair with explicit network and checking options
-    const keyPair = ECPair.makeRandom({
-      network: bitcoin.networks.bitcoin,
-      compressed: true
-    });
+    // Create a new random keypair
+    const keyPair = ECPair.makeRandom();
+    console.log('Generated key pair successfully');
 
-    // Get the public key buffer
-    const pubkeyBuffer = keyPair.publicKey;
-
-    // Create a P2PKH payment object with the public key buffer
-    const payment = bitcoin.payments.p2pkh({
-      pubkey: pubkeyBuffer,
+    // Generate P2PKH address
+    const { address } = bitcoin.payments.p2pkh({
+      pubkey: keyPair.publicKey,
       network: bitcoin.networks.bitcoin
     });
 
-    // Get the address from the payment object
-    if (!payment.address) {
-      throw new Error('Failed to generate BTC address: address is undefined');
+    if (!address) {
+      throw new Error('Failed to generate BTC address');
     }
 
     // Validate the generated address
     try {
-      bitcoin.address.toOutputScript(payment.address, bitcoin.networks.bitcoin);
-      console.log('Successfully generated and validated BTC address:', payment.address);
-      return payment.address;
+      bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
+      console.log('Successfully generated and validated BTC address:', address);
+      return address;
     } catch (validationError) {
       console.error('BTC address validation failed:', validationError);
       throw new Error('Generated address failed validation');
@@ -76,11 +72,21 @@ function generateEthAddress(): string {
 // Function for validating crypto addresses
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   try {
+    console.log(`Validating ${type.toUpperCase()} address:`, address);
+
     if (type === 'btc') {
-      bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
-      return true;
+      try {
+        bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
+        console.log('BTC address validation successful');
+        return true;
+      } catch (error) {
+        console.error('BTC address validation failed:', error);
+        return false;
+      }
     } else {
-      return ethers.isAddress(address);
+      const isValid = ethers.isAddress(address);
+      console.log('ETH address validation result:', isValid);
+      return isValid;
     }
   } catch (error) {
     console.error(`Error validating ${type.toUpperCase()} address:`, error);
@@ -343,10 +349,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cryptoCards = await db
         .select()
         .from(cards)
-        .where(eq(cards.type, 'crypto'))
-        .where(eq(cards.userId, req.user.id));
+        .where(
+          and(
+            eq(cards.type, 'crypto'),
+            eq(cards.userId, req.user.id)
+          )
+        );
 
       console.log(`Found ${cryptoCards.length} crypto cards to update`);
+
+      if (cryptoCards.length === 0) {
+        return res.status(400).json({ error: 'No crypto cards found for this user' });
+      }
 
       // Update each card with new addresses
       for (const card of cryptoCards) {
@@ -359,6 +373,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             btc: newBtcAddress,
             eth: newEthAddress
           });
+
+          // Validate both addresses before updating
+          const isBtcValid = validateCryptoAddress(newBtcAddress, 'btc');
+          const isEthValid = validateCryptoAddress(newEthAddress, 'eth');
+
+          if (!isBtcValid || !isEthValid) {
+            throw new Error('Generated addresses failed validation');
+          }
 
           // Update the card with new addresses
           await db
