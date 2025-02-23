@@ -196,5 +196,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate cards for user
+  app.post("/api/cards/generate", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+
+      // Generate a unique BTC address using ECPair
+      const keyPair = ECPair.makeRandom();
+      const { address: btcAddress } = bitcoin.payments.p2pkh({
+        pubkey: keyPair.publicKey,
+        network: bitcoin.networks.bitcoin
+      });
+
+      // Generate a unique ETH address using ethers
+      const ethWallet = ethers.Wallet.createRandom();
+      const ethAddress = ethWallet.address;
+
+      // Create three cards: USD, UAH, and Crypto
+      const cards = await Promise.all([
+        storage.createCard({
+          userId: req.user.id,
+          type: 'usd',
+          number: Math.random().toString().slice(2, 18), // 16 digit number
+          balance: '1000.00', // Starting balance
+          btcAddress: null,
+          ethAddress: null,
+          btcBalance: '0',
+          ethBalance: '0'
+        }),
+        storage.createCard({
+          userId: req.user.id,
+          type: 'uah',
+          number: Math.random().toString().slice(2, 18),
+          balance: '37000.00', // Starting balance in UAH
+          btcAddress: null,
+          ethAddress: null,
+          btcBalance: '0',
+          ethBalance: '0'
+        }),
+        storage.createCard({
+          userId: req.user.id,
+          type: 'crypto',
+          number: Math.random().toString().slice(2, 18),
+          balance: '0',
+          btcAddress: btcAddress,
+          ethAddress: ethAddress,
+          btcBalance: '0.05', // Starting BTC balance
+          ethBalance: '1.0'  // Starting ETH balance
+        })
+      ]);
+
+      res.json(cards);
+    } catch (error) {
+      console.error("Error generating cards:", error);
+      res.status(500).json({ 
+        message: "Ошибка при генерации карт",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   return httpServer;
 }

@@ -29,6 +29,7 @@ export default function HomePage() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Show welcome message only on fresh login and track it in sessionStorage
   useEffect(() => {
@@ -324,32 +325,49 @@ export default function HomePage() {
               </p>
               <Button
                 size="lg"
-                className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
+                className="bg-primary hover:bg-primary/90 w-full sm:w-auto relative"
+                disabled={isGenerating}
                 onClick={async () => {
                   try {
-                    const response = await apiRequest("POST", "/api/cards/generate");
+                    setIsGenerating(true);
+                    const response = await apiRequest("POST", "/api/cards/generate", undefined, {
+                      headers: {
+                        'Content-Type': 'application/json'
+                      }
+                    });
+
                     if (!response.ok) {
-                      throw new Error("Failed to generate cards");
+                      const errorData = await response.json().catch(() => ({}));
+                      throw new Error(errorData.message || "Failed to generate cards");
                     }
 
                     // Invalidate cards query to trigger refresh
-                    queryClient.invalidateQueries({ queryKey: ["/api/cards"] });
+                    await queryClient.invalidateQueries({ queryKey: ["/api/cards"] });
 
                     toast({
                       title: "Cards Generated",
                       description: "Your multi-currency cards have been created successfully",
                     });
-                  } catch (error) {
+                  } catch (error: any) {
                     console.error("Error generating cards:", error);
                     toast({
                       title: "Error",
-                      description: "Failed to generate cards. Please try again.",
+                      description: error.message || "Failed to generate cards. Please try again.",
                       variant: "destructive",
                     });
+                  } finally {
+                    setIsGenerating(false);
                   }
                 }}
               >
-                Generate Cards
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Cards'
+                )}
               </Button>
             </div>
           </div>
