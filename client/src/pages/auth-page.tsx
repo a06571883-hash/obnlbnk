@@ -11,16 +11,12 @@ import { useLocation } from "wouter";
 import { Loader2, Shield, Globe, Wallet } from "lucide-react";
 import { LogoFull } from "@/components/logo";
 import AnimatedBackground from "@/components/animated-background";
-import { useEffect, useState } from 'react'; 
+import { useEffect } from 'react'; 
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
-  const [, setLocation] = useLocation();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLogin, setIsLogin] = useState(true);
-  const auth = useAuth();
   const [, navigate] = useLocation();
+  const auth = useAuth();
 
   useEffect(() => {
     if (auth.user) {
@@ -89,7 +85,6 @@ export default function AuthPage() {
           </div>
         </div>
 
-        {/* Декоративный фоновый элемент */}
         <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" />
       </div>
     </div>
@@ -117,6 +112,8 @@ function LoginForm() {
     defaultValues: {
       username: "",
       password: "",
+      is_regulator: false,
+      regulator_balance: "0"
     },
   });
 
@@ -167,6 +164,8 @@ function RegisterForm() {
     defaultValues: {
       username: "",
       password: "",
+      is_regulator: false,
+      regulator_balance: "0"
     },
   });
 

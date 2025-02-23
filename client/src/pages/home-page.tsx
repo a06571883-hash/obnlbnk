@@ -69,9 +69,9 @@ export default function HomePage() {
 
   // Update prevRates when new rates arrive
   useEffect(() => {
-    if (rates && (!prevRates || 
-      rates.btcToUsd !== prevRates.btcToUsd || 
-      rates.ethToUsd !== prevRates.ethToUsd || 
+    if (rates && (!prevRates ||
+      rates.btcToUsd !== prevRates.btcToUsd ||
+      rates.ethToUsd !== prevRates.ethToUsd ||
       rates.usdToUah !== prevRates.usdToUah)) {
       setPrevRates(rates);
     }
@@ -330,11 +330,7 @@ export default function HomePage() {
                 onClick={async () => {
                   try {
                     setIsGenerating(true);
-                    const response = await apiRequest("POST", "/api/cards/generate", undefined, {
-                      headers: {
-                        'Content-Type': 'application/json'
-                      }
-                    });
+                    const response = await apiRequest("POST", "/api/cards/generate");
 
                     if (!response.ok) {
                       const errorData = await response.json().catch(() => ({}));

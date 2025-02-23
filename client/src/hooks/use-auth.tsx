@@ -1,9 +1,10 @@
 import { createContext, ReactNode, useContext } from "react";
 import { useQuery, useMutation, UseMutationResult } from "@tanstack/react-query";
 import { insertUserSchema, type User as SelectUser, type InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "./use-toast";
 import { useLocation } from "wouter";
+import { Loader2 } from "lucide-react";
 
 type LoginData = Pick<InsertUser, "username" | "password">;
 
@@ -138,6 +139,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLocation("/auth");
     },
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider
