@@ -256,24 +256,24 @@ export default function HomePage() {
                           className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 cursor-pointer"
                         >
                           <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
                               {transaction.type === 'transfer' && (
-                                <ArrowUpRight className={`h-4 w-4 ${iconColor}`} />
+                                <ArrowUpRight className={`h-3 w-3 ${iconColor}`} />
                               )}
                               {transaction.type === 'deposit' && (
-                                <ArrowDownLeft className="h-4 w-4 text-emerald-500" />
+                                <ArrowDownLeft className="h-3 w-3 text-emerald-500" />
                               )}
                             </div>
                             <div>
-                              <p className="text-sm font-medium">
+                              <p className="text-xs font-medium">
                                 {transactionType}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-[10px] text-muted-foreground">
                                 {format(new Date(transaction.createdAt), 'dd.MM.yyyy HH:mm')}
                               </p>
                             </div>
                           </div>
-                          <span className="text-sm font-medium">
+                          <span className="text-xs font-medium">
                             {transaction.amount} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
                           </span>
                         </div>
