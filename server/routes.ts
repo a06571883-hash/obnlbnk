@@ -159,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Crypto transfer
         if (!validateCryptoAddress(toCardNumber, wallet as 'btc' | 'eth')) {
           return res.status(400).json({ 
-            error: `Неверный формат ${wallet.toUpperCase()} адреса. Адрес должен начинаться с 0x`
+            error: `Неверный формат ${wallet.toUpperCase()} адреса`
           });
         }
 
@@ -231,7 +231,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch transactions" });
     }
   });
-
 
   const balances: BalanceType = {
     crypto: "62000",
