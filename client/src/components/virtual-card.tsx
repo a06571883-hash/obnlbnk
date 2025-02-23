@@ -101,21 +101,31 @@ export default function VirtualCard({ card }: { card: Card }) {
   }, [gyroscope, isMobile, isIOS]);
 
   const transferMutation = useMutation({
-    mutationFn: async ({ fromCardId, toCardNumber, amount, wallet, recipientType }: { fromCardId: number; toCardNumber: string; amount: string; wallet?: 'btc' | 'eth'; recipientType: RecipientType }) => {
+    mutationFn: async ({ fromCardId, toCardNumber, amount }: { fromCardId: number; toCardNumber: string; amount: string }) => {
       if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
         throw new Error('Пожалуйста, введите корректную сумму');
       }
 
-      // For crypto to USD transfers, amount is the target USD amount
-      const targetAmount = parseFloat(amount);
+      // Convert amount to number
+      const amountValue = parseFloat(amount);
 
-      const response = await apiRequest("POST", "/api/transfer", {
+      // Prepare transfer data based on recipient type
+      const transferData = {
         fromCardId,
-        toCardNumber: toCardNumber.replace(/\s+/g, ''),
-        amount: targetAmount,
-        wallet: card.type === 'crypto' || recipientType === 'crypto_wallet' ? selectedWallet : undefined,
-        recipientType
-      });
+        toCardNumber: recipientType === 'usd_card' ? toCardNumber.replace(/\s+/g, '') : toCardNumber,
+        amount: amountValue,
+        type: recipientType,
+        ...(recipientType === 'crypto_wallet' && { 
+          cryptoType: selectedWallet,
+          cryptoAmount: selectedWallet === 'btc' 
+            ? amountValue / EXCHANGE_RATES.btcToUsd 
+            : amountValue / EXCHANGE_RATES.ethToUsd
+        })
+      };
+
+      console.log('Transfer data:', transferData);
+
+      const response = await apiRequest("POST", "/api/transfer", transferData);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -130,13 +140,24 @@ export default function VirtualCard({ card }: { card: Card }) {
       setTransferAmount('');
       setRecipientCardNumber('');
       setTransferError('');
+
+      toast({
+        title: "Успешно!",
+        description: "Перевод выполнен успешно",
+      });
     },
     onError: (error: Error) => {
+      console.error('Transfer error:', error);
       setTransferError(error.message);
       setIsTransferring(false);
+
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive"
+      });
     }
   });
-
 
   return (
     <div
@@ -314,8 +335,6 @@ export default function VirtualCard({ card }: { card: Card }) {
                           fromCardId: card.id,
                           toCardNumber: recipientCardNumber,
                           amount: transferAmount,
-                          wallet: recipientType === 'crypto_wallet' ? selectedWallet : undefined,
-                          recipientType
                         });
 
                         toast({
