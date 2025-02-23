@@ -38,7 +38,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
       // Базовая валидация
-      if (!fromCardId || !toCardNumber) {
+      if (!fromCardId || !toCardNumber || !amount) {
         return res.status(400).json({ 
           message: "Не указаны обязательные параметры перевода" 
         });
@@ -70,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Выполнение перевода
       const result = await storage.transferMoney(
-        parseInt(fromCardId), 
+        parseInt(fromCardId),
         toCardNumber.replace(/\s+/g, ''),
         transferAmount,
         wallet
