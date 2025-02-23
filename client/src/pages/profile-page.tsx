@@ -57,7 +57,7 @@ export default function ProfilePage() {
 
   // Load initial settings and set up theme
   useEffect(() => {
-    // Default to dark theme unless explicitly set to false
+    // Default to dark theme unless explicitly set to light
     const isDark = localStorage.getItem('darkMode') !== 'false';
 
     // Apply theme
@@ -154,20 +154,20 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                {darkMode ? (
-                  <Moon className="h-4 w-4" />
-                ) : (
+                {!darkMode ? (
                   <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
                 )}
-                <Label>Тёмная тема</Label>
+                <Label>Светлая тема</Label>
               </div>
               <p className="text-sm text-muted-foreground">
-                Переключить тёмный режим
+                Переключить светлый режим
               </p>
             </div>
             <Switch
-              checked={darkMode}
-              onCheckedChange={(checked) => updateSetting('darkMode', checked)}
+              checked={!darkMode}
+              onCheckedChange={(checked) => updateSetting('darkMode', !checked)}
             />
           </div>
 
