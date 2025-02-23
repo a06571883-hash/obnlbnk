@@ -244,39 +244,39 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Calculate conversion rates based on latest exchange rates
-        const conversionRates = {
+        type CurrencyType = 'usd' | 'uah' | 'crypto';
+
+        const conversionRates: Record<CurrencyType, Record<'usd' | 'uah' | 'crypto', number>> = {
           usd: {
+            usd: 1,
             uah: parseFloat(rates.usdToUah),
             crypto: 1 / parseFloat(rates.btcToUsd)
           },
           uah: {
             usd: 1 / parseFloat(rates.usdToUah),
+            uah: 1,
             crypto: 1 / (parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah))
           },
           crypto: {
             usd: parseFloat(rates.btcToUsd),
-            uah: parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)
+            uah: parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah),
+            crypto: 1
           }
-        } as const;
+        };
 
         // Calculate converted amount for recipient
         let convertedAmount = amount;
         if (fromCard.type !== toCard.type) {
-          const fromType = fromCard.type.toLowerCase();
-          const toType = toCard.type.toLowerCase();
-          const rate = conversionRates[fromType as keyof typeof conversionRates]?.[toType as keyof (typeof conversionRates)[keyof typeof conversionRates]];
-
-          if (!rate) {
-            throw new Error("Неподдерживаемая конвертация валют");
-          }
-          convertedAmount = amount * rate;
+          const fromType = fromCard.type.toLowerCase() as CurrencyType;
+          const toType = toCard.type.toLowerCase() as CurrencyType;
+          convertedAmount = amount * conversionRates[fromType][toType];
         }
 
         // Convert commission to BTC
         let btcCommission = commission;
         if (fromCard.type !== 'crypto') {
-          const fromType = fromCard.type.toLowerCase();
-          btcCommission = commission * conversionRates[fromType].crypto;
+          const fromType = fromCard.type.toLowerCase() as CurrencyType;
+          btcCommission = commission * conversionRates[fromType]['crypto'];
         }
 
         // Update balances
