@@ -171,14 +171,6 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Карта получателя не найдена");
         }
 
-        if (fromCard.type !== toCard.type) {
-          throw new Error(`Перевод возможен только между картами одного типа (${fromCard.type.toUpperCase()})`);
-        }
-
-        if (fromCard.type === 'crypto') {
-          throw new Error("Для перевода криптовалюты используйте специальный метод");
-        }
-
         const fromBalance = parseFloat(fromCard.balance);
         const toBalance = parseFloat(toCard.balance);
 
@@ -190,18 +182,35 @@ export class DatabaseStorage implements IStorage {
           throw new Error(`Недостаточно средств на балансе (${fromBalance} ${fromCard.type.toUpperCase()})`);
         }
 
+        // Apply conversion rates if cards have different types
+        let convertedAmount = amount;
+        if (fromCard.type !== toCard.type) {
+          // Conversion rates (simplified for demo)
+          const rates = {
+            usd: { uah: 38.5, crypto: 0.000025 },
+            uah: { usd: 0.026, crypto: 0.00000065 },
+            crypto: { usd: 40000, uah: 1540000 }
+          };
+
+          if (!rates[fromCard.type]?.[toCard.type]) {
+            throw new Error("Неподдерживаемая конвертация валют");
+          }
+
+          convertedAmount = amount * rates[fromCard.type][toCard.type];
+        }
+
         const newFromBalance = (fromBalance - amount).toFixed(2);
-        const newToBalance = (toBalance + amount).toFixed(2);
+        const newToBalance = (toBalance + convertedAmount).toFixed(2);
 
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard.id,
           amount: amount.toString(),
-          convertedAmount: amount.toString(),
+          convertedAmount: convertedAmount.toString(),
           type: 'transfer',
           status: 'completed',
           wallet: null,
-          description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`,
+          description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} -> ${convertedAmount.toFixed(2)} ${toCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
           createdAt: new Date()
@@ -227,9 +236,13 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Карта отправителя не найдена");
         }
 
-        if (fromCard.type !== 'crypto') {
-          throw new Error("Отправитель должен использовать крипто-карту");
-        }
+        // Check recipient's card if it's an internal transfer
+        let toCard = null;
+        const allCards = await db.select().from(cards);
+        toCard = allCards.find(card => 
+          card.btcAddress === recipientAddress || 
+          card.ethAddress === recipientAddress
+        );
 
         const balance = cryptoType === 'btc' ?
           parseFloat(fromCard.btcBalance || '0') :
@@ -243,26 +256,40 @@ export class DatabaseStorage implements IStorage {
           throw new Error(`Недостаточно ${cryptoType.toUpperCase()} на балансе (${balance} ${cryptoType.toUpperCase()})`);
         }
 
-        const newBalance = (balance - amount).toFixed(8);
-
-        // Update the appropriate balance field
+        // Update sender's balance
+        const newSenderBalance = (balance - amount).toFixed(8);
         if (cryptoType === 'btc') {
-          await this.updateCardBtcBalance(fromCard.id, newBalance);
+          await this.updateCardBtcBalance(fromCard.id, newSenderBalance);
         } else {
-          await this.updateCardEthBalance(fromCard.id, newBalance);
+          await this.updateCardEthBalance(fromCard.id, newSenderBalance);
+        }
+
+        // If internal transfer, update recipient's balance
+        if (toCard) {
+          const recipientBalance = cryptoType === 'btc' ?
+            parseFloat(toCard.btcBalance || '0') :
+            parseFloat(toCard.ethBalance || '0');
+
+          const newRecipientBalance = (recipientBalance + amount).toFixed(8);
+
+          if (cryptoType === 'btc') {
+            await this.updateCardBtcBalance(toCard.id, newRecipientBalance);
+          } else {
+            await this.updateCardEthBalance(toCard.id, newRecipientBalance);
+          }
         }
 
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
-          toCardId: fromCard.id, // Same card for crypto withdrawals
+          toCardId: toCard?.id || fromCard.id,
           amount: amount.toString(),
           convertedAmount: amount.toString(),
           type: 'transfer',
           status: 'completed',
           wallet: recipientAddress,
-          description: `Перевод ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}`,
+          description: `Перевод ${amount.toFixed(8)} ${cryptoType.toUpperCase()} ${toCard ? 'на карту' : 'на адрес'} ${recipientAddress}`,
           fromCardNumber: fromCard.number,
-          toCardNumber: fromCard.number,
+          toCardNumber: toCard?.number || fromCard.number,
           createdAt: new Date()
         });
 
