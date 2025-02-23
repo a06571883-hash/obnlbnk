@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import { WebSocket, WebSocketServer } from 'ws';
+import { parse } from 'url';
 
 const COINGECKO_API_URL = "https://api.coingecko.com/api/v3";
 const UPDATE_INTERVAL = 30000; // 30 секунд
@@ -102,11 +103,17 @@ async function fetchRates() {
   }
 }
 
-export function startRateUpdates(server: any) {
+export function startRateUpdates(server: any, path: string = '/ws') {
   console.log("Запуск сервиса обновления курсов...");
 
-  // Инициализация WebSocket сервера
-  wss = new WebSocketServer({ server });
+  // Инициализация WebSocket сервера с проверкой пути
+  wss = new WebSocketServer({ 
+    server,
+    verifyClient: (info) => {
+      const { pathname } = parse(info.req.url || '');
+      return pathname === path;
+    }
+  });
 
   wss.on('connection', (ws) => {
     console.log('Новое WebSocket подключение');

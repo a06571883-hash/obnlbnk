@@ -38,54 +38,78 @@ export default function HomePage() {
   // Инициализация WebSocket подключения
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}`);
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
-    ws.onopen = () => {
-      console.log('WebSocket подключение установлено');
-      setWsStatus('connected');
+    let reconnectTimer: NodeJS.Timeout;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 5;
+
+    const connect = () => {
+      ws.onopen = () => {
+        console.log('WebSocket подключение установлено');
+        setWsStatus('connected');
+        reconnectAttempts = 0; // Сбрасываем счетчик попыток при успешном подключении
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const newRates = JSON.parse(event.data);
+          setPrevRates(rates);
+          setRates(newRates);
+        } catch (error) {
+          console.error('Ошибка обработки данных WebSocket:', error);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket ошибка:', error);
+        setWsStatus('error');
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket соединение закрыто');
+        setWsStatus('error');
+
+        // Пытаемся переподключиться, если не превышен лимит попыток
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          reconnectTimer = setTimeout(() => {
+            reconnectAttempts++;
+            connect();
+          }, 2000 * Math.pow(2, reconnectAttempts)); // Экспоненциальная задержка
+        } else {
+          toast({
+            title: "Ошибка соединения",
+            description: "Не удалось восстановить соединение для обновления курсов",
+            variant: "destructive"
+          });
+        }
+      };
     };
 
-    ws.onmessage = (event) => {
-      try {
-        const newRates = JSON.parse(event.data);
-        setPrevRates(rates);
-        setRates(newRates);
-      } catch (error) {
-        console.error('Ошибка обработки данных WebSocket:', error);
-      }
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket ошибка:', error);
-      setWsStatus('error');
-      toast({
-        title: "Ошибка соединения",
-        description: "Проблема с получением обновлений курсов валют",
-        variant: "destructive"
-      });
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket соединение закрыто');
-      setWsStatus('error');
-    };
+    connect(); // Инициируем первое подключение
 
     // Получаем начальные курсы через HTTP
-    if (!rates) {
-      fetch('/api/rates')
-        .then(res => res.json())
-        .then(initialRates => {
-          setRates(initialRates);
-        })
-        .catch(error => {
-          console.error('Ошибка получения начальных курсов:', error);
+    fetch('/api/rates')
+      .then(res => res.json())
+      .then(initialRates => {
+        setRates(initialRates);
+      })
+      .catch(error => {
+        console.error('Ошибка получения начальных курсов:', error);
+        toast({
+          title: "Ошибка загрузки курсов",
+          description: "Не удалось получить текущие курсы валют",
+          variant: "destructive"
         });
-    }
+      });
 
     return () => {
-      ws.close();
+      clearTimeout(reconnectTimer);
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
     };
-  }, []);
+  }, [toast]); // Добавляем toast в зависимости
 
   // Show welcome message only on fresh login and track it in sessionStorage
   useEffect(() => {

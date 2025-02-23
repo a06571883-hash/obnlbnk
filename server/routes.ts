@@ -31,8 +31,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Инициализация аутентификации
   setupAuth(app);
 
-  // Запуск автоматического обновления курсов с поддержкой WebSocket
-  startRateUpdates(httpServer);
+  // Запуск автоматического обновления курсов с поддержкой WebSocket на пути /ws
+  startRateUpdates(httpServer, '/ws');
 
   // Получение последних курсов валют
   app.get("/api/rates", async (req, res) => {
