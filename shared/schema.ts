@@ -17,7 +17,7 @@ export const cards = pgTable("cards", {
   number: text("number").notNull(),
   expiry: text("expiry").notNull(),
   cvv: text("cvv").notNull(),
-  balance: decimal("balance", { precision: 10, scale: 2 }).notNull().default("0"),
+  balance: decimal("balance").notNull().default("0"),
   btcBalance: decimal("btc_balance", { precision: 20, scale: 8 }).notNull().default("0"),
   ethBalance: decimal("eth_balance", { precision: 20, scale: 8 }).notNull().default("0"),
   btcAddress: text("btc_address"),
@@ -27,22 +27,38 @@ export const cards = pgTable("cards", {
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   fromCardId: integer("from_card_id").notNull(),
-  toCardId: integer("to_card_id").notNull(),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  convertedAmount: decimal("converted_amount", { precision: 10, scale: 2 }).notNull(),
-  type: text("type").notNull(), // 'transfer', 'deposit', 'withdraw'
-  wallet: text("wallet"), // 'btc' или 'eth' для крипто-транзакций
-  status: text("status").notNull(), // 'pending', 'completed', 'failed'
+  toCardId: integer("to_card_id"),
+  amount: decimal("amount", { precision: 20, scale: 8 }).notNull(),
+  convertedAmount: decimal("converted_amount", { precision: 20, scale: 8 }).notNull(),
+  type: text("type").notNull(),
+  wallet: text("wallet"),
+  status: text("status").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   description: text("description"),
-  fromCardNumber: text("from_card_number"),
-  toCardNumber: text("to_card_number"),
+  fromCardNumber: text("from_card_number").notNull(),
+  toCardNumber: text("to_card_number").notNull(),
 });
 
+// Base schemas with drizzle-zod
 export const insertUserSchema = createInsertSchema(users);
 export const insertCardSchema = createInsertSchema(cards);
-export const insertTransactionSchema = createInsertSchema(transactions);
 
+// Custom transaction schema with proper validation
+export const insertTransactionSchema = z.object({
+  fromCardId: z.number(),
+  toCardId: z.number().nullable(),
+  amount: z.string(),
+  convertedAmount: z.string(),
+  type: z.string(),
+  wallet: z.string().nullable(),
+  status: z.string(),
+  createdAt: z.date().optional(),
+  description: z.string().nullable(),
+  fromCardNumber: z.string(),
+  toCardNumber: z.string()
+});
+
+// Type exports
 export type User = typeof users.$inferSelect;
 export type Card = typeof cards.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
