@@ -10,52 +10,10 @@ import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
 import { db } from './db';
-import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
-import * as bip39 from 'bip39';
-import HDKey from 'hdkey';
-import { randomBytes } from 'crypto';
+import ECPairFactory from 'ecpair';
 
 const ECPair = ECPairFactory(ecc);
-
-// Function for generating BTC addresses
-function generateBtcAddress(): string {
-  try {
-    // Create a random key pair
-    const keyPair = ECPair.makeRandom();
-
-    // Convert public key to Buffer if it's Uint8Array
-    const pubkeyBuffer = Buffer.from(keyPair.publicKey);
-
-    // Generate P2PKH address from the public key
-    const { address } = bitcoin.payments.p2pkh({
-      pubkey: pubkeyBuffer,
-      network: bitcoin.networks.bitcoin
-    });
-
-    if (!address) {
-      throw new Error('Failed to generate BTC address');
-    }
-
-    return address;
-  } catch (error) {
-    console.error('Error generating BTC address:', error);
-    throw new Error('Failed to generate BTC address');
-  }
-}
-
-// Function for generating ETH addresses
-function generateEthAddress(): string {
-  try {
-    const randomPart = Array(40).fill(0)
-      .map(() => Math.floor(Math.random() * 16).toString(16))
-      .join('');
-    return `0x${randomPart}`;
-  } catch (error) {
-    console.error('Error generating ETH address:', error);
-    throw new Error('Failed to generate ETH address');
-  }
-}
 
 // Function for validating crypto addresses
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
@@ -77,15 +35,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   app.get("/api/user", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const user = await storage.getUser(req.user.id);
-    res.json(user);
+    try {
+      if (!req.isAuthenticated()) {
+        console.log('User not authenticated');
+        return res.sendStatus(401);
+      }
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        console.log('User not found');
+        return res.sendStatus(404);
+      }
+      res.json(user);
+    } catch (error) {
+      console.error('Error in /api/user:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   });
 
   app.get("/api/cards", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const cards = await storage.getCardsByUserId(req.user.id);
-    res.json(cards);
+    try {
+      if (!req.isAuthenticated()) {
+        console.log('User not authenticated for /api/cards');
+        return res.sendStatus(401);
+      }
+      const cards = await storage.getCardsByUserId(req.user.id);
+      res.json(cards);
+    } catch (error) {
+      console.error('Error in /api/cards:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   });
 
   app.get("/api/users", async (req, res) => {
@@ -136,16 +114,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/transactions", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
     try {
-      // Get user's cards
+      if (!req.isAuthenticated()) {
+        console.log('User not authenticated for transactions');
+        return res.sendStatus(401);
+      }
+
       const userCards = await storage.getCardsByUserId(req.user.id);
       if (!userCards.length) {
         return res.json([]);
       }
 
-      // Get transactions for all user's cards
       const cardIds = userCards.map(card => card.id);
       const transactions = [];
 
@@ -154,7 +133,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transactions.push(...cardTransactions);
       }
 
-      // Sort by date descending and remove duplicates
       const uniqueTransactions = Array.from(
         new Map(transactions.map(t => [t.id, t])).values()
       ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -167,40 +145,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/transfer", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
-    const { fromCardId, toCardNumber, amount, wallet } = req.body;
-
-    if (!fromCardId || !toCardNumber || !amount) {
-      return res.status(400).json({ error: "Все поля обязательны" });
-    }
-
     try {
+      if (!req.isAuthenticated()) {
+        console.log('User not authenticated for transfer');
+        return res.sendStatus(401);
+      }
+
+      const { fromCardId, toCardNumber, amount, wallet } = req.body;
+
+      if (!fromCardId || !toCardNumber || !amount) {
+        return res.status(400).json({ error: "Все поля обязательны" });
+      }
+
       const fromCard = await storage.getCardById(fromCardId);
       if (!fromCard) {
         return res.status(400).json({ error: "Карта отправителя не найдена" });
       }
 
-      if (wallet) {
-        // Crypto transfer
-        if (!validateCryptoAddress(toCardNumber, wallet as 'btc' | 'eth')) {
-          return res.status(400).json({
-            error: `Неверный формат ${wallet.toUpperCase()} адреса`
-          });
-        }
-
-        const result = await storage.transferMoney(fromCardId, toCardNumber, parseFloat(amount), wallet as 'btc' | 'eth');
-        if (!result.success) {
-          return res.status(400).json({ error: result.error });
-        }
-
-        return res.json({
-          success: true,
-          message: "Перевод успешно выполнен",
-          transaction: result.transaction
-        });
-      } else {
-        // Regular card transfer
+      // Для обычного перевода между картами
+      if (!wallet) {
         const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
         if (cleanToCardNumber.length !== 16) {
           return res.status(400).json({ error: "Неверный формат номера карты" });
@@ -217,6 +180,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           transaction: result.transaction
         });
       }
+
+      // Для крипто-перевода
+      if (!validateCryptoAddress(toCardNumber, wallet as 'btc' | 'eth')) {
+        return res.status(400).json({
+          error: `Неверный формат ${wallet.toUpperCase()} адреса`
+        });
+      }
+
+      const result = await storage.transferMoney(fromCardId, toCardNumber, parseFloat(amount), wallet as 'btc' | 'eth');
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      return res.json({
+        success: true,
+        message: "Перевод успешно выполнен",
+        transaction: result.transaction
+      });
     } catch (error: any) {
       console.error("Transfer error:", error);
       res.status(500).json({
@@ -225,7 +206,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-
 
   app.post("/api/cards/update-balance", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -369,6 +349,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
+
+// Function for generating BTC addresses
+function generateBtcAddress(): string {
+  try {
+    // Create a random key pair
+    const keyPair = ECPair.makeRandom();
+
+    // Convert public key to Buffer if it's Uint8Array
+    const pubkeyBuffer = Buffer.from(keyPair.publicKey);
+
+    // Generate P2PKH address from the public key
+    const { address } = bitcoin.payments.p2pkh({
+      pubkey: pubkeyBuffer,
+      network: bitcoin.networks.bitcoin
+    });
+
+    if (!address) {
+      throw new Error('Failed to generate BTC address');
+    }
+
+    return address;
+  } catch (error) {
+    console.error('Error generating BTC address:', error);
+    throw new Error('Failed to generate BTC address');
+  }
+}
+
+// Function for generating ETH addresses
+function generateEthAddress(): string {
+  try {
+    const randomPart = Array(40).fill(0)
+      .map(() => Math.floor(Math.random() * 16).toString(16))
+      .join('');
+    return `0x${randomPart}`;
+  } catch (error) {
+    console.error('Error generating ETH address:', error);
+    throw new Error('Failed to generate ETH address');
+  }
+}
+
 
 // Function for generating card numbers
 function generateCardNumber(): string {

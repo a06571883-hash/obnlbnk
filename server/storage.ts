@@ -45,7 +45,7 @@ export interface IStorage {
   getCardByNumber(cardNumber: string): Promise<Card | undefined>;
   getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
   createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction>;
-  transferMoney(fromCardId: number, toCardNumber: string, usdAmount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -183,11 +183,11 @@ export class DatabaseStorage implements IStorage {
     }, 'Create transaction');
   }
 
-  async transferMoney(fromCardId: number, toCardNumber: string, usdAmount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
+  async transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withRetry(async () => {
-      console.log(`Starting transfer: fromCardId=${fromCardId}, toCardNumber=${toCardNumber}, usdAmount=${usdAmount}, wallet=${wallet}`);
+      console.log(`Starting transfer: fromCardId=${fromCardId}, toCardNumber=${toCardNumber}, amount=${amount}, wallet=${wallet}`);
 
-      if (usdAmount <= 0) {
+      if (amount <= 0) {
         return { success: false, error: "Сумма перевода должна быть больше 0" };
       }
 
@@ -196,7 +196,7 @@ export class DatabaseStorage implements IStorage {
         return { success: false, error: "Карта отправителя не найдена" };
       }
 
-      // Regular card to card transfer
+      // Обычный перевод между картами
       if (!wallet) {
         const toCard = await this.getCardByNumber(toCardNumber);
         if (!toCard) {
@@ -210,22 +210,22 @@ export class DatabaseStorage implements IStorage {
         const fromBalance = parseFloat(fromCard.balance);
         const toBalance = parseFloat(toCard.balance);
 
-        if (fromBalance < usdAmount) {
-          return { success: false, error: `Недостаточно средств. Требуется: ${usdAmount}, Доступно: ${fromBalance}` };
+        if (fromBalance < amount) {
+          return { success: false, error: `Недостаточно средств. Требуется: ${amount}, Доступно: ${fromBalance}` };
         }
 
-        const newFromBalance = (fromBalance - usdAmount).toFixed(2);
-        const newToBalance = (toBalance + usdAmount).toFixed(2);
+        const newFromBalance = (fromBalance - amount).toFixed(2);
+        const newToBalance = (toBalance + amount).toFixed(2);
 
         const transaction = await db.transaction(async (tx) => {
           const [newTransaction] = await tx.insert(transactions)
             .values({
               fromCardId: fromCard.id,
               toCardId: toCard.id,
-              amount: usdAmount.toString(),
+              amount: amount.toString(),
               type: 'transfer',
               status: 'completed',
-              description: `Перевод ${usdAmount} ${fromCard.type.toUpperCase()}`,
+              description: `Перевод ${amount} ${fromCard.type.toUpperCase()}`,
               fromCardNumber: fromCard.number,
               toCardNumber: toCard.number
             })
@@ -245,7 +245,7 @@ export class DatabaseStorage implements IStorage {
         return { success: true, transaction };
       }
 
-      // Crypto transfer
+      // Крипто-перевод
       if (fromCard.type !== 'crypto') {
         return { success: false, error: "Отправлять криптовалюту можно только с крипто-карты" };
       }
@@ -254,25 +254,25 @@ export class DatabaseStorage implements IStorage {
         parseFloat(fromCard.btcBalance || '0') : 
         parseFloat(fromCard.ethBalance || '0');
 
-      if (fromBalance < usdAmount) {
+      if (fromBalance < amount) {
         return { 
           success: false, 
-          error: `Недостаточно ${wallet.toUpperCase()}. Требуется: ${usdAmount}, Доступно: ${fromBalance}` 
+          error: `Недостаточно ${wallet.toUpperCase()}. Требуется: ${amount}, Доступно: ${fromBalance}` 
         };
       }
 
-      const newFromBalance = (fromBalance - usdAmount).toFixed(8);
+      const newFromBalance = (fromBalance - amount).toFixed(8);
 
       const transaction = await db.transaction(async (tx) => {
         const [newTransaction] = await tx.insert(transactions)
           .values({
             fromCardId: fromCard.id,
             toCardId: null,
-            amount: usdAmount.toString(),
+            amount: amount.toString(),
             type: 'transfer',
             wallet: wallet,
             status: 'completed',
-            description: `Перевод ${usdAmount} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
+            description: `Перевод ${amount} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
             fromCardNumber: fromCard.number,
             toCardNumber: toCardNumber
           })
