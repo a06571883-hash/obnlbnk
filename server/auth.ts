@@ -33,14 +33,20 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  // Используем случайный секрет, если SESSION_SECRET не установлен
+  const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
+  console.log('Setting up session with secret length:', sessionSecret.length);
+
   app.use(session({
-    secret: process.env.SESSION_SECRET || randomBytes(32).toString('hex'),
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false,
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      secure: false, // для локальной разработки
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+      path: '/',
+      httpOnly: true
     }
   }));
 
@@ -61,40 +67,59 @@ export function setupAuth(app: Express) {
 
       return done(null, user);
     } catch (error) {
+      console.error("Authentication error:", error);
       return done(error);
     }
   }));
 
   passport.serializeUser((user, done) => {
+    console.log('Serializing user:', user.id);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log('Deserializing user:', id);
       const user = await storage.getUser(id);
+      if (!user) {
+        console.log('User not found during deserialization:', id);
+        return done(null, false);
+      }
       done(null, user);
     } catch (error) {
+      console.error("Deserialization error:", error);
       done(error);
     }
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
-      if (err) return next(err);
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        console.error("Login error:", err);
+        return next(err);
+      }
       if (!user) {
+        console.log("Login failed:", info?.message);
         return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
       req.logIn(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error("Login session error:", err);
+          return next(err);
+        }
+        console.log("User logged in successfully:", user.username);
         res.json(user);
       });
     })(req, res, next);
   });
 
   app.get("/api/user", (req, res) => {
+    console.log('Session ID:', req.sessionID);
+    console.log('Is authenticated:', req.isAuthenticated());
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
+    console.log("User session active:", req.user.username);
     res.json(req.user);
   });
 
@@ -121,20 +146,26 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) {
+          console.error("Registration session error:", err);
           return res.status(500).json({ message: "Error creating session" });
         }
+        console.log("New user registered:", username);
         res.status(201).json(user);
       });
     } catch (error) {
+      console.error("Registration error:", error);
       res.status(500).json({ message: "Registration error" });
     }
   });
 
   app.post("/api/logout", (req, res) => {
+    const username = req.user?.username;
     req.logout((err) => {
       if (err) {
+        console.error("Logout error:", err);
         return res.status(500).json({ message: "Logout error" });
       }
+      console.log("User logged out:", username);
       res.sendStatus(200);
     });
   });

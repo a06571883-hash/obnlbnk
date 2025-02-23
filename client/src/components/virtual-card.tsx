@@ -94,7 +94,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
       const selectedBalance = getSelectedBalance();
       if (selectedBalance < parseFloat(transferAmount)) {
-        throw new Error(`Недостаточно ${selectedWallet.toUpperCase()} на балансе (${selectedBalance} ${selectedWallet.toUpperCase()})`);
+        throw new Error(`Недостаточно ${card.type.toUpperCase()} на балансе (${selectedBalance} ${card.type.toUpperCase()})`);
       }
 
       if (!recipientCardNumber.trim()) {
@@ -106,7 +106,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         amount: parseFloat(transferAmount),
         recipientAddress: recipientCardNumber.replace(/\s+/g, ''),
         transferType: recipientType,
-        cryptoType: selectedWallet
+        cryptoType: card.type === 'crypto' ? selectedWallet : undefined
       };
 
       const response = await apiRequest("POST", "/api/transfer", transferRequest);
@@ -212,6 +212,13 @@ export default function VirtualCard({ card }: { card: Card }) {
       });
     }
   }, [gyroscope, isMobile, isIOS]);
+
+  const getTransferCurrency = () => {
+    if (card.type === 'crypto') {
+      return selectedWallet.toUpperCase();
+    }
+    return card.type.toUpperCase();
+  };
 
   return (
     <div
@@ -452,7 +459,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium">
-                        Сумма в {selectedWallet.toUpperCase()}
+                        Сумма в {getTransferCurrency()}
                       </label>
                       <div className="relative">
                         <input
@@ -465,7 +472,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                           required
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
-                          {selectedWallet.toUpperCase()}
+                          {getTransferCurrency()}
                         </span>
                       </div>
                       {recipientType === 'usd_card' && card.type === 'crypto' && transferAmount && (
@@ -474,7 +481,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        Доступно: {getSelectedBalance()} {selectedWallet.toUpperCase()}
+                        Доступно: {getSelectedBalance()} {getTransferCurrency()}
                       </p>
                     </div>
 

@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
 import { setupAuth } from './auth';
+import { startRateUpdates } from './rates';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -29,6 +30,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Initialize authentication
   setupAuth(app);
+
+  // Start automatic rate updates
+  startRateUpdates();
 
   // Get latest exchange rates
   app.get("/api/rates", async (req, res) => {

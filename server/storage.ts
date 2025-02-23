@@ -186,8 +186,8 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Parse balances
-        const fromBalanceStr = fromCard.type === 'crypto' ? 
-          (fromCard.btcBalance || '0') : 
+        const fromBalanceStr = fromCard.type === 'crypto' ?
+          (fromCard.btcBalance || '0') :
           fromCard.balance;
         const fromBalance = parseFloat(fromBalanceStr);
 
@@ -260,19 +260,8 @@ export class DatabaseStorage implements IStorage {
         });
 
         // Create commission transaction
-        await this.createTransaction({
-          fromCardId: fromCard.id,
-          toCardId: toCard.id,
-          amount: commission.toString(),
-          convertedAmount: btcCommission.toString(),
-          type: 'commission',
-          status: 'completed',
-          wallet: null,
-          description: `Комиссия 1% (${btcCommission.toFixed(8)} BTC)`,
-          fromCardNumber: fromCard.number,
-          toCardNumber: toCard.number,
-          createdAt: new Date()
-        });
+        await this.createCommissionTransaction(fromCard, toCard, commission, btcCommission, regulator);
+
 
         // Update balances
         await this.updateCardBalance(fromCard.id, newFromBalance);
@@ -383,19 +372,7 @@ export class DatabaseStorage implements IStorage {
         });
 
         // Create commission transaction
-        await this.createTransaction({
-          fromCardId: fromCard.id,
-          toCardId: toCard?.id || fromCard.id,
-          amount: commission.toString(),
-          convertedAmount: btcCommission.toString(),
-          type: 'commission',
-          status: 'completed',
-          wallet: null,
-          description: `Комиссия 1% (${btcCommission.toFixed(8)} BTC)`,
-          fromCardNumber: fromCard.number,
-          toCardNumber: toCard?.number || fromCard.number,
-          createdAt: new Date()
-        });
+        await this.createCommissionTransaction(fromCard, toCard, commission, btcCommission, regulator);
 
         return { success: true, transaction };
 
@@ -404,6 +381,28 @@ export class DatabaseStorage implements IStorage {
         return { success: false, error: (error as Error).message };
       }
     }, 'Transfer crypto');
+  }
+
+  private async createCommissionTransaction(
+    fromCard: Card,
+    toCard: Card | null,
+    commission: number,
+    btcCommission: number,
+    regulator: User
+  ): Promise<Transaction> {
+    return await this.createTransaction({
+      fromCardId: fromCard.id,
+      toCardId: regulator.id,
+      amount: commission.toString(),
+      convertedAmount: btcCommission.toString(),
+      type: 'commission',
+      status: 'completed',
+      wallet: null,
+      description: `Комиссия 1% от перевода с карты ${fromCard.number} ${toCard ? `на карту ${toCard.number}` : ''} (${btcCommission.toFixed(8)} BTC)`,
+      fromCardNumber: fromCard.number,
+      toCardNumber: "REGULATOR",
+      createdAt: new Date()
+    });
   }
 
   private async withTransaction<T>(operation: () => Promise<T>, context: string): Promise<T> {
