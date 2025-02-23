@@ -201,10 +201,14 @@ export class DatabaseStorage implements IStorage {
       if (wallet) {
         // For crypto transfers, find card by BTC or ETH address
         const allCards = await db.select().from(cards);
-        toCard = allCards.find(card =>
-          (wallet === 'btc' && card.btcAddress === toCardNumber) ||
-          (wallet === 'eth' && card.ethAddress === toCardNumber)
-        );
+        console.log('Searching for crypto card with address:', toCardNumber, 'wallet type:', wallet);
+        toCard = allCards.find(card => {
+          const matches = wallet === 'btc' ? 
+            (card.btcAddress && card.btcAddress.toLowerCase() === toCardNumber.toLowerCase()) :
+            (card.ethAddress && card.ethAddress.toLowerCase() === toCardNumber.toLowerCase());
+          console.log(`Checking card ${card.id}: ${wallet} address matches:`, matches);
+          return matches;
+        });
       } else {
         // For regular transfers, find by card number
         const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
@@ -212,7 +216,10 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (!toCard) {
-        return { success: false, error: "Карта получателя не найдена" };
+        return { success: false, error: wallet ? 
+          `${wallet.toUpperCase()} адрес получателя не найден` : 
+          "Карта получателя не найдена" 
+        };
       }
 
       if (fromCard.id === toCard.id) {

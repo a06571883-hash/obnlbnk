@@ -34,8 +34,9 @@ const EXCHANGE_RATES = {
 
 // Validation functions for crypto addresses
 function validateBtcAddress(address: string): boolean {
-  // Accept any non-empty string without spaces, minimum 8 characters
-  return address.trim().length >= 8 && !/\s/.test(address);
+  // Bitcoin addresses are typically between 26-35 characters
+  // Can start with 1, 3, or bc1
+  return /^(1|3|bc1)[a-zA-Z0-9]{25,59}$/.test(address);
 }
 
 function validateEthAddress(address: string): boolean {
