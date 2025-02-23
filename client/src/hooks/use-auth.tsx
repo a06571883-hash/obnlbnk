@@ -3,6 +3,7 @@ import { useQuery, useMutation, UseMutationResult, useQueryClient } from "@tanst
 import { insertUserSchema, type User as SelectUser, type InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { useToast } from "./use-toast";
+import { useLocation } from "wouter";
 
 type LoginData = Pick<InsertUser, "username" | "password">;
 
@@ -20,6 +21,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const {
     data: user,
@@ -84,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
       queryClient.invalidateQueries();
+      setLocation("/auth");
       toast({
         title: "Выход выполнен",
         description: "Вы успешно вышли из системы",
@@ -97,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       // Force clear user data even if logout fails
       queryClient.setQueryData(["/api/user"], null);
+      setLocation("/auth");
     },
   });
 

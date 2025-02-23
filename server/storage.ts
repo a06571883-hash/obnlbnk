@@ -15,10 +15,11 @@ const PostgresSessionStore = connectPg(session);
 
 const sessionPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 5,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-  ssl: false
+  max: 10,
+  idleTimeoutMillis: 60000, // 1 minute
+  connectionTimeoutMillis: 5000, // 5 seconds
+  ssl: false,
+  keepAlive: true
 });
 
 export interface IStorage {
@@ -52,6 +53,7 @@ export class DatabaseStorage implements IStorage {
         createTableIfMissing: true,
         pruneSessionInterval: 60 * 15, // 15 minutes
         errorLog: console.error.bind(console),
+        keepAlive: true,
         schemaName: 'public'
       });
       console.log('Session store initialized successfully');

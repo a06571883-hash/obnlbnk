@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
 interface AuthProviderProps {
@@ -7,7 +8,14 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const { isLoading } = useQuery({
+    queryKey: ["/api/user"],
+    retry: false,
+    refetchOnWindowFocus: true,
+    staleTime: 0
+  });
 
   if (isLoading) {
     return (
