@@ -21,11 +21,23 @@ const ECPair = ECPairFactory(ecc);
 // Function for generating BTC addresses
 function generateBtcAddress(): string {
   try {
-    // Generate a simple demo BTC address (legacy format)
-    const randomPart = Array(33).fill(0)
-      .map(() => Math.floor(Math.random() * 16).toString(16))
-      .join('');
-    return `1${randomPart}`; // Using legacy format starting with '1'
+    // Create a random key pair
+    const keyPair = ECPair.makeRandom();
+
+    // Convert public key to Buffer if it's Uint8Array
+    const pubkeyBuffer = Buffer.from(keyPair.publicKey);
+
+    // Generate P2PKH address from the public key
+    const { address } = bitcoin.payments.p2pkh({
+      pubkey: pubkeyBuffer,
+      network: bitcoin.networks.bitcoin
+    });
+
+    if (!address) {
+      throw new Error('Failed to generate BTC address');
+    }
+
+    return address;
   } catch (error) {
     console.error('Error generating BTC address:', error);
     throw new Error('Failed to generate BTC address');
@@ -50,8 +62,12 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   if (!address) return false;
 
   if (type === 'btc') {
-    // Updated validation to accept both legacy and SegWit addresses
-    return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address);
+    try {
+      bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
+      return true;
+    } catch {
+      return false;
+    }
   } else {
     return /^0x[a-fA-F0-9]{40}$/.test(address);
   }
