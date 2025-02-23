@@ -106,7 +106,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   return (
     <div
       ref={cardRef}
-      className="perspective-[1000px] w-full max-w-[400px] mx-auto px-4 sm:px-0"
+      className="perspective-[1000px] w-full max-w-[500px] mx-auto px-8 py-12 sm:px-12"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -120,7 +120,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-40 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 sm:p-6 text-white shadow-xl transform transition-all duration-300`}
+        className={`relative h-48 sm:h-64 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-4 sm:p-8 text-white shadow-xl transform transition-all duration-300`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
