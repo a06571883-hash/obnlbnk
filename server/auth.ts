@@ -53,9 +53,9 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false,
+      secure: false, // Set to true in production with HTTPS
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: 'lax' as 'lax', // Type assertion to fix TypeScript error
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     }
   };
@@ -106,61 +106,42 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user: Express.User, done) => {
-    console.log(`[Auth] Serializing user: ${user.username}`);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
-      console.log(`[Auth] Deserializing user: ${id}`);
       const user = await storage.getUser(id);
       if (!user) {
-        console.log(`[Auth] User not found during deserialization: ${id}`);
         return done(null, false);
       }
       done(null, user);
     } catch (err) {
-      console.error('[Auth] Deserialization error:', err);
       done(err);
     }
   });
 
   app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
-    console.log('[Auth] Login request received:', req.body.username);
-
     passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
       if (err) {
-        console.error('[Auth] Authentication error:', err);
         return res.status(500).json({ message: "Ошибка сервера при входе" });
       }
 
       if (!user) {
-        console.log('[Auth] Authentication failed:', info?.message);
         return res.status(401).json({ message: info?.message || "Ошибка аутентификации" });
       }
 
       req.logIn(user, (err) => {
         if (err) {
-          console.error('[Auth] Login error:', err);
           return res.status(500).json({ message: "Ошибка при создании сессии" });
         }
-
-        // Save session explicitly before sending response
-        req.session.save((err) => {
-          if (err) {
-            console.error('[Auth] Session save error:', err);
-            return res.status(500).json({ message: "Ошибка при сохранении сессии" });
-          }
-          res.json(user);
-        });
+        res.json(user);
       });
     })(req, res, next);
   });
 
   app.post("/api/register", async (req: Request, res: Response) => {
     try {
-      console.log('[Auth] Registration attempt:', req.body.username);
-
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).json({
@@ -178,21 +159,11 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) {
-          console.error('[Auth] Login after registration failed:', err);
           return res.status(500).json({ message: "Ошибка при создании сессии" });
         }
-
-        // Save session explicitly before sending response
-        req.session.save((err) => {
-          if (err) {
-            console.error('[Auth] Session save error:', err);
-            return res.status(500).json({ message: "Ошибка при сохранении сессии" });
-          }
-          res.status(201).json(user);
-        });
+        res.status(201).json(user);
       });
     } catch (error) {
-      console.error('[Auth] Registration error:', error);
       res.status(500).json({ message: "Ошибка при регистрации" });
     }
   });
@@ -204,28 +175,18 @@ export function setupAuth(app: Express) {
 
     req.logout((err) => {
       if (err) {
-        console.error('[Auth] Logout error:', err);
         return res.status(500).json({ message: "Ошибка при выходе" });
       }
-
-      req.session.destroy((err) => {
-        if (err) {
-          console.error('[Auth] Session destruction error:', err);
-          return res.status(500).json({ message: "Ошибка при удалении сессии" });
-        }
-        res.sendStatus(200);
-      });
+      res.sendStatus(200);
     });
   });
 
   app.get("/api/user", (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
-      console.log('[Auth] Unauthorized access attempt to /api/user');
       return res.sendStatus(401);
     }
 
     if (!req.user) {
-      console.log('[Auth] No user in session');
       return res.sendStatus(401);
     }
 

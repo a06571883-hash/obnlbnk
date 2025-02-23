@@ -31,9 +31,7 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up CORS for WebSocket with specific origin
   app.use((req, res, next) => {
-    // Accept requests from any origin during development
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -46,17 +44,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
-        console.log('[Auth] Unauthorized access attempt to /api/user');
         return res.sendStatus(401);
       }
 
       const user = await storage.getUser(req.user.id);
       if (!user) {
-        console.log('User not found');
         return res.sendStatus(404);
       }
 
-      console.log('User found:', user.username);
       res.json(user);
     } catch (error) {
       console.error('Error in /api/user:', error);
@@ -67,7 +62,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cards", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
-        console.log('User not authenticated for /api/cards');
         return res.sendStatus(401);
       }
       const cards = await storage.getCardsByUserId(req.user.id);
@@ -81,13 +75,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/transfer", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
-        console.log('User not authenticated for transfer');
         return res.status(401).json({ error: "Необходима авторизация" });
       }
 
       const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
-      // Базовая валидация
       if (!fromCardId || !toCardNumber) {
         return res.status(400).json({ 
           error: "Укажите карту отправителя и получателя" 
@@ -107,14 +99,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Проверка принадлежности карты текущему пользователю
       if (fromCard.userId !== req.user.id) {
         return res.status(403).json({ 
           error: "У вас нет прав для использования этой карты" 
         });
       }
 
-      // Для крипто-перевода
+      // For crypto transfer
       if (wallet) {
         if (!validateCryptoAddress(toCardNumber, wallet as 'btc' | 'eth')) {
           return res.status(400).json({
@@ -134,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Для обычного перевода между картами
+      // For regular card-to-card transfer
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
       if (cleanToCardNumber.length !== 16) {
         return res.status(400).json({ 
@@ -163,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  // Enable keep-alive for better WebSocket stability
+  // Enable keep-alive for better connection stability
   httpServer.keepAliveTimeout = 65000;
   httpServer.headersTimeout = 66000;
 
