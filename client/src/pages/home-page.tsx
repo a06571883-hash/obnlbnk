@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import type { Card } from "@shared/schema";
 import { Card as CardUI } from "@/components/ui/card";
 import {
@@ -104,7 +105,7 @@ export default function HomePage() {
     }
   }, [user]);
 
-  const { data: cards, isLoading: isLoadingCards } = useQuery<Card[]>({
+  const { data: cards = [], isLoading: isLoadingCards, error: cardsError } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
@@ -112,7 +113,6 @@ export default function HomePage() {
     staleTime: 0,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
-
 
   const getPriceChangeColor = (current: string | undefined, previous: string | undefined) => {
     if (!current || !previous) return '';
@@ -132,6 +132,17 @@ export default function HomePage() {
     );
   }
 
+  if (cardsError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background flex-col gap-4">
+        <p className="text-destructive">Ошибка загрузки данных</p>
+        <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/cards"] })}>
+          Попробовать снова
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="p-4 flex justify-between items-center border-b backdrop-blur-sm bg-background/50 sticky top-0 z-50">
@@ -145,7 +156,7 @@ export default function HomePage() {
           onClick={() => logoutMutation.mutate()}
           className="hover:bg-destructive/10 hover:text-destructive"
         >
-          Logout
+          Выход
         </Button>
       </header>
 
@@ -160,10 +171,10 @@ export default function HomePage() {
           `}
         >
           <h2 className="text-2xl font-medium mb-2 text-center">
-            Welcome back, <span className="text-primary">{user?.username}</span>
+            С возвращением, <span className="text-primary">{user?.username}</span>
           </h2>
           <p className="text-muted-foreground text-center">
-            Manage your multi-currency cards
+            Управляйте своими мультивалютными картами
           </p>
         </div>
 
@@ -186,13 +197,13 @@ export default function HomePage() {
                           <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                       </div>
-                      <h3 className="font-medium">Quick Transfer</h3>
+                      <h3 className="font-medium">Быстрый перевод</h3>
                     </div>
                   </CardUI>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Quick Transfer</DialogTitle>
+                    <DialogTitle>Быстрый перевод</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <form onSubmit={async (e) => {
@@ -217,7 +228,10 @@ export default function HomePage() {
                           amount: parseFloat(amount.toString())
                         });
 
-                        const data = await response.json();
+                        if (!response.ok) {
+                          const error = await response.json();
+                          throw new Error(error.message || "Ошибка перевода");
+                        }
 
                         toast({
                           title: "Успех",
@@ -225,7 +239,6 @@ export default function HomePage() {
                         });
 
                         e.currentTarget.reset();
-
                         queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
                       } catch (error: any) {
                         console.error("Transfer error:", error);
@@ -265,7 +278,7 @@ export default function HomePage() {
               {/* Exchange Rates */}
               <CardUI className="p-4 backdrop-blur-sm bg-background/80">
                 <div className="space-y-4">
-                  <h3 className="font-medium text-center">Current Exchange Rates</h3>
+                  <h3 className="font-medium text-center">Текущие курсы валют</h3>
 
                   {rates === null ? (
                     <div className="flex justify-center p-4">
@@ -327,19 +340,19 @@ export default function HomePage() {
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">ETH/BTC</div>
                           <div className={`font-medium transition-colors duration-300 ${getPriceChangeColor(
-                            (parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd || '1')).toString(),
+                            (parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd)).toString(),
                             prevRates ? (parseFloat(prevRates.ethToUsd) / parseFloat(prevRates.btcToUsd)).toString() : undefined
                           )}`}>
-                            {(parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd || '1')).toFixed(6)}
+                            {(parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd)).toFixed(6)}
                           </div>
                         </div>
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">UAH/USD</div>
                           <div className={`font-medium transition-colors duration-300 ${getPriceChangeColor(
-                            (1 / parseFloat(rates.usdToUah || '1')).toString(),
+                            (1 / parseFloat(rates.usdToUah)).toString(),
                             prevRates ? (1 / parseFloat(prevRates.usdToUah)).toString() : undefined
                           )}`}>
-                            ${(1 / parseFloat(rates.usdToUah || '1')).toFixed(4)}
+                            ${(1 / parseFloat(rates.usdToUah)).toFixed(4)}
                           </div>
                         </div>
                       </div>
@@ -352,9 +365,9 @@ export default function HomePage() {
         ) : (
           <div className="text-center py-12 px-4">
             <div className="max-w-md mx-auto">
-              <h3 className="text-xl font-semibold mb-4">No Cards Found</h3>
+              <h3 className="text-xl font-semibold mb-4">Карты не найдены</h3>
               <p className="text-muted-foreground mb-8">
-                Get started by generating your multi-currency cards
+                Начните с генерации ваших мультивалютных карт
               </p>
               <Button
                 size="lg"
@@ -374,14 +387,14 @@ export default function HomePage() {
                     await queryClient.invalidateQueries({ queryKey: ["/api/cards"] });
 
                     toast({
-                      title: "Cards Generated",
-                      description: "Your multi-currency cards have been created successfully",
+                      title: "Карты сгенерированы",
+                      description: "Ваши мультивалютные карты успешно созданы",
                     });
                   } catch (error: any) {
                     console.error("Error generating cards:", error);
                     toast({
-                      title: "Error",
-                      description: error.message || "Failed to generate cards. Please try again.",
+                      title: "Ошибка",
+                      description: error.message || "Не удалось сгенерировать карты. Попробуйте снова.",
                       variant: "destructive",
                     });
                   } finally {
@@ -392,10 +405,10 @@ export default function HomePage() {
                 {isGenerating ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
+                    Генерация...
                   </>
                 ) : (
-                  'Generate Cards'
+                  'Сгенерировать карты'
                 )}
               </Button>
             </div>
