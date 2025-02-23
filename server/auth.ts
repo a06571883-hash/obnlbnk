@@ -53,11 +53,13 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     name: 'sid',
+    proxy: true, // Trust the reverse proxy
     cookie: {
-      secure: false, // Allow non-HTTPS in development
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
-      sameSite: 'lax'
+      sameSite: 'lax',
+      path: '/'
     }
   }));
 
@@ -107,15 +109,23 @@ export function setupAuth(app: Express) {
     })
   );
 
-  passport.serializeUser((user, done) => {
+  passport.serializeUser((user: Express.User, done) => {
     console.log(`[Auth] Serializing user session: ${user.id}`);
     done(null, user.id);
   });
 
-  passport.deserializeUser(async (id: number, done) => {
+  passport.deserializeUser(async (id: number | string, done) => {
     try {
       console.log(`[Auth] Deserializing user session: ${id}`);
-      const user = await storage.getUser(id);
+      // Ensure id is a number
+      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+
+      if (isNaN(numericId)) {
+        console.error(`[Auth] Invalid user ID during deserialization: ${id}`);
+        return done(new Error('Invalid user ID'), null);
+      }
+
+      const user = await storage.getUser(numericId);
       if (!user) {
         console.log(`[Auth] User not found during deserialization: ${id}`);
         return done(null, false);
@@ -126,6 +136,18 @@ export function setupAuth(app: Express) {
       console.error('[Auth] Deserialization error:', err);
       done(err);
     }
+  });
+
+  // Debug middleware to log session and auth state
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    console.log('Session debug:', {
+      sessionID: req.sessionID,
+      session: req.session,
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user,
+      cookies: req.headers.cookie
+    });
+    next();
   });
 
   app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {

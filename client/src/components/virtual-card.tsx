@@ -106,7 +106,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   return (
     <div
       ref={cardRef}
-      className="perspective-[1000px] w-full max-w-[400px] mx-auto px-4 sm:px-0"
+      className="perspective-[1000px] w-full max-w-[400px] mx-auto px-4 py-2 sm:px-0"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{

@@ -72,8 +72,8 @@ export default function HomePage() {
             OOO BNAL BANK
           </h1>
         </div>
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => logoutMutation.mutate()}
           className="hover:bg-destructive/10 hover:text-destructive"
         >
@@ -82,11 +82,11 @@ export default function HomePage() {
       </header>
 
       <main className="container mx-auto p-4 pt-8 max-w-4xl">
-        <div 
+        <div
           className={`
             transition-all duration-500 ease-in-out transform
-            ${showWelcome 
-              ? 'opacity-100 translate-y-0 h-[100px] mb-8' 
+            ${showWelcome
+              ? 'opacity-100 translate-y-0 h-[100px] mb-8'
               : 'opacity-0 -translate-y-full h-0 overflow-hidden mb-0'
             }
           `}
@@ -115,7 +115,7 @@ export default function HomePage() {
                     <CardContent className="p-2 flex flex-col items-center">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                         <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                       </div>
                       <h3 className="font-medium">Quick Transfer</h3>
@@ -169,19 +169,19 @@ export default function HomePage() {
                         });
                       }
                     }}>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         name="amount"
-                        placeholder="Сумма" 
-                        className="w-full p-2 border rounded mb-4" 
+                        placeholder="Сумма"
+                        className="w-full p-2 border rounded mb-4"
                         step="0.01"
                         min="0.01"
-                        required 
+                        required
                       />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         name="cardNumber"
-                        placeholder="Номер карты получателя" 
+                        placeholder="Номер карты получателя"
                         className="w-full p-2 border rounded mb-4"
                         pattern="\d{16}"
                         title="Номер карты должен состоять из 16 цифр"
@@ -208,35 +208,63 @@ export default function HomePage() {
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                   ) : transactions && transactions.length > 0 ? (
-                    transactions.slice(0, 5).map((transaction) => (
-                      <div
-                        key={transaction.id}
-                        onClick={() => setSelectedTransaction(transaction)}
-                        className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            {transaction.type === 'transfer' && (
-                              <ArrowUpRight className="h-4 w-4 text-primary" />
-                            )}
-                            {transaction.type === 'deposit' && (
-                              <ArrowDownLeft className="h-4 w-4 text-emerald-500" />
-                            )}
+                    transactions.slice(0, 5).map((transaction) => {
+                      // Determine transaction type description
+                      let transactionType = 'Перевод';
+                      let iconColor = 'text-primary';
+
+                      if (transaction.type === 'transfer') {
+                        const fromCard = cards.find(c => c.id === transaction.fromCardId);
+                        const toCard = cards.find(c => c.id === transaction.toCardId);
+
+                        if (fromCard && toCard && fromCard.userId === toCard.userId) {
+                          // If both cards belong to the same user, it's a currency exchange
+                          transactionType = 'Обмен';
+                          iconColor = 'text-amber-500';
+                        } else if (fromCard?.userId === user?.id) {
+                          // If from card belongs to current user, it's an outgoing transfer
+                          transactionType = 'Перевод';
+                          iconColor = 'text-primary';
+                        } else {
+                          // Otherwise it's an incoming transfer
+                          transactionType = 'Получение';
+                          iconColor = 'text-emerald-500';
+                        }
+                      } else if (transaction.type === 'deposit') {
+                        transactionType = 'Пополнение';
+                        iconColor = 'text-emerald-500';
+                      }
+
+                      return (
+                        <div
+                          key={transaction.id}
+                          onClick={() => setSelectedTransaction(transaction)}
+                          className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                              {transaction.type === 'transfer' && (
+                                <ArrowUpRight className={`h-4 w-4 ${iconColor}`} />
+                              )}
+                              {transaction.type === 'deposit' && (
+                                <ArrowDownLeft className="h-4 w-4 text-emerald-500" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">
+                                {transactionType}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(transaction.createdAt), 'dd.MM.yyyy HH:mm')}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium">
-                              {transaction.type === 'transfer' ? 'Перевод' : 'Пополнение'}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {format(new Date(transaction.createdAt), 'dd.MM.yyyy HH:mm')}
-                            </p>
-                          </div>
+                          <span className="text-sm font-medium">
+                            {transaction.amount} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
+                          </span>
                         </div>
-                        <span className="text-sm font-medium">
-                          {transaction.amount} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
-                        </span>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="text-center py-4 text-muted-foreground">
                       No transactions yet
