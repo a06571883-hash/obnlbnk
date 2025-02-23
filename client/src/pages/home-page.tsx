@@ -2,8 +2,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import type { Card, Transaction } from "../../shared/schema";
-import { Card as CardUI, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Card } from "../../shared/schema";
+import { Card as CardUI } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -13,10 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
-import TransactionReceipt from "@/components/transaction-receipt";
 
 // Create a key for sessionStorage to track welcome message state
 const WELCOME_MESSAGE_KEY = 'welcomeMessageShown';
@@ -25,7 +23,6 @@ export default function HomePage() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   // Show welcome message only on fresh login and track it in sessionStorage
   useEffect(() => {
@@ -68,12 +65,6 @@ export default function HomePage() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const { data: transactions, isLoading: isLoadingTransactions } = useQuery<Transaction[]>({
-    queryKey: ["/api/transactions"],
-    enabled: !!cards?.length,
-    refetchInterval: 5000,
-  });
-
   if (isLoadingCards) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -113,13 +104,13 @@ export default function HomePage() {
             Welcome back, <span className="text-primary">{user?.username}</span>
           </h2>
           <p className="text-muted-foreground text-center">
-            Manage your multi-currency cards and transactions
+            Manage your multi-currency cards
           </p>
         </div>
 
         {cards && cards.length > 0 ? (
           <div className={`
-            space-y-8 transition-all duration-500 ease-in-out transform
+            transition-all duration-500 ease-in-out transform
             ${!showWelcome ? '-translate-y-16' : ''}
             mt-16 pt-8
           `}>
@@ -130,14 +121,14 @@ export default function HomePage() {
               <Dialog>
                 <DialogTrigger asChild>
                   <CardUI className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
-                    <CardContent className="p-2 flex flex-col items-center">
+                    <div className="p-2 flex flex-col items-center">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                         <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                           <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                       </div>
                       <h3 className="font-medium">Quick Transfer</h3>
-                    </CardContent>
+                    </div>
                   </CardUI>
                 </DialogTrigger>
                 <DialogContent>
@@ -177,7 +168,6 @@ export default function HomePage() {
                         e.currentTarget.reset();
 
                         queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
-                        queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
                       } catch (error: any) {
                         console.error("Transfer error:", error);
                         toast({
@@ -213,89 +203,6 @@ export default function HomePage() {
                 </DialogContent>
               </Dialog>
             </div>
-
-            {/* Recent Activity */}
-            <CardUI className="backdrop-blur-sm bg-background/80">
-              <CardHeader>
-                <CardTitle className="text-lg">Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {isLoadingTransactions ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  ) : transactions && transactions.length > 0 ? (
-                    transactions.slice(0, 5).map((transaction) => {
-                      let transactionType = 'Перевод';
-                      let iconColor = 'text-primary';
-
-                      if (transaction.type === 'transfer') {
-                        transactionType = 'Перевод';
-                        iconColor = 'text-primary';
-                      } else if (transaction.type === 'deposit') {
-                        transactionType = 'Пополнение';
-                        iconColor = 'text-emerald-500';
-                      }
-
-                      return (
-                        <div
-                          key={transaction.id}
-                          onClick={() => setSelectedTransaction(transaction)}
-                          className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-accent/50 cursor-pointer"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                              {transaction.type === 'transfer' && (
-                                <ArrowUpRight className={`h-3.5 w-3.5 ${iconColor}`} />
-                              )}
-                              {transaction.type === 'deposit' && (
-                                <ArrowDownLeft className="h-3.5 w-3.5 text-emerald-500" />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">
-                                {transactionType}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {format(new Date(transaction.createdAt), 'dd.MM.yyyy HH:mm')}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right ml-2">
-                            <p className="text-sm font-medium whitespace-nowrap">
-                              {Number(transaction.amount).toFixed(2)} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              ≈ {(Number(transaction.amount) * 95652.99).toFixed(2)} USD
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No transactions yet
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </CardUI>
-
-            {/* Transaction Receipt Dialog */}
-            {selectedTransaction && (
-              <TransactionReceipt
-                transaction={{
-                  ...selectedTransaction,
-                  currency: cards.find(c => c.id === selectedTransaction.fromCardId)?.type || 'Unknown',
-                  from: cards.find(c => c.id === selectedTransaction.fromCardId)?.number || 'Unknown',
-                  to: cards.find(c => c.id === selectedTransaction.toCardId)?.number || 'Unknown',
-                  date: selectedTransaction.createdAt,
-                }}
-                open={!!selectedTransaction}
-                onOpenChange={(open) => !open && setSelectedTransaction(null)}
-              />
-            )}
           </div>
         ) : (
           <div className="text-center py-12 px-4">

@@ -45,7 +45,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
   };
 
   const getCurrencyIcon = (type: string) => {
-    switch (type.toLowerCase()) {
+    switch (type?.toLowerCase()) {
       case 'crypto':
         return <Bitcoin className="h-4 w-4" />;
       case 'usd':
@@ -64,10 +64,11 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
   };
 
   const formatAmount = (amount: string, currency: string) => {
+    if (!amount) return '0';
     const num = parseFloat(amount);
-    if (isNaN(num)) return amount;
+    if (isNaN(num)) return '0';
 
-    if (currency.toLowerCase() === 'crypto') {
+    if (currency?.toLowerCase() === 'crypto') {
       return num.toFixed(8);
     }
     return num.toFixed(2);
@@ -103,18 +104,18 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
               <div className="flex items-center gap-1">
                 {getCurrencyIcon(transaction.currency)}
                 <span className="font-semibold">
-                  {formatAmount(transaction.amount, transaction.currency)} {transaction.currency.toUpperCase()}
+                  {formatAmount(transaction.amount, transaction.currency)} {transaction.currency?.toUpperCase()}
                 </span>
               </div>
             </div>
 
-            {transaction.convertedAmount && transaction.convertedAmount !== transaction.amount && (
+            {transaction.convertedAmount && transaction.convertedAmount !== transaction.amount && transaction.toCard?.type && (
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Конвертировано в</span>
                 <div className="flex items-center gap-1">
-                  {getCurrencyIcon(transaction.toCard?.type)}
+                  {getCurrencyIcon(transaction.toCard.type)}
                   <span className="font-semibold">
-                    {formatAmount(transaction.convertedAmount, transaction.toCard?.type)} {transaction.toCard?.type.toUpperCase()}
+                    {formatAmount(transaction.convertedAmount, transaction.toCard.type)} {transaction.toCard.type.toUpperCase()}
                   </span>
                 </div>
               </div>
