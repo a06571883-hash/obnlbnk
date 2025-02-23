@@ -191,20 +191,102 @@ export class DatabaseStorage implements IStorage {
         return { success: false, error: "Сумма перевода должна быть больше 0" };
       }
 
-      const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
-
       const fromCard = await this.getCardById(fromCardId);
       if (!fromCard) {
         return { success: false, error: "Карта отправителя не найдена" };
       }
 
-      const toCard = await this.getCardByNumber(cleanToCardNumber);
+      // Different logic for crypto and regular transfers
+      let toCard;
+      if (wallet) {
+        // For crypto transfers, find card by BTC or ETH address
+        const allCards = await db.select().from(cards);
+        toCard = allCards.find(card =>
+          (wallet === 'btc' && card.btcAddress === toCardNumber) ||
+          (wallet === 'eth' && card.ethAddress === toCardNumber)
+        );
+      } else {
+        // For regular transfers, find by card number
+        const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
+        [toCard] = await db.select().from(cards).where(eq(cards.number, cleanToCardNumber));
+      }
+
       if (!toCard) {
         return { success: false, error: "Карта получателя не найдена" };
       }
 
       if (fromCard.id === toCard.id) {
         return { success: false, error: "Нельзя перевести деньги на ту же карту" };
+      }
+
+      // Handle USD to crypto transfer
+      if (fromCard.type === 'usd' && toCard.type === 'crypto' && wallet) {
+        const rate = wallet === 'btc' ? EXCHANGE_RATES.btcToUsd : EXCHANGE_RATES.ethToUsd;
+        const cryptoAmount = Number((usdAmount / rate).toFixed(8));
+        const fromBalance = Number(fromCard.balance);
+
+        console.log('Transfer details:', {
+          type: 'usd_to_crypto',
+          wallet,
+          usdAmount,
+          rate,
+          cryptoAmount,
+          fromBalance
+        });
+
+        if (fromBalance < usdAmount) {
+          return { success: false, error: `Недостаточно USD для перевода. Требуется: ${usdAmount} USD, Доступно: ${fromBalance} USD` };
+        }
+
+        const newFromBalance = (fromBalance - usdAmount).toFixed(2);
+        const newToBalance = wallet === 'btc'
+          ? (Number(toCard.btcBalance) + cryptoAmount).toFixed(8)
+          : (Number(toCard.ethBalance) + cryptoAmount).toFixed(8);
+
+        console.log('New balances:', {
+          from: { old: fromBalance, new: newFromBalance, currency: 'USD' },
+          to: { old: wallet === 'btc' ? toCard.btcBalance : toCard.ethBalance, new: newToBalance, currency: wallet.toUpperCase() }
+        });
+
+        // Execute transaction in database
+        const transaction = await db.transaction(async (tx) => {
+          // Create transaction record
+          const [newTransaction] = await tx.insert(transactions)
+            .values({
+              fromCardId: fromCard.id,
+              toCardId: toCard.id,
+              amount: usdAmount.toString(),
+              convertedAmount: cryptoAmount.toString(),
+              type: 'transfer',
+              wallet: wallet,
+              status: 'completed',
+              description: `Convert ${usdAmount} USD to ${cryptoAmount} ${wallet.toUpperCase()}`,
+              fromCardNumber: fromCard.number,
+              toCardNumber: toCard.number
+            })
+            .returning();
+
+          // Update USD balance
+          await tx.update(cards)
+            .set({ balance: newFromBalance })
+            .where(eq(cards.id, fromCard.id));
+
+          // Update crypto balance
+          if (wallet === 'btc') {
+            await tx.update(cards)
+              .set({ btcBalance: newToBalance })
+              .where(eq(cards.id, toCard.id));
+          } else {
+            await tx.update(cards)
+              .set({ ethBalance: newToBalance })
+              .where(eq(cards.id, toCard.id));
+          }
+
+          return newTransaction;
+        });
+
+        console.log('Transfer completed successfully:', transaction);
+        return { success: true, transaction };
       }
 
       // Handle crypto (BTC/ETH) to USD transfer
@@ -226,8 +308,8 @@ export class DatabaseStorage implements IStorage {
 
         if (fromBalance < cryptoAmount) {
           const message = `Недостаточно ${wallet.toUpperCase()} для перевода ${usdAmount} USD. ` +
-                         `Требуется: ${cryptoAmount} ${wallet.toUpperCase()}, ` +
-                         `Доступно: ${fromBalance} ${wallet.toUpperCase()}`;
+            `Требуется: ${cryptoAmount} ${wallet.toUpperCase()}, ` +
+            `Доступно: ${fromBalance} ${wallet.toUpperCase()}`;
           return { success: false, error: message };
         }
 
