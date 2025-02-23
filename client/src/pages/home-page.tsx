@@ -29,8 +29,10 @@ export default function HomePage() {
 
   // Show welcome message only on fresh login and track it in sessionStorage
   useEffect(() => {
+    if (!user) return;
+
     const hasShownWelcome = sessionStorage.getItem(WELCOME_MESSAGE_KEY);
-    if (!hasShownWelcome && user) {
+    if (!hasShownWelcome) {
       setShowWelcome(true);
       sessionStorage.setItem(WELCOME_MESSAGE_KEY, 'true');
 
