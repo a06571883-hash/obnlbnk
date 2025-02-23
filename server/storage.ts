@@ -33,11 +33,20 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({
-      pool,
+      pool: pool as any, // Fix для типизации
       tableName: 'session',
       createTableIfMissing: true,
       pruneSessionInterval: 60,
-      maxAge: 30 * 24 * 60 * 60 * 1000
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 дней
+    });
+
+    // Добавляем обработчики событий для отладки сессии
+    this.sessionStore.on('error', (error) => {
+      console.error('Session store error:', error);
+    });
+
+    this.sessionStore.on('connect', () => {
+      console.log('Session store connected successfully');
     });
   }
 
@@ -197,7 +206,7 @@ export class DatabaseStorage implements IStorage {
 
           // Get crypto balance
           const balance = wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance;
-          const numBalance = Number(balance || '0');
+          const numBalance = parseFloat(balance || '0');
 
           if (isNaN(numBalance)) {
             throw new Error(`Ошибка формата баланса ${wallet.toUpperCase()}`);
@@ -208,7 +217,7 @@ export class DatabaseStorage implements IStorage {
           }
 
           // Update balance
-          const newBalance = (numBalance - amount).toString();
+          const newBalance = (numBalance - amount).toFixed(8);
 
           // Create crypto transaction
           const transaction = await this.createTransaction({
@@ -245,8 +254,8 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Перевод возможен только между картами одного типа валют");
         }
 
-        const fromBalance = Number(fromCard.balance);
-        const toBalance = Number(toCard.balance);
+        const fromBalance = parseFloat(fromCard.balance);
+        const toBalance = parseFloat(toCard.balance);
 
         if (isNaN(fromBalance) || isNaN(toBalance)) {
           throw new Error("Ошибка формата баланса");
@@ -256,16 +265,16 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Недостаточно средств на балансе");
         }
 
-        // Calculate new balances
-        const newFromBalance = (fromBalance - amount).toString();
-        const newToBalance = (toBalance + amount).toString();
+        // Calculate new balances with proper decimal places
+        const newFromBalance = (fromBalance - amount).toFixed(2);
+        const newToBalance = (toBalance + amount).toFixed(2);
 
         // Create fiat transaction
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard.id,
-          amount: amount.toString(),
-          convertedAmount: amount.toString(),
+          amount: amount.toFixed(2),
+          convertedAmount: amount.toFixed(2),
           type: 'transfer',
           status: 'completed',
           wallet: null,

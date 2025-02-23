@@ -3,18 +3,19 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./database/connection";
 import * as schema from "@shared/schema";
-import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 
-// Set development mode explicitly
+// Установка режима разработки
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 const app = express();
+
+// Базовые middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add CORS headers for development
+// Настройка CORS
 app.use((req, res, next) => {
   const origin = req.headers.origin || '';
   if (origin.includes('.replit.dev') || origin.includes('replit.com') || process.env.NODE_ENV !== 'production') {
@@ -30,14 +31,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Request logging middleware with detailed session info
+// Логирование запросов
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
   const sessionId = req.sessionID;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  // Add session debugging
+  // Отладка сессии
   console.log('Session debug:', {
     sessionID: req.sessionID,
     session: req.session,
@@ -48,12 +48,6 @@ app.use((req, res, next) => {
     path: req.path
   });
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
   res.on("finish", () => {
     const duration = Date.now() - start;
     const authStatus = req.isAuthenticated?.() ? 'authenticated' : 'unauthenticated';
@@ -61,14 +55,6 @@ app.use((req, res, next) => {
 
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} [${authStatus}] [${sessionStatus}] [sid:${sessionId}] in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
       log(logLine);
     }
   });
@@ -78,7 +64,7 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    console.log('Initializing database tables...');
+    console.log('Инициализация таблиц базы данных...');
     await db.execute(`
       CREATE TABLE IF NOT EXISTS session (
         sid VARCHAR PRIMARY KEY,
@@ -86,46 +72,49 @@ app.use((req, res, next) => {
         expire TIMESTAMP(6) NOT NULL
       )
     `);
-    console.log('Database initialized successfully');
-  } catch (error) {
-    console.error('Error initializing database:', error);
-  }
+    console.log('База данных успешно инициализирована');
 
-  // Setup authentication after database is initialized
-  setupAuth(app);
+    // Настройка аутентификации после инициализации базы данных
+    setupAuth(app);
 
-  const server = await registerRoutes(app);
+    const server = await registerRoutes(app);
 
-  // Error handling middleware with better error messages
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    const stack = process.env.NODE_ENV === 'development' ? err.stack : undefined;
+    // Обработка ошибок
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Внутренняя ошибка сервера";
+      const stack = process.env.NODE_ENV === 'development' ? err.stack : undefined;
 
-    console.error('Error:', {
-      status,
-      message,
-      stack,
-      type: err.constructor.name
-    });
-
-    res.status(status).json({ 
-      error: {
+      console.error('Error:', {
+        status,
         message,
-        ...(stack ? { stack } : {})
-      }
+        stack,
+        type: err.constructor.name
+      });
+
+      res.status(status).json({ 
+        error: {
+          message,
+          ...(stack ? { stack } : {})
+        }
+      });
     });
-  });
 
-  if (process.env.NODE_ENV !== 'production') {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+    // Настройка Vite в режиме разработки
+    if (process.env.NODE_ENV !== 'production') {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+
+    // Запуск сервера
+    const PORT = 5000;
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`Сервер запущен на http://0.0.0.0:${PORT}`);
+      log(`Сервер работает на порту ${PORT} в режиме ${process.env.NODE_ENV}`);
+    });
+  } catch (error) {
+    console.error('Ошибка при инициализации:', error);
+    process.exit(1);
   }
-
-  const PORT = 5000;
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server listening at http://0.0.0.0:${PORT}`);
-    log(`Server is running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-  });
 })();

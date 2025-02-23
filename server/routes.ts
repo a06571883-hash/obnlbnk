@@ -38,14 +38,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
       // Базовая валидация
-      if (!fromCardId || !toCardNumber || amount === undefined || amount === null) {
+      if (!fromCardId || !toCardNumber) {
         return res.status(400).json({ 
           message: "Не указаны обязательные параметры перевода" 
         });
       }
 
       // Валидация суммы
-      const transferAmount = Number(amount);
+      const transferAmount = parseFloat(amount);
       if (isNaN(transferAmount) || transferAmount <= 0) {
         return res.status(400).json({ 
           message: "Некорректная сумма перевода" 
@@ -69,7 +69,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Выполнение перевода
-      const result = await storage.transferMoney(fromCardId, toCardNumber, transferAmount, wallet);
+      const result = await storage.transferMoney(
+        parseInt(fromCardId), 
+        toCardNumber.replace(/\s+/g, ''),
+        transferAmount,
+        wallet
+      );
 
       if (!result.success) {
         return res.status(400).json({ message: result.error });
