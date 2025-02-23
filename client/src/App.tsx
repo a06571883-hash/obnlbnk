@@ -10,13 +10,13 @@ import ActivityPage from "@/pages/activity-page";
 import ProfilePage from "@/pages/profile-page";
 import RegulatorPage from "@/pages/regulator-page";
 import { ProtectedRoute } from "./lib/protected-route";
-import { AuthProvider } from "./hooks/use-auth";
+import { AuthProvider } from "./components/auth-provider";
 import BottomNav from "@/components/bottom-nav";
 import { useLocation } from "wouter";
 
 const Router = () => {
   const [location] = useLocation();
-  const showNav = location !== "/auth";
+  const showNav = location !== "/auth" && location !== "/regulator";
 
   return (
     <>

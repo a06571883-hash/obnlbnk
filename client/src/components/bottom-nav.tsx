@@ -1,53 +1,49 @@
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Home, CreditCard, Activity, User } from "lucide-react";
+import { Home, CreditCard, Activity, User, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function BottomNav() {
   const [location] = useLocation();
   const { user } = useAuth();
-  console.log("User in BottomNav:", user);
 
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: CreditCard, label: "Cards", path: "/cards" },
     { icon: Activity, label: "Activity", path: "/activity" },
     { icon: User, label: "Profile", path: "/profile" },
-  ].filter(item => {
-    if (user?.username === 'admin') {
-      return true; // Show all items for admin
-    }
-    return true; // Show all items for regular users too
-  });
+    // Show regulator page only for users with regulator access
+    ...(user?.is_regulator ? [{ icon: Shield, label: "Regulator", path: "/regulator" }] : []),
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t z-50">
       <div className="flex justify-around items-center py-2">
         {navItems.map((item) => (
           <Link key={item.path} href={item.path} className="relative py-1 px-3 rounded-lg">
-              <div
-                className={cn(
-                  "flex flex-col items-center transition-colors",
-                  location === item.path
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                <span className="text-[10px]">{item.label}</span>
-              </div>
-              {location === item.path && (
-                <motion.div
-                  layoutId="bottomNav"
-                  className="absolute inset-0 bg-primary/10 rounded-lg"
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 30,
-                  }}
-                />
+            <div
+              className={cn(
+                "flex flex-col items-center transition-colors",
+                location === item.path
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
               )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="text-[10px]">{item.label}</span>
+            </div>
+            {location === item.path && (
+              <motion.div
+                layoutId="bottomNav"
+                className="absolute inset-0 bg-primary/10 rounded-lg"
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 30,
+                }}
+              />
+            )}
           </Link>
         ))}
       </div>
