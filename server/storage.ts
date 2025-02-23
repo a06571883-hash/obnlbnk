@@ -31,10 +31,14 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
+    // Оптимизированные настройки хранилища сессий
     this.sessionStore = new PostgresSessionStore({
       pool,
       tableName: 'session',
-      createTableIfMissing: true
+      createTableIfMissing: true,
+      pruneSessionInterval: 60,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      errorLog: console.error,
     });
   }
 
@@ -54,18 +58,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  private async withRetry<T>(operation: () => Promise<T>, context: string): Promise<T> {
+  private async withRetry<T>(operation: () => Promise<T>, context: string, maxAttempts = 3): Promise<T> {
     let lastError: Error | undefined;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        console.error(`${context} failed (attempt ${attempt + 1}/3):`, error);
-        if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+        console.error(`${context} failed (attempt ${attempt + 1}/${maxAttempts}):`, error);
+        if (attempt < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+        }
       }
     }
-    throw lastError || new Error(`${context} failed after 3 attempts`);
+    throw lastError || new Error(`${context} failed after ${maxAttempts} attempts`);
   }
 
   async getUser(id: number): Promise<User | undefined> {

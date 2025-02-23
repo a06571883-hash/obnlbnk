@@ -6,29 +6,33 @@ import * as schema from "@shared/schema";
 neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+  throw new Error("DATABASE_URL must be set");
 }
 
-// Configure pool with mobile-friendly settings
+// Оптимизированные настройки пула для мобильного приложения
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
   connectionTimeoutMillis: 5000,
-  max: 2,
-  idleTimeoutMillis: 30000
+  max: 20, // Увеличиваем максимальное количество соединений
+  idleTimeoutMillis: 30000,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000
 });
 
-// Handle pool errors
+// Обработка ошибок пула
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
   process.exit(-1);
 });
 
-// Create a drizzle database instance
+pool.on('connect', () => {
+  console.log('New database connection established');
+});
+
+// Создаем экземпляр базы данных drizzle
 export const db = drizzle(pool, { schema });
 
-// Ensure the pool is terminated when the application exits
+// Корректное завершение пула при выходе
 process.on('SIGTERM', () => {
   console.log('Received SIGTERM. Closing pool...');
   pool.end();

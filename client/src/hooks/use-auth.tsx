@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useContext } from "react";
 import { useQuery, useMutation, UseMutationResult } from "@tanstack/react-query";
 import { insertUserSchema, type User as SelectUser, type InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest } from "@/lib/queryClient";
+import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "./use-toast";
 import { useLocation } from "wouter";
 
@@ -31,24 +31,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       try {
         const response = await fetch("/api/user", {
-          credentials: "include"
+          credentials: "include",
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
         });
+
         if (response.status === 401) {
           return null;
         }
+
         if (!response.ok) {
           throw new Error("Failed to fetch user data");
         }
-        return await response.json();
+
+        const data = await response.json();
+        return data;
       } catch (error) {
         console.error("Auth error:", error);
         return null;
       }
     },
-    retry: false,
-    staleTime: 30000,
+    retry: 1,
+    staleTime: 10000, // Уменьшаем время кэширования
     refetchOnWindowFocus: true,
-    refetchInterval: 30000,
+    refetchInterval: 15000, // Чаще проверяем статус
   });
 
   const loginMutation = useMutation({
@@ -61,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Успешный вход",
         description: `Добро пожаловать, ${user.username}!`,
@@ -86,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Регистрация успешна",
         description: `Аккаунт ${user.username} создан!`,
@@ -110,6 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onSuccess: () => {
+      queryClient.setQueryData(["/api/user"], null);
+      queryClient.clear(); // Очищаем весь кэш при выходе
       setLocation("/auth");
       toast({
         title: "Выход выполнен",
@@ -117,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      queryClient.setQueryData(["/api/user"], null);
       toast({
         title: "Ошибка выхода",
         description: error.message,
