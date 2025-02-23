@@ -129,6 +129,22 @@ export class DatabaseStorage implements IStorage {
     }, 'Update card balance');
   }
 
+  async updateCardBtcBalance(cardId: number, balance: string): Promise<void> {
+    await this.withRetry(async () => {
+      await db.update(cards)
+        .set({ btcBalance: balance })
+        .where(eq(cards.id, cardId));
+    }, 'Update card BTC balance');
+  }
+
+  async updateCardEthBalance(cardId: number, balance: string): Promise<void> {
+    await this.withRetry(async () => {
+      await db.update(cards)
+        .set({ ethBalance: balance })
+        .where(eq(cards.id, cardId));
+    }, 'Update card ETH balance');
+  }
+
   async getCardById(cardId: number): Promise<Card | undefined> {
     return this.withRetry(async () => {
       const [card] = await db.select().from(cards).where(eq(cards.id, cardId));
@@ -162,22 +178,6 @@ export class DatabaseStorage implements IStorage {
       }).returning();
       return result;
     }, 'Create transaction');
-  }
-
-  async updateCardBtcBalance(cardId: number, balance: string): Promise<void> {
-    await this.withRetry(async () => {
-      await db.update(cards)
-        .set({ btcBalance: balance })
-        .where(eq(cards.id, cardId));
-    }, 'Update card BTC balance');
-  }
-
-  async updateCardEthBalance(cardId: number, balance: string): Promise<void> {
-    await this.withRetry(async () => {
-      await db.update(cards)
-        .set({ ethBalance: balance })
-        .where(eq(cards.id, cardId));
-    }, 'Update card ETH balance');
   }
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {

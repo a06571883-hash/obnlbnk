@@ -6,7 +6,6 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
-import { WebSocketServer } from 'ws';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -29,22 +28,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   const httpServer = createServer(app);
-
-  // Создаем WebSocket сервер на отдельном пути
-  const wss = new WebSocketServer({ 
-    server: httpServer,
-    path: '/ws'
-  });
-
-  wss.on('connection', (ws) => {
-    console.log('WebSocket client connected');
-
-    ws.on('error', console.error);
-
-    ws.on('close', () => {
-      console.log('WebSocket client disconnected');
-    });
-  });
 
   app.post("/api/transfer", async (req, res) => {
     try {
