@@ -262,18 +262,18 @@ function TransactionList({
             </div>
 
             <div className="text-right ml-3 min-w-[80px]">
-              <div className="flex items-center gap-1 text-sm font-medium justify-end">
+              <div className="flex items-center gap-1 text-xs font-medium justify-end">
                 <div className="flex items-center truncate">
                   {getCurrencyIcon(currency)}
                   <span className="ml-1">{tx.amount}</span>
                 </div>
               </div>
               {tx.convertedAmount && tx.convertedAmount !== tx.amount && (
-                <div className="text-xs text-muted-foreground truncate">
+                <div className="text-[10px] text-muted-foreground truncate">
                   → {tx.convertedAmount} {getCurrencyLabel(toCard)}
                 </div>
               )}
-              <div className="text-xs text-muted-foreground">
+              <div className="text-[10px] text-muted-foreground">
                 {getCurrencyLabel(fromCard)}
               </div>
             </div>
