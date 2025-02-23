@@ -196,168 +196,45 @@ export class DatabaseStorage implements IStorage {
         return { success: false, error: "Карта отправителя не найдена" };
       }
 
-      // Different logic for crypto and regular transfers
-      let toCard;
-      if (wallet) {
-        // For crypto transfers, find card by BTC or ETH address
-        const allCards = await db.select().from(cards);
-        console.log('Searching for crypto card with address:', toCardNumber, 'wallet type:', wallet);
-        toCard = allCards.find(card => {
-          const matches = wallet === 'btc' ? 
-            (card.btcAddress && card.btcAddress.toLowerCase() === toCardNumber.toLowerCase()) :
-            (card.ethAddress && card.ethAddress.toLowerCase() === toCardNumber.toLowerCase());
-          console.log(`Checking card ${card.id}: ${wallet} address matches:`, matches);
-          return matches;
-        });
-      } else {
-        // For regular transfers, find by card number
-        const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
-        [toCard] = await db.select().from(cards).where(eq(cards.number, cleanToCardNumber));
-      }
+      // Regular card to card transfer
+      if (!wallet) {
+        const toCard = await this.getCardByNumber(toCardNumber);
+        if (!toCard) {
+          return { success: false, error: "Карта получателя не найдена" };
+        }
 
-      if (!toCard) {
-        return { success: false, error: wallet ? 
-          `${wallet.toUpperCase()} адрес получателя не найден` : 
-          "Карта получателя не найдена" 
-        };
-      }
+        if (fromCard.id === toCard.id) {
+          return { success: false, error: "Нельзя перевести деньги на ту же карту" };
+        }
 
-      if (fromCard.id === toCard.id) {
-        return { success: false, error: "Нельзя перевести деньги на ту же карту" };
-      }
-
-      // Handle USD to crypto transfer
-      if (fromCard.type === 'usd' && toCard.type === 'crypto' && wallet) {
-        const rate = wallet === 'btc' ? EXCHANGE_RATES.btcToUsd : EXCHANGE_RATES.ethToUsd;
-        const cryptoAmount = Number((usdAmount / rate).toFixed(8));
-        const fromBalance = Number(fromCard.balance);
-
-        console.log('Transfer details:', {
-          type: 'usd_to_crypto',
-          wallet,
-          usdAmount,
-          rate,
-          cryptoAmount,
-          fromBalance
-        });
+        const fromBalance = parseFloat(fromCard.balance);
+        const toBalance = parseFloat(toCard.balance);
 
         if (fromBalance < usdAmount) {
-          return { success: false, error: `Недостаточно USD для перевода. Требуется: ${usdAmount} USD, Доступно: ${fromBalance} USD` };
+          return { success: false, error: `Недостаточно средств. Требуется: ${usdAmount}, Доступно: ${fromBalance}` };
         }
 
         const newFromBalance = (fromBalance - usdAmount).toFixed(2);
-        const newToBalance = wallet === 'btc'
-          ? (Number(toCard.btcBalance) + cryptoAmount).toFixed(8)
-          : (Number(toCard.ethBalance) + cryptoAmount).toFixed(8);
+        const newToBalance = (toBalance + usdAmount).toFixed(2);
 
-        console.log('New balances:', {
-          from: { old: fromBalance, new: newFromBalance, currency: 'USD' },
-          to: { old: wallet === 'btc' ? toCard.btcBalance : toCard.ethBalance, new: newToBalance, currency: wallet.toUpperCase() }
-        });
-
-        // Execute transaction in database
         const transaction = await db.transaction(async (tx) => {
-          // Create transaction record
           const [newTransaction] = await tx.insert(transactions)
             .values({
               fromCardId: fromCard.id,
               toCardId: toCard.id,
               amount: usdAmount.toString(),
-              convertedAmount: cryptoAmount.toString(),
               type: 'transfer',
-              wallet: wallet,
               status: 'completed',
-              description: `Convert ${usdAmount} USD to ${cryptoAmount} ${wallet.toUpperCase()}`,
+              description: `Перевод ${usdAmount} ${fromCard.type.toUpperCase()}`,
               fromCardNumber: fromCard.number,
               toCardNumber: toCard.number
             })
             .returning();
 
-          // Update USD balance
           await tx.update(cards)
             .set({ balance: newFromBalance })
             .where(eq(cards.id, fromCard.id));
 
-          // Update crypto balance
-          if (wallet === 'btc') {
-            await tx.update(cards)
-              .set({ btcBalance: newToBalance })
-              .where(eq(cards.id, toCard.id));
-          } else {
-            await tx.update(cards)
-              .set({ ethBalance: newToBalance })
-              .where(eq(cards.id, toCard.id));
-          }
-
-          return newTransaction;
-        });
-
-        console.log('Transfer completed successfully:', transaction);
-        return { success: true, transaction };
-      }
-
-      // Handle crypto (BTC/ETH) to USD transfer
-      if (fromCard.type === 'crypto' && wallet && toCard.type === 'usd') {
-        const rate = wallet === 'btc' ? EXCHANGE_RATES.btcToUsd : EXCHANGE_RATES.ethToUsd;
-        const cryptoAmount = Number((usdAmount / rate).toFixed(8));
-        const fromBalance = Number(wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance);
-        const toBalance = Number(toCard.balance);
-
-        console.log('Transfer details:', {
-          type: 'crypto_to_usd',
-          wallet,
-          usdAmount,
-          rate,
-          cryptoAmount,
-          fromBalance,
-          toBalance
-        });
-
-        if (fromBalance < cryptoAmount) {
-          const message = `Недостаточно ${wallet.toUpperCase()} для перевода ${usdAmount} USD. ` +
-            `Требуется: ${cryptoAmount} ${wallet.toUpperCase()}, ` +
-            `Доступно: ${fromBalance} ${wallet.toUpperCase()}`;
-          return { success: false, error: message };
-        }
-
-        const newFromBalance = (fromBalance - cryptoAmount).toFixed(8);
-        const newToBalance = (toBalance + usdAmount).toFixed(2);
-
-        console.log('New balances:', {
-          from: { old: fromBalance, new: newFromBalance, currency: wallet.toUpperCase() },
-          to: { old: toBalance, new: newToBalance, currency: 'USD' }
-        });
-
-        // Execute transaction in database
-        const transaction = await db.transaction(async (tx) => {
-          // Create transaction record
-          const [newTransaction] = await tx.insert(transactions)
-            .values({
-              fromCardId: fromCard.id,
-              toCardId: toCard.id,
-              amount: cryptoAmount.toString(),
-              convertedAmount: usdAmount.toString(),
-              type: 'transfer',
-              wallet: wallet,
-              status: 'completed',
-              description: `Convert ${cryptoAmount} ${wallet.toUpperCase()} to ${usdAmount} USD`,
-              fromCardNumber: fromCard.number,
-              toCardNumber: toCard.number
-            })
-            .returning();
-
-          // Update crypto balance
-          if (wallet === 'btc') {
-            await tx.update(cards)
-              .set({ btcBalance: newFromBalance })
-              .where(eq(cards.id, fromCard.id));
-          } else {
-            await tx.update(cards)
-              .set({ ethBalance: newFromBalance })
-              .where(eq(cards.id, fromCard.id));
-          }
-
-          // Update USD balance
           await tx.update(cards)
             .set({ balance: newToBalance })
             .where(eq(cards.id, toCard.id));
@@ -365,11 +242,56 @@ export class DatabaseStorage implements IStorage {
           return newTransaction;
         });
 
-        console.log('Transfer completed successfully:', transaction);
         return { success: true, transaction };
       }
 
-      return { success: false, error: "Неподдерживаемый тип перевода" };
+      // Crypto transfer
+      if (fromCard.type !== 'crypto') {
+        return { success: false, error: "Отправлять криптовалюту можно только с крипто-карты" };
+      }
+
+      const fromBalance = wallet === 'btc' ? 
+        parseFloat(fromCard.btcBalance || '0') : 
+        parseFloat(fromCard.ethBalance || '0');
+
+      if (fromBalance < usdAmount) {
+        return { 
+          success: false, 
+          error: `Недостаточно ${wallet.toUpperCase()}. Требуется: ${usdAmount}, Доступно: ${fromBalance}` 
+        };
+      }
+
+      const newFromBalance = (fromBalance - usdAmount).toFixed(8);
+
+      const transaction = await db.transaction(async (tx) => {
+        const [newTransaction] = await tx.insert(transactions)
+          .values({
+            fromCardId: fromCard.id,
+            toCardId: null,
+            amount: usdAmount.toString(),
+            type: 'transfer',
+            wallet: wallet,
+            status: 'completed',
+            description: `Перевод ${usdAmount} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
+            fromCardNumber: fromCard.number,
+            toCardNumber: toCardNumber
+          })
+          .returning();
+
+        if (wallet === 'btc') {
+          await tx.update(cards)
+            .set({ btcBalance: newFromBalance })
+            .where(eq(cards.id, fromCard.id));
+        } else {
+          await tx.update(cards)
+            .set({ ethBalance: newFromBalance })
+            .where(eq(cards.id, fromCard.id));
+        }
+
+        return newTransaction;
+      });
+
+      return { success: true, transaction };
     }, 'Transfer money');
   }
 

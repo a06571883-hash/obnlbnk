@@ -15,6 +15,31 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 
+interface Transaction {
+  id: number;
+  type: string;
+  status: string;
+  amount: string;
+  convertedAmount?: string;
+  fromCardId: number;
+  toCardId?: number | null;
+  createdAt: string;
+  fromCardNumber: string;
+  toCardNumber: string;
+  description: string;
+  wallet?: 'btc' | 'eth';
+}
+
+interface Card {
+  id: number;
+  userId: number;
+  type: string;
+  number: string;
+  balance: string;
+  btcBalance?: string;
+  ethBalance?: string;
+}
+
 const EmptyState = () => (
   <div className="text-center py-12">
     <p className="text-muted-foreground">Транзакций пока нет</p>
@@ -23,23 +48,18 @@ const EmptyState = () => (
 
 export default function ActivityPage() {
   const { user } = useAuth();
-  const { data: cards = [] } = useQuery({
+  const { data: cards = [] } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
   });
 
-  const { data: transactions = [] } = useQuery({
+  const { data: transactions = [] } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
-    queryFn: async () => {
-      const response = await fetch('/api/transactions');
-      if (!response.ok) return [];
-      return response.json();
-    }
   });
 
-  const [selectedTx, setSelectedTx] = useState<any>(null);
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   const filterTransactions = (type: 'all' | 'incoming' | 'outgoing') => {
-    return transactions.filter((tx: any) => {
+    return transactions.filter((tx) => {
       if (type === 'all') return true;
 
       const fromCard = cards.find(c => c.id === tx.fromCardId);
@@ -64,7 +84,7 @@ export default function ActivityPage() {
     }
   };
 
-  const getTransactionType = (tx: any) => {
+  const getTransactionType = (tx: Transaction) => {
     const fromCard = cards.find(c => c.id === tx.fromCardId);
     const toCard = cards.find(c => c.id === tx.toCardId);
 
@@ -72,18 +92,16 @@ export default function ActivityPage() {
       if (fromCard && toCard && fromCard.userId === toCard.userId) {
         return { type: 'Обмен', iconColor: 'text-amber-500' };
       } else if (fromCard?.userId === user?.id) {
-        return { type: 'Перевод', iconColor: 'text-primary' };
+        return { type: tx.wallet ? `Перевод ${tx.wallet.toUpperCase()}` : 'Перевод', iconColor: 'text-primary' };
       } else {
         return { type: 'Получение', iconColor: 'text-emerald-500' };
       }
-    } else if (tx.type === 'deposit') {
-      return { type: 'Пополнение', iconColor: 'text-emerald-500' };
     }
 
     return { type: 'Неизвестно', iconColor: 'text-muted-foreground' };
   };
 
-  const getTransactionIcon = (tx: any) => {
+  const getTransactionIcon = (tx: Transaction) => {
     const { iconColor } = getTransactionType(tx);
     switch (tx.type) {
       case 'deposit':
@@ -103,19 +121,13 @@ export default function ActivityPage() {
     }
   };
 
-  const getCurrencyLabel = (card: any) => {
+  const getCurrencyLabel = (card: Card | undefined) => {
     if (!card) return '';
 
-    switch (card.type) {
-      case 'crypto':
-        return card.btcBalance ? 'BTC' : 'ETH';
-      case 'usd':
-        return 'USD';
-      case 'uah':
-        return 'UAH';
-      default:
-        return card.type.toUpperCase();
+    if (card.type === 'crypto') {
+      return card.btcBalance ? 'BTC' : 'ETH';
     }
+    return card.type.toUpperCase();
   };
 
   return (
@@ -137,44 +149,20 @@ export default function ActivityPage() {
                 <TabsTrigger value="outgoing">Исходящие</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="all" className="mt-4">
-                <TransactionList 
-                  transactions={filterTransactions('all')}
-                  getTransactionIcon={getTransactionIcon}
-                  getTransactionType={getTransactionType}
-                  getCurrencyIcon={getCurrencyIcon}
-                  getCurrencyLabel={getCurrencyLabel}
-                  formatDate={formatDate}
-                  cards={cards}
-                  onSelect={setSelectedTx}
-                />
-              </TabsContent>
-
-              <TabsContent value="incoming" className="mt-4">
-                <TransactionList 
-                  transactions={filterTransactions('incoming')}
-                  getTransactionIcon={getTransactionIcon}
-                  getTransactionType={getTransactionType}
-                  getCurrencyIcon={getCurrencyIcon}
-                  getCurrencyLabel={getCurrencyLabel}
-                  formatDate={formatDate}
-                  cards={cards}
-                  onSelect={setSelectedTx}
-                />
-              </TabsContent>
-
-              <TabsContent value="outgoing" className="mt-4">
-                <TransactionList 
-                  transactions={filterTransactions('outgoing')}
-                  getTransactionIcon={getTransactionIcon}
-                  getTransactionType={getTransactionType}
-                  getCurrencyIcon={getCurrencyIcon}
-                  getCurrencyLabel={getCurrencyLabel}
-                  formatDate={formatDate}
-                  cards={cards}
-                  onSelect={setSelectedTx}
-                />
-              </TabsContent>
+              {['all', 'incoming', 'outgoing'].map((tabValue) => (
+                <TabsContent key={tabValue} value={tabValue} className="mt-4">
+                  <TransactionList 
+                    transactions={filterTransactions(tabValue as 'all' | 'incoming' | 'outgoing')}
+                    getTransactionIcon={getTransactionIcon}
+                    getTransactionType={getTransactionType}
+                    getCurrencyIcon={getCurrencyIcon}
+                    getCurrencyLabel={getCurrencyLabel}
+                    formatDate={formatDate}
+                    cards={cards}
+                    onSelect={setSelectedTx}
+                  />
+                </TabsContent>
+              ))}
             </Tabs>
           </CardContent>
         </Card>
@@ -194,7 +182,8 @@ export default function ActivityPage() {
             to: selectedTx.toCardNumber,
             description: selectedTx.description,
             fromCard: cards.find(c => c.id === selectedTx.fromCardId),
-            toCard: cards.find(c => c.id === selectedTx.toCardId)
+            toCard: cards.find(c => c.id === selectedTx.toCardId),
+            wallet: selectedTx.wallet
           }}
           open={!!selectedTx}
           onOpenChange={(open) => !open && setSelectedTx(null)}
@@ -205,14 +194,14 @@ export default function ActivityPage() {
 }
 
 interface TransactionListProps {
-  transactions: any[];
-  getTransactionIcon: (tx: any) => JSX.Element | null;
-  getTransactionType: (tx: any) => { type: string; iconColor: string };
+  transactions: Transaction[];
+  getTransactionIcon: (tx: Transaction) => JSX.Element | null;
+  getTransactionType: (tx: Transaction) => { type: string; iconColor: string };
   getCurrencyIcon: (type: string) => JSX.Element | null;
-  getCurrencyLabel: (card: any) => string;
+  getCurrencyLabel: (card: Card | undefined) => string;
   formatDate: (date: string) => string;
-  cards: any[];
-  onSelect: (tx: any) => void;
+  cards: Card[];
+  onSelect: (tx: Transaction) => void;
 }
 
 function TransactionList({ 
@@ -274,7 +263,7 @@ function TransactionList({
                 </div>
               )}
               <div className="text-[10px] text-muted-foreground">
-                {getCurrencyLabel(fromCard)}
+                {tx.wallet ? tx.wallet.toUpperCase() : getCurrencyLabel(fromCard)}
               </div>
             </div>
           </div>
