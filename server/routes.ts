@@ -83,18 +83,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.isAuthenticated()) {
         console.log('User not authenticated for transfer');
-        return res.sendStatus(401);
+        return res.status(401).json({ error: "Необходима авторизация" });
       }
 
       const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
-      if (!fromCardId || !toCardNumber || !amount) {
-        return res.status(400).json({ error: "Все поля обязательны" });
+      // Базовая валидация
+      if (!fromCardId || !toCardNumber) {
+        return res.status(400).json({ 
+          error: "Укажите карту отправителя и получателя" 
+        });
+      }
+
+      if (!amount || isNaN(amount) || amount <= 0) {
+        return res.status(400).json({ 
+          error: "Сумма перевода должна быть положительным числом" 
+        });
       }
 
       const fromCard = await storage.getCardById(fromCardId);
       if (!fromCard) {
-        return res.status(400).json({ error: "Карта отправителя не найдена" });
+        return res.status(400).json({ 
+          error: "Карта отправителя не найдена" 
+        });
+      }
+
+      // Проверка принадлежности карты текущему пользователю
+      if (fromCard.userId !== req.user.id) {
+        return res.status(403).json({ 
+          error: "У вас нет прав для использования этой карты" 
+        });
       }
 
       // Для крипто-перевода
@@ -120,7 +138,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Для обычного перевода между картами
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
       if (cleanToCardNumber.length !== 16) {
-        return res.status(400).json({ error: "Неверный формат номера карты" });
+        return res.status(400).json({ 
+          error: "Неверный формат номера карты. Номер должен состоять из 16 цифр" 
+        });
       }
 
       const result = await storage.transferMoney(fromCardId, cleanToCardNumber, parseFloat(amount));

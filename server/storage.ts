@@ -206,37 +206,55 @@ export class DatabaseStorage implements IStorage {
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withRetry(async () => {
-      console.log(`Starting transfer: fromCardId=${fromCardId}, toCardNumber=${toCardNumber}, amount=${amount}, wallet=${wallet}`);
+      console.log(`Начало перевода: fromCardId=${fromCardId}, toCardNumber=${toCardNumber}, amount=${amount}, wallet=${wallet}`);
 
+      // Базовая валидация
       if (!fromCardId || !toCardNumber || amount <= 0) {
-        return { success: false, error: "Неверные параметры перевода" };
+        return { 
+          success: false, 
+          error: "Неверные параметры перевода. Сумма должна быть больше 0" 
+        };
       }
 
+      // Получаем карту отправителя
       const fromCard = await this.getCardById(fromCardId);
       if (!fromCard) {
-        return { success: false, error: "Карта отправителя не найдена" };
+        return { 
+          success: false, 
+          error: "Карта отправителя не найдена или недоступна" 
+        };
       }
 
-      // Crypto transfer
+      // Перевод криптовалюты
       if (wallet) {
         if (fromCard.type !== 'crypto') {
-          return { success: false, error: "Отправлять криптовалюту можно только с крипто-карты" };
+          return { 
+            success: false, 
+            error: "Для перевода криптовалюты используйте крипто-карту" 
+          };
         }
 
         const balance = wallet === 'btc' ?
           parseFloat(fromCard.btcBalance || '0') :
           parseFloat(fromCard.ethBalance || '0');
 
-        if (isNaN(balance) || balance < amount) {
-          return {
-            success: false,
-            error: `Недостаточно ${wallet.toUpperCase()}. Требуется: ${amount}, Доступно: ${balance}`
+        if (isNaN(balance)) {
+          return { 
+            success: false, 
+            error: `Ошибка чтения баланса ${wallet.toUpperCase()}` 
           };
         }
 
-        const newBalance = (balance - amount).toFixed(8);
+        if (balance < amount) {
+          return {
+            success: false,
+            error: `Недостаточно ${wallet.toUpperCase()} на балансе. Доступно: ${balance.toFixed(8)} ${wallet.toUpperCase()}, требуется: ${amount.toFixed(8)} ${wallet.toUpperCase()}`
+          };
+        }
 
         try {
+          const newBalance = (balance - amount).toFixed(8);
+
           const transaction = await this.createTransaction({
             fromCardId: fromCard.id,
             toCardId: fromCard.id,
@@ -245,7 +263,7 @@ export class DatabaseStorage implements IStorage {
             type: 'transfer',
             status: 'completed',
             wallet,
-            description: `Перевод ${amount} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
+            description: `Перевод ${amount.toFixed(8)} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
             fromCardNumber: fromCard.number,
             toCardNumber: toCardNumber,
             createdAt: new Date()
@@ -257,35 +275,48 @@ export class DatabaseStorage implements IStorage {
             await this.updateCardEthBalance(fromCard.id, newBalance);
           }
 
+          console.log(`Успешный крипто-перевод: ${amount} ${wallet}`);
           return { success: true, transaction };
         } catch (error) {
-          console.error('Crypto transfer error:', error);
-          return { success: false, error: "Ошибка при выполнении крипто-перевода" };
+          console.error('Ошибка крипто-перевода:', error);
+          return { 
+            success: false, 
+            error: "Произошла ошибка при переводе криптовалюты. Пожалуйста, попробуйте позже" 
+          };
         }
       }
 
-      // Regular card transfer
+      // Обычный перевод между картами
       try {
         const toCard = await this.getCardByNumber(toCardNumber);
         if (!toCard) {
-          return { success: false, error: "Карта получателя не найдена" };
+          return { 
+            success: false, 
+            error: "Карта получателя не найдена. Проверьте номер карты" 
+          };
         }
 
         if (fromCard.id === toCard.id) {
-          return { success: false, error: "Нельзя перевести деньги на ту же карту" };
+          return { 
+            success: false, 
+            error: "Невозможно выполнить перевод на ту же карту" 
+          };
         }
 
         const fromBalance = parseFloat(fromCard.balance || '0');
         const toBalance = parseFloat(toCard.balance || '0');
 
         if (isNaN(fromBalance) || isNaN(toBalance)) {
-          return { success: false, error: "Ошибка при чтении баланса" };
+          return { 
+            success: false, 
+            error: "Ошибка при чтении баланса карт" 
+          };
         }
 
         if (fromBalance < amount) {
           return {
             success: false,
-            error: `Недостаточно средств. Требуется: ${amount}, Доступно: ${fromBalance}`
+            error: `Недостаточно средств на карте. Доступно: ${fromBalance.toFixed(2)} ${fromCard.type.toUpperCase()}, требуется: ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`
           };
         }
 
@@ -300,7 +331,7 @@ export class DatabaseStorage implements IStorage {
           type: 'transfer',
           status: 'completed',
           wallet: null,
-          description: `Перевод ${amount} ${fromCard.type.toUpperCase()}`,
+          description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
           createdAt: new Date()
@@ -309,10 +340,14 @@ export class DatabaseStorage implements IStorage {
         await this.updateCardBalance(fromCard.id, newFromBalance);
         await this.updateCardBalance(toCard.id, newToBalance);
 
+        console.log(`Успешный перевод: ${amount} ${fromCard.type}`);
         return { success: true, transaction };
       } catch (error) {
-        console.error('Card transfer error:', error);
-        return { success: false, error: "Ошибка при выполнении перевода между картами" };
+        console.error('Ошибка перевода между картами:', error);
+        return { 
+          success: false, 
+          error: "Произошла ошибка при переводе. Пожалуйста, попробуйте позже" 
+        };
       }
     }, 'Transfer money');
   }
