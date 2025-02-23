@@ -33,14 +33,13 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({
-      pool: pool as any, // Fix для типизации
+      pool: pool as any,
       tableName: 'session',
       createTableIfMissing: true,
       pruneSessionInterval: 60,
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 дней
+      ttl: 30 * 24 * 60 * 60 // 30 days in seconds
     });
 
-    // Добавляем обработчики событий для отладки сессии
     this.sessionStore.on('error', (error) => {
       console.error('Session store error:', error);
     });
@@ -48,38 +47,6 @@ export class DatabaseStorage implements IStorage {
     this.sessionStore.on('connect', () => {
       console.log('Session store connected successfully');
     });
-  }
-
-  private async withTransaction<T>(operation: () => Promise<T>, context: string): Promise<T> {
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      const result = await operation();
-      await client.query('COMMIT');
-      return result;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      console.error(`${context} failed:`, error);
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
-  private async withRetry<T>(operation: () => Promise<T>, context: string, maxAttempts = 3): Promise<T> {
-    let lastError: Error | undefined;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      try {
-        return await operation();
-      } catch (error) {
-        lastError = error as Error;
-        console.error(`${context} failed (attempt ${attempt + 1}/${maxAttempts}):`, error);
-        if (attempt < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
-        }
-      }
-    }
-    throw lastError || new Error(`${context} failed after ${maxAttempts} attempts`);
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -182,6 +149,7 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       const [result] = await db.insert(transactions).values({
         ...transaction,
+        wallet: transaction.wallet || null,
         description: transaction.description || "",
         createdAt: new Date()
       }).returning();
@@ -223,10 +191,11 @@ export class DatabaseStorage implements IStorage {
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard.id,
-          amount: amount.toFixed(2),
-          convertedAmount: amount.toFixed(2),
+          amount: amount.toString(),
+          convertedAmount: amount.toString(),
           type: 'transfer',
           status: 'completed',
+          wallet: null,
           description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
@@ -243,6 +212,38 @@ export class DatabaseStorage implements IStorage {
         return { success: false, error: (error as Error).message };
       }
     }, 'Transfer money');
+  }
+
+  private async withTransaction<T>(operation: () => Promise<T>, context: string): Promise<T> {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await operation();
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error(`${context} failed:`, error);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  private async withRetry<T>(operation: () => Promise<T>, context: string, maxAttempts = 3): Promise<T> {
+    let lastError: Error | undefined;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`${context} failed (attempt ${attempt + 1}/${maxAttempts}):`, error);
+        if (attempt < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+        }
+      }
+    }
+    throw lastError || new Error(`${context} failed after ${maxAttempts} attempts`);
   }
 }
 

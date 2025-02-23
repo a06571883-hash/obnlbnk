@@ -33,47 +33,27 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Генерация стабильного секрета для сессий
   const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
   console.log('Using session secret:', sessionSecret.substring(0, 8) + '...');
 
-  // Настройка сессии с подробными параметрами
-  const sessionConfig = {
+  const sessionConfig: session.SessionOptions = {
     secret: sessionSecret,
     name: 'bnal.sid',
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     store: storage.sessionStore,
-    proxy: true,
-    rolling: true, // Обновляет сессию при каждом запросе
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to false for development
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax' as const,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
-      path: '/'
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     }
   };
 
-  // Настройка прокси и сессии
-  app.set('trust proxy', 1);
   app.use(session(sessionConfig));
-
-  // Отладка сессии
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    console.log('Session debug (pre-auth):', {
-      sessionID: req.sessionID,
-      cookie: req.session?.cookie,
-      user: req.session?.passport?.user
-    });
-    next();
-  });
-
-  // Инициализация Passport
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Стратегия локальной аутентификации
   passport.use(new LocalStrategy(async (username, password, done) => {
     try {
       console.log('Attempting authentication for user:', username);
@@ -120,7 +100,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Маршрут аутентификации
   app.post("/api/login", (req, res, next) => {
     console.log('Login attempt:', req.body.username);
 
@@ -146,15 +125,14 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  // Маршрут проверки пользователя
   app.get("/api/user", (req, res) => {
+    console.log('User check:', req.isAuthenticated(), req.user);
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Необходима авторизация" });
     }
     res.json(req.user);
   });
 
-  // Маршрут регистрации
   app.post("/api/register", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -189,7 +167,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Маршрут выхода
   app.post("/api/logout", (req, res) => {
     req.logout((err) => {
       if (err) {
@@ -206,46 +183,6 @@ export function setupAuth(app: Express) {
     });
   });
 
-  // Защищенные API маршруты
-  app.get("/api/cards", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-      const cards = await storage.getCardsByUserId(req.user.id);
-      res.json(cards);
-    } catch (error) {
-      console.error("Cards fetch error:", error);
-      res.status(500).json({ message: "Ошибка при получении карт" });
-    }
-  });
-
-  app.get("/api/transactions", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-
-      const userCards = await storage.getCardsByUserId(req.user.id);
-      const allTransactions = [];
-
-      for (const card of userCards) {
-        const cardTransactions = await storage.getTransactionsByCardId(card.id);
-        allTransactions.push(...cardTransactions);
-      }
-
-      allTransactions.sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-
-      res.json(allTransactions);
-    } catch (error) {
-      console.error("Transactions fetch error:", error);
-      res.status(500).json({ message: "Ошибка при получении транзакций" });
-    }
-  });
-
-  // Безопасность заголовков
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
