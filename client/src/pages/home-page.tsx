@@ -21,8 +21,32 @@ import TransactionReceipt from "@/components/transaction-receipt";
 export default function HomePage() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+
+  // Show welcome message only on fresh login
+  useEffect(() => {
+    const hasShownWelcome = localStorage.getItem('welcomeShown');
+    if (!hasShownWelcome) {
+      setShowWelcome(true);
+      localStorage.setItem('welcomeShown', 'true');
+
+      // Hide after 4 seconds
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+      }, 4000);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Clear welcome flag on logout
+  useEffect(() => {
+    const unsubscribe = logoutMutation.subscribe(() => {
+      localStorage.removeItem('welcomeShown');
+    });
+    return () => unsubscribe();
+  }, [logoutMutation]);
 
   const { data: cards, isLoading: isLoadingCards } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
@@ -37,23 +61,6 @@ export default function HomePage() {
     queryKey: ["/api/transactions"],
     enabled: !!cards?.length,
     refetchInterval: 5000,
-  });
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowWelcome(false);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const generateCardsMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/cards/generate");
-      return await res.json();
-    },
-    onSuccess: (newCards) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
-    },
   });
 
   if (isLoadingCards) {
