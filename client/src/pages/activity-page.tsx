@@ -54,11 +54,11 @@ export default function ActivityPage() {
   const getCurrencyIcon = (type: string) => {
     switch (type) {
       case 'crypto':
-        return <Bitcoin className="h-5 w-5" />;
+        return <Bitcoin className="h-4 w-4" />;
       case 'usd':
-        return <DollarSign className="h-5 w-5" />;
+        return <DollarSign className="h-4 w-4" />;
       case 'uah':
-        return <Coins className="h-5 w-5" />;
+        return <Coins className="h-4 w-4" />;
       default:
         return null;
     }
@@ -87,11 +87,11 @@ export default function ActivityPage() {
     const { iconColor } = getTransactionType(tx);
     switch (tx.type) {
       case 'deposit':
-        return <ArrowDownLeft className={`h-5 w-5 ${iconColor}`} />;
+        return <ArrowDownLeft className={`h-4 w-4 ${iconColor}`} />;
       case 'transfer':
-        return <ArrowUpRight className={`h-5 w-5 ${iconColor}`} />;
+        return <ArrowUpRight className={`h-4 w-4 ${iconColor}`} />;
       default:
-        return <RefreshCw className="h-5 w-5 text-muted-foreground" />;
+        return <RefreshCw className={`h-4 w-4 text-muted-foreground`} />;
     }
   };
 
@@ -228,7 +228,7 @@ function TransactionList({
   if (!transactions.length) return <EmptyState />;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {transactions.map((tx) => {
         const { type } = getTransactionType(tx);
         const fromCard = cards.find(c => c.id === tx.fromCardId);
@@ -238,21 +238,21 @@ function TransactionList({
         return (
           <div
             key={tx.id}
-            className="flex items-center p-4 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer"
+            className="flex items-center p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer"
             onClick={() => onSelect(tx)}
           >
-            <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center mr-4">
+            <div className="h-8 w-8 rounded-full bg-background flex items-center justify-center mr-3">
               {getTransactionIcon(tx)}
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium truncate">{type}</span>
-                <span className="text-sm text-muted-foreground whitespace-nowrap">
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-medium truncate">{type}</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
                   • {formatDate(tx.createdAt)}
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 {tx.status === 'completed' ? (
                   <span className="text-emerald-500">Выполнено</span>
                 ) : (
@@ -261,19 +261,19 @@ function TransactionList({
               </div>
             </div>
 
-            <div className="text-right ml-4 min-w-[100px]">
-              <div className="flex items-center gap-1 font-medium justify-end">
+            <div className="text-right ml-3 min-w-[80px]">
+              <div className="flex items-center gap-1 text-sm font-medium justify-end">
                 <div className="flex items-center truncate">
                   {getCurrencyIcon(currency)}
                   <span className="ml-1">{tx.amount}</span>
                 </div>
               </div>
               {tx.convertedAmount && tx.convertedAmount !== tx.amount && (
-                <div className="text-muted-foreground text-xs truncate">
+                <div className="text-xs text-muted-foreground truncate">
                   → {tx.convertedAmount} {getCurrencyLabel(toCard)}
                 </div>
               )}
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 {getCurrencyLabel(fromCard)}
               </div>
             </div>
