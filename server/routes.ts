@@ -18,25 +18,34 @@ const ECPair = ECPairFactory(ecc);
 // Function for generating BTC addresses
 function generateBtcAddress(): string {
   try {
-    const keyPair = ECPair.makeRandom();
-    const pubKey = keyPair.publicKey;
+    // Generate a key pair with explicit network and checking options
+    const keyPair = ECPair.makeRandom({
+      network: bitcoin.networks.bitcoin,
+      compressed: true
+    });
 
-    const { address } = bitcoin.payments.p2pkh({
-      pubkey: pubKey,
+    // Get the public key buffer
+    const pubkeyBuffer = keyPair.publicKey;
+
+    // Create a P2PKH payment object with the public key buffer
+    const payment = bitcoin.payments.p2pkh({
+      pubkey: pubkeyBuffer,
       network: bitcoin.networks.bitcoin
     });
 
-    if (!address) {
-      throw new Error('Failed to generate BTC address');
+    // Get the address from the payment object
+    if (!payment.address) {
+      throw new Error('Failed to generate BTC address: address is undefined');
     }
 
+    // Validate the generated address
     try {
-      bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
-      console.log('Generated and validated BTC address:', address);
-      return address;
+      bitcoin.address.toOutputScript(payment.address, bitcoin.networks.bitcoin);
+      console.log('Successfully generated and validated BTC address:', payment.address);
+      return payment.address;
     } catch (validationError) {
-      console.error('Generated address failed validation:', validationError);
-      throw validationError;
+      console.error('BTC address validation failed:', validationError);
+      throw new Error('Generated address failed validation');
     }
   } catch (error) {
     console.error('Error in BTC address generation:', error);
@@ -47,14 +56,16 @@ function generateBtcAddress(): string {
 // Function for generating ETH addresses
 function generateEthAddress(): string {
   try {
+    // Create a new random wallet
     const wallet = ethers.Wallet.createRandom();
-    const address = wallet.address.toLowerCase();
+    const address = wallet.address;
 
+    // Validate the generated address
     if (!ethers.isAddress(address)) {
       throw new Error('Generated ETH address is invalid');
     }
 
-    console.log('Generated and validated ETH address:', address);
+    console.log('Successfully generated and validated ETH address:', address);
     return address;
   } catch (error) {
     console.error('Error in ETH address generation:', error);
@@ -72,7 +83,7 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
       return ethers.isAddress(address);
     }
   } catch (error) {
-    console.error(`Error validating ${type} address:`, error);
+    console.error(`Error validating ${type.toUpperCase()} address:`, error);
     return false;
   }
 }
@@ -326,10 +337,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      console.log('Starting address regeneration...');
+      console.log('Starting address regeneration process...');
 
-      // Get all crypto cards
-      const cryptoCards = await db.select().from(cards).where(eq(cards.type, 'crypto'));
+      // Get crypto cards for the current user
+      const cryptoCards = await db
+        .select()
+        .from(cards)
+        .where(eq(cards.type, 'crypto'))
+        .where(eq(cards.userId, req.user.id));
+
       console.log(`Found ${cryptoCards.length} crypto cards to update`);
 
       // Update each card with new addresses
@@ -345,7 +361,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           // Update the card with new addresses
-          await db.update(cards)
+          await db
+            .update(cards)
             .set({
               btcAddress: newBtcAddress,
               ethAddress: newEthAddress
@@ -360,7 +377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Return updated cards for the user
+      // Get updated cards and return them
       const updatedCards = await storage.getCardsByUserId(req.user.id);
       console.log('Address regeneration completed successfully');
 
