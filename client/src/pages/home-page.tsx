@@ -47,11 +47,17 @@ export default function HomePage() {
 
   // Clear welcome flag on logout
   useEffect(() => {
-    const unsubscribe = logoutMutation.subscribe(() => {
+    const cleanup = () => {
       sessionStorage.removeItem(WELCOME_MESSAGE_KEY);
-    });
-    return () => unsubscribe();
-  }, [logoutMutation]);
+    };
+
+    // Add cleanup to logout mutation
+    if (logoutMutation.isSuccess) {
+      cleanup();
+    }
+
+    return cleanup;
+  }, [logoutMutation.isSuccess]);
 
   const { data: cards, isLoading: isLoadingCards } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
@@ -70,7 +76,7 @@ export default function HomePage() {
 
   if (isLoadingCards) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -221,7 +227,6 @@ export default function HomePage() {
                     </div>
                   ) : transactions && transactions.length > 0 ? (
                     transactions.slice(0, 5).map((transaction) => {
-                      // Determine transaction type description
                       let transactionType = 'Перевод';
                       let iconColor = 'text-primary';
 
@@ -230,15 +235,12 @@ export default function HomePage() {
                         const toCard = cards.find(c => c.id === transaction.toCardId);
 
                         if (fromCard && toCard && fromCard.userId === toCard.userId) {
-                          // If both cards belong to the same user, it's a currency exchange
                           transactionType = 'Обмен';
                           iconColor = 'text-amber-500';
                         } else if (fromCard?.userId === user?.id) {
-                          // If from card belongs to current user, it's an outgoing transfer
                           transactionType = 'Перевод';
                           iconColor = 'text-primary';
                         } else {
-                          // Otherwise it's an incoming transfer
                           transactionType = 'Получение';
                           iconColor = 'text-emerald-500';
                         }
@@ -310,8 +312,6 @@ export default function HomePage() {
               </p>
               <Button
                 size="lg"
-                //onClick={() => generateCardsMutation.mutate()}  // Removed because useMutation is not imported
-                disabled={false} // Assuming generateCardsMutation is not used
                 className="bg-primary hover:bg-primary/90"
               >
                 Generate Cards
