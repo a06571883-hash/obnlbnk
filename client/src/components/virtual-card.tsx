@@ -130,31 +130,6 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   });
 
-  // Add regenerate addresses mutation
-  const regenerateAddressesMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/cards/regenerate-addresses");
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to regenerate addresses");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
-      toast({
-        title: "Успех",
-        description: "Адреса кошельков успешно обновлены",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
 
   return (
     <div
@@ -245,24 +220,6 @@ export default function VirtualCard({ card }: { card: Card }) {
                           <p className="text-sm text-muted-foreground mb-2">ETH Address</p>
                           <p className="font-mono text-sm break-all">{card.ethAddress}</p>
                         </div>
-                        {/* Add regenerate button */}
-                        <Button 
-                          className="w-full"
-                          disabled={regenerateAddressesMutation.isPending}
-                          onClick={() => regenerateAddressesMutation.mutate()}
-                        >
-                          {regenerateAddressesMutation.isPending ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Обновление адресов...
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="h-4 w-4 mr-2" />
-                              Обновить адреса кошельков
-                            </>
-                          )}
-                        </Button>
                       </>
                     ) : (
                       <div>
