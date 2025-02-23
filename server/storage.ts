@@ -13,13 +13,23 @@ const scryptAsync = promisify(scrypt);
 
 const PostgresSessionStore = connectPg(session);
 
+// Создаем отдельный пул для сессий с оптимизированными настройками
 const sessionPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 10,
-  idleTimeoutMillis: 60000, // 1 minute
-  connectionTimeoutMillis: 5000, // 5 seconds
+  max: 20,
+  idleTimeoutMillis: 300000, // 5 минут
+  connectionTimeoutMillis: 10000, // 10 секунд
   ssl: false,
   keepAlive: true
+});
+
+// Добавляем обработчики событий для пула
+sessionPool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+});
+
+sessionPool.on('connect', () => {
+  console.log('Session pool connected successfully');
 });
 
 export interface IStorage {
@@ -49,12 +59,13 @@ export class DatabaseStorage implements IStorage {
     try {
       this.sessionStore = new PostgresSessionStore({
         pool: sessionPool,
-        tableName: 'session',
+        tableName: 'connect_pg_simple_sessions',
         createTableIfMissing: true,
-        pruneSessionInterval: 60 * 15, // 15 minutes
-        errorLog: console.error.bind(console),
         schemaName: 'public',
-        ttl: 24 * 60 * 60 // 24 hours
+        pruneSessionInterval: 60000, // 1 minute
+        errorLog: (err) => {
+          console.error('Session store error:', err);
+        }
       });
       console.log('Session store initialized successfully');
     } catch (error) {
@@ -212,8 +223,8 @@ export class DatabaseStorage implements IStorage {
           return { success: false, error: "Отправлять криптовалюту можно только с крипто-карты" };
         }
 
-        const balance = wallet === 'btc' ? 
-          parseFloat(fromCard.btcBalance || '0') : 
+        const balance = wallet === 'btc' ?
+          parseFloat(fromCard.btcBalance || '0') :
           parseFloat(fromCard.ethBalance || '0');
 
         if (isNaN(balance) || balance < amount) {
@@ -272,9 +283,9 @@ export class DatabaseStorage implements IStorage {
         }
 
         if (fromBalance < amount) {
-          return { 
-            success: false, 
-            error: `Недостаточно средств. Требуется: ${amount}, Доступно: ${fromBalance}` 
+          return {
+            success: false,
+            error: `Недостаточно средств. Требуется: ${amount}, Доступно: ${fromBalance}`
           };
         }
 
