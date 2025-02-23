@@ -43,24 +43,30 @@ function convertCurrency(amount: number, fromCurrency: string, toCurrency: strin
 // Function for validating crypto addresses
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   if (type === 'btc') {
-    // Valid formats: Legacy (1), SegWit (3), or Native SegWit (bc1)
-    return /^(1[a-km-zA-HJ-NP-Z1-9]{25,34}|3[a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-zA-HJ-NP-Z0-9]{39,59})$/.test(address);
+    // Bitcoin address validation rules:
+    // Legacy: starts with 1, followed by exactly 33 alphanumeric characters (total 34)
+    // SegWit: starts with 3, followed by exactly 33 alphanumeric characters (total 34)
+    // Native SegWit: starts with bc1, followed by 39-59 alphanumeric characters
+    const legacy = /^[13][a-km-zA-HJ-NP-Z1-9]{33}$/;
+    const nativeSegwit = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
+    return legacy.test(address) || nativeSegwit.test(address);
   }
-  // Ethereum address validation - must start with 0x followed by 40 hex chars
+
+  // Ethereum address validation:
+  // Must start with 0x followed by exactly 40 hex characters
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
 // Function for generating BTC addresses
 function generateBtcAddress(): string {
-  // For simplicity and compatibility, we'll use a Legacy Bitcoin address format
-  // Real Legacy addresses examples: 1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2, 1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2
+  // Generate a Legacy Bitcoin address with exactly 34 characters
   const prefix = '1';
   const base58Chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
   let address = prefix;
 
-  // Generate 32 characters for proper length (total 33)
-  const randomBytes = crypto.randomBytes(32);
-  for (let i = 0; i < 32; i++) {
+  // Generate exactly 33 characters after the prefix for a total of 34
+  const randomBytes = crypto.randomBytes(33);
+  for (let i = 0; i < 33; i++) {
     address += base58Chars[randomBytes[i] % base58Chars.length];
   }
 
@@ -69,11 +75,9 @@ function generateBtcAddress(): string {
 
 // Function for generating ETH addresses
 function generateEthAddress(): string {
-  // Real Ethereum address examples: 0x742d35Cc6634C0532925a3b844Bc454e4438f44e
+  // Generate a standard Ethereum address
   const addressBytes = crypto.randomBytes(20);
-  const address = '0x' + addressBytes.toString('hex');
-  // Convert to checksum address format
-  return address.toLowerCase();
+  return '0x' + addressBytes.toString('hex').toLowerCase();
 }
 
 export async function registerRoutes(app: Express, db: any): Promise<Server> {
