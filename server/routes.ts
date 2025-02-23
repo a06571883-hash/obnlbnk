@@ -36,15 +36,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/user", async (req, res) => {
     try {
+      console.log('[Auth] User info request. Authenticated:', req.isAuthenticated(), 'Session ID:', req.sessionID);
+
       if (!req.isAuthenticated()) {
-        console.log('User not authenticated');
+        console.log('[Auth] Unauthorized access attempt to /api/user');
         return res.sendStatus(401);
       }
+
       const user = await storage.getUser(req.user.id);
       if (!user) {
         console.log('User not found');
         return res.sendStatus(404);
       }
+
+      console.log('User found:', user.username);
       res.json(user);
     } catch (error) {
       console.error('Error in /api/user:', error);

@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -11,7 +12,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }

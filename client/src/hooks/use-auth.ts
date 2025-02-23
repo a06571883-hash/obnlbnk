@@ -27,15 +27,13 @@ export function useAuth() {
     queryKey: ["/api/user"],
     retry: false,
     refetchOnWindowFocus: true,
-    gcTime: 0,
     staleTime: 0,
-    onSettled(data, error) {
-      if (error) {
-        setUser(null);
-        setLocation("/auth");
-      } else if (data) {
-        setUser(data);
-      }
+    onSuccess: (data) => {
+      setUser(data);
+    },
+    onError: () => {
+      setUser(null);
+      setLocation("/auth");
     }
   });
 

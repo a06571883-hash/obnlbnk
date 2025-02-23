@@ -15,18 +15,11 @@ const PostgresSessionStore = connectPg(session);
 
 const sessionPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 2,
-  ssl: false,
+  max: 5,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-  keepAlive: true
+  connectionTimeoutMillis: 2000,
+  ssl: false
 });
-
-// Exchange rates - using current market rates
-const EXCHANGE_RATES = {
-  btcToUsd: 96252.05, // Current BTC/USD rate
-  ethToUsd: 2950.00,  // Current ETH/USD rate
-};
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -52,14 +45,20 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     console.log('Initializing DatabaseStorage with session store...');
-    this.sessionStore = new PostgresSessionStore({
-      pool: sessionPool,
-      createTableIfMissing: true,
-      tableName: 'session',
-      pruneSessionInterval: 60,
-      schemaName: 'public'
-    });
-    console.log('Session store initialized');
+    try {
+      this.sessionStore = new PostgresSessionStore({
+        pool: sessionPool,
+        tableName: 'session',
+        createTableIfMissing: true,
+        pruneSessionInterval: 60 * 15, // 15 minutes
+        errorLog: console.error.bind(console),
+        schemaName: 'public'
+      });
+      console.log('Session store initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize session store:', error);
+      throw error;
+    }
   }
 
   private async withRetry<T>(operation: () => Promise<T>, context: string): Promise<T> {
@@ -210,14 +209,14 @@ export class DatabaseStorage implements IStorage {
           return { success: false, error: "Отправлять криптовалюту можно только с крипто-карты" };
         }
 
-        const fromBalance = wallet === 'btc' ? 
-          parseFloat(fromCard.btcBalance || '0') : 
+        const fromBalance = wallet === 'btc' ?
+          parseFloat(fromCard.btcBalance || '0') :
           parseFloat(fromCard.ethBalance || '0');
 
         if (fromBalance < amount) {
-          return { 
-            success: false, 
-            error: `Недостаточно ${wallet.toUpperCase()}. Требуется: ${amount}, Доступно: ${fromBalance}` 
+          return {
+            success: false,
+            error: `Недостаточно ${wallet.toUpperCase()}. Требуется: ${amount}, Доступно: ${fromBalance}`
           };
         }
 
