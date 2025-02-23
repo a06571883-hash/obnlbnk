@@ -249,31 +249,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY}); // Added API key initialization
+      const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
 
-      // Генерируем изображение
+      // Генерируем изображение с оптимизированными параметрами
       const imageResponse = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: "Create a luxury lifestyle image in pixelated art style featuring either a Mercedes G-Class, Rolex watch, or business success symbols. Add modern aesthetic elements and high-end details.",
+        model: "dall-e-2",
+        prompt: "Luxury lifestyle pixel art with Mercedes or Rolex watch in modern style",
         n: 1,
-        size: "1024x1024",
-        quality: "standard",
-        style: "vivid"
+        size: "512x512",
+        quality: "standard"
       });
 
       const imageUrl = imageResponse.data[0].url;
 
-      // Генерируем название и описание
+      // Генерируем название и описание используя более простую модель
       const completionResponse = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [{
           role: "system",
-          content: "Generate a creative name and description for a luxury lifestyle NFT. Focus on exclusivity and status symbols."
+          content: "Create a short name and description for a luxury NFT"
         }],
-        temperature: 0.7
+        temperature: 0.7,
+        max_tokens: 100
       });
 
-      const suggestion = completionResponse.choices[0].message.content; //Directly use content
+      const suggestion = completionResponse.choices[0].message.content;
 
       // Создаем или получаем коллекцию
       let collection = (await storage.getNFTCollectionsByUserId(req.user.id))[0];
@@ -289,8 +289,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nft = await storage.createNFT({
         userId: req.user.id,
         imageUrl,
-        name: suggestion || "Luxury NFT", // Handle potential null
-        description: suggestion || "Эксклюзивный NFT в стиле люкс", // Handle potential null
+        name: suggestion?.split('\n')[0] || "Luxury NFT",
+        description: suggestion?.split('\n')[1] || "Эксклюзивный NFT в стиле люкс",
         collectionId: collection.id,
         createdAt: new Date()
       });
