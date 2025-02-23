@@ -1,7 +1,7 @@
 import { storage } from "./storage";
 
 const COINGECKO_API_URL = "https://api.coingecko.com/api/v3";
-const UPDATE_INTERVAL = 10000; // 10 seconds
+const UPDATE_INTERVAL = 2000; // 2 seconds
 let lastSuccessfulRates = null;
 
 async function fetchRates() {
@@ -39,7 +39,6 @@ async function fetchRates() {
       throw new Error("Invalid response from Exchange Rate API");
     }
 
-    // Update rates in database
     const rates = {
       usdToUah: usdData.rates.UAH.toString(),
       btcToUsd: cryptoData.bitcoin.usd.toString(),

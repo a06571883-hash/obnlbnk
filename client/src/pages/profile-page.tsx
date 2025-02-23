@@ -4,9 +4,6 @@ import { Button } from "@/components/ui/button";
 import { 
   Card, 
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -14,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -39,27 +35,12 @@ import { useToast } from "@/hooks/use-toast";
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
-  const [darkMode, setDarkMode] = useState(true); // По умолчанию тёмная тема
   const [notifications, setNotifications] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [language, setLanguage] = useState("ru");
 
-  const applyTheme = (isDark: boolean) => {
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(isDark ? 'dark' : 'light');
-    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
-    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
-  };
-
   // Загрузка начальных настроек
   useEffect(() => {
-    // Проверяем сохранённую тему, по умолчанию тёмная
-    const storedTheme = localStorage.getItem('darkMode');
-    const isDark = storedTheme === null || storedTheme === 'dark';
-
-    applyTheme(isDark);
-    setDarkMode(isDark);
-
     setNotifications(localStorage.getItem('notifications') === 'true');
     setSoundEnabled(localStorage.getItem('soundEnabled') === 'true');
     setLanguage(localStorage.getItem('language') || 'ru');
@@ -68,19 +49,6 @@ export default function ProfilePage() {
   const updateSetting = async (key: string, value: any) => {
     try {
       switch(key) {
-        case 'darkMode':
-          // When switch is checked, it means we want light theme
-          const isDark = !value;
-          localStorage.setItem('darkMode', isDark ? 'dark' : 'light');
-          applyTheme(isDark);
-          setDarkMode(isDark);
-
-          toast({
-            title: isDark ? "Тёмная тема включена" : "Светлая тема включена",
-            description: isDark ? "Приложение переключено на тёмную тему" : "Приложение переключено на светлую тему",
-          });
-          break;
-
         case 'notifications':
           if (value && 'Notification' in window) {
             const permission = await Notification.requestPermission();
@@ -142,26 +110,6 @@ export default function ProfilePage() {
       description: "Персонализация и предпочтения",
       content: (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                {darkMode ? (
-                  <Moon className="h-4 w-4" />
-                ) : (
-                  <Sun className="h-4 w-4" />
-                )}
-                <Label>Светлая тема</Label>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Переключить на светлую тему
-              </p>
-            </div>
-            <Switch
-              checked={!darkMode}
-              onCheckedChange={(checked) => updateSetting('darkMode', checked)}
-            />
-          </div>
-
           <div className="space-y-2">
             <Label>Язык</Label>
             <select

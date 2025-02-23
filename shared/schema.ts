@@ -86,3 +86,11 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertCard = z.infer<typeof insertCardSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;
+
+// Define the exchange rate response type
+export interface ExchangeRateResponse {
+  usdToUah: string;
+  btcToUsd: string;
+  ethToUsd: string;
+  updatedAt?: Date;
+}

@@ -19,6 +19,12 @@ import { useEffect, useState } from "react";
 // Create a key for sessionStorage to track welcome message state
 const WELCOME_MESSAGE_KEY = 'welcomeMessageShown';
 
+interface ExchangeRateResponse {
+  btcToUsd: string;
+  ethToUsd: string;
+  usdToUah: string;
+}
+
 export default function HomePage() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
@@ -51,7 +57,7 @@ export default function HomePage() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const { data: rates, isLoading: isLoadingRates } = useQuery({
+  const { data: rates, isLoading: isLoadingRates } = useQuery<ExchangeRateResponse>({
     queryKey: ["/api/rates"],
     refetchInterval: 10000,
     staleTime: 0,
@@ -59,18 +65,19 @@ export default function HomePage() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const [prevRates, setPrevRates] = useState<typeof rates>(null);
+  const [prevRates, setPrevRates] = useState<ExchangeRateResponse | null>(null);
 
   useEffect(() => {
-    if (rates) {
+    if (rates && rates !== prevRates) {
       setPrevRates(rates);
     }
   }, [rates]);
 
-  const getPriceChangeColor = (current: string, previous: string | undefined) => {
-    if (!previous) return '';
+  const getPriceChangeColor = (current: string | undefined, previous: string | undefined) => {
+    if (!current || !previous) return '';
     const currentValue = parseFloat(current);
     const previousValue = parseFloat(previous);
+    if (isNaN(currentValue) || isNaN(previousValue)) return '';
     if (currentValue > previousValue) return 'text-emerald-500';
     if (currentValue < previousValue) return 'text-red-500';
     return '';
@@ -232,8 +239,8 @@ export default function HomePage() {
                             <Bitcoin className="h-5 w-5 text-amber-500" />
                             <span>BTC/USD</span>
                           </div>
-                          <span className={`font-medium transition-colors duration-300 ${getPriceChangeColor(rates?.btcToUsd || '0', prevRates?.btcToUsd)}`}>
-                            ${parseFloat(rates?.btcToUsd || '0').toLocaleString()}
+                          <span className={`font-medium transition-colors duration-300 ${getPriceChangeColor(rates.btcToUsd, prevRates?.btcToUsd)}`}>
+                            ${parseFloat(rates.btcToUsd).toLocaleString()}
                           </span>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
@@ -241,8 +248,8 @@ export default function HomePage() {
                             <Coins className="h-5 w-5 text-blue-500" />
                             <span>ETH/USD</span>
                           </div>
-                          <span className={`font-medium transition-colors duration-300 ${getPriceChangeColor(rates?.ethToUsd || '0', prevRates?.ethToUsd)}`}>
-                            ${parseFloat(rates?.ethToUsd || '0').toLocaleString()}
+                          <span className={`font-medium transition-colors duration-300 ${getPriceChangeColor(rates.ethToUsd, prevRates?.ethToUsd)}`}>
+                            ${parseFloat(rates.ethToUsd).toLocaleString()}
                           </span>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
@@ -250,8 +257,8 @@ export default function HomePage() {
                             <DollarSign className="h-5 w-5 text-green-500" />
                             <span>USD/UAH</span>
                           </div>
-                          <span className={`font-medium transition-colors duration-300 ${getPriceChangeColor(rates?.usdToUah || '0', prevRates?.usdToUah)}`}>
-                            ₴{parseFloat(rates?.usdToUah || '0').toLocaleString()}
+                          <span className={`font-medium transition-colors duration-300 ${getPriceChangeColor(rates.usdToUah, prevRates?.usdToUah)}`}>
+                            ₴{parseFloat(rates.usdToUah).toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -261,37 +268,37 @@ export default function HomePage() {
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">BTC/UAH</div>
                           <div className={`font-medium transition-colors duration-300 ${getPriceChangeColor(
-                            (parseFloat(rates?.btcToUsd || '0') * parseFloat(rates?.usdToUah || '0')).toString(),
+                            (parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)).toString(),
                             prevRates ? (parseFloat(prevRates.btcToUsd) * parseFloat(prevRates.usdToUah)).toString() : undefined
                           )}`}>
-                            ₴{(parseFloat(rates?.btcToUsd || '0') * parseFloat(rates?.usdToUah || '0')).toLocaleString()}
+                            ₴{(parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)).toLocaleString()}
                           </div>
                         </div>
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">ETH/UAH</div>
                           <div className={`font-medium transition-colors duration-300 ${getPriceChangeColor(
-                            (parseFloat(rates?.ethToUsd || '0') * parseFloat(rates?.usdToUah || '0')).toString(),
+                            (parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah)).toString(),
                             prevRates ? (parseFloat(prevRates.ethToUsd) * parseFloat(prevRates.usdToUah)).toString() : undefined
                           )}`}>
-                            ₴{(parseFloat(rates?.ethToUsd || '0') * parseFloat(rates?.usdToUah || '0')).toLocaleString()}
+                            ₴{(parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah)).toLocaleString()}
                           </div>
                         </div>
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">ETH/BTC</div>
                           <div className={`font-medium transition-colors duration-300 ${getPriceChangeColor(
-                            (parseFloat(rates?.ethToUsd || '0') / parseFloat(rates?.btcToUsd || '1')).toString(),
+                            (parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd || '1')).toString(),
                             prevRates ? (parseFloat(prevRates.ethToUsd) / parseFloat(prevRates.btcToUsd)).toString() : undefined
                           )}`}>
-                            {(parseFloat(rates?.ethToUsd || '0') / parseFloat(rates?.btcToUsd || '1')).toFixed(6)}
+                            {(parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd || '1')).toFixed(6)}
                           </div>
                         </div>
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">UAH/USD</div>
                           <div className={`font-medium transition-colors duration-300 ${getPriceChangeColor(
-                            (1 / parseFloat(rates?.usdToUah || '1')).toString(),
+                            (1 / parseFloat(rates.usdToUah || '1')).toString(),
                             prevRates ? (1 / parseFloat(prevRates.usdToUah)).toString() : undefined
                           )}`}>
-                            ${(1 / parseFloat(rates?.usdToUah || '1')).toFixed(4)}
+                            ${(1 / parseFloat(rates.usdToUah || '1')).toFixed(4)}
                           </div>
                         </div>
                       </div>
