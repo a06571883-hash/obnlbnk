@@ -1,7 +1,7 @@
 import { storage } from "./storage";
 
 const COINGECKO_API_URL = "https://api.coingecko.com/api/v3";
-const UPDATE_INTERVAL = 5000; // 5 seconds
+const UPDATE_INTERVAL = 3000; // 3 seconds
 
 async function fetchRates() {
   try {

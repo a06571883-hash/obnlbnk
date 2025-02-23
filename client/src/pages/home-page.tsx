@@ -67,7 +67,7 @@ export default function HomePage() {
 
   const { data: rates, isLoading: isLoadingRates } = useQuery({
     queryKey: ["/api/rates"],
-    refetchInterval: 5000,
+    refetchInterval: 3000, // Changed to 3 seconds
   });
 
   if (isLoadingCards) {
