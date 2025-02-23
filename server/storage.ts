@@ -181,7 +181,6 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       console.log(`Attempting transfer: from card ${fromCardId} to card number ${toCardNumber}, amount: ${amount}, wallet: ${wallet}`);
 
-      // Clean card number
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
 
       const fromCard = await this.getCardById(fromCardId);
@@ -203,37 +202,38 @@ export class DatabaseStorage implements IStorage {
 
       console.log('Found both cards:', { fromCard: fromCard.id, toCard: toCard.id });
 
+      // Exchange rates
+      const exchangeRates = {
+        btcToUsd: 48500.00, // Updated BTC/USD rate
+        ethToUsd: 2950.00,  // Updated ETH/USD rate
+      };
+
       // Check balance based on wallet type for crypto cards
       let fromBalance: number;
       let toBalance: number;
       let convertedAmount = amount;
 
+      // Handle crypto to USD conversion
       if (fromCard.type === 'crypto' && wallet) {
-        // For crypto cards check corresponding wallet balance
         fromBalance = parseFloat(wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance);
 
-        // Apply conversion rates if transferring to USD card
         if (toCard.type === 'usd') {
-          if (wallet === 'btc') {
-            convertedAmount = amount * 52341.23; // Current BTC to USD rate
-          } else {
-            convertedAmount = amount * 3128.45; // Current ETH to USD rate
-          }
+          const rate = wallet === 'btc' ? exchangeRates.btcToUsd : exchangeRates.ethToUsd;
+          convertedAmount = Number((amount * rate).toFixed(2)); // Convert to USD with 2 decimals
+          console.log(`Converting ${amount} ${wallet.toUpperCase()} to USD: ${convertedAmount}`);
         }
       } else {
         fromBalance = parseFloat(fromCard.balance);
       }
 
+      // Handle USD to crypto conversion
       if (toCard.type === 'crypto' && wallet) {
         toBalance = parseFloat(wallet === 'btc' ? toCard.btcBalance : toCard.ethBalance);
 
-        // Apply conversion rates if transferring from USD card
         if (fromCard.type === 'usd') {
-          if (wallet === 'btc') {
-            convertedAmount = amount / 52341.23; // USD to BTC rate
-          } else {
-            convertedAmount = amount / 3128.45; // USD to ETH rate
-          }
+          const rate = wallet === 'btc' ? exchangeRates.btcToUsd : exchangeRates.ethToUsd;
+          convertedAmount = Number((amount / rate).toFixed(8)); // Convert to crypto with 8 decimals
+          console.log(`Converting ${amount} USD to ${wallet.toUpperCase()}: ${convertedAmount}`);
         }
       } else {
         toBalance = parseFloat(toCard.balance);
@@ -247,13 +247,15 @@ export class DatabaseStorage implements IStorage {
         return { success: false, error: "Ошибка в балансе получателя" };
       }
 
-      const newFromBalance = (fromBalance - amount).toFixed(8);
-      const newToBalance = (toBalance + convertedAmount).toFixed(8);
+      // Format balances based on currency type
+      const newFromBalance = (fromBalance - amount).toFixed(fromCard.type === 'crypto' ? 8 : 2);
+      const newToBalance = (toBalance + convertedAmount).toFixed(toCard.type === 'crypto' ? 8 : 2);
 
       console.log('Updating balances:', {
         fromCard: { old: fromBalance, new: newFromBalance },
         toCard: { old: toBalance, new: newToBalance },
-        convertedAmount
+        convertedAmount,
+        conversionType: `${fromCard.type} to ${toCard.type}`
       });
 
       const transaction = await db.transaction(async (tx) => {
@@ -267,7 +269,7 @@ export class DatabaseStorage implements IStorage {
             type: 'transfer',
             wallet: wallet,
             status: 'completed',
-            description: `Transfer from card ${fromCard.number} to ${toCard.number}`,
+            description: `Transfer from ${fromCard.number} to ${toCard.number}`,
             fromCardNumber: fromCard.number,
             toCardNumber: toCard.number
           })
