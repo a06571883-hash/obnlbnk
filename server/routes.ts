@@ -162,14 +162,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/transfer", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const { fromCardId, toCardNumber, amount } = req.body;
+    const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
     if (!fromCardId || !toCardNumber || !amount) {
       return res.status(400).json({ error: "Все поля обязательны" });
     }
 
     try {
-      console.log('Transfer request received:', { fromCardId, toCardNumber, amount });
+      console.log('Transfer request received:', { fromCardId, toCardNumber, amount, wallet });
 
       // Clean card number
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
@@ -186,25 +186,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check amount validity
-      const fromAmount = parseFloat(amount);
-      if (isNaN(fromAmount) || fromAmount <= 0) {
+      const requestedAmount = parseFloat(amount);
+      if (isNaN(requestedAmount) || requestedAmount <= 0) {
         return res.status(400).json({ error: "Неверная сумма перевода" });
       }
 
-      const fromBalance = parseFloat(fromCard.balance);
-      if (fromBalance < fromAmount) {
-        return res.status(400).json({ error: "Недостаточно средств" });
+      // If sending from crypto to USD, calculate the crypto amount needed
+      let fromAmount = requestedAmount;
+      let toAmount = requestedAmount;
+
+      if (fromCard.type === 'crypto' && toCard.type === 'usd' && wallet) {
+        // User specified USD amount they want to send, calculate required crypto
+        const rate = wallet === 'btc' ? EXCHANGE_RATES.CRYPTO_USD : EXCHANGE_RATES.CRYPTO_USD / 30; // Approximate ETH rate
+        fromAmount = requestedAmount / rate;
+        toAmount = requestedAmount; // This is the USD amount they requested
+
+        console.log('Conversion details:', {
+          requestedUsdAmount: requestedAmount,
+          requiredCryptoAmount: fromAmount,
+          rate,
+          wallet
+        });
+
+        // Check crypto balance
+        const cryptoBalance = wallet === 'btc' ? parseFloat(fromCard.btcBalance) : parseFloat(fromCard.ethBalance);
+        if (cryptoBalance < fromAmount) {
+          return res.status(400).json({ 
+            error: `Недостаточно ${wallet.toUpperCase()}. Требуется ${fromAmount.toFixed(8)} ${wallet.toUpperCase()} для перевода ${requestedAmount} USD` 
+          });
+        }
+      } else {
+        // For non-crypto transfers, check regular balance
+        const fromBalance = parseFloat(fromCard.balance);
+        if (fromBalance < fromAmount) {
+          return res.status(400).json({ error: "Недостаточно средств" });
+        }
       }
-
-      // Convert amount if currencies are different
-      const toAmount = convertCurrency(fromAmount, fromCard.type, toCard.type);
-
-      console.log('Conversion details:', {
-        fromAmount,
-        fromCurrency: fromCard.type,
-        toAmount,
-        toCurrency: toCard.type
-      });
 
       // Create new transaction
       const transaction = await storage.createTransaction({
@@ -217,15 +234,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fromCardNumber: fromCard.number,
         toCardNumber: toCard.number,
         createdAt: new Date(),
-        convertedAmount: toAmount.toString()
+        convertedAmount: toAmount.toString(),
+        wallet: fromCard.type === 'crypto' ? wallet! : null
       });
 
       // Update balances
-      const newFromBalance = (fromBalance - fromAmount).toFixed(2);
-      const newToBalance = (parseFloat(toCard.balance) + toAmount).toFixed(2);
-
-      await storage.updateCardBalance(fromCard.id, newFromBalance);
-      await storage.updateCardBalance(toCard.id, newToBalance);
+      if (fromCard.type === 'crypto' && wallet) {
+        if (wallet === 'btc') {
+          await storage.updateCardBtcBalance(fromCard.id, (parseFloat(fromCard.btcBalance) - fromAmount).toFixed(8));
+        } else {
+          await storage.updateCardEthBalance(fromCard.id, (parseFloat(fromCard.ethBalance) - fromAmount).toFixed(8));
+        }
+        await storage.updateCardBalance(toCard.id, (parseFloat(toCard.balance) + toAmount).toFixed(2));
+      }
 
       res.json({
         success: true,
