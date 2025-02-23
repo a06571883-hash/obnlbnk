@@ -8,6 +8,7 @@ import AuthPage from "@/pages/auth-page";
 import CardsPage from "@/pages/cards-page";
 import ActivityPage from "@/pages/activity-page";
 import ProfilePage from "@/pages/profile-page";
+import NFTPage from "@/pages/nft-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./components/auth-provider";
 import BottomNav from "@/components/bottom-nav";
@@ -24,6 +25,7 @@ function Router() {
         <ProtectedRoute path="/" component={HomePage} />
         <ProtectedRoute path="/cards" component={CardsPage} />
         <ProtectedRoute path="/activity" component={ActivityPage} />
+        <ProtectedRoute path="/nft" component={NFTPage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
         <Route component={NotFound} />
       </Switch>
