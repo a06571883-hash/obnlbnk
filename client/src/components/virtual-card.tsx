@@ -106,7 +106,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   return (
     <div
       ref={cardRef}
-      className="perspective-[1000px] w-full max-w-[500px] mx-auto px-8 py-12 sm:px-12"
+      className="perspective-[1000px] w-full max-w-[500px] mx-auto px-8 py-8 sm:px-12"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -168,11 +168,11 @@ export default function VirtualCard({ card }: { card: Card }) {
                 <div className="text-xs sm:text-base font-semibold">{card.expiry}</div>
               </div>
             </div>
-            <div className="flex space-x-1 sm:space-x-2">
+            <div className="flex space-x-0.5 sm:space-x-1">
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-5 sm:h-6">
-                    <ArrowUpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
+                    <ArrowUpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5" />
                     <span className="hidden sm:inline">Deposit</span>
                     <span className="sm:hidden">Dep</span>
                   </Button>
@@ -205,7 +205,7 @@ export default function VirtualCard({ card }: { card: Card }) {
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-5 sm:h-6">
-                    <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
+                    <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5" />
                     <span className="hidden sm:inline">Withdraw</span>
                     <span className="sm:hidden">With</span>
                   </Button>
@@ -227,7 +227,7 @@ export default function VirtualCard({ card }: { card: Card }) {
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-5 sm:h-6">
-                    <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
+                    <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5" />
                     <span className="hidden sm:inline">Transfer</span>
                     <span className="sm:hidden">Trans</span>
                   </Button>
