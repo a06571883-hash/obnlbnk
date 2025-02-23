@@ -92,7 +92,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         fromCardId,
         toCardNumber: toCardNumber.replace(/\s+/g, ''),
         amount: targetAmount,
-        wallet: card.type === 'crypto' ? selectedWallet : undefined,
+        wallet: card.type === 'crypto' || recipientType === 'crypto_wallet' ? selectedWallet : undefined,
         recipientType
       });
 
@@ -261,6 +261,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                         return;
                       }
 
+                      // Validation based on recipient type
                       if (recipientType === 'usd_card') {
                         const cleanCardNumber = recipientCardNumber.replace(/\s+/g, '');
                         if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
@@ -283,7 +284,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                           fromCardId: card.id,
                           toCardNumber: recipientCardNumber,
                           amount: transferAmount,
-                          wallet: card.type === 'crypto' ? selectedWallet : undefined,
+                          wallet: card.type === 'crypto' || recipientType === 'crypto_wallet' ? selectedWallet : undefined,
                           recipientType
                         });
                       } catch (error: any) {
@@ -291,60 +292,62 @@ export default function VirtualCard({ card }: { card: Card }) {
                         setTransferError(error.message || "Произошла ошибка при переводе");
                       }
                     }}>
-                      {card.type === 'crypto' && (
-                        <>
-                          <div className="mb-3">
-                            <label className="block text-sm font-medium mb-1">Выберите кошелек отправителя</label>
-                            <div className="flex gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant={selectedWallet === 'btc' ? 'default' : 'outline'}
-                                className="flex-1 h-8"
-                                onClick={() => setSelectedWallet('btc')}
-                              >
-                                <Bitcoin className="h-3 w-3 mr-1" />
-                                BTC
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant={selectedWallet === 'eth' ? 'default' : 'outline'}
-                                className="flex-1 h-8"
-                                onClick={() => setSelectedWallet('eth')}
-                              >
-                                <Coins className="h-3 w-3 mr-1" />
-                                ETH
-                              </Button>
-                            </div>
-                          </div>
+                      {/* Show recipient type selection for both USD and crypto cards */}
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium mb-1">Тип получателя</label>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={recipientType === 'usd_card' ? 'default' : 'outline'}
+                            className="flex-1 h-8"
+                            onClick={() => setRecipientType('usd_card')}
+                          >
+                            <CreditCard className="h-3 w-3 mr-1" />
+                            USD Карта
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={recipientType === 'crypto_wallet' ? 'default' : 'outline'}
+                            className="flex-1 h-8"
+                            onClick={() => setRecipientType('crypto_wallet')}
+                          >
+                            <Wallet className="h-3 w-3 mr-1" />
+                            Крипто кошелек
+                          </Button>
+                        </div>
+                      </div>
 
-                          <div className="mb-3">
-                            <label className="block text-sm font-medium mb-1">Тип получателя</label>
-                            <div className="flex gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant={recipientType === 'usd_card' ? 'default' : 'outline'}
-                                className="flex-1 h-8"
-                                onClick={() => setRecipientType('usd_card')}
-                              >
-                                <CreditCard className="h-3 w-3 mr-1" />
-                                USD Карта
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant={recipientType === 'crypto_wallet' ? 'default' : 'outline'}
-                                className="flex-1 h-8"
-                                onClick={() => setRecipientType('crypto_wallet')}
-                              >
-                                <Wallet className="h-3 w-3 mr-1" />
-                                Крипто кошелек
-                              </Button>
-                            </div>
+                      {/* Show wallet selection when sending to crypto */}
+                      {(card.type === 'crypto' || recipientType === 'crypto_wallet') && (
+                        <div className="mb-3">
+                          <label className="block text-sm font-medium mb-1">
+                            {card.type === 'crypto' ? 'Выберите кошелек отправителя' : 'Выберите криптовалюту получателя'}
+                          </label>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={selectedWallet === 'btc' ? 'default' : 'outline'}
+                              className="flex-1 h-8"
+                              onClick={() => setSelectedWallet('btc')}
+                            >
+                              <Bitcoin className="h-3 w-3 mr-1" />
+                              BTC
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={selectedWallet === 'eth' ? 'default' : 'outline'}
+                              className="flex-1 h-8"
+                              onClick={() => setSelectedWallet('eth')}
+                            >
+                              <Coins className="h-3 w-3 mr-1" />
+                              ETH
+                            </Button>
                           </div>
-                        </>
+                        </div>
                       )}
 
                       <div className="mb-3">
@@ -371,10 +374,9 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                       <div className="mb-3">
                         <label className="block text-sm font-medium mb-1">
-                          {card.type === 'crypto' && recipientType === 'usd_card'
-                            ? 'Сумма в USD (будет конвертирована из криптовалюты)'
-                            : `Сумма в ${card.type === 'crypto' ? selectedWallet.toUpperCase() : 'USD'}`
-                          }
+                          {recipientType === 'crypto_wallet'
+                            ? `Сумма в ${card.type.toUpperCase()} (будет конвертирована в ${selectedWallet.toUpperCase()})`
+                            : `Сумма в ${card.type.toUpperCase()}`}
                         </label>
                         <div className="relative">
                           <input
@@ -387,12 +389,12 @@ export default function VirtualCard({ card }: { card: Card }) {
                             required
                           />
                           <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                            {card.type === 'crypto' && recipientType === 'usd_card' ? 'USD' : (card.type === 'crypto' ? selectedWallet.toUpperCase() : 'USD')}
+                            {card.type.toUpperCase()}
                           </span>
                         </div>
-                        {card.type === 'crypto' && recipientType === 'usd_card' && (
+                        {recipientType === 'crypto_wallet' && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Будет списано: {transferAmount ? (parseFloat(transferAmount) / EXCHANGE_RATES[`${selectedWallet}ToUsd`]).toFixed(8) : '0.00'} {selectedWallet.toUpperCase()}
+                            Получатель получит: {transferAmount ? (parseFloat(transferAmount) * EXCHANGE_RATES[`${selectedWallet}ToUsd`]).toFixed(8) : '0.00'} {selectedWallet.toUpperCase()}
                           </p>
                         )}
                       </div>

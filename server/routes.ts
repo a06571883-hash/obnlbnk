@@ -162,14 +162,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/transfer", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const { fromCardId, toCardNumber, amount, wallet } = req.body;
+    const { fromCardId, toCardNumber, amount, wallet, recipientType } = req.body;
 
     if (!fromCardId || !toCardNumber || !amount) {
       return res.status(400).json({ error: "Все поля обязательны" });
     }
 
     try {
-      console.log('Transfer request received:', { fromCardId, toCardNumber, amount, wallet });
+      console.log('Transfer request received:', { fromCardId, toCardNumber, amount, wallet, recipientType });
 
       // Clean card number
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
@@ -191,29 +191,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Неверная сумма перевода" });
       }
 
-      // If sending from crypto to USD, calculate the crypto amount needed
       let fromAmount = requestedAmount;
       let toAmount = requestedAmount;
 
-      if (fromCard.type === 'crypto' && toCard.type === 'usd' && wallet) {
-        // User specified USD amount they want to send, calculate required crypto
+      // Handle crypto conversions
+      if ((fromCard.type === 'crypto' && toCard.type === 'usd') || 
+          (fromCard.type === 'usd' && toCard.type === 'crypto' && recipientType === 'crypto_wallet')) {
+
         const rate = wallet === 'btc' ? EXCHANGE_RATES.CRYPTO_USD : EXCHANGE_RATES.CRYPTO_USD / 30; // Approximate ETH rate
-        fromAmount = requestedAmount / rate;
-        toAmount = requestedAmount; // This is the USD amount they requested
+
+        if (fromCard.type === 'crypto') {
+          // Converting from crypto to USD
+          fromAmount = requestedAmount / rate;
+          toAmount = requestedAmount;
+        } else {
+          // Converting from USD to crypto
+          fromAmount = requestedAmount;
+          toAmount = requestedAmount * rate;
+        }
 
         console.log('Conversion details:', {
-          requestedUsdAmount: requestedAmount,
-          requiredCryptoAmount: fromAmount,
+          fromType: fromCard.type,
+          toType: toCard.type,
+          requestedAmount,
+          fromAmount,
+          toAmount,
           rate,
           wallet
         });
 
-        // Check crypto balance
-        const cryptoBalance = wallet === 'btc' ? parseFloat(fromCard.btcBalance) : parseFloat(fromCard.ethBalance);
-        if (cryptoBalance < fromAmount) {
-          return res.status(400).json({ 
-            error: `Недостаточно ${wallet.toUpperCase()}. Требуется ${fromAmount.toFixed(8)} ${wallet.toUpperCase()} для перевода ${requestedAmount} USD` 
-          });
+        // Check balance based on card type
+        if (fromCard.type === 'crypto') {
+          const cryptoBalance = wallet === 'btc' ? parseFloat(fromCard.btcBalance) : parseFloat(fromCard.ethBalance);
+          if (cryptoBalance < fromAmount) {
+            return res.status(400).json({ 
+              error: `Недостаточно ${wallet.toUpperCase()}. Требуется ${fromAmount.toFixed(8)} ${wallet.toUpperCase()} для перевода ${requestedAmount} USD` 
+            });
+          }
+        } else {
+          const usdBalance = parseFloat(fromCard.balance);
+          if (usdBalance < fromAmount) {
+            return res.status(400).json({ error: "Недостаточно USD для конвертации" });
+          }
         }
       } else {
         // For non-crypto transfers, check regular balance
@@ -235,16 +254,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         toCardNumber: toCard.number,
         createdAt: new Date(),
         convertedAmount: toAmount.toString(),
-        wallet: fromCard.type === 'crypto' ? wallet! : null
+        wallet: (fromCard.type === 'crypto' || recipientType === 'crypto_wallet') ? wallet! : null
       });
 
-      // Update balances
-      if (fromCard.type === 'crypto' && wallet) {
+      // Update balances based on card types
+      if (fromCard.type === 'crypto') {
+        // Update crypto balance when sending from crypto card
         if (wallet === 'btc') {
           await storage.updateCardBtcBalance(fromCard.id, (parseFloat(fromCard.btcBalance) - fromAmount).toFixed(8));
         } else {
           await storage.updateCardEthBalance(fromCard.id, (parseFloat(fromCard.ethBalance) - fromAmount).toFixed(8));
         }
+        await storage.updateCardBalance(toCard.id, (parseFloat(toCard.balance) + toAmount).toFixed(2));
+      } else if (toCard.type === 'crypto' && recipientType === 'crypto_wallet') {
+        // Update balances when sending from USD to crypto
+        await storage.updateCardBalance(fromCard.id, (parseFloat(fromCard.balance) - fromAmount).toFixed(2));
+        if (wallet === 'btc') {
+          await storage.updateCardBtcBalance(toCard.id, (parseFloat(toCard.btcBalance) + toAmount).toFixed(8));
+        } else {
+          await storage.updateCardEthBalance(toCard.id, (parseFloat(toCard.ethBalance) + toAmount).toFixed(8));
+        }
+      } else {
+        // Regular fiat transfer
+        await storage.updateCardBalance(fromCard.id, (parseFloat(fromCard.balance) - fromAmount).toFixed(2));
         await storage.updateCardBalance(toCard.id, (parseFloat(toCard.balance) + toAmount).toFixed(2));
       }
 
@@ -269,6 +301,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  app.get("/api/transactions", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      // Get user's cards
+      const userCards = await storage.getCardsByUserId(req.user.id);
+      if (!userCards.length) {
+        return res.json([]);
+      }
+
+      // Get transactions for all user's cards
+      const cardIds = userCards.map(card => card.id);
+      const transactions = [];
+
+      for (const cardId of cardIds) {
+        const cardTransactions = await storage.getTransactionsByCardId(cardId);
+        transactions.push(...cardTransactions);
+      }
+
+      // Sort by date descending and remove duplicates
+      const uniqueTransactions = Array.from(
+        new Map(transactions.map(t => [t.id, t])).values()
+      ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      res.json(uniqueTransactions);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
 
   const balances: BalanceType = {
     crypto: "62000",
