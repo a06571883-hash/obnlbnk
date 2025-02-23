@@ -8,13 +8,19 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   const { isLoading } = useQuery({
     queryKey: ["/api/user"],
     retry: false,
-    refetchOnWindowFocus: true,
-    staleTime: 0
+    refetchOnWindowFocus: false,
+    staleTime: 30000, // Cache for 30 seconds
+    refetchInterval: location === '/auth' ? false : 30000, // Only refetch if not on auth page
+    onSettled: (data, error) => {
+      if (error && location !== '/auth') {
+        setLocation('/auth');
+      }
+    }
   });
 
   if (isLoading) {
