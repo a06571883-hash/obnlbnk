@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import type { User as SelectUser } from "@shared/schema";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -11,14 +12,14 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [location, setLocation] = useLocation();
 
-  const { isLoading } = useQuery({
+  const { isLoading } = useQuery<SelectUser | null>({
     queryKey: ["/api/user"],
     retry: false,
     refetchOnWindowFocus: true,
     staleTime: 30000, // Cache for 30 seconds
     refetchInterval: location === '/auth' ? false : 30000, // Only refetch if not on auth page
-    onError: () => {
-      if (location !== '/auth') {
+    onSuccess: (data) => {
+      if (!data && location !== '/auth') {
         setLocation('/auth');
       }
     }

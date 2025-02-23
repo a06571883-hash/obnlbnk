@@ -33,7 +33,11 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionConfig = {
+  if (!process.env.SESSION_SECRET) {
+    console.warn("SESSION_SECRET not set, using random value");
+  }
+
+  const sessionConfig: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || randomBytes(32).toString('hex'),
     name: 'sid',
     resave: false,
@@ -43,34 +47,20 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      sameSite: 'lax' as const,
+      sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     }
   };
 
+  // Enable trust proxy to work with secure cookies
   app.set('trust proxy', 1);
+
+  // Initialize session middleware before passport
   app.use(session(sessionConfig));
   app.use(passport.initialize());
   app.use(passport.session());
 
-  passport.use(new LocalStrategy(async (username, password, done) => {
-    try {
-      const user = await storage.getUserByUsername(username);
-      if (!user) {
-        return done(null, false, { message: "Пользователь не найден" });
-      }
-
-      const isValid = await comparePasswords(password, user.password);
-      if (!isValid) {
-        return done(null, false, { message: "Неверный пароль" });
-      }
-
-      return done(null, user);
-    } catch (error) {
-      return done(error);
-    }
-  }));
-
+  // Configure passport serialization
   passport.serializeUser((user, done) => {
     done(null, user.id);
   });
@@ -87,8 +77,30 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Configure authentication strategy
+  passport.use(
+    new LocalStrategy(async (username: string, password: string, done) => {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user) {
+          return done(null, false, { message: "Пользователь не найден" });
+        }
+
+        const isValid = await comparePasswords(password, user.password);
+        if (!isValid) {
+          return done(null, false, { message: "Неверный пароль" });
+        }
+
+        return done(null, user);
+      } catch (error) {
+        return done(error);
+      }
+    })
+  );
+
+  // Authentication routes
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: Error | null, user: SelectUser | false, info: { message: string } | undefined) => {
       if (err) {
         console.error("Login error:", err);
         return res.status(500).json({ message: "Ошибка сервера при входе" });
@@ -106,6 +118,20 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
+  app.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Необходима авторизация" });
+    }
+    res.json(req.user);
+  });
+
+  // Session cleanup middleware
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    if (req.session && !req.session.passport && req.session.cookie) {
+      req.session.destroy(() => {});
+    }
+    next();
+  });
   app.post("/api/register", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -155,26 +181,12 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.sendStatus(401);
-    }
-    res.json(req.user);
-  });
 
-  // Basic security headers
+  // Security headers
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
-    next();
-  });
-
-  // Session cleanup middleware
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.session && !req.session.passport && req.session.cookie) {
-      req.session.destroy(() => {});
-    }
     next();
   });
 
@@ -206,7 +218,7 @@ export function setupAuth(app: Express) {
         allTransactions.push(...cardTransactions);
       }
 
-      allTransactions.sort((a, b) => 
+      allTransactions.sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 

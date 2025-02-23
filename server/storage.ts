@@ -1,3 +1,4 @@
+import { Pool } from 'pg';
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -31,9 +32,9 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    // Оптимизированные настройки хранилища сессий
+    // Оптимизированные настройки хранилища сессий с PostgreSQL
     this.sessionStore = new PostgresSessionStore({
-      pool,
+      pool: pool as unknown as Pool,
       tableName: 'session',
       createTableIfMissing: true,
       pruneSessionInterval: 60,
