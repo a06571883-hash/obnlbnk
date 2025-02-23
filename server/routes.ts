@@ -156,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (recipientType === 'crypto_wallet' && wallet) {
         if (!validateCryptoAddress(toCardNumber, wallet as 'btc' | 'eth')) {
           return res.status(400).json({ 
-            error: `Неверный формат ${wallet.toUpperCase()} адреса`
+            error: `Неверный формат ${wallet.toUpperCase()} адреса. Адрес должен начинаться с 0x`
           });
         }
       } else {

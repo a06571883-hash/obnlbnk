@@ -33,12 +33,12 @@ const EXCHANGE_RATES = {
 
 // Validation functions for crypto addresses
 function validateBtcAddress(address: string): boolean {
-  // Since we generate ETH-style addresses for both BTC and ETH,
-  // we'll validate them the same way
+  // Simplified validation: check for 0x prefix and length
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
 function validateEthAddress(address: string): boolean {
+  // Simplified validation: check for 0x prefix and length
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
