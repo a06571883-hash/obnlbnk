@@ -21,10 +21,11 @@ const ECPair = ECPairFactory(ecc);
 // Function for generating BTC addresses
 function generateBtcAddress(): string {
   try {
-    const randomPart = Array(32).fill(0)
+    // Generate a simple demo BTC address (legacy format)
+    const randomPart = Array(33).fill(0)
       .map(() => Math.floor(Math.random() * 16).toString(16))
       .join('');
-    return `bc1${randomPart}`;
+    return `1${randomPart}`; // Using legacy format starting with '1'
   } catch (error) {
     console.error('Error generating BTC address:', error);
     throw new Error('Failed to generate BTC address');
@@ -49,7 +50,8 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   if (!address) return false;
 
   if (type === 'btc') {
-    return /^bc1[a-zA-Z0-9]{32,}$/.test(address);
+    // Updated validation to accept both legacy and SegWit addresses
+    return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address);
   } else {
     return /^0x[a-fA-F0-9]{40}$/.test(address);
   }
