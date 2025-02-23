@@ -171,7 +171,7 @@ export default function VirtualCard({ card }: { card: Card }) {
             <div className="flex space-x-1 sm:space-x-2">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-6 sm:h-8">
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-5 sm:h-6">
                     <ArrowUpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
                     <span className="hidden sm:inline">Deposit</span>
                     <span className="sm:hidden">Dep</span>
@@ -204,7 +204,7 @@ export default function VirtualCard({ card }: { card: Card }) {
               </Dialog>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-6 sm:h-8">
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-5 sm:h-6">
                     <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
                     <span className="hidden sm:inline">Withdraw</span>
                     <span className="sm:hidden">With</span>
@@ -226,7 +226,7 @@ export default function VirtualCard({ card }: { card: Card }) {
               </Dialog>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-6 sm:h-8">
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-sm py-0.5 h-5 sm:h-6">
                     <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
                     <span className="hidden sm:inline">Transfer</span>
                     <span className="sm:hidden">Trans</span>
