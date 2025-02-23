@@ -43,39 +43,37 @@ function convertCurrency(amount: number, fromCurrency: string, toCurrency: strin
 // Function for validating crypto addresses
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   if (type === 'btc') {
-    // Bitcoin address validation - either legacy P2PKH or native SegWit
-    return /^(1[1-9A-HJ-NP-Za-km-z]{25,34}|bc1[ac-hj-np-z02-9]{11,71})$/.test(address);
+    // Valid formats: bc1 (native SegWit)
+    return /^bc1[a-zA-HJ-NP-Z0-9]{40,58}$/.test(address);
   }
-  // Ethereum address validation - must be 0x followed by 40 hex characters
+  // Ethereum address validation
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
 // Function for generating BTC addresses
 function generateBtcAddress(): string {
-  // Generate a valid legacy BTC address (P2PKH format)
-  const validPrefixes = [
-    '1A', '1B', '1C', '1D', '1E', '1F', '1G', '1H', '1J', '1K', '1L', '1M', '1N',
-    '1P', '1Q', '1R', '1S', '1T', '1U', '1V', '1W', '1X', '1Y', '1Z'
-  ];
-  const prefix = validPrefixes[Math.floor(Math.random() * validPrefixes.length)];
-
-  // Use a cryptographically secure random number generator
+  // Generate a native SegWit address (bc1 format)
+  const prefix = 'bc1';
   const base58Chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-  let address = prefix;
 
-  // Generate 30 more characters to reach typical BTC address length (32 chars total)
-  const randomBytes = crypto.randomBytes(30);
-  for (let i = 0; i < 30; i++) {
-    address += base58Chars[randomBytes[i] % base58Chars.length];
+  // Generate 42-58 characters for proper length
+  const length = 42; // Using fixed length for consistency
+  let randomChars = '';
+
+  // Use cryptographically secure random bytes
+  const randomBytes = crypto.randomBytes(length);
+  for (let i = 0; i < length; i++) {
+    randomChars += base58Chars[randomBytes[i] % base58Chars.length];
   }
 
-  return address;
+  return `${prefix}${randomChars}`;
 }
 
 // Function for generating ETH addresses
 function generateEthAddress(): string {
   // Generate a valid Ethereum address with checksum
-  return '0x' + crypto.randomBytes(20).toString('hex').toLowerCase();
+  const address = '0x' + crypto.randomBytes(20).toString('hex');
+  return address.toLowerCase();
 }
 
 export async function registerRoutes(app: Express, db: any): Promise<Server> {
@@ -421,9 +419,4 @@ function generateExpiry(): string {
 // Function for generating CVV codes
 function generateCVV(): string {
   return Math.floor(Math.random() * 900 + 100).toString();
-}
-
-// Function for generating crypto addresses - This function is now effectively replaced.
-function generateCryptoAddress(): string {
-  return '0x' + crypto.randomBytes(20).toString('hex');
 }
