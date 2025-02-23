@@ -9,13 +9,11 @@ import {
   DialogDescription,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins, QrCode } from "lucide-react";
+import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { QRCodeSVG } from 'qrcode.react';
-import QRScanner from "./qr-scanner";
 
 // Add recipient type enum
 type RecipientType = 'usd_card' | 'crypto_wallet';
@@ -25,29 +23,6 @@ const cardColors = {
   usd: "bg-gradient-to-br from-green-400 to-green-600",
   uah: "bg-gradient-to-br from-blue-400 to-blue-600",
 } as const;
-
-const QRCodeGenerator = ({ card, type }: { card: Card; type: 'btc' | 'eth' | 'card' }) => {
-  const data = {
-    type: type === 'card' ? 'usd_card' : 'crypto_wallet',
-    ...(type === 'card'
-      ? { cardNumber: card.number }
-      : { walletAddress: type === 'btc' ? card.btcAddress : card.ethAddress }
-    )
-  };
-
-  return (
-    <div className="flex justify-center">
-      <QRCodeSVG
-        value={JSON.stringify(data)}
-        size={200}
-        level="H"
-        includeMargin
-        bgColor="#ffffff"
-        fgColor="#000000"
-      />
-    </div>
-  );
-};
 
 export default function VirtualCard({ card }: { card: Card }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -63,7 +38,6 @@ export default function VirtualCard({ card }: { card: Card }) {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
   const [recipientType, setRecipientType] = useState<RecipientType>('usd_card');
-  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || isMobile) return;
@@ -213,19 +187,16 @@ export default function VirtualCard({ card }: { card: Card }) {
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">BTC Address</p>
                           <p className="font-mono text-sm break-all">{card.btcAddress}</p>
-                          <QRCodeGenerator card={card} type="btc" />
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">ETH Address</p>
                           <p className="font-mono text-sm break-all">{card.ethAddress}</p>
-                          <QRCodeGenerator card={card} type="eth" />
                         </div>
                       </>
                     ) : (
                       <div>
                         <p className="text-sm text-muted-foreground mb-2">Card Number</p>
                         <p className="font-mono">{card.number}</p>
-                        <QRCodeGenerator card={card} type="card" />
                       </div>
                     )}
                   </div>
@@ -362,37 +333,6 @@ export default function VirtualCard({ card }: { card: Card }) {
                       )}
 
                       <div className="mb-4">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full mb-2"
-                          onClick={() => setShowQRScanner(true)}
-                        >
-                          <QrCode className="h-4 w-4 mr-2" />
-                          Сканировать QR-код
-                        </Button>
-
-                        {showQRScanner && (
-                          <Dialog open={showQRScanner} onOpenChange={setShowQRScanner}>
-                            <DialogContent className="sm:max-w-lg">
-                              <DialogHeader>
-                                <DialogTitle>Сканировать QR-код</DialogTitle>
-                                <DialogDescription>
-                                  Нажмите "Включить камеру" и разрешите доступ к камере устройства
-                                </DialogDescription>
-                              </DialogHeader>
-                              <QRScanner
-                                onScanSuccess={(recipient, type) => {
-                                  setRecipientType(type);
-                                  setRecipientCardNumber(recipient);
-                                  setShowQRScanner(false);
-                                }}
-                                onClose={() => setShowQRScanner(false)}
-                              />
-                            </DialogContent>
-                          </Dialog>
-                        )}
-
                         <input
                           type="text"
                           value={recipientCardNumber}
