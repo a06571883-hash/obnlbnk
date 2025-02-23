@@ -168,7 +168,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const fromCard = await storage.getCardById(fromCardId);
-      const toCard = await storage.getCardByNumber(toCardNumber);
+      let toCard;
+
+      if (recipientType === 'crypto_wallet') {
+        // For crypto transfers, find the card by BTC or ETH address
+        const cards = await storage.getAllCards();
+        toCard = cards.find(card => 
+          (wallet === 'btc' && card.btcAddress === toCardNumber) || 
+          (wallet === 'eth' && card.ethAddress === toCardNumber)
+        );
+      } else {
+        // For regular transfers, find by card number
+        toCard = await storage.getCardByNumber(toCardNumber);
+      }
 
       if (!fromCard || !toCard) {
         return res.status(400).json({ error: "Карта получателя не найдена" });
