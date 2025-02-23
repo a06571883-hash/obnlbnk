@@ -2,6 +2,7 @@ import { storage } from "./storage";
 import { WebSocket, WebSocketServer } from 'ws';
 import { parse } from 'url';
 import { IncomingMessage } from 'http';
+import type { Server } from 'http';
 
 const COINGECKO_API_URL = "https://api.coingecko.com/api/v3";
 const UPDATE_INTERVAL = 30000; // 30 секунд
@@ -23,6 +24,44 @@ function broadcastRates(rates: typeof lastSuccessfulRates) {
       client.send(JSON.stringify(rates));
     }
   });
+}
+
+interface VerifyClientInfo {
+  origin: string;
+  secure: boolean;
+  req: IncomingMessage;
+}
+
+export function startRateUpdates(server: Server, path: string = '/ws') {
+  console.log("Запуск сервиса обновления курсов...");
+
+  // Инициализация WebSocket сервера с проверкой пути
+  wss = new WebSocketServer({ 
+    server,
+    verifyClient: (info: VerifyClientInfo) => {
+      const { pathname } = parse(info.req.url || '');
+      return pathname === path;
+    }
+  });
+
+  wss.on('connection', (ws) => {
+    console.log('Новое WebSocket подключение');
+
+    // Отправляем текущие курсы при подключении
+    if (lastSuccessfulRates) {
+      ws.send(JSON.stringify(lastSuccessfulRates));
+    }
+
+    ws.on('error', (error) => {
+      console.error('WebSocket ошибка:', error);
+    });
+  });
+
+  // Начальное обновление
+  fetchRates();
+
+  // Настройка периодических обновлений
+  setInterval(fetchRates, UPDATE_INTERVAL);
 }
 
 async function fetchRates() {
@@ -102,42 +141,4 @@ async function fetchRates() {
 
     await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
   }
-}
-
-interface VerifyClientInfo {
-  origin: string;
-  secure: boolean;
-  req: IncomingMessage;
-}
-
-export function startRateUpdates(server: any, path: string = '/ws') {
-  console.log("Запуск сервиса обновления курсов...");
-
-  // Инициализация WebSocket сервера с проверкой пути
-  wss = new WebSocketServer({ 
-    server,
-    verifyClient: (info: VerifyClientInfo) => {
-      const { pathname } = parse(info.req.url || '');
-      return pathname === path;
-    }
-  });
-
-  wss.on('connection', (ws) => {
-    console.log('Новое WebSocket подключение');
-
-    // Отправляем текущие курсы при подключении
-    if (lastSuccessfulRates) {
-      ws.send(JSON.stringify(lastSuccessfulRates));
-    }
-
-    ws.on('error', (error) => {
-      console.error('WebSocket ошибка:', error);
-    });
-  });
-
-  // Начальное обновление
-  fetchRates();
-
-  // Настройка периодических обновлений
-  setInterval(fetchRates, UPDATE_INTERVAL);
 }
