@@ -12,13 +12,10 @@ interface ReceiptProps {
     id: number;
     type: string;
     amount: string;
-    convertedAmount?: string;
     currency: string;
     date: string;
-    status?: string;
     from?: string;
     to?: string;
-    description?: string;
     fromCard?: any;
     toCard?: any;
   };
@@ -27,19 +24,6 @@ interface ReceiptProps {
 }
 
 export default function TransactionReceipt({ transaction, open, onOpenChange }: ReceiptProps) {
-  const getCurrencySymbol = (type: string) => {
-    switch (type) {
-      case 'crypto':
-        return '₿';
-      case 'usd':
-        return '$';
-      case 'uah':
-        return '₴';
-      default:
-        return '';
-    }
-  };
-
   const getCardDetails = (card: any) => {
     if (!card) return '';
     const number = card.number.replace(/(\d{4})/g, "$1 ").trim();
@@ -65,26 +49,15 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Тип</span>
-              <span>{transaction.type}</span>
+              <span>{transaction.type === 'transfer' ? 'Перевод' : 'Пополнение'}</span>
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Сумма списания</span>
+              <span className="text-muted-foreground">Сумма</span>
               <span className="font-semibold">
-                {getCurrencySymbol(transaction.currency)}
-                {transaction.amount}
+                {transaction.amount} {transaction.currency}
               </span>
             </div>
-
-            {transaction.convertedAmount && transaction.convertedAmount !== transaction.amount && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Сумма зачисления</span>
-                <span className="font-semibold">
-                  {getCurrencySymbol(transaction.toCard?.type)}
-                  {transaction.convertedAmount}
-                </span>
-              </div>
-            )}
 
             {transaction.from && (
               <div className="flex justify-between items-center">
@@ -120,22 +93,6 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
                 {format(new Date(transaction.date), 'dd.MM.yyyy HH:mm')}
               </span>
             </div>
-
-            {transaction.status && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Статус</span>
-                <span className={transaction.status === "completed" ? "text-emerald-500" : "text-amber-500"}>
-                  {transaction.status === "completed" ? "Выполнено" : "В обработке"}
-                </span>
-              </div>
-            )}
-
-            {transaction.description && (
-              <div className="pt-2 border-t">
-                <span className="text-xs text-muted-foreground">Описание</span>
-                <p className="mt-1 text-xs">{transaction.description}</p>
-              </div>
-            )}
           </div>
 
           <div className="text-center text-[10px] text-muted-foreground pt-2 border-t">

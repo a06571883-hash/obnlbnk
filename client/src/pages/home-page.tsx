@@ -231,19 +231,8 @@ export default function HomePage() {
                       let iconColor = 'text-primary';
 
                       if (transaction.type === 'transfer') {
-                        const fromCard = cards.find(c => c.id === transaction.fromCardId);
-                        const toCard = cards.find(c => c.id === transaction.toCardId);
-
-                        if (fromCard && toCard && fromCard.userId === toCard.userId) {
-                          transactionType = 'Обмен';
-                          iconColor = 'text-amber-500';
-                        } else if (fromCard?.userId === user?.id) {
-                          transactionType = 'Перевод';
-                          iconColor = 'text-primary';
-                        } else {
-                          transactionType = 'Получение';
-                          iconColor = 'text-emerald-500';
-                        }
+                        transactionType = 'Перевод';
+                        iconColor = 'text-primary';
                       } else if (transaction.type === 'deposit') {
                         transactionType = 'Пополнение';
                         iconColor = 'text-emerald-500';
@@ -278,7 +267,7 @@ export default function HomePage() {
                               {Number(transaction.amount).toFixed(8)} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
                             </p>
                             <p className="text-[9px] text-muted-foreground">
-                              ≈ {(Number(transaction.amount) * (transaction.type === 'transfer' ? 95652.99 : 95652.99)).toFixed(2)} USD
+                              ≈ {(Number(transaction.amount) * 95652.99).toFixed(2)} USD
                             </p>
                           </div>
                         </div>
