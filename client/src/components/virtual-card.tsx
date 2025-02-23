@@ -22,11 +22,11 @@ import { useToast } from "@/hooks/use-toast";
 // Add recipient type enum
 type RecipientType = 'usd_card' | 'crypto_wallet';
 
-// Card colors for different types
+// Update card colors for a more premium look
 const cardColors = {
-  crypto: "bg-gradient-to-br from-violet-500 to-violet-700",
-  usd: "bg-gradient-to-br from-emerald-500 to-emerald-700",
-  uah: "bg-gradient-to-br from-blue-500 to-blue-700",
+  crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl",
+  usd: "bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl",
+  uah: "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl",
 } as const;
 
 function validateBtcAddress(address: string): boolean {
@@ -237,7 +237,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-40 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-4 sm:p-6 text-white shadow-xl transform transition-all duration-300`}
+        className={`relative h-40 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-4 sm:p-6 text-white shadow-xl overflow-hidden backdrop-blur-sm before:z-0`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
@@ -246,265 +246,268 @@ export default function VirtualCard({ card }: { card: Card }) {
           `
         }}
       >
-        {/* Card content */}
-        <div className="flex flex-col justify-between h-full">
-          <div className="space-y-1 sm:space-y-2">
-            <div className="text-[10px] sm:text-xs opacity-80">OOO BNAL BANK</div>
-            <div className="text-sm sm:text-2xl font-bold tracking-wider">
-              {card.number.replace(/(\d{4})/g, "$1 ").trim()}
-            </div>
-          </div>
+        {/* Add a subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
 
-          <div className="space-y-2 sm:space-y-3">
-            <div className="flex justify-between">
-              {card.type === 'crypto' ? (
-                <div className="space-y-0.5 sm:space-y-1">
-                  <div className="flex items-center">
-                    <Bitcoin className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                    <div className="text-[9px] sm:text-[11px] opacity-80">BTC Balance</div>
-                  </div>
-                  <div className="text-[11px] sm:text-sm font-semibold">
-                    {card.btcBalance} BTC
-                  </div>
-                  <div className="flex items-center mt-0.5">
-                    <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                    <div className="text-[9px] sm:text-[11px] opacity-80">ETH Balance</div>
-                  </div>
-                  <div className="text-[11px] sm:text-sm font-semibold">
-                    {card.ethBalance} ETH
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="text-[10px] sm:text-xs opacity-80">Balance</div>
-                  <div className="text-xs sm:text-base font-semibold">
-                    {card.balance} {card.type.toUpperCase()}
-                  </div>
-                </div>
-              )}
-              <div>
-                <div className="text-[10px] sm:text-xs opacity-80">Expires</div>
-                <div className="text-xs sm:text-base font-semibold">{card.expiry}</div>
+        {/* Add a subtle light effect */}
+        <div 
+          className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle at 0% 0%, rgba(255,255,255,0.3) 0%, transparent 50%)'
+          }}
+        />
+
+        {/* Rest of the card content remains unchanged but wrapped in relative container */}
+        <div className="relative z-10">
+          <div className="flex flex-col justify-between h-full">
+            <div className="space-y-1 sm:space-y-2">
+              <div className="text-[10px] sm:text-xs opacity-80">OOO BNAL BANK</div>
+              <div className="text-sm sm:text-2xl font-bold tracking-wider">
+                {card.number.replace(/(\d{4})/g, "$1 ").trim()}
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex space-x-1">
-              {/* Deposit Dialog */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
-                    <ArrowUpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                    <span className="hidden sm:inline">Deposit</span>
-                    <span className="sm:hidden">Dep</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Deposit Funds</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    {card.type === 'crypto' ? (
-                      <>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-2">BTC Address</p>
-                          <p className="font-mono text-sm break-all">{card.btcAddress}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-2">ETH Address</p>
-                          <p className="font-mono text-sm break-all">{card.ethAddress}</p>
-                        </div>
-                      </>
-                    ) : (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Card Number</p>
-                        <p className="font-mono">{card.number}</p>
-                      </div>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              {/* Withdraw Dialog */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
-                    <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                    <span className="hidden sm:inline">Withdraw</span>
-                    <span className="sm:hidden">With</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Withdraw Funds</DialogTitle>
-                    <DialogDescription>
-                      Process your withdrawal request
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <p className="text-center text-muted-foreground">
-                      Contact support @KA7777AA to process your withdrawal
-                    </p>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              {/* Transfer Dialog */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
-                    <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                    <span className="hidden sm:inline">Transfer</span>
-                    <span className="sm:hidden">Trans</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-md mx-auto max-h-[calc(100vh-4rem)] overflow-y-auto p-3 sm:p-6 rounded-lg">
-                  <DialogHeader className="space-y-2 mb-4">
-                    <DialogTitle className="text-lg sm:text-xl">Transfer Funds</DialogTitle>
-                    <DialogDescription className="text-sm">
-                      Transfer funds to another card or wallet
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-3">
-                    {/* Recipient type selection */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium">Тип получателя</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={recipientType === 'usd_card' ? 'default' : 'outline'}
-                          className="h-8 text-xs sm:text-sm"
-                          onClick={() => setRecipientType('usd_card')}
-                        >
-                          <CreditCard className="h-3 w-3 mr-1" />
-                          Фиат карта
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={recipientType === 'crypto_wallet' ? 'default' : 'outline'}
-                          className="h-8 text-xs sm:text-sm"
-                          onClick={() => setRecipientType('crypto_wallet')}
-                        >
-                          <Wallet className="h-3 w-3 mr-1" />
-                          Крипто карта
-                        </Button>
-                      </div>
+            <div className="space-y-2 sm:space-y-3">
+              <div className="flex justify-between">
+                {card.type === 'crypto' ? (
+                  <div className="space-y-0.5 sm:space-y-1">
+                    <div className="flex items-center">
+                      <Bitcoin className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                      <div className="text-[9px] sm:text-[11px] opacity-80">BTC Balance</div>
                     </div>
+                    <div className="text-[11px] sm:text-sm font-semibold">
+                      {card.btcBalance} BTC
+                    </div>
+                    <div className="flex items-center mt-0.5">
+                      <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                      <div className="text-[9px] sm:text-[11px] opacity-80">ETH Balance</div>
+                    </div>
+                    <div className="text-[11px] sm:text-sm font-semibold">
+                      {card.ethBalance} ETH
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-[10px] sm:text-xs opacity-80">Balance</div>
+                    <div className="text-xs sm:text-base font-semibold">
+                      {card.balance} {card.type.toUpperCase()}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <div className="text-[10px] sm:text-xs opacity-80">Expires</div>
+                  <div className="text-xs sm:text-base font-semibold">{card.expiry}</div>
+                </div>
+              </div>
 
-                    {/* Wallet selection for crypto card */}
-                    {card.type === 'crypto' && (
+              <div className="flex space-x-1">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
+                      <ArrowUpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <span className="hidden sm:inline">Deposit</span>
+                      <span className="sm:hidden">Dep</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Deposit Funds</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      {card.type === 'crypto' ? (
+                        <>
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">BTC Address</p>
+                            <p className="font-mono text-sm break-all">{card.btcAddress}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">ETH Address</p>
+                            <p className="font-mono text-sm break-all">{card.ethAddress}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">Card Number</p>
+                          <p className="font-mono">{card.number}</p>
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
+                      <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <span className="hidden sm:inline">Withdraw</span>
+                      <span className="sm:hidden">With</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Withdraw Funds</DialogTitle>
+                      <DialogDescription>
+                        Process your withdrawal request
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <p className="text-center text-muted-foreground">
+                        Contact support @KA7777AA to process your withdrawal
+                      </p>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
+                      <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <span className="hidden sm:inline">Transfer</span>
+                      <span className="sm:hidden">Trans</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-md mx-auto max-h-[calc(100vh-4rem)] overflow-y-auto p-3 sm:p-6 rounded-lg">
+                    <DialogHeader className="space-y-2 mb-4">
+                      <DialogTitle className="text-lg sm:text-xl">Transfer Funds</DialogTitle>
+                      <DialogDescription className="text-sm">
+                        Transfer funds to another card or wallet
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-3">
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          Выберите криптовалюту для перевода
-                        </label>
+                        <label className="block text-sm font-medium">Тип получателя</label>
                         <div className="grid grid-cols-2 gap-2">
                           <Button
                             type="button"
                             size="sm"
-                            variant={selectedWallet === 'btc' ? 'default' : 'outline'}
+                            variant={recipientType === 'usd_card' ? 'default' : 'outline'}
                             className="h-8 text-xs sm:text-sm"
-                            onClick={() => setSelectedWallet('btc')}
+                            onClick={() => setRecipientType('usd_card')}
                           >
-                            <Bitcoin className="h-3 w-3 mr-1" />
-                            <span>BTC</span>
-                            <span className="text-[10px] ml-1 opacity-80">
-                              ({card.btcBalance})
-                            </span>
+                            <CreditCard className="h-3 w-3 mr-1" />
+                            Фиат карта
                           </Button>
                           <Button
                             type="button"
                             size="sm"
-                            variant={selectedWallet === 'eth' ? 'default' : 'outline'}
+                            variant={recipientType === 'crypto_wallet' ? 'default' : 'outline'}
                             className="h-8 text-xs sm:text-sm"
-                            onClick={() => setSelectedWallet('eth')}
+                            onClick={() => setRecipientType('crypto_wallet')}
                           >
-                            <Coins className="h-3 w-3 mr-1" />
-                            <span>ETH</span>
-                            <span className="text-[10px] ml-1 opacity-80">
-                              ({card.ethBalance})
-                            </span>
+                            <Wallet className="h-3 w-3 mr-1" />
+                            Крипто карта
                           </Button>
                         </div>
                       </div>
-                    )}
 
-                    {/* Recipient card number/address */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium">
-                        {recipientType === 'usd_card' ? 'Номер карты получателя' : `Адрес ${selectedWallet.toUpperCase()} кошелька`}
-                      </label>
-                      <input
-                        type="text"
-                        value={recipientCardNumber}
-                        onChange={e => {
-                          if (recipientType === 'usd_card') {
-                            const value = e.target.value.replace(/\D/g, '');
-                            const parts = value.match(/.{1,4}/g) || [];
-                            setRecipientCardNumber(parts.join(' '));
-                          } else {
-                            setRecipientCardNumber(e.target.value);
-                          }
-                        }}
-                        className="w-full p-2 border rounded text-sm"
-                        maxLength={recipientType === 'usd_card' ? 19 : undefined}
-                        required
-                      />
-                    </div>
+                      {card.type === 'crypto' && (
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium">
+                            Выберите криптовалюту для перевода
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={selectedWallet === 'btc' ? 'default' : 'outline'}
+                              className="h-8 text-xs sm:text-sm"
+                              onClick={() => setSelectedWallet('btc')}
+                            >
+                              <Bitcoin className="h-3 w-3 mr-1" />
+                              <span>BTC</span>
+                              <span className="text-[10px] ml-1 opacity-80">
+                                ({card.btcBalance})
+                              </span>
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={selectedWallet === 'eth' ? 'default' : 'outline'}
+                              className="h-8 text-xs sm:text-sm"
+                              onClick={() => setSelectedWallet('eth')}
+                            >
+                              <Coins className="h-3 w-3 mr-1" />
+                              <span>ETH</span>
+                              <span className="text-[10px] ml-1 opacity-80">
+                                ({card.ethBalance})
+                              </span>
+                            </Button>
+                          </div>
+                        </div>
+                      )}
 
-                    {/* Transfer amount */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium">
-                        Сумма в {selectedWallet.toUpperCase()}
-                      </label>
-                      <div className="relative">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium">
+                          {recipientType === 'usd_card' ? 'Номер карты получателя' : `Адрес ${selectedWallet.toUpperCase()} кошелька`}
+                        </label>
                         <input
-                          type="number"
-                          value={transferAmount}
-                          onChange={e => setTransferAmount(e.target.value)}
-                          className="w-full p-2 border rounded text-sm pr-12"
-                          step="0.00000001"
-                          min="0.00000001"
+                          type="text"
+                          value={recipientCardNumber}
+                          onChange={e => {
+                            if (recipientType === 'usd_card') {
+                              const value = e.target.value.replace(/\D/g, '');
+                              const parts = value.match(/.{1,4}/g) || [];
+                              setRecipientCardNumber(parts.join(' '));
+                            } else {
+                              setRecipientCardNumber(e.target.value);
+                            }
+                          }}
+                          className="w-full p-2 border rounded text-sm"
+                          maxLength={recipientType === 'usd_card' ? 19 : undefined}
                           required
                         />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
-                          {selectedWallet.toUpperCase()}
-                        </span>
                       </div>
-                      {recipientType === 'usd_card' && card.type === 'crypto' && transferAmount && (
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium">
+                          Сумма в {selectedWallet.toUpperCase()}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={transferAmount}
+                            onChange={e => setTransferAmount(e.target.value)}
+                            className="w-full p-2 border rounded text-sm pr-12"
+                            step="0.00000001"
+                            min="0.00000001"
+                            required
+                          />
+                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
+                            {selectedWallet.toUpperCase()}
+                          </span>
+                        </div>
+                        {recipientType === 'usd_card' && card.type === 'crypto' && transferAmount && (
+                          <p className="text-xs text-muted-foreground">
+                            Получатель получит примерно: {calculateUsdEquivalent(transferAmount)?.toFixed(2)} USD
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
-                          Получатель получит примерно: {calculateUsdEquivalent(transferAmount)?.toFixed(2)} USD
+                          Доступно: {getSelectedBalance()} {selectedWallet.toUpperCase()}
                         </p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        Доступно: {getSelectedBalance()} {selectedWallet.toUpperCase()}
-                      </p>
-                    </div>
+                      </div>
 
-                    {/* Error message */}
-                    {transferError && (
-                      <p className="text-xs text-red-500 mt-2">{transferError}</p>
-                    )}
-
-                    {/* Submit button */}
-                    <Button
-                      type="submit"
-                      disabled={isTransferring}
-                      className="w-full h-9 text-sm"
-                    >
-                      {isTransferring ? (
-                        <>
-                          <Loader2 className="animate-spin h-3 w-3 mr-1" />
-                          Выполняется перевод...
-                        </>
-                      ) : (
-                        "Перевести"
+                      {transferError && (
+                        <p className="text-xs text-red-500 mt-2">{transferError}</p>
                       )}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
+
+                      <Button
+                        type="submit"
+                        disabled={isTransferring}
+                        className="w-full h-9 text-sm"
+                      >
+                        {isTransferring ? (
+                          <>
+                            <Loader2 className="animate-spin h-3 w-3 mr-1" />
+                            Выполняется перевод...
+                          </>
+                        ) : (
+                          "Перевести"
+                        )}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
         </div>
