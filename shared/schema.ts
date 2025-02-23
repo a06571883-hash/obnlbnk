@@ -18,8 +18,8 @@ export const cards = pgTable("cards", {
   expiry: text("expiry").notNull(),
   cvv: text("cvv").notNull(),
   balance: decimal("balance", { precision: 10, scale: 2 }).notNull().default("0"),
-  btcBalance: decimal("btc_balance", { precision: 10, scale: 8 }).notNull().default("0"),
-  ethBalance: decimal("eth_balance", { precision: 10, scale: 8 }).notNull().default("0"),
+  btcBalance: decimal("btc_balance", { precision: 20, scale: 8 }).notNull().default("0"),
+  ethBalance: decimal("eth_balance", { precision: 20, scale: 8 }).notNull().default("0"),
   btcAddress: text("btc_address"),
   ethAddress: text("eth_address"),
 });
