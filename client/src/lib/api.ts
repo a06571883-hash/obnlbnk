@@ -1,18 +1,13 @@
-export const apiRequest = async (method: string, url: string, body?: any) => {
+export const apiRequest = async (url: string, options: RequestInit = {}) => {
   try {
-    const options: RequestInit = {
-      method,
+    const response = await fetch(url, {
+      ...options,
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...options.headers,
       },
-    };
-
-    if (body) {
-      options.body = JSON.stringify(body);
-    }
-
-    const response = await fetch(url, options);
+    });
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -23,14 +18,14 @@ export const apiRequest = async (method: string, url: string, body?: any) => {
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Fetch error:', error);
     throw error instanceof Error ? error : new Error('Произошла ошибка при запросе к серверу');
   }
 };
 
-// Добавляем функцию повторных попыток с экспоненциальной задержкой
 export const retryApiRequest = async (
   url: string, 
   options: RequestInit = {}, 
@@ -38,7 +33,7 @@ export const retryApiRequest = async (
 ) => {
   for (let i = 0; i < maxRetries; i++) {
     try {
-      return await apiRequest(options.method || 'GET', url, options.body);
+      return await apiRequest(url, options);
     } catch (error) {
       if (i === maxRetries - 1) throw error;
       await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));

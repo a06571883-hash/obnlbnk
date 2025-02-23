@@ -13,7 +13,7 @@ import { AuthProvider } from "./components/auth-provider";
 import BottomNav from "@/components/bottom-nav";
 import { useLocation } from "wouter";
 
-const Router = () => {
+function Router() {
   const [location] = useLocation();
   const showNav = location !== "/auth";
 
@@ -30,13 +30,13 @@ const Router = () => {
       {showNav && <BottomNav />}
     </>
   );
-};
+}
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div id="app-root" className="min-h-screen bg-background overflow-auto">
+        <div id="app-root" className="min-h-screen bg-background">
           <Router />
           <Toaster />
         </div>
