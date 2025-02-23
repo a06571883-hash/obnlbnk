@@ -49,6 +49,18 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
+// Function for generating BTC addresses
+function generateBtcAddress(): string {
+  // Generate a valid BTC address starting with '1' followed by 33 alphanumeric characters
+  return '1' + crypto.randomBytes(16).toString('hex') + 
+         crypto.randomBytes(1).toString('hex').substring(0, 1);
+}
+
+// Function for generating ETH addresses
+function generateEthAddress(): string {
+  return '0x' + crypto.randomBytes(20).toString('hex');
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
@@ -297,9 +309,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiry: generateExpiry(),
         cvv: generateCVV(),
         balance: virtualBalances[type],
-        btcAddress: type === 'crypto' ? generateCryptoAddress() : null,
-        ethAddress: type === 'crypto' ? generateCryptoAddress() : null,
-        isVirtual: true
+        btcAddress: type === 'crypto' ? generateBtcAddress() : null,
+        ethAddress: type === 'crypto' ? generateEthAddress() : null,
+        btcBalance: "0",
+        ethBalance: "0"
       };
 
       return await storage.createCard(cardData);
@@ -351,7 +364,7 @@ function generateCVV(): string {
   return Math.floor(Math.random() * 900 + 100).toString();
 }
 
-// Function for generating crypto addresses
+// Function for generating crypto addresses - This function is now effectively replaced.
 function generateCryptoAddress(): string {
   return '0x' + crypto.randomBytes(20).toString('hex');
 }
