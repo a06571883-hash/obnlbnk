@@ -206,16 +206,35 @@ export class DatabaseStorage implements IStorage {
       // Check balance based on wallet type for crypto cards
       let fromBalance: number;
       let toBalance: number;
+      let convertedAmount = amount;
 
       if (fromCard.type === 'crypto' && wallet) {
-        // Для крипто-карт проверяем баланс соответствующего кошелька
+        // For crypto cards check corresponding wallet balance
         fromBalance = parseFloat(wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance);
+
+        // Apply conversion rates if transferring to USD card
+        if (toCard.type === 'usd') {
+          if (wallet === 'btc') {
+            convertedAmount = amount * 52341.23; // Current BTC to USD rate
+          } else {
+            convertedAmount = amount * 3128.45; // Current ETH to USD rate
+          }
+        }
       } else {
         fromBalance = parseFloat(fromCard.balance);
       }
 
       if (toCard.type === 'crypto' && wallet) {
         toBalance = parseFloat(wallet === 'btc' ? toCard.btcBalance : toCard.ethBalance);
+
+        // Apply conversion rates if transferring from USD card
+        if (fromCard.type === 'usd') {
+          if (wallet === 'btc') {
+            convertedAmount = amount / 52341.23; // USD to BTC rate
+          } else {
+            convertedAmount = amount / 3128.45; // USD to ETH rate
+          }
+        }
       } else {
         toBalance = parseFloat(toCard.balance);
       }
@@ -229,11 +248,12 @@ export class DatabaseStorage implements IStorage {
       }
 
       const newFromBalance = (fromBalance - amount).toFixed(8);
-      const newToBalance = (toBalance + amount).toFixed(8);
+      const newToBalance = (toBalance + convertedAmount).toFixed(8);
 
       console.log('Updating balances:', {
         fromCard: { old: fromBalance, new: newFromBalance },
-        toCard: { old: toBalance, new: newToBalance }
+        toCard: { old: toBalance, new: newToBalance },
+        convertedAmount
       });
 
       const transaction = await db.transaction(async (tx) => {
@@ -243,7 +263,7 @@ export class DatabaseStorage implements IStorage {
             fromCardId: fromCard.id,
             toCardId: toCard.id,
             amount: amount.toString(),
-            convertedAmount: amount.toString(),
+            convertedAmount: convertedAmount.toString(),
             type: 'transfer',
             wallet: wallet,
             status: 'completed',
