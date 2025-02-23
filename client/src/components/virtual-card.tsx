@@ -34,9 +34,9 @@ const EXCHANGE_RATES = {
 
 // Validation functions for crypto addresses
 function validateBtcAddress(address: string): boolean {
-  // Bitcoin addresses are typically between 26-35 characters
-  // Can start with 1, 3, or bc1
-  return /^(1|3|bc1)[a-zA-Z0-9]{25,59}$/.test(address);
+  // Bitcoin addresses can be 26-35 chars legacy, or up to 62 chars for native SegWit
+  // Allow any alphanumeric string that matches general BTC address patterns
+  return /^[123][a-zA-Z0-9]{25,34}$|^(bc1)[a-zA-Z0-9]{8,87}$/.test(address);
 }
 
 function validateEthAddress(address: string): boolean {
