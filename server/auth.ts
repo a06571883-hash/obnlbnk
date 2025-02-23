@@ -7,7 +7,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import { users } from "@shared/schema";
-import { db } from "./database/connection";
+import { db } from "./db";
 import { eq } from "drizzle-orm";
 
 declare global {
@@ -46,26 +46,36 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   console.log('Setting up authentication...');
 
-  // Initialize session middleware with debug-friendly settings
+  // Initialize session middleware with proper settings
   app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
+    name: 'sid',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
-    name: 'sid',
-    proxy: true, // Trust the reverse proxy
+    proxy: true,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      httpOnly: true,
       sameSite: 'lax',
-      path: '/'
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: '/',
+      httpOnly: true
     }
   }));
 
   // Initialize Passport after session
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Add session debugging middleware
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    console.log('[Session Debug]', {
+      id: req.sessionID,
+      authenticated: req.isAuthenticated(),
+      user: req.user?.username
+    });
+    next();
+  });
 
   passport.use(
     new LocalStrategy(async (username: string, password: string, done) => {
@@ -74,7 +84,7 @@ export function setupAuth(app: Express) {
 
         // Special handling for admin user
         if (username === 'admin' && password === 'admin123') {
-          console.log('[Auth] Creating/updating admin user');
+          console.log('[Auth] Admin login attempt');
           let user = await storage.getUserByUsername('admin');
           if (!user) {
             user = await storage.createUser({
@@ -110,22 +120,14 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user: Express.User, done) => {
-    console.log(`[Auth] Serializing user session: ${user.id}`);
+    console.log(`[Auth] Serializing user: ${user.username} (${user.id})`);
     done(null, user.id);
   });
 
-  passport.deserializeUser(async (id: number | string, done) => {
+  passport.deserializeUser(async (id: number, done) => {
     try {
-      console.log(`[Auth] Deserializing user session: ${id}`);
-      // Ensure id is a number
-      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-
-      if (isNaN(numericId)) {
-        console.error(`[Auth] Invalid user ID during deserialization: ${id}`);
-        return done(new Error('Invalid user ID'), null);
-      }
-
-      const user = await storage.getUser(numericId);
+      console.log(`[Auth] Deserializing user: ${id}`);
+      const user = await storage.getUser(id);
       if (!user) {
         console.log(`[Auth] User not found during deserialization: ${id}`);
         return done(null, false);
@@ -138,26 +140,13 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Debug middleware to log session and auth state
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    console.log('Session debug:', {
-      sessionID: req.sessionID,
-      session: req.session,
-      isAuthenticated: req.isAuthenticated(),
-      user: req.user,
-      cookies: req.headers.cookie
-    });
-    next();
-  });
-
   app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
     console.log('[Auth] Login request received:', req.body.username);
-    console.log('[Auth] Session ID before login:', req.sessionID);
 
     passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
       if (err) {
         console.error('[Auth] Authentication error:', err);
-        return next(err);
+        return res.status(500).json({ message: "Ошибка сервера при входе" });
       }
 
       if (!user) {
@@ -168,14 +157,22 @@ export function setupAuth(app: Express) {
       req.logIn(user, (err) => {
         if (err) {
           console.error('[Auth] Login error:', err);
-          return next(err);
+          return res.status(500).json({ message: "Ошибка при создании сессии" });
         }
+
         console.log('[Auth] User successfully logged in:', {
           username: user.username,
-          sessionID: req.sessionID,
-          isAuthenticated: req.isAuthenticated()
+          sessionID: req.sessionID
         });
-        res.json(user);
+
+        // Save session before sending response
+        req.session.save((err) => {
+          if (err) {
+            console.error('[Auth] Session save error:', err);
+            return res.status(500).json({ message: "Ошибка при сохранении сессии" });
+          }
+          res.json(user);
+        });
       });
     })(req, res, next);
   });
@@ -185,7 +182,6 @@ export function setupAuth(app: Express) {
       console.log('[Auth] Registration attempt:', req.body.username);
 
       if (!req.body.username || !req.body.password) {
-        console.log('[Auth] Registration failed - missing credentials');
         return res.status(400).json({ 
           message: "Требуется имя пользователя и пароль" 
         });
@@ -193,7 +189,6 @@ export function setupAuth(app: Express) {
 
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        console.log(`[Auth] Registration failed - username exists: ${req.body.username}`);
         return res.status(400).json({ 
           message: "Пользователь с таким именем уже существует" 
         });
@@ -207,40 +202,59 @@ export function setupAuth(app: Express) {
         regulator_balance: "0"
       });
 
-      console.log(`[Auth] User registered successfully: ${user.username}`);
-
       req.login(user, (err) => {
         if (err) {
           console.error('[Auth] Login after registration failed:', err);
-          return next(err);
+          return res.status(500).json({ message: "Ошибка при создании сессии" });
         }
-        console.log(`[Auth] Auto-login after registration successful: ${user.username}`);
-        res.status(201).json(user);
+
+        // Save session before sending response
+        req.session.save((err) => {
+          if (err) {
+            console.error('[Auth] Session save error:', err);
+            return res.status(500).json({ message: "Ошибка при сохранении сессии" });
+          }
+          res.status(201).json(user);
+        });
       });
     } catch (error) {
       console.error('[Auth] Registration error:', error);
-      next(error);
+      res.status(500).json({ message: "Ошибка при регистрации" });
     }
   });
 
-  app.post("/api/logout", (req: Request, res: Response, next: NextFunction) => {
-    console.log(`[Auth] Logout request received. User: ${req.user?.username}, Session ID: ${req.sessionID}`);
+  app.post("/api/logout", (req: Request, res: Response) => {
+    console.log(`[Auth] Logout request received. User: ${req.user?.username}`);
+
     req.logout((err) => {
       if (err) {
         console.error('[Auth] Logout error:', err);
-        return next(err);
+        return res.status(500).json({ message: "Ошибка при выходе" });
       }
-      console.log('[Auth] User successfully logged out');
-      res.sendStatus(200);
+
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('[Auth] Session destruction error:', err);
+          return res.status(500).json({ message: "Ошибка при удалении сессии" });
+        }
+        res.sendStatus(200);
+      });
     });
   });
 
   app.get("/api/user", (req: Request, res: Response) => {
-    console.log(`[Auth] User info request. Authenticated: ${req.isAuthenticated()}, Session ID: ${req.sessionID}`);
+    console.log(`[Auth] User info request. Authenticated: ${req.isAuthenticated()}`);
+
     if (!req.isAuthenticated()) {
       console.log('[Auth] Unauthorized access attempt to /api/user');
       return res.sendStatus(401);
     }
+
+    if (!req.user) {
+      console.log('[Auth] No user in session');
+      return res.sendStatus(401);
+    }
+
     console.log('[Auth] Returning user info:', req.user);
     res.json(req.user);
   });
