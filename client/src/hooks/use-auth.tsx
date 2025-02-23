@@ -48,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Успешный вход",
         description: `Добро пожаловать, ${user.username}!`,
       });
+      setLocation("/");
     },
     onError: (error: Error) => {
       toast({
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Регистрация успешна",
         description: `Аккаунт ${user.username} создан!`,
       });
+      setLocation("/");
     },
     onError: (error: Error) => {
       toast({

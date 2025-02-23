@@ -197,8 +197,8 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       console.log(`Starting transfer: fromCardId=${fromCardId}, toCardNumber=${toCardNumber}, amount=${amount}, wallet=${wallet}`);
 
-      if (amount <= 0) {
-        return { success: false, error: "Сумма перевода должна быть больше 0" };
+      if (!fromCardId || !toCardNumber || amount <= 0) {
+        return { success: false, error: "Неверные параметры перевода" };
       }
 
       const fromCard = await this.getCardById(fromCardId);
@@ -212,80 +212,97 @@ export class DatabaseStorage implements IStorage {
           return { success: false, error: "Отправлять криптовалюту можно только с крипто-карты" };
         }
 
-        const fromBalance = wallet === 'btc' ?
-          parseFloat(fromCard.btcBalance || '0') :
+        const balance = wallet === 'btc' ? 
+          parseFloat(fromCard.btcBalance || '0') : 
           parseFloat(fromCard.ethBalance || '0');
 
-        if (fromBalance < amount) {
+        if (isNaN(balance) || balance < amount) {
           return {
             success: false,
-            error: `Недостаточно ${wallet.toUpperCase()}. Требуется: ${amount}, Доступно: ${fromBalance}`
+            error: `Недостаточно ${wallet.toUpperCase()}. Требуется: ${amount}, Доступно: ${balance}`
           };
         }
 
-        const newFromBalance = (fromBalance - amount).toFixed(8);
+        const newBalance = (balance - amount).toFixed(8);
+
+        try {
+          const transaction = await this.createTransaction({
+            fromCardId: fromCard.id,
+            toCardId: fromCard.id,
+            amount: amount.toString(),
+            convertedAmount: amount.toString(),
+            type: 'transfer',
+            status: 'completed',
+            wallet,
+            description: `Перевод ${amount} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
+            fromCardNumber: fromCard.number,
+            toCardNumber: toCardNumber,
+            createdAt: new Date()
+          });
+
+          if (wallet === 'btc') {
+            await this.updateCardBtcBalance(fromCard.id, newBalance);
+          } else {
+            await this.updateCardEthBalance(fromCard.id, newBalance);
+          }
+
+          return { success: true, transaction };
+        } catch (error) {
+          console.error('Crypto transfer error:', error);
+          return { success: false, error: "Ошибка при выполнении крипто-перевода" };
+        }
+      }
+
+      // Regular card transfer
+      try {
+        const toCard = await this.getCardByNumber(toCardNumber);
+        if (!toCard) {
+          return { success: false, error: "Карта получателя не найдена" };
+        }
+
+        if (fromCard.id === toCard.id) {
+          return { success: false, error: "Нельзя перевести деньги на ту же карту" };
+        }
+
+        const fromBalance = parseFloat(fromCard.balance || '0');
+        const toBalance = parseFloat(toCard.balance || '0');
+
+        if (isNaN(fromBalance) || isNaN(toBalance)) {
+          return { success: false, error: "Ошибка при чтении баланса" };
+        }
+
+        if (fromBalance < amount) {
+          return { 
+            success: false, 
+            error: `Недостаточно средств. Требуется: ${amount}, Доступно: ${fromBalance}` 
+          };
+        }
+
+        const newFromBalance = (fromBalance - amount).toFixed(2);
+        const newToBalance = (toBalance + amount).toFixed(2);
 
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
-          toCardId: fromCard.id, 
+          toCardId: toCard.id,
           amount: amount.toString(),
           convertedAmount: amount.toString(),
           type: 'transfer',
           status: 'completed',
-          wallet: wallet,
-          description: `Перевод ${amount} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
+          wallet: null,
+          description: `Перевод ${amount} ${fromCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
-          toCardNumber: toCardNumber,
+          toCardNumber: toCard.number,
           createdAt: new Date()
         });
 
-        if (wallet === 'btc') {
-          await this.updateCardBtcBalance(fromCard.id, newFromBalance);
-        } else {
-          await this.updateCardEthBalance(fromCard.id, newFromBalance);
-        }
+        await this.updateCardBalance(fromCard.id, newFromBalance);
+        await this.updateCardBalance(toCard.id, newToBalance);
 
         return { success: true, transaction };
+      } catch (error) {
+        console.error('Card transfer error:', error);
+        return { success: false, error: "Ошибка при выполнении перевода между картами" };
       }
-
-      // Regular card transfer
-      const toCard = await this.getCardByNumber(toCardNumber);
-      if (!toCard) {
-        return { success: false, error: "Карта получателя не найдена" };
-      }
-
-      if (fromCard.id === toCard.id) {
-        return { success: false, error: "Нельзя перевести деньги на ту же карту" };
-      }
-
-      const fromBalance = parseFloat(fromCard.balance);
-      const toBalance = parseFloat(toCard.balance);
-
-      if (fromBalance < amount) {
-        return { success: false, error: `Недостаточно средств. Требуется: ${amount}, Доступно: ${fromBalance}` };
-      }
-
-      const newFromBalance = (fromBalance - amount).toFixed(2);
-      const newToBalance = (toBalance + amount).toFixed(2);
-
-      const transaction = await this.createTransaction({
-        fromCardId: fromCard.id,
-        toCardId: toCard.id,
-        amount: amount.toString(),
-        convertedAmount: amount.toString(),
-        type: 'transfer',
-        status: 'completed',
-        wallet: null,
-        description: `Перевод ${amount} ${fromCard.type.toUpperCase()}`,
-        fromCardNumber: fromCard.number,
-        toCardNumber: toCard.number,
-        createdAt: new Date()
-      });
-
-      await this.updateCardBalance(fromCard.id, newFromBalance);
-      await this.updateCardBalance(toCard.id, newToBalance);
-
-      return { success: true, transaction };
     }, 'Transfer money');
   }
 
