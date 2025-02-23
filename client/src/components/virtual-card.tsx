@@ -408,7 +408,10 @@ export default function VirtualCard({ card }: { card: Card }) {
                             onClick={() => setSelectedWallet('btc')}
                           >
                             <Bitcoin className="h-3 w-3 mr-1" />
-                            BTC ({card.btcBalance})
+                            <span>BTC</span>
+                            <span className="text-[10px] ml-1 opacity-80">
+                              ({card.btcBalance})
+                            </span>
                           </Button>
                           <Button
                             type="button"
@@ -418,7 +421,10 @@ export default function VirtualCard({ card }: { card: Card }) {
                             onClick={() => setSelectedWallet('eth')}
                           >
                             <Coins className="h-3 w-3 mr-1" />
-                            ETH ({card.ethBalance})
+                            <span>ETH</span>
+                            <span className="text-[10px] ml-1 opacity-80">
+                              ({card.ethBalance})
+                            </span>
                           </Button>
                         </div>
                       </div>
