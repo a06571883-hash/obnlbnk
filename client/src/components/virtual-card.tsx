@@ -257,7 +257,6 @@ export default function VirtualCard({ card }: { card: Card }) {
           }}
         />
 
-        {/* Rest of the card content remains unchanged but wrapped in relative container */}
         <div className="relative z-10">
           <div className="flex flex-col justify-between h-full">
             <div className="space-y-1 sm:space-y-2">
