@@ -77,10 +77,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Необходима авторизация" });
       }
 
-      const { fromCardId, toCardNumber, amount } = req.body;
+      const { fromCardId, amount, recipientAddress, transferType, cryptoType } = req.body;
 
       // Basic validation
-      if (!fromCardId || !toCardNumber || !amount) {
+      if (!fromCardId || !recipientAddress || !amount || !transferType) {
         return res.status(400).json({ message: "Не указаны обязательные параметры перевода" });
       }
 
@@ -90,10 +90,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Некорректная сумма перевода" });
       }
 
-      // Validate card number
-      const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
-      if (!/^\d{16}$/.test(cleanToCardNumber)) {
-        return res.status(400).json({ message: "Неверный формат номера карты" });
+      // Validate recipient address based on transfer type
+      if (transferType === 'usd_card') {
+        const cleanRecipientAddress = recipientAddress.replace(/\s+/g, '');
+        if (!/^\d{16}$/.test(cleanRecipientAddress)) {
+          return res.status(400).json({ message: "Неверный формат номера карты" });
+        }
+      } else if (transferType === 'crypto_wallet') {
+        if (!cryptoType) {
+          return res.status(400).json({ message: "Не указан тип криптовалюты" });
+        }
+
+        if (!validateCryptoAddress(recipientAddress, cryptoType as 'btc' | 'eth')) {
+          return res.status(400).json({ message: `Неверный формат ${cryptoType.toUpperCase()} адреса` });
+        }
+      } else {
+        return res.status(400).json({ message: "Неподдерживаемый тип перевода" });
       }
 
       // Check if the card belongs to the authenticated user
@@ -103,12 +115,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "У вас нет доступа к этой карте" });
       }
 
-      // Execute transfer
-      const result = await storage.transferMoney(
-        parseInt(fromCardId),
-        cleanToCardNumber,
-        transferAmount
-      );
+      // Execute transfer based on type
+      let result;
+      if (transferType === 'usd_card') {
+        result = await storage.transferMoney(
+          parseInt(fromCardId),
+          recipientAddress.replace(/\s+/g, ''),
+          transferAmount
+        );
+      } else {
+        result = await storage.transferCrypto(
+          parseInt(fromCardId),
+          recipientAddress,
+          transferAmount,
+          cryptoType as 'btc' | 'eth'
+        );
+      }
 
       if (!result.success) {
         return res.status(400).json({ message: result.error });
