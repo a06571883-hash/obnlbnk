@@ -67,8 +67,25 @@ export default function HomePage() {
 
   const { data: rates, isLoading: isLoadingRates } = useQuery({
     queryKey: ["/api/rates"],
-    refetchInterval: 3000, // Changed to 3 seconds
+    refetchInterval: 2000, // Changed to 2 seconds
   });
+
+  const [prevRates, setPrevRates] = useState<typeof rates>(null);
+
+  useEffect(() => {
+    if (rates) {
+      setPrevRates(rates);
+    }
+  }, [rates]);
+
+  const getPriceChangeColor = (current: string, previous: string | undefined) => {
+    if (!previous) return '';
+    const currentValue = parseFloat(current);
+    const previousValue = parseFloat(previous);
+    if (currentValue > previousValue) return 'text-emerald-500';
+    if (currentValue < previousValue) return 'text-red-500';
+    return '';
+  };
 
   if (isLoadingCards) {
     return (
@@ -226,21 +243,27 @@ export default function HomePage() {
                             <Bitcoin className="h-5 w-5 text-amber-500" />
                             <span>BTC/USD</span>
                           </div>
-                          <span className="font-medium">${parseFloat(rates.btcToUsd).toLocaleString()}</span>
+                          <span className={`font-medium ${getPriceChangeColor(rates?.btcToUsd || '0', prevRates?.btcToUsd)}`}>
+                            ${parseFloat(rates?.btcToUsd || '0').toLocaleString()}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
                           <div className="flex items-center gap-2">
                             <Coins className="h-5 w-5 text-blue-500" />
                             <span>ETH/USD</span>
                           </div>
-                          <span className="font-medium">${parseFloat(rates.ethToUsd).toLocaleString()}</span>
+                          <span className={`font-medium ${getPriceChangeColor(rates?.ethToUsd || '0', prevRates?.ethToUsd)}`}>
+                            ${parseFloat(rates?.ethToUsd || '0').toLocaleString()}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
                           <div className="flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-green-500" />
                             <span>USD/UAH</span>
                           </div>
-                          <span className="font-medium">₴{parseFloat(rates.usdToUah).toLocaleString()}</span>
+                          <span className={`font-medium ${getPriceChangeColor(rates?.usdToUah || '0', prevRates?.usdToUah)}`}>
+                            ₴{parseFloat(rates?.usdToUah || '0').toLocaleString()}
+                          </span>
                         </div>
                       </div>
 
@@ -248,19 +271,39 @@ export default function HomePage() {
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">BTC/UAH</div>
-                          <div className="font-medium">₴{(parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)).toLocaleString()}</div>
+                          <div className={`font-medium ${getPriceChangeColor(
+                            (parseFloat(rates?.btcToUsd || '0') * parseFloat(rates?.usdToUah || '0')).toString(),
+                            prevRates ? (parseFloat(prevRates.btcToUsd) * parseFloat(prevRates.usdToUah)).toString() : undefined
+                          )}`}>
+                            ₴{(parseFloat(rates?.btcToUsd || '0') * parseFloat(rates?.usdToUah || '0')).toLocaleString()}
+                          </div>
                         </div>
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">ETH/UAH</div>
-                          <div className="font-medium">₴{(parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah)).toLocaleString()}</div>
+                          <div className={`font-medium ${getPriceChangeColor(
+                            (parseFloat(rates?.ethToUsd || '0') * parseFloat(rates?.usdToUah || '0')).toString(),
+                            prevRates ? (parseFloat(prevRates.ethToUsd) * parseFloat(prevRates.usdToUah)).toString() : undefined
+                          )}`}>
+                            ₴{(parseFloat(rates?.ethToUsd || '0') * parseFloat(rates?.usdToUah || '0')).toLocaleString()}
+                          </div>
                         </div>
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">ETH/BTC</div>
-                          <div className="font-medium">{(parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd)).toFixed(6)}</div>
+                          <div className={`font-medium ${getPriceChangeColor(
+                            (parseFloat(rates?.ethToUsd || '0') / parseFloat(rates?.btcToUsd || '1')).toString(),
+                            prevRates ? (parseFloat(prevRates.ethToUsd) / parseFloat(prevRates.btcToUsd)).toString() : undefined
+                          )}`}>
+                            {(parseFloat(rates?.ethToUsd || '0') / parseFloat(rates?.btcToUsd || '1')).toFixed(6)}
+                          </div>
                         </div>
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">UAH/USD</div>
-                          <div className="font-medium">${(1 / parseFloat(rates.usdToUah)).toFixed(4)}</div>
+                          <div className={`font-medium ${getPriceChangeColor(
+                            (1 / parseFloat(rates?.usdToUah || '1')).toString(),
+                            prevRates ? (1 / parseFloat(prevRates.usdToUah)).toString() : undefined
+                          )}`}>
+                            ${(1 / parseFloat(rates?.usdToUah || '1')).toFixed(4)}
+                          </div>
                         </div>
                       </div>
                     </div>
