@@ -1,5 +1,8 @@
 import { Card } from "@shared/schema";
-import { Card as UICard, CardContent } from "@/components/ui/card";
+import { 
+  Card as UICard, 
+  CardContent 
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,34 +22,27 @@ import { useToast } from "@/hooks/use-toast";
 // Add recipient type enum
 type RecipientType = 'usd_card' | 'crypto_wallet';
 
+// Card colors for different types
 const cardColors = {
-  crypto: "bg-gradient-to-br from-yellow-400 to-yellow-600",
-  usd: "bg-gradient-to-br from-green-400 to-green-600",
-  uah: "bg-gradient-to-br from-blue-400 to-blue-600",
+  crypto: "bg-gradient-to-br from-violet-500 to-violet-700",
+  usd: "bg-gradient-to-br from-emerald-500 to-emerald-700",
+  uah: "bg-gradient-to-br from-blue-500 to-blue-700",
 } as const;
 
-// Exchange rates - using current market rates
+// Exchange rates
 const EXCHANGE_RATES = {
-  btcToUsd: 96683.27, // Current BTC/USD rate
-  ethToUsd: 2950.00,  // Current ETH/USD rate
-  usdToUah: 41.64,    // Current USD/UAH rate
+  btcToUsd: 52000,
+  ethToUsd: 3000,
 };
 
 // Validation functions for crypto addresses
 function validateBtcAddress(address: string): boolean {
-  // Support legacy addresses (1), P2SH addresses (3), and Bech32 addresses (bc1)
-  // Legacy: 1... (26-34 chars)
-  // P2SH: 3... (26-34 chars)
-  // Bech32: bc1... (42-62 chars)
   const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
   const bech32Regex = /^(bc1)[a-zA-HJ-NP-Z0-9]{11,71}$/;
-
   return legacyRegex.test(address) || bech32Regex.test(address);
 }
 
 function validateEthAddress(address: string): boolean {
-  // Basic Ethereum address validation (0x followed by 40 hex chars)
-  // More lenient validation to allow both checksum and non-checksum addresses
   return /^0x[a-fA-F0-9]{40}$/i.test(address);
 }
 
@@ -66,6 +62,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
   const [recipientType, setRecipientType] = useState<RecipientType>('usd_card');
 
+  // Gesture handlers
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || isMobile) return;
 
@@ -101,31 +98,40 @@ export default function VirtualCard({ card }: { card: Card }) {
   }, [gyroscope, isMobile, isIOS]);
 
   const transferMutation = useMutation({
-    mutationFn: async ({ fromCardId, toCardNumber, amount }: { fromCardId: number; toCardNumber: string; amount: string }) => {
-      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+    mutationFn: async () => {
+      if (!transferAmount || isNaN(parseFloat(transferAmount)) || parseFloat(transferAmount) <= 0) {
         throw new Error('Пожалуйста, введите корректную сумму');
       }
 
-      // Convert amount to number
-      const amountValue = parseFloat(amount);
+      const amount = parseFloat(transferAmount);
 
-      // Prepare transfer data based on recipient type
-      const transferData = {
-        fromCardId,
-        toCardNumber: recipientType === 'usd_card' ? toCardNumber.replace(/\s+/g, '') : toCardNumber,
-        amount: amountValue,
-        type: recipientType,
-        ...(recipientType === 'crypto_wallet' && { 
-          cryptoType: selectedWallet,
-          cryptoAmount: selectedWallet === 'btc' 
-            ? amountValue / EXCHANGE_RATES.btcToUsd 
-            : amountValue / EXCHANGE_RATES.ethToUsd
-        })
-      };
+      // Prepare transfer request data
+      let transferRequest;
+      if (recipientType === 'usd_card') {
+        transferRequest = {
+          cardId: card.id,
+          recipientCard: recipientCardNumber.replace(/\s+/g, ''),
+          amount,
+          type: 'card'
+        };
+      } else {
+        // Handle crypto transfers
+        const cryptoAmount = selectedWallet === 'btc' 
+          ? amount / EXCHANGE_RATES.btcToUsd 
+          : amount / EXCHANGE_RATES.ethToUsd;
 
-      console.log('Transfer data:', transferData);
+        transferRequest = {
+          cardId: card.id,
+          recipientAddress: recipientCardNumber.trim(),
+          amount: cryptoAmount,
+          type: 'crypto',
+          cryptoCurrency: selectedWallet
+        };
+      }
 
-      const response = await apiRequest("POST", "/api/transfer", transferData);
+      console.log('Transfer request:', transferRequest);
+
+      const response = await apiRequest("POST", "/api/transfer", transferRequest);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -159,6 +165,48 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   });
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!transferAmount || !recipientCardNumber || parseFloat(transferAmount) <= 0) {
+      setTransferError('Пожалуйста, введите корректную сумму и номер карты/адрес кошелька');
+      return;
+    }
+
+    // Validation based on recipient type
+    if (recipientType === 'usd_card') {
+      const cleanCardNumber = recipientCardNumber.replace(/\s+/g, '');
+      if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
+        setTransferError('Номер карты должен состоять из 16 цифр');
+        return;
+      }
+    } else {
+      // Validate crypto address format
+      const isValidAddress = selectedWallet === 'btc'
+        ? validateBtcAddress(recipientCardNumber.trim())
+        : validateEthAddress(recipientCardNumber.trim());
+
+      if (!isValidAddress) {
+        setTransferError(
+          selectedWallet === 'btc'
+            ? 'Неверный формат BTC адреса'
+            : 'Неверный формат ETH адреса'
+        );
+        return;
+      }
+    }
+
+    setIsTransferring(true);
+    setTransferError('');
+
+    try {
+      await transferMutation.mutateAsync();
+    } catch (error: any) {
+      console.error("Transfer error:", error);
+      setTransferError(error.message || "Произошла ошибка при переводе");
+    }
+  };
+
   return (
     <div
       ref={cardRef}
@@ -185,6 +233,7 @@ export default function VirtualCard({ card }: { card: Card }) {
           `
         }}
       >
+        {/* Card content */}
         <div className="flex flex-col justify-between h-full">
           <div className="space-y-1 sm:space-y-2">
             <div className="text-[10px] sm:text-xs opacity-80">OOO BNAL BANK</div>
@@ -192,6 +241,7 @@ export default function VirtualCard({ card }: { card: Card }) {
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
           </div>
+
           <div className="space-y-2 sm:space-y-3">
             <div className="flex justify-between">
               {card.type === 'crypto' ? (
@@ -224,7 +274,10 @@ export default function VirtualCard({ card }: { card: Card }) {
                 <div className="text-xs sm:text-base font-semibold">{card.expiry}</div>
               </div>
             </div>
+
+            {/* Action buttons */}
             <div className="flex space-x-1">
+              {/* Deposit Dialog */}
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
@@ -258,6 +311,8 @@ export default function VirtualCard({ card }: { card: Card }) {
                   </div>
                 </DialogContent>
               </Dialog>
+
+              {/* Withdraw Dialog */}
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
@@ -280,6 +335,8 @@ export default function VirtualCard({ card }: { card: Card }) {
                   </div>
                 </DialogContent>
               </Dialog>
+
+              {/* Transfer Dialog */}
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
@@ -296,57 +353,8 @@ export default function VirtualCard({ card }: { card: Card }) {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-3">
-                    <form onSubmit={async (e) => {
-                      e.preventDefault();
-
-                      if (!transferAmount || !recipientCardNumber || parseFloat(transferAmount) <= 0) {
-                        setTransferError('Пожалуйста, введите корректную сумму и номер карты/адрес кошелька');
-                        return;
-                      }
-
-                      // Validation based on recipient type
-                      if (recipientType === 'usd_card') {
-                        const cleanCardNumber = recipientCardNumber.replace(/\s+/g, '');
-                        if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
-                          setTransferError('Номер карты должен состоять из 16 цифр');
-                          return;
-                        }
-                      } else {
-                        // Validate crypto wallet address
-                        const isValidAddress = selectedWallet === 'btc'
-                          ? validateBtcAddress(recipientCardNumber)
-                          : validateEthAddress(recipientCardNumber);
-
-                        if (!isValidAddress) {
-                          setTransferError(
-                            selectedWallet === 'btc'
-                              ? 'Неверный формат BTC адреса. Поддерживаются Legacy, P2SH и Bech32 адреса'
-                              : 'Неверный формат ETH адреса. Адрес должен начинаться с 0x и содержать 40 символов'
-                          );
-                          return;
-                        }
-                      }
-
-                      setIsTransferring(true);
-                      setTransferError('');
-
-                      try {
-                        await transferMutation.mutateAsync({
-                          fromCardId: card.id,
-                          toCardNumber: recipientCardNumber,
-                          amount: transferAmount,
-                        });
-
-                        toast({
-                          title: "Успешно!",
-                          description: "Перевод выполнен успешно",
-                        });
-                      } catch (error: any) {
-                        console.error("Transfer error:", error);
-                        setTransferError(error.message || "Произошла ошибка при переводе");
-                      }
-                    }}>
-                      {/* Show recipient type selection */}
+                    <form onSubmit={handleSubmit}>
+                      {/* Recipient type selection */}
                       <div className="mb-3">
                         <label className="block text-sm font-medium mb-1">Тип получателя</label>
                         <div className="flex gap-2">
@@ -404,6 +412,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                         </div>
                       )}
 
+                      {/* Recipient card number/address */}
                       <div className="mb-3">
                         <label className="block text-sm font-medium mb-1">
                           {recipientType === 'usd_card' ? 'Номер карты получателя' : `Адрес ${selectedWallet.toUpperCase()} карты`}
@@ -421,11 +430,12 @@ export default function VirtualCard({ card }: { card: Card }) {
                             }
                           }}
                           className="w-full p-2 border rounded text-sm"
-                          maxLength={recipientType === 'usd_card' ? 19 : 35}
+                          maxLength={recipientType === 'usd_card' ? 19 : undefined}
                           required
                         />
                       </div>
 
+                      {/* Transfer amount */}
                       <div className="mb-3">
                         <label className="block text-sm font-medium mb-1">
                           Сумма в {card.type.toUpperCase()}
@@ -453,7 +463,12 @@ export default function VirtualCard({ card }: { card: Card }) {
                         )}
                       </div>
 
-                      {transferError && <p className="text-red-500 text-xs mt-2">{transferError}</p>}
+                      {/* Error message */}
+                      {transferError && (
+                        <p className="text-red-500 text-xs mt-2">{transferError}</p>
+                      )}
+
+                      {/* Submit button */}
                       <Button
                         type="submit"
                         disabled={isTransferring}
