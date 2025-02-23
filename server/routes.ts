@@ -106,9 +106,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate a unique BTC address
       const keyPair = ECPair.makeRandom();
-      const { address: btcAddress } = bitcoin.payments.p2pkh({ 
+      const { address: btcAddress } = bitcoin.payments.p2pkh({
         pubkey: Buffer.from(keyPair.publicKey),
-        network: bitcoin.networks.bitcoin 
+        network: bitcoin.networks.bitcoin
       });
 
       // Generate a unique ETH address
@@ -158,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(cards);
     } catch (error) {
       console.error("Error generating cards:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Ошибка при генерации карт",
         error: error instanceof Error ? error.message : "Unknown error"
       });
@@ -269,6 +269,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false,
         message: "Произошла ошибка при выполнении перевода"
       });
+    }
+  });
+
+
+  // Get all users (protected, only for regulators)
+  app.get("/api/users", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+
+      if (!req.user.is_regulator) {
+        return res.status(403).json({ message: "Недостаточно прав" });
+      }
+
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Ошибка при получении списка пользователей" });
+    }
+  });
+
+  // Adjust balance (protected, only for regulators)
+  app.post("/api/regulator/adjust-balance", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+
+      if (!req.user.is_regulator) {
+        return res.status(403).json({ message: "Недостаточно прав" });
+      }
+
+      const { userId, cardId, amount, operation, cardType } = req.body;
+
+      if (!userId || !cardId || !amount || !operation || !cardType) {
+        return res.status(400).json({ message: "Не указаны обязательные параметры" });
+      }
+
+      // Get user's card
+      const userCard = await storage.getCardById(cardId);
+      if (!userCard) {
+        return res.status(404).json({ message: "Карта не найдена" });
+      }
+
+      // Get regulator's card of the same type
+      const regulatorCards = await storage.getCardsByUserId(req.user.id);
+      const regulatorCard = regulatorCards.find(card => card.type === cardType);
+
+      if (!regulatorCard) {
+        return res.status(404).json({ message: "У регулятора нет карты соответствующего типа" });
+      }
+
+      if (operation === 'subtract') {
+        // Check if user has enough balance
+        let sufficientBalance = false;
+        if (cardType === 'crypto') {
+          const btcBalance = parseFloat(userCard.btcBalance);
+          const ethBalance = parseFloat(userCard.ethBalance);
+          sufficientBalance = cardType === 'btc' ? btcBalance >= parseFloat(amount) : ethBalance >= parseFloat(amount);
+        } else {
+          sufficientBalance = parseFloat(userCard.balance) >= parseFloat(amount);
+        }
+
+        if (!sufficientBalance) {
+          return res.status(400).json({ message: "Недостаточно средств" });
+        }
+
+        // Transfer from user to regulator
+        if (cardType === 'crypto') {
+          await storage.transferCrypto(
+            cardId,
+            regulatorCard.id.toString(),
+            parseFloat(amount),
+            cardType === 'btc' ? 'btc' : 'eth'
+          );
+        } else {
+          await storage.transferMoney(
+            cardId,
+            regulatorCard.number,
+            parseFloat(amount)
+          );
+        }
+      } else {
+        // Add balance to user's card
+        if (cardType === 'crypto') {
+          const updateData = cardType === 'btc'
+            ? { btcBalance: (parseFloat(userCard.btcBalance) + parseFloat(amount)).toString() }
+            : { ethBalance: (parseFloat(userCard.ethBalance) + parseFloat(amount)).toString() };
+          await storage.updateCard(cardId, updateData);
+        } else {
+          await storage.updateCard(cardId, {
+            balance: (parseFloat(userCard.balance) + parseFloat(amount)).toString()
+          });
+        }
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error adjusting balance:", error);
+      res.status(500).json({ message: "Ошибка при изменении баланса" });
     }
   });
 
