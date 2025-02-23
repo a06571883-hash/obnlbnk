@@ -40,9 +40,12 @@ function convertCurrency(amount: number, fromCurrency: string, toCurrency: strin
   }
 }
 
-// Function for validating crypto addresses
+// Update validation function for crypto addresses
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
-  return /^0x[a-fA-F0-9]{32,40}$/.test(address);
+  if (type === 'btc') {
+    return /^(1|3|bc1)[a-zA-Z0-9]{25,34}$/.test(address);
+  }
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
