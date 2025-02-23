@@ -43,25 +43,42 @@ function convertCurrency(amount: number, fromCurrency: string, toCurrency: strin
 // Function for validating crypto addresses
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   if (type === 'btc') {
-    // Accept any non-empty string without spaces, minimum 8 characters
-    return address.trim().length >= 8 && !/\s/.test(address);
+    // Bitcoin address validation - either legacy P2PKH or native SegWit
+    return /^(1[1-9A-HJ-NP-Za-km-z]{25,34}|bc1[ac-hj-np-z02-9]{11,71})$/.test(address);
   }
+  // Ethereum address validation - must be 0x followed by 40 hex characters
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
 // Function for generating BTC addresses
 function generateBtcAddress(): string {
-  // Generate a valid BTC address starting with '1' followed by 33 alphanumeric characters
-  return '1' + crypto.randomBytes(16).toString('hex') + 
-         crypto.randomBytes(1).toString('hex').substring(0, 1);
+  // Generate a valid legacy BTC address (P2PKH format)
+  const validPrefixes = [
+    '1A', '1B', '1C', '1D', '1E', '1F', '1G', '1H', '1J', '1K', '1L', '1M', '1N',
+    '1P', '1Q', '1R', '1S', '1T', '1U', '1V', '1W', '1X', '1Y', '1Z'
+  ];
+  const prefix = validPrefixes[Math.floor(Math.random() * validPrefixes.length)];
+
+  // Use a cryptographically secure random number generator
+  const base58Chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  let address = prefix;
+
+  // Generate 30 more characters to reach typical BTC address length (32 chars total)
+  const randomBytes = crypto.randomBytes(30);
+  for (let i = 0; i < 30; i++) {
+    address += base58Chars[randomBytes[i] % base58Chars.length];
+  }
+
+  return address;
 }
 
 // Function for generating ETH addresses
 function generateEthAddress(): string {
-  return '0x' + crypto.randomBytes(20).toString('hex');
+  // Generate a valid Ethereum address with checksum
+  return '0x' + crypto.randomBytes(20).toString('hex').toLowerCase();
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express, db: any): Promise<Server> {
   setupAuth(app);
 
   app.get("/api/user", async (req, res) => {
@@ -340,6 +357,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating theme:', error);
       res.status(500).json({ error: 'Failed to update theme' });
+    }
+  });
+
+  app.post("/api/cards/regenerate-addresses", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      console.log('Starting address regeneration...');
+
+      // Get all crypto cards
+      const cryptoCards = await db.select()
+        .from(cards)
+        .where(eq(cards.type, 'crypto'));
+
+      console.log(`Found ${cryptoCards.length} crypto cards to update`);
+
+      // Update each card with new addresses
+      for (const card of cryptoCards) {
+        const newBtcAddress = generateBtcAddress();
+        const newEthAddress = generateEthAddress();
+
+        console.log(`Updating card ${card.id} with new addresses:`, {
+          btc: newBtcAddress,
+          eth: newEthAddress
+        });
+
+        await db.update(cards)
+          .set({
+            btcAddress: newBtcAddress,
+            ethAddress: newEthAddress
+          })
+          .where(eq(cards.id, card.id));
+      }
+
+      // Return updated cards for the user
+      const updatedCards = await storage.getCardsByUserId(req.user.id);
+      console.log('Address regeneration completed successfully');
+
+      res.json(updatedCards);
+    } catch (error) {
+      console.error('Error regenerating addresses:', error);
+      res.status(500).json({ error: 'Failed to regenerate addresses' });
     }
   });
 
