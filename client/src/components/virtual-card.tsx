@@ -358,147 +358,145 @@ export default function VirtualCard({ card }: { card: Card }) {
                     <span className="sm:hidden">Trans</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[90%] max-h-[90vh] overflow-y-auto p-3 sm:p-4">
-                  <DialogHeader>
-                    <DialogTitle>Transfer Funds</DialogTitle>
-                    <DialogDescription>
+                <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-md mx-auto max-h-[calc(100vh-4rem)] overflow-y-auto p-3 sm:p-6 rounded-lg">
+                  <DialogHeader className="space-y-2 mb-4">
+                    <DialogTitle className="text-lg sm:text-xl">Transfer Funds</DialogTitle>
+                    <DialogDescription className="text-sm">
                       Transfer funds to another card or wallet
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-3">
-                    <form onSubmit={handleSubmit}>
-                      {/* Recipient type selection */}
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium mb-1">Тип получателя</label>
-                        <div className="flex gap-2">
+                  <form onSubmit={handleSubmit} className="space-y-3">
+                    {/* Recipient type selection */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">Тип получателя</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={recipientType === 'usd_card' ? 'default' : 'outline'}
+                          className="h-8 text-xs sm:text-sm"
+                          onClick={() => setRecipientType('usd_card')}
+                        >
+                          <CreditCard className="h-3 w-3 mr-1" />
+                          Фиат карта
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={recipientType === 'crypto_wallet' ? 'default' : 'outline'}
+                          className="h-8 text-xs sm:text-sm"
+                          onClick={() => setRecipientType('crypto_wallet')}
+                        >
+                          <Wallet className="h-3 w-3 mr-1" />
+                          Крипто карта
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Wallet selection for crypto card */}
+                    {card.type === 'crypto' && (
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium">
+                          Выберите криптовалюту для перевода
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
                           <Button
                             type="button"
                             size="sm"
-                            variant={recipientType === 'usd_card' ? 'default' : 'outline'}
-                            className="flex-1 h-8"
-                            onClick={() => setRecipientType('usd_card')}
+                            variant={selectedWallet === 'btc' ? 'default' : 'outline'}
+                            className="h-8 text-xs sm:text-sm"
+                            onClick={() => setSelectedWallet('btc')}
                           >
-                            <CreditCard className="h-3 w-3 mr-1" />
-                            Фиат карта
+                            <Bitcoin className="h-3 w-3 mr-1" />
+                            BTC ({card.btcBalance})
                           </Button>
                           <Button
                             type="button"
                             size="sm"
-                            variant={recipientType === 'crypto_wallet' ? 'default' : 'outline'}
-                            className="flex-1 h-8"
-                            onClick={() => setRecipientType('crypto_wallet')}
+                            variant={selectedWallet === 'eth' ? 'default' : 'outline'}
+                            className="h-8 text-xs sm:text-sm"
+                            onClick={() => setSelectedWallet('eth')}
                           >
-                            <Wallet className="h-3 w-3 mr-1" />
-                            Крипто карта
+                            <Coins className="h-3 w-3 mr-1" />
+                            ETH ({card.ethBalance})
                           </Button>
                         </div>
                       </div>
+                    )}
 
-                      {/* Wallet selection for crypto card */}
-                      {card.type === 'crypto' && (
-                        <div className="mb-3">
-                          <label className="block text-sm font-medium mb-1">
-                            Выберите криптовалюту для перевода
-                          </label>
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant={selectedWallet === 'btc' ? 'default' : 'outline'}
-                              className="flex-1 h-8"
-                              onClick={() => setSelectedWallet('btc')}
-                            >
-                              <Bitcoin className="h-3 w-3 mr-1" />
-                              BTC ({card.btcBalance} BTC)
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant={selectedWallet === 'eth' ? 'default' : 'outline'}
-                              className="flex-1 h-8"
-                              onClick={() => setSelectedWallet('eth')}
-                            >
-                              <Coins className="h-3 w-3 mr-1" />
-                              ETH ({card.ethBalance} ETH)
-                            </Button>
-                          </div>
-                        </div>
-                      )}
+                    {/* Recipient card number/address */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">
+                        {recipientType === 'usd_card' ? 'Номер карты получателя' : `Адрес ${selectedWallet.toUpperCase()} кошелька`}
+                      </label>
+                      <input
+                        type="text"
+                        value={recipientCardNumber}
+                        onChange={e => {
+                          if (recipientType === 'usd_card') {
+                            const value = e.target.value.replace(/\D/g, '');
+                            const parts = value.match(/.{1,4}/g) || [];
+                            setRecipientCardNumber(parts.join(' '));
+                          } else {
+                            setRecipientCardNumber(e.target.value);
+                          }
+                        }}
+                        className="w-full p-2 border rounded text-sm"
+                        maxLength={recipientType === 'usd_card' ? 19 : undefined}
+                        required
+                      />
+                    </div>
 
-                      {/* Recipient card number/address */}
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium mb-1">
-                          {recipientType === 'usd_card' ? 'Номер карты получателя' : `Адрес ${selectedWallet.toUpperCase()} карты`}
-                        </label>
+                    {/* Transfer amount */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">
+                        Сумма в {selectedWallet.toUpperCase()}
+                      </label>
+                      <div className="relative">
                         <input
-                          type="text"
-                          value={recipientCardNumber}
-                          onChange={e => {
-                            if (recipientType === 'usd_card') {
-                              const value = e.target.value.replace(/\D/g, '');
-                              const parts = value.match(/.{1,4}/g) || [];
-                              setRecipientCardNumber(parts.join(' '));
-                            } else {
-                              setRecipientCardNumber(e.target.value);
-                            }
-                          }}
-                          className="w-full p-2 border rounded text-sm"
-                          maxLength={recipientType === 'usd_card' ? 19 : undefined}
+                          type="number"
+                          value={transferAmount}
+                          onChange={e => setTransferAmount(e.target.value)}
+                          className="w-full p-2 border rounded text-sm pr-12"
+                          step="0.00000001"
+                          min="0.00000001"
                           required
                         />
+                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
+                          {selectedWallet.toUpperCase()}
+                        </span>
                       </div>
-
-                      {/* Transfer amount */}
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium mb-1">
-                          Сумма в {selectedWallet.toUpperCase()}
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            value={transferAmount}
-                            onChange={e => setTransferAmount(e.target.value)}
-                            className="w-full p-2 border rounded text-sm pr-12"
-                            step="0.00000001"
-                            min="0.00000001"
-                            required
-                          />
-                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                            {selectedWallet.toUpperCase()}
-                          </span>
-                        </div>
-                        {recipientType === 'usd_card' && card.type === 'crypto' && transferAmount && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Получатель получит примерно: {calculateUsdEquivalent(transferAmount)?.toFixed(2)} USD
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Доступно: {getSelectedBalance()} {selectedWallet.toUpperCase()}
+                      {recipientType === 'usd_card' && card.type === 'crypto' && transferAmount && (
+                        <p className="text-xs text-muted-foreground">
+                          Получатель получит примерно: {calculateUsdEquivalent(transferAmount)?.toFixed(2)} USD
                         </p>
-                      </div>
-
-                      {/* Error message */}
-                      {transferError && (
-                        <p className="text-red-500 text-xs mt-2">{transferError}</p>
                       )}
+                      <p className="text-xs text-muted-foreground">
+                        Доступно: {getSelectedBalance()} {selectedWallet.toUpperCase()}
+                      </p>
+                    </div>
 
-                      {/* Submit button */}
-                      <Button
-                        type="submit"
-                        disabled={isTransferring}
-                        className="w-full h-8 text-sm"
-                      >
-                        {isTransferring ? (
-                          <>
-                            <Loader2 className="animate-spin h-3 w-3 mr-1" />
-                            Выполняется перевод...
-                          </>
-                        ) : (
-                          "Перевести"
-                        )}
-                      </Button>
-                    </form>
-                  </div>
+                    {/* Error message */}
+                    {transferError && (
+                      <p className="text-xs text-red-500 mt-2">{transferError}</p>
+                    )}
+
+                    {/* Submit button */}
+                    <Button
+                      type="submit"
+                      disabled={isTransferring}
+                      className="w-full h-9 text-sm"
+                    >
+                      {isTransferring ? (
+                        <>
+                          <Loader2 className="animate-spin h-3 w-3 mr-1" />
+                          Выполняется перевод...
+                        </>
+                      ) : (
+                        "Перевести"
+                      )}
+                    </Button>
+                  </form>
                 </DialogContent>
               </Dialog>
             </div>
