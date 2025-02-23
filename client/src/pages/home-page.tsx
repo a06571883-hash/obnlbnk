@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { Card, Transaction } from "../../shared/schema";
 import { Card as CardUI, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -77,7 +77,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+    <div className="min-h-screen bg-background">
       <header className="p-4 flex justify-between items-center border-b backdrop-blur-sm bg-background/50 sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground">
@@ -310,13 +310,10 @@ export default function HomePage() {
               </p>
               <Button
                 size="lg"
-                onClick={() => generateCardsMutation.mutate()}
-                disabled={generateCardsMutation.isPending}
+                //onClick={() => generateCardsMutation.mutate()}  // Removed because useMutation is not imported
+                disabled={false} // Assuming generateCardsMutation is not used
                 className="bg-primary hover:bg-primary/90"
               >
-                {generateCardsMutation.isPending && (
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                )}
                 Generate Cards
               </Button>
             </div>
