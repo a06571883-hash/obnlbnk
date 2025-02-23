@@ -40,26 +40,14 @@ function convertCurrency(amount: number, fromCurrency: string, toCurrency: strin
   }
 }
 
-// Function for generating card numbers
-function generateCardNumber(): string {
-  return '4' + Array(15).fill(null).map(() => Math.floor(Math.random() * 10)).join('');
-}
-
-// Function for generating expiry dates
-function generateExpiry(): string {
-  const month = Math.floor(Math.random() * 12) + 1;
-  const year = new Date().getFullYear() + Math.floor(Math.random() * 5);
-  return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;
-}
-
-// Function for generating CVV codes
-function generateCVV(): string {
-  return Math.floor(Math.random() * 900 + 100).toString();
-}
-
-// Function for generating crypto addresses
-function generateCryptoAddress(): string {
-  return '0x' + crypto.randomBytes(20).toString('hex');
+// Function for validating crypto addresses
+function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
+  if (type === 'eth') {
+    return /^0x[a-fA-F0-9]{40}$/.test(address);
+  } else {
+    // BTC addresses can be different formats, this is a basic check
+    return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address);
+  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -167,13 +155,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Transfer request received:', { fromCardId, toCardNumber, amount, wallet, recipientType });
 
-      const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
-      if (cleanToCardNumber.length !== 16) {
-        return res.status(400).json({ error: "Неверный формат номера карты" });
+      // Validate crypto address if needed
+      if (recipientType === 'crypto_wallet' && wallet) {
+        if (!validateCryptoAddress(toCardNumber, wallet as 'btc' | 'eth')) {
+          return res.status(400).json({ 
+            error: `Неверный формат ${wallet.toUpperCase()} адреса`
+          });
+        }
+      } else {
+        // Clean card number for regular transfers
+        const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
+        if (cleanToCardNumber.length !== 16) {
+          return res.status(400).json({ error: "Неверный формат номера карты" });
+        }
       }
 
       const fromCard = await storage.getCardById(fromCardId);
-      const toCard = await storage.getCardByNumber(cleanToCardNumber);
+      const toCard = await storage.getCardByNumber(toCardNumber);
 
       if (!fromCard || !toCard) {
         return res.status(400).json({ error: "Карта получателя не найдена" });
@@ -203,13 +201,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             cryptoType
           });
 
-        } else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
-          // Crypto to USD conversion
-          const cryptoType = wallet?.toLowerCase() || 'btc';
-          const rate = cryptoType === 'btc' ? EXCHANGE_RATES.CRYPTO_USD : EXCHANGE_RATES.ETH_USD;
-          fromAmount = requestedAmount / rate; // Amount in crypto to deduct
-          toAmount = requestedAmount; // Amount in USD to add
-
         } else if (['usd', 'uah'].includes(fromCard.type) && ['usd', 'uah'].includes(toCard.type)) {
           // Fiat to fiat conversion
           toAmount = convertCurrency(requestedAmount, fromCard.type, toCard.type);
@@ -217,18 +208,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check balances
-      if (fromCard.type === 'crypto') {
-        const cryptoBalance = wallet === 'btc' ? parseFloat(fromCard.btcBalance) : parseFloat(fromCard.ethBalance);
-        if (cryptoBalance < fromAmount) {
-          return res.status(400).json({ 
-            error: `Недостаточно ${wallet?.toUpperCase()}. Требуется ${fromAmount.toFixed(8)} ${wallet?.toUpperCase()} для перевода ${requestedAmount} USD` 
-          });
-        }
-      } else {
-        const fiatBalance = parseFloat(fromCard.balance);
-        if (fiatBalance < fromAmount) {
-          return res.status(400).json({ error: "Недостаточно средств" });
-        }
+      const fromBalance = parseFloat(fromCard.balance);
+      if (fromBalance < fromAmount) {
+        return res.status(400).json({ error: "Недостаточно средств" });
       }
 
       // Create transaction
@@ -243,21 +225,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         toCardNumber: toCard.number,
         createdAt: new Date(),
         convertedAmount: toAmount.toString(),
-        wallet: (fromCard.type === 'crypto' || recipientType === 'crypto_wallet') ? wallet! : null
+        wallet: recipientType === 'crypto_wallet' ? wallet! : null
       });
 
       // Update balances
-      if (fromCard.type === 'crypto') {
-        // Update crypto balance when sending from crypto card
-        if (wallet === 'btc') {
-          await storage.updateCardBtcBalance(fromCard.id, (parseFloat(fromCard.btcBalance) - fromAmount).toFixed(8));
-        } else {
-          await storage.updateCardEthBalance(fromCard.id, (parseFloat(fromCard.ethBalance) - fromAmount).toFixed(8));
-        }
-        await storage.updateCardBalance(toCard.id, (parseFloat(toCard.balance) + toAmount).toFixed(2));
-      } else if (toCard.type === 'crypto' && recipientType === 'crypto_wallet') {
-        // Update balances when sending from USD to crypto
-        await storage.updateCardBalance(fromCard.id, (parseFloat(fromCard.balance) - fromAmount).toFixed(2));
+      if (recipientType === 'crypto_wallet') {
+        // Update USD balance (sender)
+        await storage.updateCardBalance(fromCard.id, (fromBalance - fromAmount).toFixed(2));
+
+        // Update crypto balance (recipient)
         if (wallet === 'btc') {
           await storage.updateCardBtcBalance(toCard.id, (parseFloat(toCard.btcBalance) + toAmount).toFixed(8));
         } else {
@@ -265,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         // Regular fiat transfer
-        await storage.updateCardBalance(fromCard.id, (parseFloat(fromCard.balance) - fromAmount).toFixed(2));
+        await storage.updateCardBalance(fromCard.id, (fromBalance - fromAmount).toFixed(2));
         await storage.updateCardBalance(toCard.id, (parseFloat(toCard.balance) + toAmount).toFixed(2));
       }
 
@@ -282,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Transfer error:", error);
       res.status(500).json({ 
         success: false,
@@ -290,7 +266,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-
 
   app.get("/api/transactions", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -420,4 +395,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Function for generating card numbers
+function generateCardNumber(): string {
+  return '4' + Array(15).fill(null).map(() => Math.floor(Math.random() * 10)).join('');
+}
+
+// Function for generating expiry dates
+function generateExpiry(): string {
+  const month = Math.floor(Math.random() * 12) + 1;
+  const year = new Date().getFullYear() + Math.floor(Math.random() * 5);
+  return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;
+}
+
+// Function for generating CVV codes
+function generateCVV(): string {
+  return Math.floor(Math.random() * 900 + 100).toString();
+}
+
+// Function for generating crypto addresses
+function generateCryptoAddress(): string {
+  return '0x' + crypto.randomBytes(20).toString('hex');
 }

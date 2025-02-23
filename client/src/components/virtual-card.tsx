@@ -31,6 +31,15 @@ const EXCHANGE_RATES = {
   usdToUah: 41.64,    // Current USD/UAH rate
 };
 
+// Validation functions for crypto addresses
+function validateBtcAddress(address: string): boolean {
+  return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address);
+}
+
+function validateEthAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
+}
+
 export default function VirtualCard({ card }: { card: Card }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -271,8 +280,16 @@ export default function VirtualCard({ card }: { card: Card }) {
                         }
                       } else {
                         // Validate crypto wallet address
-                        if (recipientCardNumber.length < 26 || recipientCardNumber.length > 35) {
-                          setTransferError('Неверный формат адреса криптокошелька');
+                        const isValidAddress = selectedWallet === 'btc'
+                          ? validateBtcAddress(recipientCardNumber)
+                          : validateEthAddress(recipientCardNumber);
+
+                        if (!isValidAddress) {
+                          setTransferError(
+                            selectedWallet === 'btc'
+                              ? 'Неверный формат BTC адреса. Адрес должен начинаться с 1 или 3'
+                              : 'Неверный формат ETH адреса. Адрес должен начинаться с 0x'
+                          );
                           return;
                         }
                       }
