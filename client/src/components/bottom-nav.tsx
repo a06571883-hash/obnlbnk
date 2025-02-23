@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Home, CreditCard, Activity, User, Shield } from "lucide-react";
+import { Home, CreditCard, Activity, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -13,8 +13,6 @@ export default function BottomNav() {
     { icon: CreditCard, label: "Cards", path: "/cards" },
     { icon: Activity, label: "Activity", path: "/activity" },
     { icon: User, label: "Profile", path: "/profile" },
-    // Show regulator page only for users with regulator access
-    ...(user?.is_regulator ? [{ icon: Shield, label: "Regulator", path: "/regulator" }] : []),
   ];
 
   return (

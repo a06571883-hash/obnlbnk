@@ -8,7 +8,6 @@ import AuthPage from "@/pages/auth-page";
 import CardsPage from "@/pages/cards-page";
 import ActivityPage from "@/pages/activity-page";
 import ProfilePage from "@/pages/profile-page";
-import RegulatorPage from "@/pages/regulator-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./components/auth-provider";
 import BottomNav from "@/components/bottom-nav";
@@ -16,7 +15,7 @@ import { useLocation } from "wouter";
 
 const Router = () => {
   const [location] = useLocation();
-  const showNav = location !== "/auth" && location !== "/regulator";
+  const showNav = location !== "/auth";
 
   return (
     <>
@@ -26,7 +25,6 @@ const Router = () => {
         <ProtectedRoute path="/cards" component={CardsPage} />
         <ProtectedRoute path="/activity" component={ActivityPage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
-        <ProtectedRoute path="/regulator" component={RegulatorPage} />
         <Route component={NotFound} />
       </Switch>
       {showNav && <BottomNav />}
