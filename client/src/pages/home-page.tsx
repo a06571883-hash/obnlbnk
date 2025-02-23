@@ -242,31 +242,31 @@ export default function HomePage() {
                         <div
                           key={transaction.id}
                           onClick={() => setSelectedTransaction(transaction)}
-                          className="flex items-center justify-between py-0.5 px-1 rounded-lg hover:bg-accent/50 cursor-pointer"
+                          className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-accent/50 cursor-pointer"
                         >
-                          <div className="flex items-center gap-1">
-                            <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center">
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
                               {transaction.type === 'transfer' && (
-                                <ArrowUpRight className={`h-2.5 w-2.5 ${iconColor}`} />
+                                <ArrowUpRight className={`h-3.5 w-3.5 ${iconColor}`} />
                               )}
                               {transaction.type === 'deposit' && (
-                                <ArrowDownLeft className="h-2.5 w-2.5 text-emerald-500" />
+                                <ArrowDownLeft className="h-3.5 w-3.5 text-emerald-500" />
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-[8px] font-medium truncate">
+                              <p className="text-sm font-medium truncate">
                                 {transactionType}
                               </p>
-                              <p className="text-[8px] text-muted-foreground">
+                              <p className="text-xs text-muted-foreground">
                                 {format(new Date(transaction.createdAt), 'dd.MM.yyyy HH:mm')}
                               </p>
                             </div>
                           </div>
-                          <div className="text-right ml-1">
-                            <p className="text-[8px] font-medium whitespace-nowrap">
+                          <div className="text-right ml-2">
+                            <p className="text-sm font-medium whitespace-nowrap">
                               {Number(transaction.amount).toFixed(2)} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
                             </p>
-                            <p className="text-[8px] text-muted-foreground">
+                            <p className="text-xs text-muted-foreground">
                               ≈ {(Number(transaction.amount) * 95652.99).toFixed(2)} USD
                             </p>
                           </div>
