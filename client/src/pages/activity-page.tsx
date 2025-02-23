@@ -13,6 +13,7 @@ import TransactionReceipt from "@/components/transaction-receipt";
 import AnimatedBackground from "@/components/animated-background";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
 
 const EmptyState = () => (
   <div className="text-center py-12">
@@ -21,6 +22,11 @@ const EmptyState = () => (
 );
 
 export default function ActivityPage() {
+  const { user } = useAuth();
+  const { data: cards = [] } = useQuery({
+    queryKey: ["/api/cards"],
+  });
+
   const { data: transactions = [] } = useQuery({
     queryKey: ["/api/transactions"],
     queryFn: async () => {
@@ -35,8 +41,12 @@ export default function ActivityPage() {
   const filterTransactions = (type: 'all' | 'incoming' | 'outgoing') => {
     return transactions.filter((tx: any) => {
       if (type === 'all') return true;
-      if (type === 'incoming') return tx.type === 'deposit';
-      if (type === 'outgoing') return tx.type === 'transfer';
+
+      const fromCard = cards.find(c => c.id === tx.fromCardId);
+      const toCard = cards.find(c => c.id === tx.toCardId);
+
+      if (type === 'incoming') return toCard?.userId === user?.id;
+      if (type === 'outgoing') return fromCard?.userId === user?.id;
       return true;
     });
   };
@@ -54,14 +64,34 @@ export default function ActivityPage() {
     }
   };
 
-  const getTransactionIcon = (type: string) => {
-    switch (type) {
+  const getTransactionType = (tx: any) => {
+    const fromCard = cards.find(c => c.id === tx.fromCardId);
+    const toCard = cards.find(c => c.id === tx.toCardId);
+
+    if (tx.type === 'transfer') {
+      if (fromCard && toCard && fromCard.userId === toCard.userId) {
+        return { type: 'Обмен', iconColor: 'text-amber-500' };
+      } else if (fromCard?.userId === user?.id) {
+        return { type: 'Перевод', iconColor: 'text-primary' };
+      } else {
+        return { type: 'Получение', iconColor: 'text-emerald-500' };
+      }
+    } else if (tx.type === 'deposit') {
+      return { type: 'Пополнение', iconColor: 'text-emerald-500' };
+    }
+
+    return { type: 'Неизвестно', iconColor: 'text-muted-foreground' };
+  };
+
+  const getTransactionIcon = (tx: any) => {
+    const { iconColor } = getTransactionType(tx);
+    switch (tx.type) {
       case 'deposit':
-        return <ArrowDownLeft className="h-5 w-5 text-emerald-500" />;
+        return <ArrowDownLeft className={`h-5 w-5 ${iconColor}`} />;
       case 'transfer':
-        return <ArrowUpRight className="h-5 w-5 text-red-500" />;
+        return <ArrowUpRight className={`h-5 w-5 ${iconColor}`} />;
       default:
-        return null;
+        return <RefreshCw className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -70,6 +100,21 @@ export default function ActivityPage() {
       return format(new Date(date), 'dd.MM.yyyy HH:mm');
     } catch {
       return 'Недействительная дата';
+    }
+  };
+
+  const getCurrencyLabel = (card: any) => {
+    if (!card) return '';
+
+    switch (card.type) {
+      case 'crypto':
+        return card.btcBalance ? 'BTC' : 'ETH';
+      case 'usd':
+        return 'USD';
+      case 'uah':
+        return 'UAH';
+      default:
+        return card.type.toUpperCase();
     }
   };
 
@@ -96,8 +141,11 @@ export default function ActivityPage() {
                 <TransactionList 
                   transactions={filterTransactions('all')}
                   getTransactionIcon={getTransactionIcon}
+                  getTransactionType={getTransactionType}
                   getCurrencyIcon={getCurrencyIcon}
+                  getCurrencyLabel={getCurrencyLabel}
                   formatDate={formatDate}
+                  cards={cards}
                   onSelect={setSelectedTx}
                 />
               </TabsContent>
@@ -106,8 +154,11 @@ export default function ActivityPage() {
                 <TransactionList 
                   transactions={filterTransactions('incoming')}
                   getTransactionIcon={getTransactionIcon}
+                  getTransactionType={getTransactionType}
                   getCurrencyIcon={getCurrencyIcon}
+                  getCurrencyLabel={getCurrencyLabel}
                   formatDate={formatDate}
+                  cards={cards}
                   onSelect={setSelectedTx}
                 />
               </TabsContent>
@@ -116,8 +167,11 @@ export default function ActivityPage() {
                 <TransactionList 
                   transactions={filterTransactions('outgoing')}
                   getTransactionIcon={getTransactionIcon}
+                  getTransactionType={getTransactionType}
                   getCurrencyIcon={getCurrencyIcon}
+                  getCurrencyLabel={getCurrencyLabel}
                   formatDate={formatDate}
+                  cards={cards}
                   onSelect={setSelectedTx}
                 />
               </TabsContent>
@@ -130,14 +184,17 @@ export default function ActivityPage() {
         <TransactionReceipt
           transaction={{
             id: selectedTx.id,
-            type: selectedTx.type,
+            type: getTransactionType(selectedTx).type,
             amount: selectedTx.amount,
-            currency: selectedTx.currency || 'USD',
+            convertedAmount: selectedTx.convertedAmount,
+            currency: cards.find(c => c.id === selectedTx.fromCardId)?.type || 'Unknown',
             date: selectedTx.createdAt,
             status: selectedTx.status || 'completed',
-            from: selectedTx.from || selectedTx.fromCardNumber,
-            to: selectedTx.to || selectedTx.toCardNumber,
-            description: selectedTx.description
+            from: selectedTx.fromCardNumber,
+            to: selectedTx.toCardNumber,
+            description: selectedTx.description,
+            fromCard: cards.find(c => c.id === selectedTx.fromCardId),
+            toCard: cards.find(c => c.id === selectedTx.toCardId)
           }}
           open={!!selectedTx}
           onOpenChange={(open) => !open && setSelectedTx(null)}
@@ -149,56 +206,79 @@ export default function ActivityPage() {
 
 interface TransactionListProps {
   transactions: any[];
-  getTransactionIcon: (type: string) => JSX.Element | null;
+  getTransactionIcon: (tx: any) => JSX.Element | null;
+  getTransactionType: (tx: any) => { type: string; iconColor: string };
   getCurrencyIcon: (type: string) => JSX.Element | null;
+  getCurrencyLabel: (card: any) => string;
   formatDate: (date: string) => string;
+  cards: any[];
   onSelect: (tx: any) => void;
 }
 
-function TransactionList({ transactions, getTransactionIcon, getCurrencyIcon, formatDate, onSelect }: TransactionListProps) {
+function TransactionList({ 
+  transactions, 
+  getTransactionIcon, 
+  getTransactionType,
+  getCurrencyIcon,
+  getCurrencyLabel,
+  formatDate, 
+  cards,
+  onSelect 
+}: TransactionListProps) {
   if (!transactions.length) return <EmptyState />;
 
   return (
     <div className="space-y-4">
-      {transactions.map((tx) => (
-        <div
-          key={tx.id}
-          className="flex items-center p-4 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer"
-          onClick={() => onSelect(tx)}
-        >
-          <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center mr-4">
-            {getTransactionIcon(tx.type)}
-          </div>
+      {transactions.map((tx) => {
+        const { type } = getTransactionType(tx);
+        const fromCard = cards.find(c => c.id === tx.fromCardId);
+        const toCard = cards.find(c => c.id === tx.toCardId);
+        const currency = fromCard?.type || 'unknown';
 
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">
-                {tx.type === 'transfer' ? 'Перевод' : 'Пополнение'}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                • {formatDate(tx.createdAt)}
-              </span>
+        return (
+          <div
+            key={tx.id}
+            className="flex items-center p-4 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer"
+            onClick={() => onSelect(tx)}
+          >
+            <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center mr-4">
+              {getTransactionIcon(tx)}
             </div>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              {tx.status === 'completed' ? (
-                <span className="text-emerald-500">Выполнено</span>
-              ) : (
-                <span className="text-amber-500">В обработке</span>
-              )}
-            </div>
-          </div>
 
-          <div className="text-right">
-            <div className="flex items-center gap-1 font-medium">
-              {getCurrencyIcon(tx.currency || 'usd')}
-              {tx.amount}
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{type}</span>
+                <span className="text-sm text-muted-foreground">
+                  • {formatDate(tx.createdAt)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                {tx.status === 'completed' ? (
+                  <span className="text-emerald-500">Выполнено</span>
+                ) : (
+                  <span className="text-amber-500">В обработке</span>
+                )}
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              {tx.currency || 'USD'}
+
+            <div className="text-right">
+              <div className="flex items-center gap-1 font-medium">
+                {getCurrencyIcon(currency)}
+                {tx.amount}
+
+                {tx.convertedAmount && tx.convertedAmount !== tx.amount && (
+                  <span className="text-muted-foreground text-xs">
+                    → {tx.convertedAmount} {getCurrencyLabel(toCard)}
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {getCurrencyLabel(fromCard)}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

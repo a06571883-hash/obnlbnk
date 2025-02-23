@@ -19,12 +19,33 @@ interface ReceiptProps {
     from?: string;
     to?: string;
     description?: string;
+    fromCard?: any;
+    toCard?: any;
   };
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export default function TransactionReceipt({ transaction, open, onOpenChange }: ReceiptProps) {
+  const getCurrencySymbol = (type: string) => {
+    switch (type) {
+      case 'crypto':
+        return '₿';
+      case 'usd':
+        return '$';
+      case 'uah':
+        return '₴';
+      default:
+        return '';
+    }
+  };
+
+  const getCardDetails = (card: any) => {
+    if (!card) return '';
+    const number = card.number.replace(/(\d{4})/g, "$1 ").trim();
+    return `${number} (${card.type.toUpperCase()})`;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100%-2rem)] max-w-sm mx-auto">
@@ -44,18 +65,13 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Тип</span>
-              <span>
-                {transaction.type === 'transfer' && 'Перевод'}
-                {transaction.type === 'deposit' && 'Пополнение'}
-              </span>
+              <span>{transaction.type}</span>
             </div>
 
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Сумма списания</span>
               <span className="font-semibold">
-                {transaction.currency === 'crypto' && '₿'}
-                {transaction.currency === 'usd' && '$'}
-                {transaction.currency === 'uah' && '₴'}
+                {getCurrencySymbol(transaction.currency)}
                 {transaction.amount}
               </span>
             </div>
@@ -64,7 +80,8 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Сумма зачисления</span>
                 <span className="font-semibold">
-                  {parseFloat(transaction.convertedAmount).toFixed(2)}
+                  {getCurrencySymbol(transaction.toCard?.type)}
+                  {transaction.convertedAmount}
                 </span>
               </div>
             )}
@@ -72,14 +89,28 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
             {transaction.from && (
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Откуда</span>
-                <span className="font-mono text-xs">{transaction.from}</span>
+                <div className="text-right">
+                  <span className="font-mono text-xs block">{getCardDetails(transaction.fromCard)}</span>
+                  {transaction.fromCard?.userId && (
+                    <span className="text-xs text-muted-foreground">
+                      {transaction.fromCard.userId === transaction.toCard?.userId ? 'Ваша карта' : 'Другой пользователь'}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
             {transaction.to && (
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Куда</span>
-                <span className="font-mono text-xs">{transaction.to}</span>
+                <div className="text-right">
+                  <span className="font-mono text-xs block">{getCardDetails(transaction.toCard)}</span>
+                  {transaction.toCard?.userId && (
+                    <span className="text-xs text-muted-foreground">
+                      {transaction.toCard.userId === transaction.fromCard?.userId ? 'Ваша карта' : 'Другой пользователь'}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
