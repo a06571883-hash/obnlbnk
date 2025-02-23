@@ -16,14 +16,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     queryKey: ["/api/user"],
     queryFn: async () => {
       try {
-        const response = await apiRequest("GET", "/api/user");
-        if (!response.ok) {
-          if (response.status === 401) {
-            return null;
-          }
-          throw new Error("Failed to fetch user");
-        }
-        return response.json();
+        const data = await apiRequest("GET", "/api/user");
+        return data || null;
       } catch (error) {
         console.error("Auth error:", error);
         return null;
