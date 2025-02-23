@@ -324,7 +324,30 @@ export default function HomePage() {
               </p>
               <Button
                 size="lg"
-                className="bg-primary hover:bg-primary/90"
+                className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
+                onClick={async () => {
+                  try {
+                    const response = await apiRequest("POST", "/api/cards/generate");
+                    if (!response.ok) {
+                      throw new Error("Failed to generate cards");
+                    }
+
+                    // Invalidate cards query to trigger refresh
+                    queryClient.invalidateQueries({ queryKey: ["/api/cards"] });
+
+                    toast({
+                      title: "Cards Generated",
+                      description: "Your multi-currency cards have been created successfully",
+                    });
+                  } catch (error) {
+                    console.error("Error generating cards:", error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to generate cards. Please try again.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
               >
                 Generate Cards
               </Button>
