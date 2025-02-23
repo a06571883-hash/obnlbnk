@@ -28,19 +28,19 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
-  // Initialize authentication
+  // Инициализация аутентификации
   setupAuth(app);
 
-  // Start automatic rate updates
-  startRateUpdates();
+  // Запуск автоматического обновления курсов с поддержкой WebSocket
+  startRateUpdates(httpServer);
 
-  // Get latest exchange rates
+  // Получение последних курсов валют
   app.get("/api/rates", async (req, res) => {
     try {
       const rates = await storage.getLatestExchangeRates();
       res.json(rates);
     } catch (error) {
-      console.error("Error fetching rates:", error);
+      console.error("Ошибка получения курсов:", error);
       res.status(500).json({ message: "Ошибка при получении курсов валют" });
     }
   });

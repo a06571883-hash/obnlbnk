@@ -1,8 +1,10 @@
 import { storage } from "./storage";
+import { WebSocket, WebSocketServer } from 'ws';
 
 const COINGECKO_API_URL = "https://api.coingecko.com/api/v3";
-const UPDATE_INTERVAL = 30000; // Increased to 30 seconds
-const RETRY_DELAY = 60000; // 1 minute delay after error
+const UPDATE_INTERVAL = 30000; // 30 секунд
+const RETRY_DELAY = 60000; // 1 минута после ошибки
+let wss: WebSocketServer;
 let lastSuccessfulRates: { 
   usdToUah: string; 
   btcToUsd: string; 
@@ -10,27 +12,42 @@ let lastSuccessfulRates: {
   timestamp: number;
 } | null = null;
 
+// Функция для отправки обновлений курсов всем подключенным клиентам
+function broadcastRates(rates: typeof lastSuccessfulRates) {
+  if (!wss) return;
+
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(rates));
+    }
+  });
+}
+
 async function fetchRates() {
   try {
-    // If we have recent rates (less than 5 minutes old), use them
     if (lastSuccessfulRates && Date.now() - lastSuccessfulRates.timestamp < 300000) {
-      await storage.updateExchangeRates(lastSuccessfulRates);
+      await storage.updateExchangeRates({
+        usdToUah: parseFloat(lastSuccessfulRates.usdToUah),
+        btcToUsd: parseFloat(lastSuccessfulRates.btcToUsd),
+        ethToUsd: parseFloat(lastSuccessfulRates.ethToUsd)
+      });
+      broadcastRates(lastSuccessfulRates);
       return;
     }
 
-    console.log("Fetching rates from CoinGecko...");
+    console.log("Получаем курсы с CoinGecko...");
     const cryptoResponse = await fetch(
       `${COINGECKO_API_URL}/simple/price?ids=bitcoin,ethereum&vs_currencies=usd`
     );
 
     if (!cryptoResponse.ok) {
-      throw new Error(`CoinGecko API error: ${cryptoResponse.status}`);
+      throw new Error(`Ошибка API CoinGecko: ${cryptoResponse.status}`);
     }
 
     const cryptoData = await cryptoResponse.json();
 
     if (!cryptoData?.bitcoin?.usd || !cryptoData?.ethereum?.usd) {
-      throw new Error("Invalid response from CoinGecko API");
+      throw new Error("Неверный ответ от API CoinGecko");
     }
 
     const usdResponse = await fetch(
@@ -38,13 +55,13 @@ async function fetchRates() {
     );
 
     if (!usdResponse.ok) {
-      throw new Error(`Exchange Rate API error: ${usdResponse.status}`);
+      throw new Error(`Ошибка API курсов валют: ${usdResponse.status}`);
     }
 
     const usdData = await usdResponse.json();
 
     if (!usdData?.rates?.UAH) {
-      throw new Error("Invalid response from Exchange Rate API");
+      throw new Error("Неверный ответ от API курсов валют");
     }
 
     const rates = {
@@ -54,33 +71,59 @@ async function fetchRates() {
       timestamp: Date.now()
     };
 
-    await storage.updateExchangeRates(rates);
-    lastSuccessfulRates = rates;
+    await storage.updateExchangeRates({
+      usdToUah: parseFloat(rates.usdToUah),
+      btcToUsd: parseFloat(rates.btcToUsd),
+      ethToUsd: parseFloat(rates.ethToUsd)
+    });
 
-    console.log("Exchange rates updated successfully:", {
+    lastSuccessfulRates = rates;
+    broadcastRates(rates);
+
+    console.log("Курсы валют успешно обновлены:", {
       usdToUah: usdData.rates.UAH,
       btcToUsd: cryptoData.bitcoin.usd,
       ethToUsd: cryptoData.ethereum.usd
     });
   } catch (error) {
-    console.error("Error updating exchange rates:", error);
+    console.error("Ошибка обновления курсов:", error);
 
-    // If we have last successful rates, use them as fallback
     if (lastSuccessfulRates) {
-      console.log("Using cached rates due to API error");
-      await storage.updateExchangeRates(lastSuccessfulRates);
+      console.log("Используем кэшированные курсы из-за ошибки API");
+      await storage.updateExchangeRates({
+        usdToUah: parseFloat(lastSuccessfulRates.usdToUah),
+        btcToUsd: parseFloat(lastSuccessfulRates.btcToUsd),
+        ethToUsd: parseFloat(lastSuccessfulRates.ethToUsd)
+      });
+      broadcastRates(lastSuccessfulRates);
     }
 
-    // Wait longer before retrying after an error
     await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
   }
 }
 
-export function startRateUpdates() {
-  console.log("Starting rate updates service...");
-  // Initial update
+export function startRateUpdates(server: any) {
+  console.log("Запуск сервиса обновления курсов...");
+
+  // Инициализация WebSocket сервера
+  wss = new WebSocketServer({ server });
+
+  wss.on('connection', (ws) => {
+    console.log('Новое WebSocket подключение');
+
+    // Отправляем текущие курсы при подключении
+    if (lastSuccessfulRates) {
+      ws.send(JSON.stringify(lastSuccessfulRates));
+    }
+
+    ws.on('error', (error) => {
+      console.error('WebSocket ошибка:', error);
+    });
+  });
+
+  // Начальное обновление
   fetchRates();
 
-  // Set up periodic updates with increased interval
+  // Настройка периодических обновлений
   setInterval(fetchRates, UPDATE_INTERVAL);
 }

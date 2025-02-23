@@ -1,8 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import type { Card } from "../../shared/schema";
+import type { Card } from "@shared/schema";
 import { Card as CardUI } from "@/components/ui/card";
 import {
   Dialog,
@@ -13,16 +12,17 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, Bitcoin, DollarSign, Coins, Banknote } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// Create a key for sessionStorage to track welcome message state
+// Ключ для отслеживания состояния приветственного сообщения
 const WELCOME_MESSAGE_KEY = 'welcomeMessageShown';
 
 interface ExchangeRateResponse {
   btcToUsd: string;
   ethToUsd: string;
   usdToUah: string;
+  timestamp: number;
 }
 
 export default function HomePage() {
@@ -30,6 +30,61 @@ export default function HomePage() {
   const { user, logoutMutation } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [rates, setRates] = useState<ExchangeRateResponse | null>(null);
+  const [prevRates, setPrevRates] = useState<ExchangeRateResponse | null>(null);
+  const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
+
+  // Инициализация WebSocket подключения
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+    ws.onopen = () => {
+      console.log('WebSocket подключение установлено');
+      setWsStatus('connected');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const newRates = JSON.parse(event.data);
+        setPrevRates(rates);
+        setRates(newRates);
+      } catch (error) {
+        console.error('Ошибка обработки данных WebSocket:', error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket ошибка:', error);
+      setWsStatus('error');
+      toast({
+        title: "Ошибка соединения",
+        description: "Проблема с получением обновлений курсов валют",
+        variant: "destructive"
+      });
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket соединение закрыто');
+      setWsStatus('error');
+    };
+
+    // Получаем начальные курсы через HTTP
+    if (!rates) {
+      fetch('/api/rates')
+        .then(res => res.json())
+        .then(initialRates => {
+          setRates(initialRates);
+        })
+        .catch(error => {
+          console.error('Ошибка получения начальных курсов:', error);
+        });
+    }
+
+    return () => {
+      ws.close();
+    };
+  }, []);
 
   // Show welcome message only on fresh login and track it in sessionStorage
   useEffect(() => {
@@ -58,24 +113,6 @@ export default function HomePage() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const { data: rates, isLoading: isLoadingRates } = useQuery<ExchangeRateResponse>({
-    queryKey: ["/api/rates"],
-    refetchInterval: 2000,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
-
-  const [prevRates, setPrevRates] = useState<ExchangeRateResponse | null>(null);
-
-  // Update prevRates when new rates arrive
-  useEffect(() => {
-    if (rates && (!prevRates ||
-      rates.btcToUsd !== prevRates.btcToUsd ||
-      rates.ethToUsd !== prevRates.ethToUsd ||
-      rates.usdToUah !== prevRates.usdToUah)) {
-      setPrevRates(rates);
-    }
-  }, [rates]);
 
   const getPriceChangeColor = (current: string | undefined, previous: string | undefined) => {
     if (!current || !previous) return '';
@@ -230,11 +267,11 @@ export default function HomePage() {
                 <div className="space-y-4">
                   <h3 className="font-medium text-center">Current Exchange Rates</h3>
 
-                  {isLoadingRates ? (
+                  {rates === null ? (
                     <div className="flex justify-center p-4">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
-                  ) : rates ? (
+                  ) : (
                     <div className="space-y-4">
                       {/* Main Rates */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -306,10 +343,6 @@ export default function HomePage() {
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      Unable to load exchange rates
                     </div>
                   )}
                 </div>
