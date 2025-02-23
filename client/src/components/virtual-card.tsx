@@ -103,12 +103,17 @@ export default function VirtualCard({ card }: { card: Card }) {
         throw new Error('Пожалуйста, введите корректную сумму');
       }
 
-      // Simplified transfer request
+      if (!recipientCardNumber.trim()) {
+        throw new Error('Пожалуйста, введите номер карты получателя');
+      }
+
+      // Create transfer request with all required parameters
       const transferRequest = {
         fromCardId: card.id,
         amount: parseFloat(transferAmount),
-        recipientAddress: recipientCardNumber.trim(),
-        transferType: recipientType === 'usd_card' ? 'card' : selectedWallet
+        recipientAddress: recipientCardNumber.replace(/\s+/g, ''), // Remove spaces from card number
+        transferType: recipientType,
+        ...(recipientType === 'crypto_wallet' ? { cryptoType: selectedWallet } : {})
       };
 
       console.log('Transfer request:', transferRequest);
@@ -117,7 +122,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Ошибка при переводе');
+        throw new Error(errorData.message || errorData.error || 'Ошибка при переводе');
       }
 
       return response.json();
@@ -155,17 +160,21 @@ export default function VirtualCard({ card }: { card: Card }) {
       return;
     }
 
-    // Basic validation based on recipient type
+    // Validate card number format
     if (recipientType === 'usd_card') {
       const cleanCardNumber = recipientCardNumber.replace(/\s+/g, '');
       if (cleanCardNumber.length !== 16 || !/^\d+$/.test(cleanCardNumber)) {
         setTransferError('Номер карты должен состоять из 16 цифр');
         return;
       }
-    } else {
-      // Simple crypto address validation
-      if (recipientCardNumber.trim().length < 20) {
-        setTransferError('Неверный формат адреса криптокошелька');
+    } else if (recipientType === 'crypto_wallet') {
+      // Validate crypto wallet address
+      const address = recipientCardNumber.trim();
+      if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
+        setTransferError('Неверный формат BTC адреса');
+        return;
+      } else if (selectedWallet === 'eth' && !validateEthAddress(address)) {
+        setTransferError('Неверный формат ETH адреса');
         return;
       }
     }
