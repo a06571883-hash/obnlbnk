@@ -245,10 +245,10 @@ function TransactionList({
               {getTransactionIcon(tx)}
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium">{type}</span>
-                <span className="text-sm text-muted-foreground">
+                <span className="font-medium truncate">{type}</span>
+                <span className="text-sm text-muted-foreground whitespace-nowrap">
                   • {formatDate(tx.createdAt)}
                 </span>
               </div>
@@ -261,17 +261,18 @@ function TransactionList({
               </div>
             </div>
 
-            <div className="text-right">
-              <div className="flex items-center gap-1 font-medium">
-                {getCurrencyIcon(currency)}
-                {tx.amount}
-
-                {tx.convertedAmount && tx.convertedAmount !== tx.amount && (
-                  <span className="text-muted-foreground text-xs">
-                    → {tx.convertedAmount} {getCurrencyLabel(toCard)}
-                  </span>
-                )}
+            <div className="text-right ml-4 min-w-[100px]">
+              <div className="flex items-center gap-1 font-medium justify-end">
+                <div className="flex items-center truncate">
+                  {getCurrencyIcon(currency)}
+                  <span className="ml-1">{tx.amount}</span>
+                </div>
               </div>
+              {tx.convertedAmount && tx.convertedAmount !== tx.amount && (
+                <div className="text-muted-foreground text-xs truncate">
+                  → {tx.convertedAmount} {getCurrencyLabel(toCard)}
+                </div>
+              )}
               <div className="text-sm text-muted-foreground">
                 {getCurrencyLabel(fromCard)}
               </div>
