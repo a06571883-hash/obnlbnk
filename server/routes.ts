@@ -89,6 +89,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate cards for user
+  app.post("/api/cards/generate", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+
+      // Generate expiry date (current month + 3 years)
+      const expiryDate = new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear() + 3);
+      const expiry = `${String(expiryDate.getMonth() + 1).padStart(2, '0')}/${String(expiryDate.getFullYear()).slice(-2)}`;
+
+      // Generate CVV (3 random digits)
+      const cvv = Math.floor(Math.random() * 900 + 100).toString();
+
+      // Generate a unique BTC address
+      const keyPair = ECPair.makeRandom();
+      const { address: btcAddress } = bitcoin.payments.p2pkh({ 
+        pubkey: Buffer.from(keyPair.publicKey),
+        network: bitcoin.networks.bitcoin 
+      });
+
+      // Generate a unique ETH address
+      const ethWallet = ethers.Wallet.createRandom();
+      const ethAddress = ethWallet.address;
+
+      // Create three cards: USD, UAH, and Crypto
+      const cards = await Promise.all([
+        storage.createCard({
+          userId: req.user.id,
+          type: 'usd',
+          number: Math.random().toString().slice(2, 18),
+          expiry,
+          cvv,
+          balance: '1000.00',
+          btcBalance: '0',
+          ethBalance: '0',
+          btcAddress: null,
+          ethAddress: null
+        }),
+        storage.createCard({
+          userId: req.user.id,
+          type: 'uah',
+          number: Math.random().toString().slice(2, 18),
+          expiry,
+          cvv,
+          balance: '37000.00',
+          btcBalance: '0',
+          ethBalance: '0',
+          btcAddress: null,
+          ethAddress: null
+        }),
+        storage.createCard({
+          userId: req.user.id,
+          type: 'crypto',
+          number: Math.random().toString().slice(2, 18),
+          expiry,
+          cvv,
+          balance: '0',
+          btcBalance: '0.05',
+          ethBalance: '1.0',
+          btcAddress: btcAddress || null,
+          ethAddress: ethAddress
+        })
+      ]);
+
+      res.json(cards);
+    } catch (error) {
+      console.error("Error generating cards:", error);
+      res.status(500).json({ 
+        message: "Ошибка при генерации карт",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Get user transactions
   app.get("/api/transactions", async (req, res) => {
     try {
@@ -192,82 +268,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: "Произошла ошибка при выполнении перевода"
-      });
-    }
-  });
-
-  // Generate cards for user
-  app.post("/api/cards/generate", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-
-      // Generate a unique BTC address using ECPair
-      const keyPair = ECPair.makeRandom();
-      const { address: btcAddress } = bitcoin.payments.p2pkh({
-        pubkey: keyPair.publicKey,
-        network: bitcoin.networks.bitcoin
-      });
-
-      // Generate a unique ETH address using ethers
-      const ethWallet = ethers.Wallet.createRandom();
-      const ethAddress = ethWallet.address;
-
-      // Generate expiry date (current month + 3 years)
-      const expiryDate = new Date();
-      expiryDate.setFullYear(expiryDate.getFullYear() + 3);
-      const expiry = `${String(expiryDate.getMonth() + 1).padStart(2, '0')}/${String(expiryDate.getFullYear()).slice(-2)}`;
-
-      // Generate CVV (3 random digits)
-      const cvv = Math.floor(Math.random() * 900 + 100).toString();
-
-      // Create three cards: USD, UAH, and Crypto
-      const cards = await Promise.all([
-        storage.createCard({
-          userId: req.user.id,
-          type: 'usd',
-          number: Math.random().toString().slice(2, 18), // 16 digit number
-          expiry,
-          cvv,
-          balance: '1000.00', // Starting balance
-          btcBalance: '0',
-          ethBalance: '0',
-          btcAddress: null,
-          ethAddress: null
-        }),
-        storage.createCard({
-          userId: req.user.id,
-          type: 'uah',
-          number: Math.random().toString().slice(2, 18),
-          expiry,
-          cvv,
-          balance: '37000.00', // Starting balance in UAH
-          btcBalance: '0',
-          ethBalance: '0',
-          btcAddress: null,
-          ethAddress: null
-        }),
-        storage.createCard({
-          userId: req.user.id,
-          type: 'crypto',
-          number: Math.random().toString().slice(2, 18),
-          expiry,
-          cvv,
-          balance: '0',
-          btcBalance: '0.05', // Starting BTC balance
-          ethBalance: '1.0',  // Starting ETH balance
-          btcAddress: btcAddress,
-          ethAddress: ethAddress
-        })
-      ]);
-
-      res.json(cards);
-    } catch (error) {
-      console.error("Error generating cards:", error);
-      res.status(500).json({ 
-        message: "Ошибка при генерации карт",
-        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
