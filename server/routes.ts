@@ -18,15 +18,15 @@ const ECPair = ECPairFactory(ecc);
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   if (!address) return false;
 
-  if (type === 'btc') {
-    try {
+  try {
+    if (type === 'btc') {
       bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
       return true;
-    } catch {
-      return false;
+    } else {
+      return /^0x[a-fA-F0-9]{40}$/.test(address);
     }
-  } else {
-    return /^0x[a-fA-F0-9]{40}$/.test(address);
+  } catch {
+    return false;
   }
 }
 
@@ -80,18 +80,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
-      if (!fromCardId || !toCardNumber) {
+      // Basic validation
+      if (!fromCardId || !toCardNumber || !amount) {
         return res.status(400).json({ 
-          error: "Укажите карту отправителя и получателя" 
+          error: "Не указаны обязательные параметры перевода" 
         });
       }
 
-      if (!amount || isNaN(amount) || amount <= 0) {
+      // Amount validation
+      const transferAmount = parseFloat(amount);
+      if (isNaN(transferAmount) || transferAmount <= 0) {
         return res.status(400).json({ 
           error: "Сумма перевода должна быть положительным числом" 
         });
       }
 
+      // Get and validate sender's card
       const fromCard = await storage.getCardById(fromCardId);
       if (!fromCard) {
         return res.status(400).json({ 
@@ -105,35 +109,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // For crypto transfer
+      // Handle crypto transfer
       if (wallet) {
-        if (!validateCryptoAddress(toCardNumber, wallet as 'btc' | 'eth')) {
+        if (fromCard.type !== 'crypto') {
+          return res.status(400).json({
+            error: "Для крипто-перевода используйте крипто-карту"
+          });
+        }
+
+        if (!validateCryptoAddress(toCardNumber, wallet)) {
           return res.status(400).json({
             error: `Неверный формат ${wallet.toUpperCase()} адреса`
           });
         }
 
-        const result = await storage.transferMoney(fromCardId, toCardNumber, parseFloat(amount), wallet as 'btc' | 'eth');
+        const result = await storage.transferMoney(fromCardId, toCardNumber, transferAmount, wallet);
         if (!result.success) {
           return res.status(400).json({ error: result.error });
         }
 
         return res.json({
           success: true,
-          message: "Перевод успешно выполнен",
+          message: `Перевод ${transferAmount} ${wallet.toUpperCase()} выполнен успешно`,
           transaction: result.transaction
         });
       }
 
-      // For regular card-to-card transfer
+      // Handle fiat transfer
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
-      if (cleanToCardNumber.length !== 16) {
+      if (!/^\d{16}$/.test(cleanToCardNumber)) {
         return res.status(400).json({ 
           error: "Неверный формат номера карты. Номер должен состоять из 16 цифр" 
         });
       }
 
-      const result = await storage.transferMoney(fromCardId, cleanToCardNumber, parseFloat(amount));
+      const result = await storage.transferMoney(fromCardId, cleanToCardNumber, transferAmount);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
@@ -143,11 +153,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Перевод успешно выполнен",
         transaction: result.transaction
       });
+
     } catch (error: any) {
       console.error("Transfer error:", error);
       res.status(500).json({
         success: false,
-        error: "Произошла ошибка при выполнении перевода. Пожалуйста, попробуйте позже."
+        error: "Произошла ошибка при выполнении перевода"
       });
     }
   });
