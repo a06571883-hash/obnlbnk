@@ -70,9 +70,12 @@ export function setupAuth(app: Express) {
   // Add session debugging middleware
   app.use((req: Request, res: Response, next: NextFunction) => {
     console.log('[Session Debug]', {
-      id: req.sessionID,
+      sessionID: req.sessionID,
       authenticated: req.isAuthenticated(),
-      user: req.user?.username
+      user: req.user?.username,
+      cookies: req.headers.cookie,
+      method: req.method,
+      path: req.path
     });
     next();
   });
@@ -177,20 +180,20 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
+  app.post("/api/register", async (req: Request, res: Response) => {
     try {
       console.log('[Auth] Registration attempt:', req.body.username);
 
       if (!req.body.username || !req.body.password) {
-        return res.status(400).json({ 
-          message: "Требуется имя пользователя и пароль" 
+        return res.status(400).json({
+          message: "Требуется имя пользователя и пароль"
         });
       }
 
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).json({ 
-          message: "Пользователь с таким именем уже существует" 
+        return res.status(400).json({
+          message: "Пользователь с таким именем уже существует"
         });
       }
 
@@ -225,6 +228,10 @@ export function setupAuth(app: Express) {
 
   app.post("/api/logout", (req: Request, res: Response) => {
     console.log(`[Auth] Logout request received. User: ${req.user?.username}`);
+
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Вы не авторизованы" });
+    }
 
     req.logout((err) => {
       if (err) {

@@ -1,14 +1,14 @@
 import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 import { db } from "./db";
 import { cards, users, transactions } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction } from "@shared/schema";
 import { eq, and, or, desc } from "drizzle-orm";
-import { pool } from "./db";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import createMemoryStore from "memorystore";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 const scryptAsync = promisify(scrypt);
 
@@ -35,12 +35,19 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    console.log('Initializing DatabaseStorage with memory session store...');
+    console.log('Initializing DatabaseStorage with PostgreSQL session store...');
     try {
-      this.sessionStore = new MemoryStore({
-        checkPeriod: 86400000 // Очистка устаревших сессий каждые 24 часа
+      this.sessionStore = new PostgresSessionStore({
+        pool,
+        tableName: 'sessions',
+        schemaName: 'public',
+        createTableIfMissing: true,
+        pruneSessionInterval: 60 * 60 * 1000, // 1 hour
+        errorLog: (err) => {
+          console.error('Session store error:', err);
+        }
       });
-      console.log('Memory session store initialized successfully');
+      console.log('PostgreSQL session store initialized successfully');
     } catch (error) {
       console.error('Failed to initialize session store:', error);
       throw error;
