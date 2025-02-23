@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { 
@@ -26,34 +27,44 @@ import {
   HelpCircle, 
   LogOut,
   ChevronRight,
-  User,
-  Lock,
-  Mail,
   Moon,
   Sun,
   Globe,
   Volume2,
   MessageSquare
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import AnimatedBackground from "@/components/animated-background";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/api";
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
-  const [darkMode, setDarkMode] = useState(true); // Default to dark theme
+  const [darkMode, setDarkMode] = useState(true);
   const [notifications, setNotifications] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [language, setLanguage] = useState("ru");
 
-  // Load initial settings
+  const applyTheme = (isDark: boolean) => {
+    // Remove existing theme classes
+    document.documentElement.classList.remove('light', 'dark');
+    // Add new theme class
+    document.documentElement.classList.add(isDark ? 'dark' : 'light');
+    // Update color scheme
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+    // Update data attribute
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+  };
+
+  // Load initial settings and set up theme
   useEffect(() => {
-    // Start with dark theme by default, then check if user has a preference
-    const isDark = localStorage.getItem('darkMode') !== 'false'; // Default to true if not set
-    document.documentElement.classList.toggle('dark', isDark);
+    // Default to dark theme unless explicitly set to false
+    const isDark = localStorage.getItem('darkMode') !== 'false';
+
+    // Apply theme
+    applyTheme(isDark);
     setDarkMode(isDark);
+
+    // Load other settings
     setNotifications(localStorage.getItem('notifications') === 'true');
     setSoundEnabled(localStorage.getItem('soundEnabled') === 'true');
     setLanguage(localStorage.getItem('language') || 'ru');
@@ -63,28 +74,19 @@ export default function ProfilePage() {
     try {
       switch(key) {
         case 'darkMode':
-          document.documentElement.classList.toggle('dark', value);
+          // Update localStorage
           localStorage.setItem('darkMode', value.toString());
+
+          // Apply theme changes
+          applyTheme(value);
+
+          // Update state
           setDarkMode(value);
 
-          const response = await fetch('/api/theme', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              appearance: value ? 'dark' : 'light'
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to update theme');
-          }
-
+          // Show feedback
           toast({
             title: "Тема изменена",
             description: value ? "Тёмная тема включена" : "Светлая тема включена",
-            variant: value ? "default" : "secondary"
           });
           break;
 
@@ -151,7 +153,14 @@ export default function ProfilePage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Тёмная тема</Label>
+              <div className="flex items-center gap-2">
+                {darkMode ? (
+                  <Moon className="h-4 w-4" />
+                ) : (
+                  <Sun className="h-4 w-4" />
+                )}
+                <Label>Тёмная тема</Label>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Переключить тёмный режим
               </p>
