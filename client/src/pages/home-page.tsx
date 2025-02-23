@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2 } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // Create a key for sessionStorage to track welcome message state
@@ -65,6 +65,11 @@ export default function HomePage() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
+  const { data: rates, isLoading: isLoadingRates } = useQuery({
+    queryKey: ["/api/rates"],
+    refetchInterval: 5000,
+  });
+
   if (isLoadingCards) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -112,12 +117,12 @@ export default function HomePage() {
           <div className={`
             transition-all duration-500 ease-in-out transform
             ${!showWelcome ? '-translate-y-16' : ''}
-            mt-16 pt-8
+            mt-16 pt-8 space-y-8
           `}>
             <CardCarousel cards={cards} />
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 gap-4 mt-8">
+            <div className="space-y-6">
               <Dialog>
                 <DialogTrigger asChild>
                   <CardUI className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
@@ -202,6 +207,70 @@ export default function HomePage() {
                   </div>
                 </DialogContent>
               </Dialog>
+
+              {/* Exchange Rates */}
+              <CardUI className="p-4 backdrop-blur-sm bg-background/80">
+                <div className="space-y-4">
+                  <h3 className="font-medium text-center">Current Exchange Rates</h3>
+
+                  {isLoadingRates ? (
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : rates ? (
+                    <div className="space-y-4">
+                      {/* Main Rates */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
+                          <div className="flex items-center gap-2">
+                            <Bitcoin className="h-5 w-5 text-amber-500" />
+                            <span>BTC/USD</span>
+                          </div>
+                          <span className="font-medium">${parseFloat(rates.btcToUsd).toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
+                          <div className="flex items-center gap-2">
+                            <Coins className="h-5 w-5 text-blue-500" />
+                            <span>ETH/USD</span>
+                          </div>
+                          <span className="font-medium">${parseFloat(rates.ethToUsd).toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-5 w-5 text-green-500" />
+                            <span>USD/UAH</span>
+                          </div>
+                          <span className="font-medium">₴{parseFloat(rates.usdToUah).toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      {/* Calculated Cross Rates */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+                        <div className="p-2 rounded bg-accent/30">
+                          <div className="text-muted-foreground">BTC/UAH</div>
+                          <div className="font-medium">₴{(parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)).toLocaleString()}</div>
+                        </div>
+                        <div className="p-2 rounded bg-accent/30">
+                          <div className="text-muted-foreground">ETH/UAH</div>
+                          <div className="font-medium">₴{(parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah)).toLocaleString()}</div>
+                        </div>
+                        <div className="p-2 rounded bg-accent/30">
+                          <div className="text-muted-foreground">ETH/BTC</div>
+                          <div className="font-medium">{(parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd)).toFixed(6)}</div>
+                        </div>
+                        <div className="p-2 rounded bg-accent/30">
+                          <div className="text-muted-foreground">UAH/USD</div>
+                          <div className="font-medium">${(1 / parseFloat(rates.usdToUah)).toFixed(4)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      Unable to load exchange rates
+                    </div>
+                  )}
+                </div>
+              </CardUI>
             </div>
           </div>
         ) : (
