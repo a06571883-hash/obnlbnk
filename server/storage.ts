@@ -32,14 +32,12 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    // Оптимизированные настройки хранилища сессий с PostgreSQL
     this.sessionStore = new PostgresSessionStore({
-      pool: pool as unknown as Pool,
+      pool,
       tableName: 'session',
       createTableIfMissing: true,
       pruneSessionInterval: 60,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      errorLog: console.error,
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
   }
 
