@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express, Request, Response, NextFunction } from "express";
+import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -43,10 +43,10 @@ export function setupAuth(app: Express) {
     saveUninitialized: true,
     store: storage.sessionStore,
     cookie: {
-      secure: false, // Set to false for development
+      secure: false,
       httpOnly: true,
       sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      maxAge: 30 * 24 * 60 * 60 * 1000
     }
   };
 
@@ -56,77 +56,59 @@ export function setupAuth(app: Express) {
 
   passport.use(new LocalStrategy(async (username, password, done) => {
     try {
-      console.log('Attempting authentication for user:', username);
       const user = await storage.getUserByUsername(username);
 
       if (!user) {
-        console.log('Authentication failed: User not found');
         return done(null, false, { message: "Пользователь не найден" });
       }
 
       const isValid = await comparePasswords(password, user.password);
-      console.log('Password validation result:', isValid);
-
       if (!isValid) {
         return done(null, false, { message: "Неверный пароль" });
       }
 
-      console.log('Authentication successful for user:', username);
       return done(null, user);
     } catch (error) {
-      console.error('Authentication error:', error);
       return done(error);
     }
   }));
 
   passport.serializeUser((user: Express.User, done) => {
-    console.log('Serializing user:', user.id);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
-      console.log('Deserializing user:', id);
       const user = await storage.getUser(id);
       if (!user) {
-        console.log('Deserialization failed: User not found');
         return done(null, false);
       }
-      console.log('User deserialized successfully');
       done(null, user);
     } catch (error) {
-      console.error('Deserialization error:', error);
       done(error);
     }
   });
 
   app.post("/api/login", (req, res, next) => {
-    console.log('Login attempt:', req.body.username);
-
     passport.authenticate("local", (err: Error | null, user: SelectUser | false, info: { message: string } | undefined) => {
       if (err) {
-        console.error("Login error:", err);
         return res.status(500).json({ message: "Ошибка сервера при входе" });
       }
 
       if (!user) {
-        console.log('Login failed:', info?.message);
         return res.status(401).json({ message: info?.message || "Ошибка аутентификации" });
       }
 
       req.logIn(user, (err) => {
         if (err) {
-          console.error("Session error:", err);
           return res.status(500).json({ message: "Ошибка при создании сессии" });
         }
-        console.log('Login successful for user:', user.username);
         res.json(user);
       });
     })(req, res, next);
   });
 
   app.get("/api/user", (req, res) => {
-    console.log('User check:', req.isAuthenticated(), req.user);
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Необходима авторизация" });
     }
@@ -156,13 +138,11 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) {
-          console.error("Registration session error:", err);
           return res.status(500).json({ message: "Ошибка при создании сессии" });
         }
         res.status(201).json(user);
       });
     } catch (error) {
-      console.error("Registration error:", error);
       res.status(500).json({ message: "Ошибка при регистрации" });
     }
   });
@@ -170,7 +150,6 @@ export function setupAuth(app: Express) {
   app.post("/api/logout", (req, res) => {
     req.logout((err) => {
       if (err) {
-        console.error("Logout error:", err);
         return res.status(500).json({ message: "Ошибка при выходе" });
       }
       req.session.destroy((err) => {
@@ -182,7 +161,6 @@ export function setupAuth(app: Express) {
       });
     });
   });
-
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
