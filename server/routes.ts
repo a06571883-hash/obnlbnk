@@ -7,6 +7,8 @@ import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
 import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
+import {OpenAI} from "openai"; // Added import
+
 
 const ECPair = ECPairFactory(ecc);
 
@@ -203,6 +205,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: "Произошла ошибка при выполнении перевода"
+      });
+    }
+  });
+
+  // NFT маршруты
+  app.get("/api/nfts", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+      const nfts = await storage.getNFTsByUserId(req.user.id);
+      res.json(nfts);
+    } catch (error) {
+      console.error("NFTs fetch error:", error);
+      res.status(500).json({ message: "Ошибка при получении NFT" });
+    }
+  });
+
+  app.get("/api/nft-collections", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+      const collections = await storage.getNFTCollectionsByUserId(req.user.id);
+      res.json(collections);
+    } catch (error) {
+      console.error("NFT collections fetch error:", error);
+      res.status(500).json({ message: "Ошибка при получении коллекций" });
+    }
+  });
+
+  app.post("/api/nfts/generate", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+
+      const canGenerate = await storage.canGenerateNFT(req.user.id);
+      if (!canGenerate) {
+        return res.status(400).json({ 
+          message: "Достигнут лимит генерации NFT на сегодня (максимум 2 в день)" 
+        });
+      }
+
+      const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY}); // Added API key initialization
+
+      // Генерируем изображение
+      const imageResponse = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: "Create a luxury lifestyle image in pixelated art style featuring either a Mercedes G-Class, Rolex watch, or business success symbols. Add modern aesthetic elements and high-end details.",
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+        style: "vivid"
+      });
+
+      const imageUrl = imageResponse.data[0].url;
+
+      // Генерируем название и описание
+      const completionResponse = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{
+          role: "system",
+          content: "Generate a creative name and description for a luxury lifestyle NFT. Focus on exclusivity and status symbols."
+        }],
+        temperature: 0.7
+      });
+
+      const suggestion = completionResponse.choices[0].message.content; //Directly use content
+
+      // Создаем или получаем коллекцию
+      let collection = (await storage.getNFTCollectionsByUserId(req.user.id))[0];
+      if (!collection) {
+        collection = await storage.createNFTCollection(
+          req.user.id,
+          "Luxury Lifestyle Collection",
+          "Эксклюзивная коллекция NFT в стиле люкс"
+        );
+      }
+
+      // Создаем NFT
+      const nft = await storage.createNFT({
+        userId: req.user.id,
+        imageUrl,
+        name: suggestion || "Luxury NFT", // Handle potential null
+        description: suggestion || "Эксклюзивный NFT в стиле люкс", // Handle potential null
+        collectionId: collection.id,
+        createdAt: new Date()
+      });
+
+      // Обновляем счетчик генераций
+      await storage.updateUserNFTGeneration(req.user.id);
+
+      res.json(nft);
+    } catch (error) {
+      console.error("NFT generation error:", error);
+      res.status(500).json({ 
+        message: "Ошибка при генерации NFT",
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
