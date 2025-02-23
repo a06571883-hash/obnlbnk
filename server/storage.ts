@@ -26,6 +26,7 @@ export interface IStorage {
   getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
   createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction>;
   transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -174,6 +175,10 @@ export class DatabaseStorage implements IStorage {
           throw new Error(`Перевод возможен только между картами одного типа (${fromCard.type.toUpperCase()})`);
         }
 
+        if (fromCard.type === 'crypto') {
+          throw new Error("Для перевода криптовалюты используйте специальный метод");
+        }
+
         const fromBalance = parseFloat(fromCard.balance);
         const toBalance = parseFloat(toCard.balance);
 
@@ -212,6 +217,62 @@ export class DatabaseStorage implements IStorage {
         return { success: false, error: (error as Error).message };
       }
     }, 'Transfer money');
+  }
+
+  async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
+    return this.withTransaction(async () => {
+      try {
+        const fromCard = await this.getCardById(fromCardId);
+        if (!fromCard) {
+          throw new Error("Карта отправителя не найдена");
+        }
+
+        if (fromCard.type !== 'crypto') {
+          throw new Error("Отправитель должен использовать крипто-карту");
+        }
+
+        const balance = cryptoType === 'btc' ?
+          parseFloat(fromCard.btcBalance || '0') :
+          parseFloat(fromCard.ethBalance || '0');
+
+        if (isNaN(balance)) {
+          throw new Error("Ошибка формата баланса");
+        }
+
+        if (balance < amount) {
+          throw new Error(`Недостаточно ${cryptoType.toUpperCase()} на балансе (${balance} ${cryptoType.toUpperCase()})`);
+        }
+
+        const newBalance = (balance - amount).toFixed(8);
+
+        // Update the appropriate balance field
+        if (cryptoType === 'btc') {
+          await this.updateCardBtcBalance(fromCard.id, newBalance);
+        } else {
+          await this.updateCardEthBalance(fromCard.id, newBalance);
+        }
+
+        const transaction = await this.createTransaction({
+          fromCardId: fromCard.id,
+          toCardId: fromCard.id, // Same card for crypto withdrawals
+          amount: amount.toString(),
+          convertedAmount: amount.toString(),
+          type: 'transfer',
+          status: 'completed',
+          wallet: recipientAddress,
+          description: `Перевод ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}`,
+          fromCardNumber: fromCard.number,
+          toCardNumber: fromCard.number,
+          createdAt: new Date()
+        });
+
+        return { success: true, transaction };
+
+      } catch (error) {
+        console.error("Error in transferCrypto:", error);
+        return { success: false, error: (error as Error).message };
+      }
+    }, 'Transfer crypto');
   }
 
   private async withTransaction<T>(operation: () => Promise<T>, context: string): Promise<T> {
