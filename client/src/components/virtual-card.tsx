@@ -31,9 +31,10 @@ const EXCHANGE_RATES = {
   usdToUah: 41.64,    // Current USD/UAH rate
 };
 
-// Update validation functions
+// Validation functions for crypto addresses
 function validateBtcAddress(address: string): boolean {
-  return /^(1|3|bc1)[a-zA-Z0-9]{25,34}$/.test(address);
+  // Support both traditional and exchange formats
+  return /^(0x[a-fA-F0-9]{40}|[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[ac-hj-np-z02-9]{11,71})$/.test(address);
 }
 
 function validateEthAddress(address: string): boolean {
