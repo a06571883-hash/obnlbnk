@@ -180,8 +180,8 @@ export class DatabaseStorage implements IStorage {
         fromCardId: transaction.fromCardId,
         toCardId: transaction.toCardId,
         wallet: transaction.wallet || null,
-        fromCardNumber: transaction.fromCardNumber || null,
-        toCardNumber: transaction.toCardNumber || null,
+        fromCardNumber: transaction.fromCardNumber,
+        toCardNumber: transaction.toCardNumber,
         createdAt: transaction.createdAt || new Date()
       }).returning();
       console.log('Transaction created:', result);
@@ -193,24 +193,16 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       console.log(`Начало перевода: fromCardId=${fromCardId}, toCardNumber=${toCardNumber}, amount=${amount}, wallet=${wallet}`);
 
-      // Базовая валидация
-      if (!fromCardId || !toCardNumber || amount <= 0) {
-        return {
-          success: false,
-          error: "Неверные параметры перевода. Сумма должна быть больше 0"
-        };
-      }
-
-      // Получаем карту отправителя
+      // Get sender's card
       const fromCard = await this.getCardById(fromCardId);
       if (!fromCard) {
         return {
           success: false,
-          error: "Карта отправителя не найдена или недоступна"
+          error: "Карта отправителя не найдена"
         };
       }
 
-      // Перевод криптовалюты
+      // Crypto transfer
       if (wallet) {
         if (fromCard.type !== 'crypto') {
           return {
@@ -219,65 +211,69 @@ export class DatabaseStorage implements IStorage {
           };
         }
 
-        const balance = wallet === 'btc' ?
+        // Parse and validate crypto balance
+        const balance = wallet === 'btc' ? 
           parseFloat(fromCard.btcBalance || '0') :
           parseFloat(fromCard.ethBalance || '0');
 
-        if (isNaN(balance)) {
+        // Additional validation for balance format
+        if (typeof balance !== 'number' || isNaN(balance)) {
           return {
             success: false,
-            error: `Ошибка чтения баланса ${wallet.toUpperCase()}`
+            error: `Ошибка формата баланса ${wallet.toUpperCase()}`
           };
         }
 
         if (balance < amount) {
           return {
             success: false,
-            error: `Недостаточно ${wallet.toUpperCase()} на балансе. Доступно: ${balance.toFixed(8)} ${wallet.toUpperCase()}, требуется: ${amount.toFixed(8)} ${wallet.toUpperCase()}`
+            error: `Недостаточно ${wallet.toUpperCase()} на балансе. Доступно: ${balance.toFixed(8)} ${wallet.toUpperCase()}`
           };
         }
 
         try {
           const newBalance = (balance - amount).toFixed(8);
 
+          // Create transaction record for crypto transfer
           const transaction = await this.createTransaction({
             fromCardId: fromCard.id,
-            toCardId: fromCard.id,
+            toCardId: null, // External wallet transfer
             amount: amount.toString(),
             convertedAmount: amount.toString(),
             type: 'transfer',
             status: 'completed',
-            wallet,
+            wallet: wallet, // Explicitly set wallet type
             description: `Перевод ${amount.toFixed(8)} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
             fromCardNumber: fromCard.number,
             toCardNumber: toCardNumber,
             createdAt: new Date()
           });
 
+          // Update the appropriate crypto balance
           if (wallet === 'btc') {
             await this.updateCardBtcBalance(fromCard.id, newBalance);
           } else {
             await this.updateCardEthBalance(fromCard.id, newBalance);
           }
 
-          console.log(`Успешный крипто-перевод: ${amount} ${wallet}`);
           return { success: true, transaction };
         } catch (error) {
           console.error('Ошибка крипто-перевода:', error);
           return {
             success: false,
-            error: "Произошла ошибка при переводе криптовалюты. Пожалуйста, попробуйте позже"
+            error: "Произошла ошибка при переводе криптовалюты"
           };
         }
       }
 
-      // Обычный перевод между картами
+      // Fiat transfer
       try {
         const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
+
         if (cleanToCardNumber.length !== 16) {
           return {
             success: false,
-            error: "Неверный формат номера карты. Номер должен состоять из 16 цифр"
+            error: "Неверный формат номера карты"
           };
         }
 
@@ -285,37 +281,40 @@ export class DatabaseStorage implements IStorage {
         if (!toCard) {
           return {
             success: false,
-            error: "Карта получателя не найдена. Проверьте номер карты"
+            error: "Карта получателя не найдена"
           };
         }
 
         if (fromCard.id === toCard.id) {
           return {
             success: false,
-            error: "Невозможно выполнить перевод на ту же карту"
+            error: "Невозможно перевести на ту же карту"
           };
         }
 
+        // Parse and validate fiat balances
         const fromBalance = parseFloat(fromCard.balance || '0');
         const toBalance = parseFloat(toCard.balance || '0');
 
-        if (isNaN(fromBalance) || isNaN(toBalance)) {
+        // Additional validation for balance format
+        if (typeof fromBalance !== 'number' || typeof toBalance !== 'number' || isNaN(fromBalance) || isNaN(toBalance)) {
           return {
             success: false,
-            error: "Ошибка при чтении баланса карт"
+            error: "Ошибка формата баланса"
           };
         }
 
         if (fromBalance < amount) {
           return {
             success: false,
-            error: `Недостаточно средств на карте. Доступно: ${fromBalance.toFixed(2)} ${fromCard.type.toUpperCase()}, требуется: ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`
+            error: `Недостаточно средств. Доступно: ${fromBalance.toFixed(2)} ${fromCard.type.toUpperCase()}`
           };
         }
 
         const newFromBalance = (fromBalance - amount).toFixed(2);
         const newToBalance = (toBalance + amount).toFixed(2);
 
+        // Create transaction record for fiat transfer
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard.id,
@@ -323,23 +322,23 @@ export class DatabaseStorage implements IStorage {
           convertedAmount: amount.toString(),
           type: 'transfer',
           status: 'completed',
-          wallet: null,
+          wallet: null, // Explicitly set wallet as null for fiat transfers
           description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
           createdAt: new Date()
         });
 
+        // Update both card balances
         await this.updateCardBalance(fromCard.id, newFromBalance);
         await this.updateCardBalance(toCard.id, newToBalance);
 
-        console.log(`Успешный перевод: ${amount} ${fromCard.type}`);
         return { success: true, transaction };
       } catch (error) {
-        console.error('Ошибка перевода между картами:', error);
+        console.error('Ошибка перевода:', error);
         return {
           success: false,
-          error: "Произошла ошибка при переводе. Пожалуйста, попробуйте позже"
+          error: "Произошла ошибка при переводе"
         };
       }
     }, 'Transfer money');
