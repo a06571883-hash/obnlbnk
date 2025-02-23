@@ -31,8 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
-    staleTime: 0,
+    staleTime: 30000,
     refetchOnWindowFocus: true,
+    refetchInterval: 30000,
   });
 
   const loginMutation = useMutation({
@@ -98,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: error.message,
         variant: "destructive",
       });
-      // Force clear user data even if logout fails
       queryClient.setQueryData(["/api/user"], null);
       setLocation("/auth");
     },

@@ -32,15 +32,26 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up CORS for WebSocket
+  // Set up CORS for WebSocket with specific origin
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
     next();
   });
 
   setupAuth(app);
+
+  // Update session handling for WebSocket
+  app.use((req, res, next) => {
+    if (req.session && !req.session.initialized) {
+      req.session.initialized = true;
+      req.session.save(next);
+    } else {
+      next();
+    }
+  });
 
   app.get("/api/user", async (req, res) => {
     try {
@@ -362,8 +373,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
   // Enable keep-alive for better WebSocket stability
-  httpServer.keepAliveTimeout = 65000; // Slightly higher than default of 60 seconds
-  httpServer.headersTimeout = 66000; // Slightly higher than keepAliveTimeout
+  httpServer.keepAliveTimeout = 65000;
+  httpServer.headersTimeout = 66000;
 
   return httpServer;
 }

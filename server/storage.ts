@@ -176,15 +176,16 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       console.log('Creating transaction:', transaction);
       const [result] = await db.insert(transactions).values({
-        fromCardId: transaction.fromCardId,
-        toCardId: transaction.toCardId,
-        amount: transaction.amount,
         type: transaction.type,
         status: transaction.status,
+        amount: transaction.amount,
+        convertedAmount: transaction.convertedAmount,
         description: transaction.description,
-        wallet: transaction.wallet,
-        fromCardNumber: transaction.fromCardNumber,
-        toCardNumber: transaction.toCardNumber,
+        fromCardId: transaction.fromCardId,
+        toCardId: transaction.toCardId,
+        wallet: transaction.wallet || null,
+        fromCardNumber: transaction.fromCardNumber || null,
+        toCardNumber: transaction.toCardNumber || null,
         createdAt: transaction.createdAt || new Date()
       }).returning();
       console.log('Transaction created:', result);
@@ -226,12 +227,12 @@ export class DatabaseStorage implements IStorage {
 
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
-          toCardId: null,
+          toCardId: fromCard.id, 
           amount: amount.toString(),
           convertedAmount: amount.toString(),
           type: 'transfer',
-          wallet: wallet,
           status: 'completed',
+          wallet: wallet,
           description: `Перевод ${amount} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCardNumber,
@@ -274,6 +275,7 @@ export class DatabaseStorage implements IStorage {
         convertedAmount: amount.toString(),
         type: 'transfer',
         status: 'completed',
+        wallet: null,
         description: `Перевод ${amount} ${fromCard.type.toUpperCase()}`,
         fromCardNumber: fromCard.number,
         toCardNumber: toCard.number,
