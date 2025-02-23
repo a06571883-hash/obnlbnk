@@ -231,10 +231,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           expiry,
           cvv,
           balance: '1000.00', // Starting balance
-          btcAddress: null,
-          ethAddress: null,
           btcBalance: '0',
-          ethBalance: '0'
+          ethBalance: '0',
+          btcAddress: null,
+          ethAddress: null
         }),
         storage.createCard({
           userId: req.user.id,
@@ -243,10 +243,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           expiry,
           cvv,
           balance: '37000.00', // Starting balance in UAH
-          btcAddress: null,
-          ethAddress: null,
           btcBalance: '0',
-          ethBalance: '0'
+          ethBalance: '0',
+          btcAddress: null,
+          ethAddress: null
         }),
         storage.createCard({
           userId: req.user.id,
@@ -255,10 +255,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           expiry,
           cvv,
           balance: '0',
-          btcAddress: btcAddress,
-          ethAddress: ethAddress,
           btcBalance: '0.05', // Starting BTC balance
-          ethBalance: '1.0'  // Starting ETH balance
+          ethBalance: '1.0',  // Starting ETH balance
+          btcAddress: btcAddress,
+          ethAddress: ethAddress
         })
       ]);
 
