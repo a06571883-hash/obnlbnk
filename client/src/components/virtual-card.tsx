@@ -245,14 +245,14 @@ export default function VirtualCard({ card }: { card: Card }) {
                     <span className="sm:hidden">Trans</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
+                <DialogContent className="sm:max-w-[90%] max-h-[90vh] overflow-y-auto p-3 sm:p-4">
+                  <DialogHeader className="space-y-2 mb-2">
                     <DialogTitle>Transfer Funds</DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className="text-sm">
                       Transfer funds to another card or wallet
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <form onSubmit={async (e) => {
                       e.preventDefault();
 
@@ -293,49 +293,53 @@ export default function VirtualCard({ card }: { card: Card }) {
                     }}>
                       {card.type === 'crypto' && (
                         <>
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium mb-2">Выберите кошелек отправителя</label>
+                          <div className="mb-3">
+                            <label className="block text-sm font-medium mb-1">Выберите кошелек отправителя</label>
                             <div className="flex gap-2">
                               <Button
                                 type="button"
+                                size="sm"
                                 variant={selectedWallet === 'btc' ? 'default' : 'outline'}
-                                className="flex-1"
+                                className="flex-1 h-8"
                                 onClick={() => setSelectedWallet('btc')}
                               >
-                                <Bitcoin className="h-4 w-4 mr-2" />
+                                <Bitcoin className="h-3 w-3 mr-1" />
                                 BTC
                               </Button>
                               <Button
                                 type="button"
+                                size="sm"
                                 variant={selectedWallet === 'eth' ? 'default' : 'outline'}
-                                className="flex-1"
+                                className="flex-1 h-8"
                                 onClick={() => setSelectedWallet('eth')}
                               >
-                                <Coins className="h-4 w-4 mr-2" />
+                                <Coins className="h-3 w-3 mr-1" />
                                 ETH
                               </Button>
                             </div>
                           </div>
 
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium mb-2">Тип получателя</label>
+                          <div className="mb-3">
+                            <label className="block text-sm font-medium mb-1">Тип получателя</label>
                             <div className="flex gap-2">
                               <Button
                                 type="button"
+                                size="sm"
                                 variant={recipientType === 'usd_card' ? 'default' : 'outline'}
-                                className="flex-1"
+                                className="flex-1 h-8"
                                 onClick={() => setRecipientType('usd_card')}
                               >
-                                <CreditCard className="h-4 w-4 mr-2" />
+                                <CreditCard className="h-3 w-3 mr-1" />
                                 USD Карта
                               </Button>
                               <Button
                                 type="button"
+                                size="sm"
                                 variant={recipientType === 'crypto_wallet' ? 'default' : 'outline'}
-                                className="flex-1"
+                                className="flex-1 h-8"
                                 onClick={() => setRecipientType('crypto_wallet')}
                               >
-                                <Wallet className="h-4 w-4 mr-2" />
+                                <Wallet className="h-3 w-3 mr-1" />
                                 Крипто кошелек
                               </Button>
                             </div>
@@ -343,8 +347,8 @@ export default function VirtualCard({ card }: { card: Card }) {
                         </>
                       )}
 
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium mb-2">
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium mb-1">
                           {recipientType === 'usd_card' ? 'Номер USD карты получателя' : `Адрес ${selectedWallet.toUpperCase()} кошелька`}
                         </label>
                         <input
@@ -359,14 +363,14 @@ export default function VirtualCard({ card }: { card: Card }) {
                               setRecipientCardNumber(e.target.value);
                             }
                           }}
-                          className="w-full p-2 border rounded"
+                          className="w-full p-2 border rounded text-sm"
                           maxLength={recipientType === 'usd_card' ? 19 : 35}
                           required
                         />
                       </div>
 
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium mb-2">
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium mb-1">
                           {card.type === 'crypto' && recipientType === 'usd_card'
                             ? 'Сумма в USD (будет конвертирована из криптовалюты)'
                             : `Сумма в ${card.type === 'crypto' ? selectedWallet.toUpperCase() : 'USD'}`
@@ -377,32 +381,31 @@ export default function VirtualCard({ card }: { card: Card }) {
                             type="number"
                             value={transferAmount}
                             onChange={e => setTransferAmount(e.target.value)}
-                            className="w-full p-2 border rounded pr-12"
+                            className="w-full p-2 border rounded text-sm pr-12"
                             step="0.01"
                             min="0.01"
                             required
                           />
-                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                             {card.type === 'crypto' && recipientType === 'usd_card' ? 'USD' : (card.type === 'crypto' ? selectedWallet.toUpperCase() : 'USD')}
                           </span>
                         </div>
                         {card.type === 'crypto' && recipientType === 'usd_card' && (
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Будет списано: {transferAmount ? (parseFloat(transferAmount) / EXCHANGE_RATES[`${selectedWallet}ToUsd`]).toFixed(8) : '0.00'} {selectedWallet.toUpperCase()}
                           </p>
                         )}
                       </div>
 
-
-                      {transferError && <p className="text-red-500 text-sm mt-2">{transferError}</p>}
+                      {transferError && <p className="text-red-500 text-xs mt-2">{transferError}</p>}
                       <Button
                         type="submit"
                         disabled={isTransferring}
-                        className="w-full"
+                        className="w-full h-8 text-sm"
                       >
                         {isTransferring ? (
                           <>
-                            <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                            <Loader2 className="animate-spin h-3 w-3 mr-1" />
                             Выполняется перевод...
                           </>
                         ) : (
