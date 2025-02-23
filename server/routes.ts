@@ -37,27 +37,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
-      if (!fromCardId || !toCardNumber || amount === undefined) {
+      // Базовая валидация
+      if (!fromCardId || !toCardNumber || amount === undefined || amount === null) {
         return res.status(400).json({ 
           message: "Не указаны обязательные параметры перевода" 
         });
       }
 
+      // Валидация суммы
       const transferAmount = Number(amount);
       if (isNaN(transferAmount) || transferAmount <= 0) {
         return res.status(400).json({ 
-          message: "Сумма перевода должна быть положительным числом" 
+          message: "Некорректная сумма перевода" 
         });
       }
 
-      const userCards = await storage.getCardsByUserId(req.user.id);
-      const ownsCard = userCards.some(card => card.id === fromCardId);
-      if (!ownsCard) {
-        return res.status(403).json({ 
-          message: "У вас нет доступа к этой карте" 
-        });
-      }
-
+      // Валидация адреса или номера карты
       if (wallet) {
         if (!validateCryptoAddress(toCardNumber, wallet)) {
           return res.status(400).json({
@@ -68,11 +63,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
         if (!/^\d{16}$/.test(cleanToCardNumber)) {
           return res.status(400).json({ 
-            message: "Неверный формат номера карты. Номер должен состоять из 16 цифр" 
+            message: "Неверный формат номера карты" 
           });
         }
       }
 
+      // Выполнение перевода
       const result = await storage.transferMoney(fromCardId, toCardNumber, transferAmount, wallet);
 
       if (!result.success) {
@@ -95,9 +91,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-
-  httpServer.keepAliveTimeout = 65000;
-  httpServer.headersTimeout = 66000;
 
   return httpServer;
 }
