@@ -214,12 +214,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ethWallet = ethers.Wallet.createRandom();
       const ethAddress = ethWallet.address;
 
+      // Generate expiry date (current month + 3 years)
+      const expiryDate = new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear() + 3);
+      const expiry = `${String(expiryDate.getMonth() + 1).padStart(2, '0')}/${String(expiryDate.getFullYear()).slice(-2)}`;
+
+      // Generate CVV (3 random digits)
+      const cvv = Math.floor(Math.random() * 900 + 100).toString();
+
       // Create three cards: USD, UAH, and Crypto
       const cards = await Promise.all([
         storage.createCard({
           userId: req.user.id,
           type: 'usd',
           number: Math.random().toString().slice(2, 18), // 16 digit number
+          expiry,
+          cvv,
           balance: '1000.00', // Starting balance
           btcAddress: null,
           ethAddress: null,
@@ -230,6 +240,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.user.id,
           type: 'uah',
           number: Math.random().toString().slice(2, 18),
+          expiry,
+          cvv,
           balance: '37000.00', // Starting balance in UAH
           btcAddress: null,
           ethAddress: null,
@@ -240,6 +252,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.user.id,
           type: 'crypto',
           number: Math.random().toString().slice(2, 18),
+          expiry,
+          cvv,
           balance: '0',
           btcAddress: btcAddress,
           ethAddress: ethAddress,
