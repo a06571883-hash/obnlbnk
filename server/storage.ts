@@ -23,6 +23,12 @@ const sessionPool = new pg.Pool({
   keepAlive: true
 });
 
+// Exchange rates
+const EXCHANGE_RATES = {
+  btcToUsd: 96252.05, // Current BTC/USD rate
+  ethToUsd: 2950.00,  // Current ETH/USD rate
+};
+
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -179,75 +185,71 @@ export class DatabaseStorage implements IStorage {
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withRetry(async () => {
-      console.log(`Attempting transfer: from card ${fromCardId} to card number ${toCardNumber}, amount: ${amount}, wallet: ${wallet}`);
+      console.log(`Attempting transfer: from card ${fromCardId} to ${toCardNumber}, amount: ${amount}, wallet: ${wallet}`);
 
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
 
       const fromCard = await this.getCardById(fromCardId);
       if (!fromCard) {
-        console.log('Source card not found');
         return { success: false, error: "Карта отправителя не найдена" };
       }
 
       const toCard = await this.getCardByNumber(cleanToCardNumber);
       if (!toCard) {
-        console.log('Destination card not found for number:', cleanToCardNumber);
         return { success: false, error: "Карта получателя не найдена" };
       }
 
-      // Prevent transfer to the same card
       if (fromCard.id === toCard.id) {
         return { success: false, error: "Нельзя перевести деньги на ту же карту" };
       }
 
-      console.log('Found both cards:', { fromCard: fromCard.id, toCard: toCard.id });
-
-      // Exchange rates
-      const exchangeRates = {
-        btcToUsd: 96252.05, // Updated BTC/USD rate
-        ethToUsd: 2950.00,  // Updated ETH/USD rate
-      };
-
-      // Check balance based on wallet type for crypto cards
-      let fromBalance: number;
-      let toBalance: number;
-      let cryptoAmount: number;
-      let usdAmount: number;
-
-      // Handle crypto to USD conversion
+      // Crypto to USD transfer
       if (fromCard.type === 'crypto' && wallet && toCard.type === 'usd') {
-        fromBalance = parseFloat(wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance);
-        toBalance = parseFloat(toCard.balance);
+        const fromBalance = parseFloat(wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance);
+        const toBalance = parseFloat(toCard.balance);
 
-        // amount is in USD, calculate how much crypto we need
-        usdAmount = amount; // User specified USD amount
-        const rate = wallet === 'btc' ? exchangeRates.btcToUsd : exchangeRates.ethToUsd;
-        cryptoAmount = Number((amount / rate).toFixed(8)); // Calculate required crypto amount
+        // User specified USD amount they want to receive
+        const targetUsdAmount = amount;
 
-        console.log(`Converting USD ${usdAmount} to ${wallet.toUpperCase()}: ${cryptoAmount}`);
+        // Calculate required crypto amount based on current exchange rate
+        const rate = wallet === 'btc' ? EXCHANGE_RATES.btcToUsd : EXCHANGE_RATES.ethToUsd;
+        const requiredCryptoAmount = Number((targetUsdAmount / rate).toFixed(8));
 
-        // Check if user has enough crypto
-        if (fromBalance < cryptoAmount) {
-          return { success: false, error: "Недостаточно криптовалюты для конвертации" };
-        }
-
-        // Update balances
-        const newFromBalance = (fromBalance - cryptoAmount).toFixed(8);
-        const newToBalance = (toBalance + usdAmount).toFixed(2);
-
-        console.log('Updating balances:', {
-          fromCard: { old: fromBalance, new: newFromBalance, currency: wallet.toUpperCase() },
-          toCard: { old: toBalance, new: newToBalance, currency: 'USD' },
-          conversion: `${cryptoAmount} ${wallet.toUpperCase()} -> ${usdAmount} USD`
+        console.log('Transfer details:', {
+          type: 'crypto_to_usd',
+          wallet,
+          targetUsdAmount,
+          requiredCryptoAmount,
+          rate,
+          currentCryptoBalance: fromBalance
         });
 
+        // Check if sender has enough crypto
+        if (fromBalance < requiredCryptoAmount) {
+          return { 
+            success: false, 
+            error: `Недостаточно ${wallet.toUpperCase()} для конвертации ${targetUsdAmount} USD. Требуется: ${requiredCryptoAmount} ${wallet.toUpperCase()}`
+          };
+        }
+
+        // Calculate new balances
+        const newFromCryptoBalance = (fromBalance - requiredCryptoAmount).toFixed(8);
+        const newToUsdBalance = (toBalance + targetUsdAmount).toFixed(2);
+
+        console.log('New balances:', {
+          from: { old: fromBalance, new: newFromCryptoBalance, currency: wallet.toUpperCase() },
+          to: { old: toBalance, new: newToUsdBalance, currency: 'USD' }
+        });
+
+        // Execute transaction in database
         const transaction = await db.transaction(async (tx) => {
+          // Create transaction record
           const [newTransaction] = await tx.insert(transactions)
             .values({
               fromCardId: fromCard.id,
               toCardId: toCard.id,
-              amount: cryptoAmount.toString(), // Amount in crypto
-              convertedAmount: usdAmount.toString(), // Amount in USD
+              amount: requiredCryptoAmount.toString(),
+              convertedAmount: targetUsdAmount.toString(),
               type: 'transfer',
               wallet: wallet,
               status: 'completed',
@@ -257,20 +259,20 @@ export class DatabaseStorage implements IStorage {
             })
             .returning();
 
-          // Update crypto card balance
+          // Update crypto balance
           if (wallet === 'btc') {
             await tx.update(cards)
-              .set({ btcBalance: newFromBalance })
+              .set({ btcBalance: newFromCryptoBalance })
               .where(eq(cards.id, fromCard.id));
           } else {
             await tx.update(cards)
-              .set({ ethBalance: newFromBalance })
+              .set({ ethBalance: newFromCryptoBalance })
               .where(eq(cards.id, fromCard.id));
           }
 
-          // Update USD card balance
+          // Update USD balance
           await tx.update(cards)
-            .set({ balance: newToBalance })
+            .set({ balance: newToUsdBalance })
             .where(eq(cards.id, toCard.id));
 
           return newTransaction;
