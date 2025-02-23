@@ -1,86 +1,83 @@
+import { ethers } from 'ethers';
+import * as bitcoin from 'bitcoinjs-lib';
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertCardSchema, cards, transactions } from "@shared/schema";
+import { cards } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
+import { db } from './db';
+import { ECPairFactory } from 'ecpair';
+import * as ecc from 'tiny-secp256k1';
 
-type BalanceType = {
-  [key in "crypto" | "usd" | "uah"]: string;
-};
+const ECPair = ECPairFactory(ecc);
 
-const EXCHANGE_RATES = {
-  USD_UAH: 41.64,  // 1 USD = 41.64 UAH
-  CRYPTO_USD: 96683, // 1 BTC = 96,683.27 USD
-  ETH_USD: 2950.00  // 1 ETH = 2,950.00 USD
-};
+// Function for generating BTC addresses
+function generateBtcAddress(): string {
+  try {
+    const keyPair = ECPair.makeRandom();
+    const pubKey = keyPair.publicKey;
 
-// Improved currency conversion function
-function convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
-  if (fromCurrency === toCurrency) return amount;
+    const { address } = bitcoin.payments.p2pkh({
+      pubkey: pubKey,
+      network: bitcoin.networks.bitcoin
+    });
 
-  switch(`${fromCurrency}_${toCurrency}`) {
-    case 'usd_uah':
-      return amount * EXCHANGE_RATES.USD_UAH;
-    case 'uah_usd':
-      return amount / EXCHANGE_RATES.USD_UAH;
-    case 'usd_btc':
-      return amount / EXCHANGE_RATES.CRYPTO_USD;
-    case 'btc_usd':
-      return amount * EXCHANGE_RATES.CRYPTO_USD;
-    case 'usd_eth':
-      return amount / EXCHANGE_RATES.ETH_USD;
-    case 'eth_usd':
-      return amount * EXCHANGE_RATES.ETH_USD;
-    default:
-      throw new Error(`Unsupported conversion: ${fromCurrency} to ${toCurrency}`);
+    if (!address) {
+      throw new Error('Failed to generate BTC address');
+    }
+
+    try {
+      bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
+      console.log('Generated and validated BTC address:', address);
+      return address;
+    } catch (validationError) {
+      console.error('Generated address failed validation:', validationError);
+      throw validationError;
+    }
+  } catch (error) {
+    console.error('Error in BTC address generation:', error);
+    throw new Error('Failed to generate valid BTC address');
+  }
+}
+
+// Function for generating ETH addresses
+function generateEthAddress(): string {
+  try {
+    const wallet = ethers.Wallet.createRandom();
+    const address = wallet.address.toLowerCase();
+
+    if (!ethers.isAddress(address)) {
+      throw new Error('Generated ETH address is invalid');
+    }
+
+    console.log('Generated and validated ETH address:', address);
+    return address;
+  } catch (error) {
+    console.error('Error in ETH address generation:', error);
+    throw new Error('Failed to generate valid ETH address');
   }
 }
 
 // Function for validating crypto addresses
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
-  if (type === 'btc') {
-    // Bitcoin address validation rules:
-    // Legacy: starts with 1, followed by exactly 33 alphanumeric characters (total 34)
-    // SegWit: starts with 3, followed by exactly 33 alphanumeric characters (total 34)
-    // Native SegWit: starts with bc1, followed by 39-59 alphanumeric characters
-    const legacy = /^[13][a-km-zA-HJ-NP-Z1-9]{33}$/;
-    const nativeSegwit = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
-    return legacy.test(address) || nativeSegwit.test(address);
+  try {
+    if (type === 'btc') {
+      bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
+      return true;
+    } else {
+      return ethers.isAddress(address);
+    }
+  } catch (error) {
+    console.error(`Error validating ${type} address:`, error);
+    return false;
   }
-
-  // Ethereum address validation:
-  // Must start with 0x followed by exactly 40 hex characters
-  return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
-// Function for generating BTC addresses
-function generateBtcAddress(): string {
-  // Generate a Legacy Bitcoin address with exactly 34 characters
-  const prefix = '1';
-  const base58Chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-  let address = prefix;
-
-  // Generate exactly 33 characters after the prefix for a total of 34
-  const randomBytes = crypto.randomBytes(33);
-  for (let i = 0; i < 33; i++) {
-    address += base58Chars[randomBytes[i] % base58Chars.length];
-  }
-
-  return address;
-}
-
-// Function for generating ETH addresses
-function generateEthAddress(): string {
-  // Generate a standard Ethereum address
-  const addressBytes = crypto.randomBytes(20);
-  return '0x' + addressBytes.toString('hex').toLowerCase();
-}
-
-export async function registerRoutes(app: Express, db: any): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   app.get("/api/user", async (req, res) => {
@@ -193,7 +190,7 @@ export async function registerRoutes(app: Express, db: any): Promise<Server> {
       if (wallet) {
         // Crypto transfer
         if (!validateCryptoAddress(toCardNumber, wallet as 'btc' | 'eth')) {
-          return res.status(400).json({ 
+          return res.status(400).json({
             error: `Неверный формат ${wallet.toUpperCase()} адреса`
           });
         }
@@ -228,50 +225,13 @@ export async function registerRoutes(app: Express, db: any): Promise<Server> {
       }
     } catch (error: any) {
       console.error("Transfer error:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
         error: "Произошла ошибка при выполнении перевода. Пожалуйста, попробуйте позже."
       });
     }
   });
 
-
-  app.get("/api/transactions", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
-    try {
-      // Get user's cards
-      const userCards = await storage.getCardsByUserId(req.user.id);
-      if (!userCards.length) {
-        return res.json([]);
-      }
-
-      // Get transactions for all user's cards
-      const cardIds = userCards.map(card => card.id);
-      const transactions = [];
-
-      for (const cardId of cardIds) {
-        const cardTransactions = await storage.getTransactionsByCardId(cardId);
-        transactions.push(...cardTransactions);
-      }
-
-      // Sort by date descending and remove duplicates
-      const uniqueTransactions = Array.from(
-        new Map(transactions.map(t => [t.id, t])).values()
-      ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-      res.json(uniqueTransactions);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-      res.status(500).json({ error: "Failed to fetch transactions" });
-    }
-  });
-
-  const balances: BalanceType = {
-    crypto: "62000",
-    usd: "45000",
-    uah: "256021"
-  };
 
   app.post("/api/cards/update-balance", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -369,28 +329,35 @@ export async function registerRoutes(app: Express, db: any): Promise<Server> {
       console.log('Starting address regeneration...');
 
       // Get all crypto cards
-      const cryptoCards = await db.select()
-        .from(cards)
-        .where(eq(cards.type, 'crypto'));
-
+      const cryptoCards = await db.select().from(cards).where(eq(cards.type, 'crypto'));
       console.log(`Found ${cryptoCards.length} crypto cards to update`);
 
       // Update each card with new addresses
       for (const card of cryptoCards) {
-        const newBtcAddress = generateBtcAddress();
-        const newEthAddress = generateEthAddress();
+        try {
+          // Generate new addresses
+          const newBtcAddress = generateBtcAddress();
+          const newEthAddress = generateEthAddress();
 
-        console.log(`Updating card ${card.id} with new addresses:`, {
-          btc: newBtcAddress,
-          eth: newEthAddress
-        });
+          console.log(`Generated new addresses for card ${card.id}:`, {
+            btc: newBtcAddress,
+            eth: newEthAddress
+          });
 
-        await db.update(cards)
-          .set({
-            btcAddress: newBtcAddress,
-            ethAddress: newEthAddress
-          })
-          .where(eq(cards.id, card.id));
+          // Update the card with new addresses
+          await db.update(cards)
+            .set({
+              btcAddress: newBtcAddress,
+              ethAddress: newEthAddress
+            })
+            .where(eq(cards.id, card.id))
+            .execute();
+
+          console.log(`Successfully updated card ${card.id}`);
+        } catch (cardError) {
+          console.error(`Failed to update card ${card.id}:`, cardError);
+          throw cardError;
+        }
       }
 
       // Return updated cards for the user
@@ -424,3 +391,41 @@ function generateExpiry(): string {
 function generateCVV(): string {
   return Math.floor(Math.random() * 900 + 100).toString();
 }
+
+type BalanceType = {
+  [key in "crypto" | "usd" | "uah"]: string;
+};
+
+const EXCHANGE_RATES = {
+  USD_UAH: 41.64,  // 1 USD = 41.64 UAH
+  CRYPTO_USD: 96683, // 1 BTC = 96,683.27 USD
+  ETH_USD: 2950.00  // 1 ETH = 2,950.00 USD
+};
+
+// Currency conversion function
+function convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
+  if (fromCurrency === toCurrency) return amount;
+
+  switch(`${fromCurrency}_${toCurrency}`) {
+    case 'usd_uah':
+      return amount * EXCHANGE_RATES.USD_UAH;
+    case 'uah_usd':
+      return amount / EXCHANGE_RATES.USD_UAH;
+    case 'usd_btc':
+      return amount / EXCHANGE_RATES.CRYPTO_USD;
+    case 'btc_usd':
+      return amount * EXCHANGE_RATES.CRYPTO_USD;
+    case 'usd_eth':
+      return amount / EXCHANGE_RATES.ETH_USD;
+    case 'eth_usd':
+      return amount * EXCHANGE_RATES.ETH_USD;
+    default:
+      throw new Error(`Unsupported conversion: ${fromCurrency} to ${toCurrency}`);
+  }
+}
+
+const balances: BalanceType = {
+  crypto: "62000",
+  usd: "45000",
+  uah: "256021"
+};
