@@ -98,24 +98,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.sendStatus(403);
     }
 
-    const { userId, cardId, amount, operation } = req.body;
+    const { userId, cardId, amount, operation, currency } = req.body;
     const card = await storage.getCardById(cardId);
 
     if (!card || card.userId !== userId) {
       return res.status(400).json({ error: "Invalid card" });
     }
 
-    const newBalance = operation === 'add'
-      ? (parseFloat(card.balance) + parseFloat(amount)).toString()
-      : (parseFloat(card.balance) - parseFloat(amount)).toString();
+    if (currency === 'btc') {
+      await storage.updateCardBtcBalance(cardId, amount);
+    } else if (currency === 'eth') {
+      await storage.updateCardEthBalance(cardId, amount);
+    } else {
+      const newBalance = operation === 'add'
+        ? (parseFloat(card.balance) + parseFloat(amount)).toString()
+        : (parseFloat(card.balance) - parseFloat(amount)).toString();
 
-    await storage.updateCardBalance(cardId, newBalance);
+      await storage.updateCardBalance(cardId, newBalance);
 
-    if (operation === 'subtract') {
-      const regulator = await storage.getUser(req.user.id);
-      if (regulator) {
-        const newRegulatorBalance = (parseFloat(regulator.regulator_balance) + parseFloat(amount)).toString();
-        await storage.updateRegulatorBalance(req.user.id, newRegulatorBalance);
+      if (operation === 'subtract') {
+        const regulator = await storage.getUser(req.user.id);
+        if (regulator) {
+          const newRegulatorBalance = (parseFloat(regulator.regulator_balance) + parseFloat(amount)).toString();
+          await storage.updateRegulatorBalance(req.user.id, newRegulatorBalance);
+        }
       }
     }
 
