@@ -33,38 +33,30 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
-  console.log('Using session secret:', sessionSecret.substring(0, 8) + '...');
-
-  const sessionConfig: session.SessionOptions = {
-    secret: sessionSecret,
-    name: 'bnal.sid',
-    resave: true,
-    saveUninitialized: true,
+  app.use(session({
+    secret: process.env.SESSION_SECRET || randomBytes(32).toString('hex'),
+    resave: false,
+    saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
       secure: false,
-      httpOnly: true,
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     }
-  };
+  }));
 
-  app.use(session(sessionConfig));
   app.use(passport.initialize());
   app.use(passport.session());
 
   passport.use(new LocalStrategy(async (username, password, done) => {
     try {
       const user = await storage.getUserByUsername(username);
-
       if (!user) {
-        return done(null, false, { message: "Пользователь не найден" });
+        return done(null, false, { message: "Invalid username or password" });
       }
 
       const isValid = await comparePasswords(password, user.password);
       if (!isValid) {
-        return done(null, false, { message: "Неверный пароль" });
+        return done(null, false, { message: "Invalid username or password" });
       }
 
       return done(null, user);
@@ -73,16 +65,13 @@ export function setupAuth(app: Express) {
     }
   }));
 
-  passport.serializeUser((user: Express.User, done) => {
+  passport.serializeUser((user, done) => {
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      if (!user) {
-        return done(null, false);
-      }
       done(null, user);
     } catch (error) {
       done(error);
@@ -90,19 +79,13 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: Error | null, user: SelectUser | false, info: { message: string } | undefined) => {
-      if (err) {
-        return res.status(500).json({ message: "Ошибка сервера при входе" });
-      }
-
+    passport.authenticate("local", (err, user, info) => {
+      if (err) return next(err);
       if (!user) {
-        return res.status(401).json({ message: info?.message || "Ошибка аутентификации" });
+        return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
-
       req.logIn(user, (err) => {
-        if (err) {
-          return res.status(500).json({ message: "Ошибка при создании сессии" });
-        }
+        if (err) return next(err);
         res.json(user);
       });
     })(req, res, next);
@@ -110,7 +93,7 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Необходима авторизация" });
+      return res.status(401).json({ message: "Not authenticated" });
     }
     res.json(req.user);
   });
@@ -120,12 +103,12 @@ export function setupAuth(app: Express) {
       const { username, password } = req.body;
 
       if (!username || !password) {
-        return res.status(400).json({ message: "Необходимо указать имя пользователя и пароль" });
+        return res.status(400).json({ message: "Username and password are required" });
       }
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
-        return res.status(400).json({ message: "Пользователь с таким именем уже существует" });
+        return res.status(400).json({ message: "Username already exists" });
       }
 
       const hashedPassword = await hashPassword(password);
@@ -138,33 +121,21 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) {
-          return res.status(500).json({ message: "Ошибка при создании сессии" });
+          return res.status(500).json({ message: "Error creating session" });
         }
         res.status(201).json(user);
       });
     } catch (error) {
-      res.status(500).json({ message: "Ошибка при регистрации" });
+      res.status(500).json({ message: "Registration error" });
     }
   });
 
   app.post("/api/logout", (req, res) => {
     req.logout((err) => {
       if (err) {
-        return res.status(500).json({ message: "Ошибка при выходе" });
+        return res.status(500).json({ message: "Logout error" });
       }
-      req.session.destroy((err) => {
-        if (err) {
-          console.error("Session destruction error:", err);
-        }
-        res.clearCookie('bnal.sid');
-        res.sendStatus(200);
-      });
+      res.sendStatus(200);
     });
-  });
-  app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    next();
   });
 }
