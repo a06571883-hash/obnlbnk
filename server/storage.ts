@@ -23,7 +23,7 @@ const sessionPool = new pg.Pool({
   keepAlive: true
 });
 
-// Exchange rates
+// Exchange rates - using current market rates
 const EXCHANGE_RATES = {
   btcToUsd: 96252.05, // Current BTC/USD rate
   ethToUsd: 2950.00,  // Current ETH/USD rate
@@ -183,9 +183,9 @@ export class DatabaseStorage implements IStorage {
     }, 'Create transaction');
   }
 
-  async transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
+  async transferMoney(fromCardId: number, toCardNumber: string, targetUsdAmount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withRetry(async () => {
-      console.log(`Attempting transfer: from card ${fromCardId} to ${toCardNumber}, amount: ${amount}, wallet: ${wallet}`);
+      console.log(`Attempting transfer: from card ${fromCardId} to ${toCardNumber}, USD amount: ${targetUsdAmount}, wallet: ${wallet}`);
 
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
 
@@ -207,9 +207,6 @@ export class DatabaseStorage implements IStorage {
       if (fromCard.type === 'crypto' && wallet && toCard.type === 'usd') {
         const fromBalance = parseFloat(wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance);
         const toBalance = parseFloat(toCard.balance);
-
-        // User specified USD amount they want to receive
-        const targetUsdAmount = amount;
 
         // Calculate required crypto amount based on current exchange rate
         const rate = wallet === 'btc' ? EXCHANGE_RATES.btcToUsd : EXCHANGE_RATES.ethToUsd;
