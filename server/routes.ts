@@ -14,15 +14,35 @@ import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import * as bip39 from 'bip39';
 import HDKey from 'hdkey';
+import { randomBytes } from 'crypto';
 
 const ECPair = ECPairFactory(ecc);
 
 // Function for generating BTC addresses
 function generateBtcAddress(): string {
   try {
-    // Create a new random keypair
-    const keyPair = ECPair.makeRandom();
-    console.log('Generated key pair successfully');
+    console.log('Starting BTC address generation process...');
+
+    // Generate mnemonic
+    const mnemonic = bip39.generateMnemonic(256); // Using 256 bits of entropy
+    console.log('Generated mnemonic successfully');
+
+    // Create seed
+    const seed = bip39.mnemonicToSeedSync(mnemonic);
+    console.log('Created seed from mnemonic');
+
+    // Create HD wallet
+    const hdwallet = HDKey.fromMasterSeed(seed);
+    console.log('Created HD wallet from seed');
+
+    // Derive BTC path (using BIP44)
+    const path = "m/44'/0'/0'/0/0";
+    const child = hdwallet.derive(path);
+    console.log('Derived child key at path:', path);
+
+    // Create key pair from derived path
+    const keyPair = ECPair.fromPrivateKey(child.privateKey);
+    console.log('Created key pair from derived private key');
 
     // Generate P2PKH address
     const { address } = bitcoin.payments.p2pkh({
@@ -34,7 +54,7 @@ function generateBtcAddress(): string {
       throw new Error('Failed to generate BTC address');
     }
 
-    // Validate the generated address
+    // Extra validation
     try {
       bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
       console.log('Successfully generated and validated BTC address:', address);
@@ -52,8 +72,27 @@ function generateBtcAddress(): string {
 // Function for generating ETH addresses
 function generateEthAddress(): string {
   try {
-    // Create a new random wallet
-    const wallet = ethers.Wallet.createRandom();
+    console.log('Starting ETH address generation process...');
+
+    // Generate mnemonic
+    const mnemonic = bip39.generateMnemonic(256);
+    console.log('Generated mnemonic successfully');
+
+    // Create seed
+    const seed = bip39.mnemonicToSeedSync(mnemonic);
+    console.log('Created seed from mnemonic');
+
+    // Create HD wallet
+    const hdwallet = HDKey.fromMasterSeed(seed);
+    console.log('Created HD wallet from seed');
+
+    // Derive ETH path (using BIP44)
+    const path = "m/44'/60'/0'/0/0";
+    const child = hdwallet.derive(path);
+    console.log('Derived child key at path:', path);
+
+    // Create wallet from private key
+    const wallet = new ethers.Wallet(child.privateKey);
     const address = wallet.address;
 
     // Validate the generated address
