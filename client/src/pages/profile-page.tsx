@@ -58,7 +58,8 @@ export default function ProfilePage() {
   // Load initial settings and set up theme
   useEffect(() => {
     // Default to dark theme unless explicitly set to light
-    const isDark = localStorage.getItem('darkMode') !== 'false';
+    const storedTheme = localStorage.getItem('darkMode');
+    const isDark = storedTheme === null || storedTheme === 'dark';
 
     // Apply theme
     applyTheme(isDark);
@@ -74,8 +75,8 @@ export default function ProfilePage() {
     try {
       switch(key) {
         case 'darkMode':
-          // Update localStorage
-          localStorage.setItem('darkMode', value.toString());
+          // Update localStorage - store explicit theme choice
+          localStorage.setItem('darkMode', value ? 'dark' : 'light');
 
           // Apply theme changes
           applyTheme(value);
@@ -85,8 +86,8 @@ export default function ProfilePage() {
 
           // Show feedback
           toast({
-            title: "Тема изменена",
-            description: value ? "Тёмная тема включена" : "Светлая тема включена",
+            title: value ? "Тёмная тема включена" : "Светлая тема включена",
+            description: value ? "Приложение переключено на тёмную тему" : "Приложение переключено на светлую тему",
           });
           break;
 
