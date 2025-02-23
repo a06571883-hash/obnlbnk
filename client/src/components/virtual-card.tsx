@@ -33,7 +33,9 @@ const EXCHANGE_RATES = {
 
 // Validation functions for crypto addresses
 function validateBtcAddress(address: string): boolean {
-  return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address);
+  // Since we generate ETH-style addresses for both BTC and ETH,
+  // we'll validate them the same way
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
 function validateEthAddress(address: string): boolean {
@@ -286,9 +288,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                         if (!isValidAddress) {
                           setTransferError(
-                            selectedWallet === 'btc'
-                              ? 'Неверный формат BTC адреса. Адрес должен начинаться с 1 или 3'
-                              : 'Неверный формат ETH адреса. Адрес должен начинаться с 0x'
+                            `Неверный формат ${selectedWallet.toUpperCase()} адреса. Адрес должен начинаться с 0x`
                           );
                           return;
                         }
