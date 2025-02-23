@@ -3,8 +3,8 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { db } from "./db";
-import { cards, users, transactions, exchangeRates } from "@shared/schema";
-import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
+import { cards, users, transactions, exchangeRates, nftCollections, nfts } from "@shared/schema";
+import type { User, Card, InsertUser, Transaction, ExchangeRate, NFTCollection, NFT, InsertNFT } from "@shared/schema";
 import { eq, and, or, desc } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
@@ -29,6 +29,13 @@ export interface IStorage {
   transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   getLatestExchangeRates(): Promise<ExchangeRate | undefined>;
   updateExchangeRates(rates: { usdToUah: number; btcToUsd: number; ethToUsd: number }): Promise<ExchangeRate>;
+  // NFT methods
+  createNFTCollection(userId: number, name: string, description: string): Promise<NFTCollection>;
+  createNFT(data: Omit<InsertNFT, "id">): Promise<NFT>;
+  getNFTsByUserId(userId: number): Promise<NFT[]>;
+  getNFTCollectionsByUserId(userId: number): Promise<NFTCollection[]>;
+  canGenerateNFT(userId: number): Promise<boolean>;
+  updateUserNFTGeneration(userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -533,6 +540,81 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return result;
     }, 'Update exchange rates');
+  }
+
+  async createNFTCollection(userId: number, name: string, description: string): Promise<NFTCollection> {
+    return this.withRetry(async () => {
+      const [collection] = await db.insert(nftCollections).values({
+        userId,
+        name,
+        description,
+        createdAt: new Date()
+      }).returning();
+      return collection;
+    }, 'Create NFT collection');
+  }
+
+  async createNFT(data: Omit<InsertNFT, "id">): Promise<NFT> {
+    return this.withRetry(async () => {
+      const [nft] = await db.insert(nfts).values({
+        ...data,
+        createdAt: new Date()
+      }).returning();
+      return nft;
+    }, 'Create NFT');
+  }
+
+  async getNFTsByUserId(userId: number): Promise<NFT[]> {
+    return this.withRetry(async () => {
+      return await db.select().from(nfts).where(eq(nfts.userId, userId));
+    }, 'Get NFTs by user ID');
+  }
+
+  async getNFTCollectionsByUserId(userId: number): Promise<NFTCollection[]> {
+    return this.withRetry(async () => {
+      return await db.select().from(nftCollections).where(eq(nftCollections.userId, userId));
+    }, 'Get NFT collections by user ID');
+  }
+
+  async canGenerateNFT(userId: number): Promise<boolean> {
+    return this.withRetry(async () => {
+      const user = await this.getUser(userId);
+      if (!user) return false;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (!user.last_nft_generation || user.last_nft_generation < today) {
+        return true;
+      }
+
+      return user.nft_generation_count < 2;
+    }, 'Check NFT generation limit');
+  }
+
+  async updateUserNFTGeneration(userId: number): Promise<void> {
+    await this.withRetry(async () => {
+      const user = await this.getUser(userId);
+      if (!user) return;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (!user.last_nft_generation || user.last_nft_generation < today) {
+        await db.update(users)
+          .set({
+            last_nft_generation: new Date(),
+            nft_generation_count: 1
+          })
+          .where(eq(users.id, userId));
+      } else {
+        await db.update(users)
+          .set({
+            nft_generation_count: user.nft_generation_count + 1
+          })
+          .where(eq(users.id, userId));
+      }
+    }, 'Update NFT generation count');
   }
 }
 

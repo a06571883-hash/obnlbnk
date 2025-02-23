@@ -8,6 +8,8 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   is_regulator: boolean("is_regulator").notNull().default(false),
   regulator_balance: decimal("regulator_balance", { precision: 20, scale: 8 }).notNull().default("0"),
+  last_nft_generation: timestamp("last_nft_generation"),
+  nft_generation_count: integer("nft_generation_count").notNull().default(0),
 });
 
 export const cards = pgTable("cards", {
@@ -27,11 +29,11 @@ export const cards = pgTable("cards", {
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   fromCardId: integer("from_card_id").notNull(),
-  toCardId: integer("to_card_id"), // nullable для крипто-переводов
+  toCardId: integer("to_card_id"),
   amount: decimal("amount", { precision: 20, scale: 8 }).notNull(),
   convertedAmount: decimal("converted_amount", { precision: 20, scale: 8 }).notNull(),
   type: text("type").notNull(),
-  wallet: text("wallet"), // nullable для фиатных переводов
+  wallet: text("wallet"),
   status: text("status").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   description: text("description").notNull().default(""),
@@ -39,11 +41,39 @@ export const transactions = pgTable("transactions", {
   toCardNumber: text("to_card_number").notNull(),
 });
 
-// Базовые схемы для пользователей и карт
+export const nfts = pgTable("nfts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  imageUrl: text("image_url").notNull(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  collectionId: integer("collection_id").notNull(),
+});
+
+export const nftCollections = pgTable("nft_collections", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const exchangeRates = pgTable("exchange_rates", {
+  id: serial("id").primaryKey(),
+  usdToUah: decimal("usd_to_uah", { precision: 10, scale: 2 }).notNull(),
+  btcToUsd: decimal("btc_to_usd", { precision: 10, scale: 2 }).notNull(),
+  ethToUsd: decimal("eth_to_usd", { precision: 10, scale: 2 }).notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Базовые схемы
 export const insertUserSchema = createInsertSchema(users, {
   id: undefined,
   regulator_balance: z.string().default("0"),
   is_regulator: z.boolean().default(false),
+  last_nft_generation: z.date().optional(),
+  nft_generation_count: z.number().default(0),
 });
 
 export const insertCardSchema = createInsertSchema(cards, {
@@ -55,7 +85,16 @@ export const insertCardSchema = createInsertSchema(cards, {
   ethAddress: z.string().nullable(),
 });
 
-// Кастомная схема для транзакций
+export const insertNftSchema = createInsertSchema(nfts, {
+  id: undefined,
+  createdAt: z.date().optional(),
+});
+
+export const insertNftCollectionSchema = createInsertSchema(nftCollections, {
+  id: undefined,
+  createdAt: z.date().optional(),
+});
+
 export const insertTransactionSchema = z.object({
   fromCardId: z.number(),
   toCardId: z.number().nullable(),
@@ -70,24 +109,19 @@ export const insertTransactionSchema = z.object({
   createdAt: z.date().optional(),
 });
 
-export const exchangeRates = pgTable("exchange_rates", {
-  id: serial("id").primaryKey(),
-  usdToUah: decimal("usd_to_uah", { precision: 10, scale: 2 }).notNull(),
-  btcToUsd: decimal("btc_to_usd", { precision: 10, scale: 2 }).notNull(),
-  ethToUsd: decimal("eth_to_usd", { precision: 10, scale: 2 }).notNull(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
 // Экспорт типов
 export type User = typeof users.$inferSelect;
 export type Card = typeof cards.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
+export type NFT = typeof nfts.$inferSelect;
+export type NFTCollection = typeof nftCollections.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertCard = z.infer<typeof insertCardSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type InsertNFT = z.infer<typeof insertNftSchema>;
+export type InsertNFTCollection = z.infer<typeof insertNftCollectionSchema>;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;
 
-// Define the exchange rate response type
 export interface ExchangeRateResponse {
   usdToUah: string;
   btcToUsd: string;
