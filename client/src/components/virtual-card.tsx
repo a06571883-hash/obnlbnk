@@ -317,6 +317,11 @@ export default function VirtualCard({ card }: { card: Card }) {
                           wallet: recipientType === 'crypto_wallet' ? selectedWallet : undefined,
                           recipientType
                         });
+
+                        toast({
+                          title: "Успешно!",
+                          description: "Перевод выполнен успешно",
+                        });
                       } catch (error: any) {
                         console.error("Transfer error:", error);
                         setTransferError(error.message || "Произошла ошибка при переводе");
