@@ -43,8 +43,8 @@ function convertCurrency(amount: number, fromCurrency: string, toCurrency: strin
 // Function for validating crypto addresses
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   if (type === 'btc') {
-    // Support both traditional and exchange formats
-    return /^(0x[a-fA-F0-9]{40}|[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[ac-hj-np-z02-9]{11,71})$/.test(address);
+    // Accept any non-empty string without spaces, minimum 8 characters
+    return address.trim().length >= 8 && !/\s/.test(address);
   }
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 }

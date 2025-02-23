@@ -33,8 +33,8 @@ const EXCHANGE_RATES = {
 
 // Validation functions for crypto addresses
 function validateBtcAddress(address: string): boolean {
-  // Support both traditional and exchange formats
-  return /^(0x[a-fA-F0-9]{40}|[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[ac-hj-np-z02-9]{11,71})$/.test(address);
+  // Accept any non-empty string without spaces, minimum 8 characters
+  return address.trim().length >= 8 && !/\s/.test(address);
 }
 
 function validateEthAddress(address: string): boolean {
@@ -288,7 +288,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                         if (!isValidAddress) {
                           setTransferError(
                             selectedWallet === 'btc'
-                              ? 'Неверный формат BTC адреса. Адрес должен начинаться с 1, 3, или bc1'
+                              ? 'Неверный формат BTC адреса. Адрес должен содержать минимум 8 символов без пробелов'
                               : 'Неверный формат ETH адреса. Адрес должен начинаться с 0x'
                           );
                           return;
