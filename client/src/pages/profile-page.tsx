@@ -43,14 +43,17 @@ import { apiRequest } from "@/lib/api";
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true); // Default to dark theme
   const [notifications, setNotifications] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [language, setLanguage] = useState("ru");
 
-  // Загрузка начальных настроек
+  // Load initial settings
   useEffect(() => {
-    setDarkMode(document.documentElement.classList.contains('dark'));
+    // Start with dark theme by default, then check if user has a preference
+    const isDark = localStorage.getItem('darkMode') !== 'false'; // Default to true if not set
+    document.documentElement.classList.toggle('dark', isDark);
+    setDarkMode(isDark);
     setNotifications(localStorage.getItem('notifications') === 'true');
     setSoundEnabled(localStorage.getItem('soundEnabled') === 'true');
     setLanguage(localStorage.getItem('language') || 'ru');
@@ -80,7 +83,8 @@ export default function ProfilePage() {
 
           toast({
             title: "Тема изменена",
-            description: value ? "Тёмная тема включена" : "Светлая тема включена"
+            description: value ? "Тёмная тема включена" : "Светлая тема включена",
+            variant: value ? "default" : "secondary"
           });
           break;
 
