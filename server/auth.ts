@@ -7,13 +7,13 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
+const scryptAsync = promisify(scrypt);
+
 declare global {
   namespace Express {
     interface User extends SelectUser {}
   }
 }
-
-const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -23,10 +23,6 @@ async function hashPassword(password: string) {
 
 async function comparePasswords(supplied: string, stored: string) {
   try {
-    if (!stored.includes('.')) {
-      return supplied === stored;
-    }
-
     const [hashed, salt] = stored.split(".");
     const hashedBuf = Buffer.from(hashed, "hex");
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
@@ -37,7 +33,6 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Session configuration
   const sessionConfig = {
     secret: process.env.SESSION_SECRET || randomBytes(32).toString('hex'),
     name: 'sid',
@@ -45,7 +40,6 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     proxy: true,
-    rolling: true,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
@@ -54,36 +48,13 @@ export function setupAuth(app: Express) {
     }
   };
 
-  // Basic security headers
-  app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    next();
-  });
-
   app.set('trust proxy', 1);
   app.use(session(sessionConfig));
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Passport configuration
   passport.use(new LocalStrategy(async (username, password, done) => {
     try {
-      // Handle admin user
-      if (username === 'admin' && password === 'admin123') {
-        let user = await storage.getUserByUsername('admin');
-        if (!user) {
-          user = await storage.createUser({
-            username: 'admin',
-            password: await hashPassword('admin123'),
-            is_regulator: true,
-            regulator_balance: "1000000"
-          });
-        }
-        return done(null, user);
-      }
-
       const user = await storage.getUserByUsername(username);
       if (!user) {
         return done(null, false, { message: "Пользователь не найден" });
@@ -116,15 +87,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Session cleanup middleware
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.session && !req.session.passport && req.session.cookie) {
-      req.session.destroy(() => {});
-    }
-    next();
-  });
-
-  // Authentication routes
   app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
       if (err) {
@@ -198,6 +160,22 @@ export function setupAuth(app: Express) {
       return res.sendStatus(401);
     }
     res.json(req.user);
+  });
+
+  // Basic security headers
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+  });
+
+  // Session cleanup middleware
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.session && !req.session.passport && req.session.cookie) {
+      req.session.destroy(() => {});
+    }
+    next();
   });
 
   // Protected API routes with proper error handling

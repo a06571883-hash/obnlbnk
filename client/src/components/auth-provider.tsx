@@ -17,8 +17,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     refetchOnWindowFocus: true,
     staleTime: 30000, // Cache for 30 seconds
     refetchInterval: location === '/auth' ? false : 30000, // Only refetch if not on auth page
-    onSettled: (data, error) => {
-      if (error && location !== '/auth') {
+    onError: () => {
+      if (location !== '/auth') {
         setLocation('/auth');
       }
     }

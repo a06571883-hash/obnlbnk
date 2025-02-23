@@ -54,9 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     retry: 1,
-    staleTime: 10000, // Уменьшаем время кэширования
+    staleTime: 10000,
     refetchOnWindowFocus: true,
-    refetchInterval: 15000, // Чаще проверяем статус
+    refetchInterval: 15000,
   });
 
   const loginMutation = useMutation({
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      queryClient.clear(); // Очищаем весь кэш при выходе
+      queryClient.clear();
       setLocation("/auth");
       toast({
         title: "Выход выполнен",
