@@ -34,13 +34,20 @@ const EXCHANGE_RATES = {
 
 // Validation functions for crypto addresses
 function validateBtcAddress(address: string): boolean {
-  // Bitcoin addresses can be 26-35 chars legacy, or up to 62 chars for native SegWit
-  // Allow any alphanumeric string that matches general BTC address patterns
-  return /^[123][a-zA-Z0-9]{25,34}$|^(bc1)[a-zA-Z0-9]{8,87}$/.test(address);
+  // Support legacy addresses (1), P2SH addresses (3), and Bech32 addresses (bc1)
+  // Legacy: 1... (26-34 chars)
+  // P2SH: 3... (26-34 chars)
+  // Bech32: bc1... (42-62 chars)
+  const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
+  const bech32Regex = /^(bc1)[a-zA-HJ-NP-Z0-9]{11,71}$/;
+
+  return legacyRegex.test(address) || bech32Regex.test(address);
 }
 
 function validateEthAddress(address: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(address);
+  // Basic Ethereum address validation (0x followed by 40 hex chars)
+  // More lenient validation to allow both checksum and non-checksum addresses
+  return /^0x[a-fA-F0-9]{40}$/i.test(address);
 }
 
 export default function VirtualCard({ card }: { card: Card }) {
@@ -292,8 +299,8 @@ export default function VirtualCard({ card }: { card: Card }) {
                         if (!isValidAddress) {
                           setTransferError(
                             selectedWallet === 'btc'
-                              ? 'Неверный формат BTC адреса. Адрес должен содержать минимум 8 символов без пробелов'
-                              : 'Неверный формат ETH адреса. Адрес должен начинаться с 0x'
+                              ? 'Неверный формат BTC адреса. Поддерживаются Legacy, P2SH и Bech32 адреса'
+                              : 'Неверный формат ETH адреса. Адрес должен начинаться с 0x и содержать 40 символов'
                           );
                           return;
                         }
