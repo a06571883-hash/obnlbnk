@@ -12,35 +12,31 @@ type BalanceType = {
   [key in "crypto" | "usd" | "uah"]: string;
 };
 
-const EXCHANGE_RATES: Record<string, number> = {
-  USD_UAH: 41.64,  // 1 USD = 41.64 UAH (Updated rate)
-  CRYPTO_UAH: 4002660, // 1 BTC = 4 002 660,38 UAH
-  CRYPTO_USD: 96683, // 1 BTC = 96 683,27 USD
+const EXCHANGE_RATES = {
+  USD_UAH: 41.64,  // 1 USD = 41.64 UAH
+  CRYPTO_USD: 96683, // 1 BTC = 96,683.27 USD
+  ETH_USD: 2950.00  // 1 ETH = 2,950.00 USD
 };
 
 // Improved currency conversion function
 function convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
   if (fromCurrency === toCurrency) return amount;
 
-  const key = `${fromCurrency.toUpperCase()}_${toCurrency.toUpperCase()}`;
-  const reverseKey = `${toCurrency.toUpperCase()}_${fromCurrency.toUpperCase()}`;
-
-  if (EXCHANGE_RATES[key]) {
-    return amount * EXCHANGE_RATES[key];
-  } else if (EXCHANGE_RATES[reverseKey]) {
-    return amount / EXCHANGE_RATES[reverseKey];
-  }
-
-  // If no direct rate, convert through UAH
-  if (fromCurrency === 'crypto') {
-    const uahAmount = amount * EXCHANGE_RATES.CRYPTO_UAH;
-    return toCurrency === 'usd' ? uahAmount / EXCHANGE_RATES.USD_UAH : uahAmount;
-  } else if (toCurrency === 'crypto') {
-    const uahAmount = fromCurrency === 'usd' ? amount * EXCHANGE_RATES.USD_UAH : amount;
-    return uahAmount / EXCHANGE_RATES.CRYPTO_UAH;
-  } else {
-    // USD to UAH or UAH to USD
-    return fromCurrency === 'usd' ? amount * EXCHANGE_RATES.USD_UAH : amount / EXCHANGE_RATES.USD_UAH;
+  switch(`${fromCurrency}_${toCurrency}`) {
+    case 'usd_uah':
+      return amount * EXCHANGE_RATES.USD_UAH;
+    case 'uah_usd':
+      return amount / EXCHANGE_RATES.USD_UAH;
+    case 'usd_btc':
+      return amount / EXCHANGE_RATES.CRYPTO_USD;
+    case 'btc_usd':
+      return amount * EXCHANGE_RATES.CRYPTO_USD;
+    case 'usd_eth':
+      return amount / EXCHANGE_RATES.ETH_USD;
+    case 'eth_usd':
+      return amount * EXCHANGE_RATES.ETH_USD;
+    default:
+      throw new Error(`Unsupported conversion: ${fromCurrency} to ${toCurrency}`);
   }
 }
 
@@ -171,13 +167,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Transfer request received:', { fromCardId, toCardNumber, amount, wallet, recipientType });
 
-      // Clean card number
       const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
       if (cleanToCardNumber.length !== 16) {
         return res.status(400).json({ error: "Неверный формат номера карты" });
       }
 
-      // Get sender's and recipient's cards
       const fromCard = await storage.getCardById(fromCardId);
       const toCard = await storage.getCardByNumber(cleanToCardNumber);
 
@@ -185,7 +179,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Карта получателя не найдена" });
       }
 
-      // Check amount validity
       const requestedAmount = parseFloat(amount);
       if (isNaN(requestedAmount) || requestedAmount <= 0) {
         return res.status(400).json({ error: "Неверная сумма перевода" });
@@ -194,55 +187,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let fromAmount = requestedAmount;
       let toAmount = requestedAmount;
 
-      // Handle crypto conversions
-      if ((fromCard.type === 'crypto' && toCard.type === 'usd') || 
-          (fromCard.type === 'usd' && toCard.type === 'crypto' && recipientType === 'crypto_wallet')) {
+      // Handle conversions
+      if (fromCard.type !== toCard.type) {
+        if (recipientType === 'crypto_wallet' && fromCard.type === 'usd') {
+          // USD to Crypto conversion
+          const cryptoType = wallet?.toLowerCase() || 'btc';
+          const rate = cryptoType === 'btc' ? EXCHANGE_RATES.CRYPTO_USD : EXCHANGE_RATES.ETH_USD;
+          fromAmount = requestedAmount; // Amount in USD to deduct
+          toAmount = requestedAmount / rate; // Amount in crypto to add
 
-        const rate = wallet === 'btc' ? EXCHANGE_RATES.CRYPTO_USD : EXCHANGE_RATES.CRYPTO_USD / 30; // Approximate ETH rate
+          console.log('USD to Crypto conversion:', {
+            usdAmount: fromAmount,
+            cryptoAmount: toAmount,
+            rate,
+            cryptoType
+          });
 
-        if (fromCard.type === 'crypto') {
-          // Converting from crypto to USD
-          fromAmount = requestedAmount / rate;
-          toAmount = requestedAmount;
-        } else {
-          // Converting from USD to crypto
-          fromAmount = requestedAmount;
-          toAmount = requestedAmount * rate;
+        } else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
+          // Crypto to USD conversion
+          const cryptoType = wallet?.toLowerCase() || 'btc';
+          const rate = cryptoType === 'btc' ? EXCHANGE_RATES.CRYPTO_USD : EXCHANGE_RATES.ETH_USD;
+          fromAmount = requestedAmount / rate; // Amount in crypto to deduct
+          toAmount = requestedAmount; // Amount in USD to add
+
+        } else if (['usd', 'uah'].includes(fromCard.type) && ['usd', 'uah'].includes(toCard.type)) {
+          // Fiat to fiat conversion
+          toAmount = convertCurrency(requestedAmount, fromCard.type, toCard.type);
         }
+      }
 
-        console.log('Conversion details:', {
-          fromType: fromCard.type,
-          toType: toCard.type,
-          requestedAmount,
-          fromAmount,
-          toAmount,
-          rate,
-          wallet
-        });
-
-        // Check balance based on card type
-        if (fromCard.type === 'crypto') {
-          const cryptoBalance = wallet === 'btc' ? parseFloat(fromCard.btcBalance) : parseFloat(fromCard.ethBalance);
-          if (cryptoBalance < fromAmount) {
-            return res.status(400).json({ 
-              error: `Недостаточно ${wallet.toUpperCase()}. Требуется ${fromAmount.toFixed(8)} ${wallet.toUpperCase()} для перевода ${requestedAmount} USD` 
-            });
-          }
-        } else {
-          const usdBalance = parseFloat(fromCard.balance);
-          if (usdBalance < fromAmount) {
-            return res.status(400).json({ error: "Недостаточно USD для конвертации" });
-          }
+      // Check balances
+      if (fromCard.type === 'crypto') {
+        const cryptoBalance = wallet === 'btc' ? parseFloat(fromCard.btcBalance) : parseFloat(fromCard.ethBalance);
+        if (cryptoBalance < fromAmount) {
+          return res.status(400).json({ 
+            error: `Недостаточно ${wallet?.toUpperCase()}. Требуется ${fromAmount.toFixed(8)} ${wallet?.toUpperCase()} для перевода ${requestedAmount} USD` 
+          });
         }
       } else {
-        // For non-crypto transfers, check regular balance
-        const fromBalance = parseFloat(fromCard.balance);
-        if (fromBalance < fromAmount) {
+        const fiatBalance = parseFloat(fromCard.balance);
+        if (fiatBalance < fromAmount) {
           return res.status(400).json({ error: "Недостаточно средств" });
         }
       }
 
-      // Create new transaction
+      // Create transaction
       const transaction = await storage.createTransaction({
         fromCardId: fromCard.id,
         toCardId: toCard.id,
@@ -257,7 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         wallet: (fromCard.type === 'crypto' || recipientType === 'crypto_wallet') ? wallet! : null
       });
 
-      // Update balances based on card types
+      // Update balances
       if (fromCard.type === 'crypto') {
         // Update crypto balance when sending from crypto card
         if (wallet === 'btc') {
@@ -301,6 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
 
   app.get("/api/transactions", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

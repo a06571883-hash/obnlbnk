@@ -26,8 +26,9 @@ const cardColors = {
 
 // Exchange rates - using current market rates
 const EXCHANGE_RATES = {
-  btcToUsd: 96252.05, // Current BTC/USD rate
+  btcToUsd: 96683.27, // Current BTC/USD rate
   ethToUsd: 2950.00,  // Current ETH/USD rate
+  usdToUah: 41.64,    // Current USD/UAH rate
 };
 
 export default function VirtualCard({ card }: { card: Card }) {
@@ -284,7 +285,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                           fromCardId: card.id,
                           toCardNumber: recipientCardNumber,
                           amount: transferAmount,
-                          wallet: card.type === 'crypto' || recipientType === 'crypto_wallet' ? selectedWallet : undefined,
+                          wallet: recipientType === 'crypto_wallet' ? selectedWallet : undefined,
                           recipientType
                         });
                       } catch (error: any) {
@@ -292,7 +293,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                         setTransferError(error.message || "Произошла ошибка при переводе");
                       }
                     }}>
-                      {/* Show recipient type selection for both USD and crypto cards */}
+                      {/* Show recipient type selection */}
                       <div className="mb-3">
                         <label className="block text-sm font-medium mb-1">Тип получателя</label>
                         <div className="flex gap-2">
@@ -304,7 +305,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                             onClick={() => setRecipientType('usd_card')}
                           >
                             <CreditCard className="h-3 w-3 mr-1" />
-                            USD Карта
+                            Фиат карта
                           </Button>
                           <Button
                             type="button"
@@ -314,16 +315,16 @@ export default function VirtualCard({ card }: { card: Card }) {
                             onClick={() => setRecipientType('crypto_wallet')}
                           >
                             <Wallet className="h-3 w-3 mr-1" />
-                            Крипто кошелек
+                            Крипто карта
                           </Button>
                         </div>
                       </div>
 
-                      {/* Show wallet selection when sending to crypto */}
-                      {(card.type === 'crypto' || recipientType === 'crypto_wallet') && (
+                      {/* Show wallet selection only when sending to crypto */}
+                      {recipientType === 'crypto_wallet' && (
                         <div className="mb-3">
                           <label className="block text-sm font-medium mb-1">
-                            {card.type === 'crypto' ? 'Выберите кошелек отправителя' : 'Выберите криптовалюту получателя'}
+                            Выберите криптовалюту получателя
                           </label>
                           <div className="flex gap-2">
                             <Button
@@ -352,7 +353,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                       <div className="mb-3">
                         <label className="block text-sm font-medium mb-1">
-                          {recipientType === 'usd_card' ? 'Номер USD карты получателя' : `Адрес ${selectedWallet.toUpperCase()} кошелька`}
+                          {recipientType === 'usd_card' ? 'Номер карты получателя' : `Адрес ${selectedWallet.toUpperCase()} карты`}
                         </label>
                         <input
                           type="text"
@@ -374,9 +375,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                       <div className="mb-3">
                         <label className="block text-sm font-medium mb-1">
-                          {recipientType === 'crypto_wallet'
-                            ? `Сумма в ${card.type.toUpperCase()} (будет конвертирована в ${selectedWallet.toUpperCase()})`
-                            : `Сумма в ${card.type.toUpperCase()}`}
+                          Сумма в {card.type.toUpperCase()}
                         </label>
                         <div className="relative">
                           <input
@@ -394,7 +393,9 @@ export default function VirtualCard({ card }: { card: Card }) {
                         </div>
                         {recipientType === 'crypto_wallet' && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Получатель получит: {transferAmount ? (parseFloat(transferAmount) * EXCHANGE_RATES[`${selectedWallet}ToUsd`]).toFixed(8) : '0.00'} {selectedWallet.toUpperCase()}
+                            Получатель получит: {transferAmount ? (
+                              parseFloat(transferAmount) / (selectedWallet === 'btc' ? EXCHANGE_RATES.btcToUsd : EXCHANGE_RATES.ethToUsd)
+                            ).toFixed(8) : '0.00000000'} {selectedWallet.toUpperCase()}
                           </p>
                         )}
                       </div>
