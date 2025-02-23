@@ -33,6 +33,8 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateRegulatorBalance(userId: number, balance: string): Promise<void>;
   updateCardBalance(cardId: number, balance: string): Promise<void>;
+  updateCardBtcBalance(cardId: number, balance: string): Promise<void>;
+  updateCardEthBalance(cardId: number, balance: string): Promise<void>;
   getCardById(cardId: number): Promise<Card | undefined>;
   getCardByNumber(cardNumber: string): Promise<Card | undefined>;
   getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
@@ -253,7 +255,7 @@ export class DatabaseStorage implements IStorage {
 
         // Update card balances based on wallet type
         if (fromCard.type === 'crypto' && wallet) {
-          const updateData = wallet === 'btc' 
+          const updateData = wallet === 'btc'
             ? { btcBalance: newFromBalance }
             : { ethBalance: newFromBalance };
 
@@ -286,6 +288,21 @@ export class DatabaseStorage implements IStorage {
       console.log('Transfer completed successfully');
       return { success: true, transaction };
     }, 'Transfer money');
+  }
+  async updateCardBtcBalance(cardId: number, balance: string): Promise<void> {
+    await this.withRetry(async () => {
+      await db.update(cards)
+        .set({ btcBalance: balance })
+        .where(eq(cards.id, cardId));
+    }, 'Update card BTC balance');
+  }
+
+  async updateCardEthBalance(cardId: number, balance: string): Promise<void> {
+    await this.withRetry(async () => {
+      await db.update(cards)
+        .set({ ethBalance: balance })
+        .where(eq(cards.id, cardId));
+    }, 'Update card ETH balance');
   }
 }
 
