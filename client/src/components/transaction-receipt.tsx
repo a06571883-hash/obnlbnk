@@ -66,7 +66,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
                   <span className="font-mono text-xs block">{getCardDetails(transaction.fromCard)}</span>
                   {transaction.fromCard?.userId && (
                     <span className="text-xs text-muted-foreground">
-                      {transaction.fromCard.userId === transaction.toCard?.userId ? 'Ваша карта' : 'Другой пользователь'}
+                      {transaction.fromCard.userId === transaction.toCard?.userId ? 'Ваша карта' : transaction.fromCard.username}
                     </span>
                   )}
                 </div>
@@ -80,7 +80,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
                   <span className="font-mono text-xs block">{getCardDetails(transaction.toCard)}</span>
                   {transaction.toCard?.userId && (
                     <span className="text-xs text-muted-foreground">
-                      {transaction.toCard.userId === transaction.fromCard?.userId ? 'Ваша карта' : 'Другой пользователь'}
+                      {transaction.toCard.userId === transaction.fromCard?.userId ? 'Ваша карта' : transaction.toCard.username}
                     </span>
                   )}
                 </div>
