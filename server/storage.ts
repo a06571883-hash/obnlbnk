@@ -4,33 +4,13 @@ import { cards, users, transactions } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction } from "@shared/schema";
 import { eq, and, or, desc } from "drizzle-orm";
 import { pool } from "./db";
-import connectPg from "connect-pg-simple";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import pg from 'pg';
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
 
 const scryptAsync = promisify(scrypt);
-
-const PostgresSessionStore = connectPg(session);
-
-// Создаем отдельный пул для сессий с оптимизированными настройками
-const sessionPool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 300000, // 5 минут
-  connectionTimeoutMillis: 10000, // 10 секунд
-  ssl: false,
-  keepAlive: true
-});
-
-// Добавляем обработчики событий для пула
-sessionPool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-});
-
-sessionPool.on('connect', () => {
-  console.log('Session pool connected successfully');
-});
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -55,19 +35,12 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    console.log('Initializing DatabaseStorage with session store...');
+    console.log('Initializing DatabaseStorage with memory session store...');
     try {
-      this.sessionStore = new PostgresSessionStore({
-        pool: sessionPool,
-        tableName: 'connect_pg_simple_sessions',
-        createTableIfMissing: true,
-        schemaName: 'public',
-        pruneSessionInterval: 60000, // 1 minute
-        errorLog: (err) => {
-          console.error('Session store error:', err);
-        }
+      this.sessionStore = new MemoryStore({
+        checkPeriod: 86400000 // Очистка устаревших сессий каждые 24 часа
       });
-      console.log('Session store initialized successfully');
+      console.log('Memory session store initialized successfully');
     } catch (error) {
       console.error('Failed to initialize session store:', error);
       throw error;
@@ -210,27 +183,27 @@ export class DatabaseStorage implements IStorage {
 
       // Базовая валидация
       if (!fromCardId || !toCardNumber || amount <= 0) {
-        return { 
-          success: false, 
-          error: "Неверные параметры перевода. Сумма должна быть больше 0" 
+        return {
+          success: false,
+          error: "Неверные параметры перевода. Сумма должна быть больше 0"
         };
       }
 
       // Получаем карту отправителя
       const fromCard = await this.getCardById(fromCardId);
       if (!fromCard) {
-        return { 
-          success: false, 
-          error: "Карта отправителя не найдена или недоступна" 
+        return {
+          success: false,
+          error: "Карта отправителя не найдена или недоступна"
         };
       }
 
       // Перевод криптовалюты
       if (wallet) {
         if (fromCard.type !== 'crypto') {
-          return { 
-            success: false, 
-            error: "Для перевода криптовалюты используйте крипто-карту" 
+          return {
+            success: false,
+            error: "Для перевода криптовалюты используйте крипто-карту"
           };
         }
 
@@ -239,9 +212,9 @@ export class DatabaseStorage implements IStorage {
           parseFloat(fromCard.ethBalance || '0');
 
         if (isNaN(balance)) {
-          return { 
-            success: false, 
-            error: `Ошибка чтения баланса ${wallet.toUpperCase()}` 
+          return {
+            success: false,
+            error: `Ошибка чтения баланса ${wallet.toUpperCase()}`
           };
         }
 
@@ -279,9 +252,9 @@ export class DatabaseStorage implements IStorage {
           return { success: true, transaction };
         } catch (error) {
           console.error('Ошибка крипто-перевода:', error);
-          return { 
-            success: false, 
-            error: "Произошла ошибка при переводе криптовалюты. Пожалуйста, попробуйте позже" 
+          return {
+            success: false,
+            error: "Произошла ошибка при переводе криптовалюты. Пожалуйста, попробуйте позже"
           };
         }
       }
@@ -290,16 +263,16 @@ export class DatabaseStorage implements IStorage {
       try {
         const toCard = await this.getCardByNumber(toCardNumber);
         if (!toCard) {
-          return { 
-            success: false, 
-            error: "Карта получателя не найдена. Проверьте номер карты" 
+          return {
+            success: false,
+            error: "Карта получателя не найдена. Проверьте номер карты"
           };
         }
 
         if (fromCard.id === toCard.id) {
-          return { 
-            success: false, 
-            error: "Невозможно выполнить перевод на ту же карту" 
+          return {
+            success: false,
+            error: "Невозможно выполнить перевод на ту же карту"
           };
         }
 
@@ -307,9 +280,9 @@ export class DatabaseStorage implements IStorage {
         const toBalance = parseFloat(toCard.balance || '0');
 
         if (isNaN(fromBalance) || isNaN(toBalance)) {
-          return { 
-            success: false, 
-            error: "Ошибка при чтении баланса карт" 
+          return {
+            success: false,
+            error: "Ошибка при чтении баланса карт"
           };
         }
 
@@ -344,9 +317,9 @@ export class DatabaseStorage implements IStorage {
         return { success: true, transaction };
       } catch (error) {
         console.error('Ошибка перевода между картами:', error);
-        return { 
-          success: false, 
-          error: "Произошла ошибка при переводе. Пожалуйста, попробуйте позже" 
+        return {
+          success: false,
+          error: "Произошла ошибка при переводе. Пожалуйста, попробуйте позже"
         };
       }
     }, 'Transfer money');
