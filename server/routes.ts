@@ -50,28 +50,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   setupAuth(app);
 
-  app.get("/api/user", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.sendStatus(401);
-      }
-
-      const user = await storage.getUser(req.user.id);
-      if (!user) {
-        return res.sendStatus(404);
-      }
-
-      res.json(user);
-    } catch (error) {
-      console.error('Error in /api/user:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
   app.get("/api/cards", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.sendStatus(401);
+      if (!req.user?.id) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
       const cards = await storage.getCardsByUserId(req.user.id);
       res.json(cards);
@@ -111,14 +93,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
-      // Базовая валидация
+      // Basic validation
       if (!fromCardId || !toCardNumber || amount === undefined) {
         return res.status(400).json({ 
           error: "Не указаны обязательные параметры перевода" 
         });
       }
 
-      // Валидация суммы
+      // Amount validation
       const transferAmount = Number(amount);
       if (isNaN(transferAmount) || transferAmount <= 0) {
         return res.status(400).json({ 
@@ -126,56 +108,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Валидация карты отправителя
-      const fromCard = await storage.getCardById(fromCardId);
-      if (!fromCard) {
-        return res.status(400).json({ 
-          error: "Карта отправителя не найдена" 
-        });
-      }
-
-      // Крипто-перевод
-      if (wallet) {
-        if (fromCard.type !== 'crypto') {
-          return res.status(400).json({
-            error: "Для крипто-перевода используйте крипто-карту"
+      // Validate card number format for fiat transfers
+      if (!wallet) {
+        const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
+        if (!/^\d{16}$/.test(cleanToCardNumber)) {
+          return res.status(400).json({ 
+            error: "Неверный формат номера карты. Номер должен состоять из 16 цифр" 
           });
         }
-
-        if (!validateCryptoAddress(toCardNumber, wallet)) {
-          return res.status(400).json({
-            error: `Неверный формат ${wallet.toUpperCase()} адреса`
-          });
-        }
-
-        const result = await storage.transferMoney(fromCardId, toCardNumber, transferAmount, wallet);
-        if (!result.success) {
-          return res.status(400).json({ error: result.error });
-        }
-
-        return res.json({
-          success: true,
-          message: `Перевод ${transferAmount} ${wallet.toUpperCase()} выполнен успешно`,
-          transaction: result.transaction
-        });
       }
 
-      // Фиатный перевод
-      const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
-      if (!/^\d{16}$/.test(cleanToCardNumber)) {
-        return res.status(400).json({ 
-          error: "Неверный формат номера карты. Номер должен состоять из 16 цифр" 
-        });
-      }
+      // Execute transfer
+      const result = await storage.transferMoney(fromCardId, toCardNumber, transferAmount, wallet);
 
-      const result = await storage.transferMoney(fromCardId, cleanToCardNumber, transferAmount);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
 
       return res.json({
         success: true,
-        message: "Перевод успешно выполнен",
+        message: wallet 
+          ? `Перевод ${transferAmount} ${wallet.toUpperCase()} выполнен успешно`
+          : "Перевод успешно выполнен",
         transaction: result.transaction
       });
 

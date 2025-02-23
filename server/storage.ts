@@ -9,7 +9,6 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 
 const PostgresSessionStore = connectPg(session);
-
 const scryptAsync = promisify(scrypt);
 
 export interface IStorage {
@@ -35,28 +34,11 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    console.log('Initializing DatabaseStorage with PostgreSQL session store...');
-    try {
-      this.sessionStore = new PostgresSessionStore({
-        pool,
-        tableName: 'session',
-        createTableIfMissing: true,
-        schemaName: 'public',
-        columnNames: {
-          session_id: 'sid',
-          session_data: 'sess',
-          expire: 'expire'
-        },
-        pruneSessionInterval: 60 * 60 * 1000, // 1 hour
-        errorLog: (err) => {
-          console.error('Session store error:', err);
-        }
-      });
-      console.log('PostgreSQL session store initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize session store:', error);
-      throw error;
-    }
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      tableName: 'session',
+      createTableIfMissing: true
+    });
   }
 
   private async withRetry<T>(operation: () => Promise<T>, context: string): Promise<T> {
@@ -68,9 +50,7 @@ export class DatabaseStorage implements IStorage {
       } catch (error) {
         lastError = error as Error;
         console.error(`${context} failed (attempt ${attempt + 1}/3):`, error);
-        if (attempt < 2) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
-        }
+        if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
       }
     }
     throw lastError || new Error(`${context} failed after 3 attempts`);
@@ -78,27 +58,21 @@ export class DatabaseStorage implements IStorage {
 
   async getUser(id: number): Promise<User | undefined> {
     return this.withRetry(async () => {
-      console.log(`Getting user by ID: ${id}`);
       const [user] = await db.select().from(users).where(eq(users.id, id));
-      console.log(`User found: ${user ? 'yes' : 'no'}`);
       return user;
     }, 'Get user');
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return this.withRetry(async () => {
-      console.log(`Finding user by username: ${username}`);
       const [user] = await db.select().from(users).where(eq(users.username, username));
-      console.log('Found user by username:', user ? 'yes' : 'no');
       return user;
     }, 'Get user by username');
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     return this.withRetry(async () => {
-      console.log('Creating user:', insertUser.username);
       const [user] = await db.insert(users).values(insertUser).returning();
-      console.log('User created successfully:', user.username);
       return user;
     }, 'Create user');
   }
@@ -149,7 +123,6 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       const cleanCardNumber = cardNumber.replace(/\s+/g, '');
       const [card] = await db.select().from(cards).where(eq(cards.number, cleanCardNumber));
-      console.log('Searching for card with number:', cleanCardNumber, 'Found:', card ? 'yes' : 'no');
       return card;
     }, 'Get card by number');
   }
@@ -158,82 +131,50 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       return await db.select()
         .from(transactions)
-        .where(
-          or(
-            eq(transactions.fromCardId, cardId),
-            eq(transactions.toCardId, cardId)
-          )
-        )
+        .where(or(eq(transactions.fromCardId, cardId), eq(transactions.toCardId, cardId)))
         .orderBy(desc(transactions.createdAt));
     }, 'Get transactions by card ID');
   }
 
   async createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction> {
     return this.withRetry(async () => {
-      console.log('Creating transaction:', transaction);
       const [result] = await db.insert(transactions).values({
-        type: transaction.type,
-        status: transaction.status,
-        amount: transaction.amount,
-        convertedAmount: transaction.convertedAmount,
-        description: transaction.description,
-        fromCardId: transaction.fromCardId,
-        toCardId: transaction.toCardId,
-        wallet: transaction.wallet || null,
-        fromCardNumber: transaction.fromCardNumber,
-        toCardNumber: transaction.toCardNumber,
+        ...transaction,
         createdAt: transaction.createdAt || new Date()
       }).returning();
-      console.log('Transaction created:', result);
       return result;
     }, 'Create transaction');
   }
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number, wallet?: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withRetry(async () => {
-      console.log(`Начало перевода: fromCardId=${fromCardId}, toCardNumber=${toCardNumber}, amount=${amount}, wallet=${wallet}`);
+      try {
+        const fromCard = await this.getCardById(fromCardId);
+        if (!fromCard) return { success: false, error: "Карта отправителя не найдена" };
 
-      // Get sender's card
-      const fromCard = await this.getCardById(fromCardId);
-      if (!fromCard) {
-        return {
-          success: false,
-          error: "Карта отправителя не найдена"
-        };
-      }
+        // Крипто-перевод
+        if (wallet) {
+          if (fromCard.type !== 'crypto') {
+            return { success: false, error: "Для крипто-перевода используйте крипто-карту" };
+          }
 
-      // Crypto transfer
-      if (wallet) {
-        if (fromCard.type !== 'crypto') {
-          return {
-            success: false,
-            error: "Для перевода криптовалюты используйте крипто-карту"
-          };
-        }
+          const balance = wallet === 'btc' ? fromCard.btcBalance : fromCard.ethBalance;
+          const numBalance = Number(balance || '0');
 
-        // Parse and validate crypto balance
-        const balance = wallet === 'btc' ? 
-          Number(fromCard.btcBalance || '0') :
-          Number(fromCard.ethBalance || '0');
+          if (isNaN(numBalance)) {
+            return { success: false, error: `Ошибка формата баланса ${wallet.toUpperCase()}` };
+          }
 
-        if (isNaN(balance)) {
-          return {
-            success: false,
-            error: `Ошибка формата баланса ${wallet.toUpperCase()}`
-          };
-        }
+          if (numBalance < amount) {
+            return { 
+              success: false, 
+              error: `Недостаточно ${wallet.toUpperCase()}. Доступно: ${numBalance.toFixed(8)} ${wallet.toUpperCase()}`
+            };
+          }
 
-        if (balance < amount) {
-          return {
-            success: false,
-            error: `Недостаточно ${wallet.toUpperCase()} на балансе. Доступно: ${balance.toFixed(8)} ${wallet.toUpperCase()}`
-          };
-        }
+          const newBalance = (numBalance - amount).toFixed(8);
 
-        try {
-          const newBalance = (balance - amount).toFixed(8);
-
-          // Create transaction record for crypto transfer
+          // Создаём транзакцию
           const transaction = await this.createTransaction({
             fromCardId: fromCard.id,
             toCardId: null,
@@ -248,7 +189,7 @@ export class DatabaseStorage implements IStorage {
             createdAt: new Date()
           });
 
-          // Update the appropriate crypto balance
+          // Обновляем баланс только после успешного создания транзакции
           if (wallet === 'btc') {
             await this.updateCardBtcBalance(fromCard.id, newBalance);
           } else {
@@ -256,43 +197,25 @@ export class DatabaseStorage implements IStorage {
           }
 
           return { success: true, transaction };
-        } catch (error) {
-          console.error('Ошибка крипто-перевода:', error);
-          return {
-            success: false,
-            error: "Произошла ошибка при переводе криптовалюты"
-          };
         }
-      }
 
-      // Fiat transfer
-      try {
+        // Фиатный перевод
         const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
-
         const toCard = await this.getCardByNumber(cleanToCardNumber);
+
         if (!toCard) {
-          return {
-            success: false,
-            error: "Карта получателя не найдена"
-          };
+          return { success: false, error: "Карта получателя не найдена" };
         }
 
         if (fromCard.id === toCard.id) {
-          return {
-            success: false,
-            error: "Невозможно перевести на ту же карту"
-          };
+          return { success: false, error: "Невозможно перевести на ту же карту" };
         }
 
-        // Parse and validate fiat balances
         const fromBalance = Number(fromCard.balance || '0');
         const toBalance = Number(toCard.balance || '0');
 
         if (isNaN(fromBalance) || isNaN(toBalance)) {
-          return {
-            success: false,
-            error: "Ошибка формата баланса"
-          };
+          return { success: false, error: "Ошибка формата баланса" };
         }
 
         if (fromBalance < amount) {
@@ -305,7 +228,7 @@ export class DatabaseStorage implements IStorage {
         const newFromBalance = (fromBalance - amount).toFixed(2);
         const newToBalance = (toBalance + amount).toFixed(2);
 
-        // Create transaction record for fiat transfer
+        // Создаём транзакцию
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard.id,
@@ -320,17 +243,15 @@ export class DatabaseStorage implements IStorage {
           createdAt: new Date()
         });
 
-        // Update both card balances
+        // Обновляем балансы только после успешного создания транзакции
         await this.updateCardBalance(fromCard.id, newFromBalance);
         await this.updateCardBalance(toCard.id, newToBalance);
 
         return { success: true, transaction };
+
       } catch (error) {
-        console.error('Ошибка перевода:', error);
-        return {
-          success: false,
-          error: "Произошла ошибка при переводе"
-        };
+        console.error('[Transfer] Error:', error);
+        return { success: false, error: "Произошла ошибка при переводе" };
       }
     }, 'Transfer money');
   }
