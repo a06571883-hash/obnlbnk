@@ -1,7 +1,7 @@
 import { Card } from "@shared/schema";
-import { 
-  Card as UICard, 
-  CardContent 
+import {
+  Card as UICard,
+  CardContent
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,8 +54,27 @@ export default function VirtualCard({ card }: { card: Card }) {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
   const [recipientType, setRecipientType] = useState<RecipientType>('usd_card');
+  const [rates, setRates] = useState<{ usdToUah: number; btcToUsd: number; ethToUsd: number } | null>(null);
 
-  // Используем актуальные балансы в зависимости от выбранного кошелька
+  // Fetch exchange rates
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        const response = await fetch('/api/rates');
+        const data = await response.json();
+        setRates({
+          usdToUah: parseFloat(data.usdToUah),
+          btcToUsd: parseFloat(data.btcToUsd),
+          ethToUsd: parseFloat(data.ethToUsd)
+        });
+      } catch (error) {
+        console.error('Failed to fetch rates:', error);
+      }
+    };
+    fetchRates();
+  }, []);
+
+  // Get selected crypto balance
   const getSelectedBalance = () => {
     if (card.type === 'crypto') {
       return selectedWallet === 'btc' ? card.btcBalance : card.ethBalance;
@@ -63,40 +82,14 @@ export default function VirtualCard({ card }: { card: Card }) {
     return card.balance;
   };
 
-  // Gesture handlers
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current || isMobile) return;
+  // Calculate USD equivalent for crypto amount
+  const calculateUsdEquivalent = (amount: string) => {
+    if (!rates || !amount) return null;
+    const value = parseFloat(amount);
+    if (isNaN(value)) return null;
 
-    const rect = cardRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-
-    const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 15;
-    const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 15;
-
-    setRotation({ x: rotateX, y: rotateY });
-    setIsHovered(true);
+    return value * (selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd);
   };
-
-  const handleMouseLeave = () => {
-    setRotation({ x: 0, y: 0 });
-    setIsHovered(false);
-  };
-
-  useEffect(() => {
-    if (gyroscope && isMobile) {
-      const sensitivity = isIOS ? 0.5 : 0.7;
-      const targetX = -gyroscope.beta * sensitivity;
-      const targetY = gyroscope.gamma * sensitivity;
-
-      requestAnimationFrame(() => {
-        setRotation(prev => ({
-          x: prev.x + (targetX - prev.x) * (isIOS ? 0.05 : 0.1),
-          y: prev.y + (targetY - prev.y) * (isIOS ? 0.05 : 0.1)
-        }));
-      });
-    }
-  }, [gyroscope, isMobile, isIOS]);
 
   const transferMutation = useMutation({
     mutationFn: async () => {
@@ -104,11 +97,15 @@ export default function VirtualCard({ card }: { card: Card }) {
         throw new Error('Пожалуйста, введите корректную сумму');
       }
 
+      const selectedBalance = getSelectedBalance();
+      if (selectedBalance < parseFloat(transferAmount)) {
+        throw new Error(`Недостаточно ${selectedWallet.toUpperCase()} на балансе (${selectedBalance} ${selectedWallet.toUpperCase()})`);
+      }
+
       if (!recipientCardNumber.trim()) {
         throw new Error('Пожалуйста, введите номер карты получателя');
       }
 
-      // Create transfer request with all required parameters
       const transferRequest = {
         fromCardId: card.id,
         amount: parseFloat(transferAmount),
@@ -188,6 +185,40 @@ export default function VirtualCard({ card }: { card: Card }) {
       setTransferError(error.message || "Произошла ошибка при переводе");
     }
   };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current || isMobile) return;
+
+    const rect = cardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 15;
+    const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 15;
+
+    setRotation({ x: rotateX, y: rotateY });
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setRotation({ x: 0, y: 0 });
+    setIsHovered(false);
+  };
+
+  useEffect(() => {
+    if (gyroscope && isMobile) {
+      const sensitivity = isIOS ? 0.5 : 0.7;
+      const targetX = -gyroscope.beta * sensitivity;
+      const targetY = gyroscope.gamma * sensitivity;
+
+      requestAnimationFrame(() => {
+        setRotation(prev => ({
+          x: prev.x + (targetX - prev.x) * (isIOS ? 0.05 : 0.1),
+          y: prev.y + (targetY - prev.y) * (isIOS ? 0.05 : 0.1)
+        }));
+      });
+    }
+  }, [gyroscope, isMobile, isIOS]);
 
   return (
     <div
@@ -436,6 +467,14 @@ export default function VirtualCard({ card }: { card: Card }) {
                             {selectedWallet.toUpperCase()}
                           </span>
                         </div>
+                        {recipientType === 'usd_card' && card.type === 'crypto' && transferAmount && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Получатель получит примерно: {calculateUsdEquivalent(transferAmount)?.toFixed(2)} USD
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Доступно: {getSelectedBalance()} {selectedWallet.toUpperCase()}
+                        </p>
                       </div>
 
                       {/* Error message */}
