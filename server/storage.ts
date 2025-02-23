@@ -13,7 +13,6 @@ const scryptAsync = promisify(scrypt);
 
 const PostgresSessionStore = connectPg(session);
 
-// Create a proper connection pool for sessions using node-postgres
 const sessionPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   max: 2,
@@ -172,14 +171,23 @@ export class DatabaseStorage implements IStorage {
     }, 'Get transactions by card ID');
   }
 
-  async createTransaction(transactionData: Omit<Transaction, "id">): Promise<Transaction> {
+  async createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction> {
     return this.withRetry(async () => {
-      console.log('Creating transaction:', transactionData);
-      const [transaction] = await db.insert(transactions)
-        .values(transactionData)
-        .returning();
-      console.log('Transaction created:', transaction);
-      return transaction;
+      console.log('Creating transaction:', transaction);
+      const [result] = await db.insert(transactions).values({
+        fromCardId: transaction.fromCardId,
+        toCardId: transaction.toCardId,
+        amount: transaction.amount,
+        type: transaction.type,
+        status: transaction.status,
+        description: transaction.description,
+        wallet: transaction.wallet,
+        fromCardNumber: transaction.fromCardNumber,
+        toCardNumber: transaction.toCardNumber,
+        createdAt: transaction.createdAt || new Date()
+      }).returning();
+      console.log('Transaction created:', result);
+      return result;
     }, 'Create transaction');
   }
 
@@ -196,100 +204,81 @@ export class DatabaseStorage implements IStorage {
         return { success: false, error: "Карта отправителя не найдена" };
       }
 
-      // Обычный перевод между картами
-      if (!wallet) {
-        const toCard = await this.getCardByNumber(toCardNumber);
-        if (!toCard) {
-          return { success: false, error: "Карта получателя не найдена" };
+      // Crypto transfer
+      if (wallet) {
+        if (fromCard.type !== 'crypto') {
+          return { success: false, error: "Отправлять криптовалюту можно только с крипто-карты" };
         }
 
-        if (fromCard.id === toCard.id) {
-          return { success: false, error: "Нельзя перевести деньги на ту же карту" };
-        }
-
-        const fromBalance = parseFloat(fromCard.balance);
-        const toBalance = parseFloat(toCard.balance);
+        const fromBalance = wallet === 'btc' ? 
+          parseFloat(fromCard.btcBalance || '0') : 
+          parseFloat(fromCard.ethBalance || '0');
 
         if (fromBalance < amount) {
-          return { success: false, error: `Недостаточно средств. Требуется: ${amount}, Доступно: ${fromBalance}` };
+          return { 
+            success: false, 
+            error: `Недостаточно ${wallet.toUpperCase()}. Требуется: ${amount}, Доступно: ${fromBalance}` 
+          };
         }
 
-        const newFromBalance = (fromBalance - amount).toFixed(2);
-        const newToBalance = (toBalance + amount).toFixed(2);
+        const newFromBalance = (fromBalance - amount).toFixed(8);
 
-        const transaction = await db.transaction(async (tx) => {
-          const [newTransaction] = await tx.insert(transactions)
-            .values({
-              fromCardId: fromCard.id,
-              toCardId: toCard.id,
-              amount: amount.toString(),
-              type: 'transfer',
-              status: 'completed',
-              description: `Перевод ${amount} ${fromCard.type.toUpperCase()}`,
-              fromCardNumber: fromCard.number,
-              toCardNumber: toCard.number
-            })
-            .returning();
-
-          await tx.update(cards)
-            .set({ balance: newFromBalance })
-            .where(eq(cards.id, fromCard.id));
-
-          await tx.update(cards)
-            .set({ balance: newToBalance })
-            .where(eq(cards.id, toCard.id));
-
-          return newTransaction;
+        const transaction = await this.createTransaction({
+          fromCardId: fromCard.id,
+          toCardId: null,
+          amount: amount.toString(),
+          type: 'transfer',
+          wallet: wallet,
+          status: 'completed',
+          description: `Перевод ${amount} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
+          fromCardNumber: fromCard.number,
+          toCardNumber: toCardNumber,
+          createdAt: new Date()
         });
+
+        if (wallet === 'btc') {
+          await this.updateCardBtcBalance(fromCard.id, newFromBalance);
+        } else {
+          await this.updateCardEthBalance(fromCard.id, newFromBalance);
+        }
 
         return { success: true, transaction };
       }
 
-      // Крипто-перевод
-      if (fromCard.type !== 'crypto') {
-        return { success: false, error: "Отправлять криптовалюту можно только с крипто-карты" };
+      // Regular card transfer
+      const toCard = await this.getCardByNumber(toCardNumber);
+      if (!toCard) {
+        return { success: false, error: "Карта получателя не найдена" };
       }
 
-      const fromBalance = wallet === 'btc' ? 
-        parseFloat(fromCard.btcBalance || '0') : 
-        parseFloat(fromCard.ethBalance || '0');
+      if (fromCard.id === toCard.id) {
+        return { success: false, error: "Нельзя перевести деньги на ту же карту" };
+      }
+
+      const fromBalance = parseFloat(fromCard.balance);
+      const toBalance = parseFloat(toCard.balance);
 
       if (fromBalance < amount) {
-        return { 
-          success: false, 
-          error: `Недостаточно ${wallet.toUpperCase()}. Требуется: ${amount}, Доступно: ${fromBalance}` 
-        };
+        return { success: false, error: `Недостаточно средств. Требуется: ${amount}, Доступно: ${fromBalance}` };
       }
 
-      const newFromBalance = (fromBalance - amount).toFixed(8);
+      const newFromBalance = (fromBalance - amount).toFixed(2);
+      const newToBalance = (toBalance + amount).toFixed(2);
 
-      const transaction = await db.transaction(async (tx) => {
-        const [newTransaction] = await tx.insert(transactions)
-          .values({
-            fromCardId: fromCard.id,
-            toCardId: null,
-            amount: amount.toString(),
-            type: 'transfer',
-            wallet: wallet,
-            status: 'completed',
-            description: `Перевод ${amount} ${wallet.toUpperCase()} на адрес ${toCardNumber}`,
-            fromCardNumber: fromCard.number,
-            toCardNumber: toCardNumber
-          })
-          .returning();
-
-        if (wallet === 'btc') {
-          await tx.update(cards)
-            .set({ btcBalance: newFromBalance })
-            .where(eq(cards.id, fromCard.id));
-        } else {
-          await tx.update(cards)
-            .set({ ethBalance: newFromBalance })
-            .where(eq(cards.id, fromCard.id));
-        }
-
-        return newTransaction;
+      const transaction = await this.createTransaction({
+        fromCardId: fromCard.id,
+        toCardId: toCard.id,
+        amount: amount.toString(),
+        type: 'transfer',
+        status: 'completed',
+        description: `Перевод ${amount} ${fromCard.type.toUpperCase()}`,
+        fromCardNumber: fromCard.number,
+        toCardNumber: toCard.number,
+        createdAt: new Date()
       });
+
+      await this.updateCardBalance(fromCard.id, newFromBalance);
+      await this.updateCardBalance(toCard.id, newToBalance);
 
       return { success: true, transaction };
     }, 'Transfer money');

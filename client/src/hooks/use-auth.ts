@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ReactNode } from "react";
 
 interface User {
   id: number;
@@ -27,13 +26,17 @@ export function useAuth() {
   const { isLoading } = useQuery<User>({
     queryKey: ["/api/user"],
     retry: false,
-    onSuccess: (data) => {
-      setUser(data);
-    },
-    onError: () => {
-      setUser(null);
-      setLocation("/auth");
-    },
+    refetchOnWindowFocus: true,
+    gcTime: 0,
+    staleTime: 0,
+    onSettled(data, error) {
+      if (error) {
+        setUser(null);
+        setLocation("/auth");
+      } else if (data) {
+        setUser(data);
+      }
+    }
   });
 
   return {
@@ -41,18 +44,4 @@ export function useAuth() {
     isLoading,
     isAuthenticated: !!user,
   };
-}
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
-  const { isLoading } = useAuth();
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  return <>{children}</>;
 }
