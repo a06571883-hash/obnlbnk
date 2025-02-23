@@ -6,6 +6,7 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
+import { WebSocketServer } from 'ws';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -27,6 +28,24 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
+  const httpServer = createServer(app);
+
+  // Создаем WebSocket сервер на отдельном пути
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/ws'
+  });
+
+  wss.on('connection', (ws) => {
+    console.log('WebSocket client connected');
+
+    ws.on('error', console.error);
+
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+    });
+  });
+
   app.post("/api/transfer", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
@@ -35,14 +54,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { fromCardId, toCardNumber, amount, wallet } = req.body;
 
-      // Basic validation
       if (!fromCardId || !toCardNumber || amount === undefined) {
         return res.status(400).json({ 
           message: "Не указаны обязательные параметры перевода" 
         });
       }
 
-      // Amount validation
       const transferAmount = Number(amount);
       if (isNaN(transferAmount) || transferAmount <= 0) {
         return res.status(400).json({ 
@@ -50,7 +67,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Validate card ownership
       const userCards = await storage.getCardsByUserId(req.user.id);
       const ownsCard = userCards.some(card => card.id === fromCardId);
       if (!ownsCard) {
@@ -59,7 +75,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Validate crypto address for crypto transfers
       if (wallet) {
         if (!validateCryptoAddress(toCardNumber, wallet)) {
           return res.status(400).json({
@@ -67,7 +82,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       } else {
-        // Validate card number format for fiat transfers
         const cleanToCardNumber = toCardNumber.replace(/\s+/g, '');
         if (!/^\d{16}$/.test(cleanToCardNumber)) {
           return res.status(400).json({ 
@@ -76,7 +90,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Execute transfer
       const result = await storage.transferMoney(fromCardId, toCardNumber, transferAmount, wallet);
 
       if (!result.success) {
@@ -100,7 +113,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
   httpServer.keepAliveTimeout = 65000;
   httpServer.headersTimeout = 66000;
 

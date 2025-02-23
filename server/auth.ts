@@ -44,7 +44,7 @@ export function setupAuth(app: Express) {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       sameSite: 'lax' as const,
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      maxAge: 30 * 24 * 60 * 60 * 1000
     }
   };
 
@@ -106,6 +106,13 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
+  app.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Необходима авторизация" });
+    }
+    res.json(req.user);
+  });
+
   app.post("/api/register", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -155,20 +162,7 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Необходима авторизация" });
-    }
-    res.json(req.user);
-  });
-
-  app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    next();
-  });
-
+  // API routes requiring authentication
   app.get("/api/cards", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
@@ -205,5 +199,12 @@ export function setupAuth(app: Express) {
       console.error("Transactions fetch error:", error);
       res.status(500).json({ message: "Ошибка при получении транзакций" });
     }
+  });
+
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
   });
 }
