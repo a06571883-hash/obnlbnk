@@ -18,18 +18,21 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import TransactionReceipt from "@/components/transaction-receipt";
 
+// Create a key for sessionStorage to track welcome message state
+const WELCOME_MESSAGE_KEY = 'welcomeMessageShown';
+
 export default function HomePage() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
-  // Show welcome message only on fresh login
+  // Show welcome message only on fresh login and track it in sessionStorage
   useEffect(() => {
-    const hasShownWelcome = localStorage.getItem('welcomeShown');
-    if (!hasShownWelcome) {
+    const hasShownWelcome = sessionStorage.getItem(WELCOME_MESSAGE_KEY);
+    if (!hasShownWelcome && user) {
       setShowWelcome(true);
-      localStorage.setItem('welcomeShown', 'true');
+      sessionStorage.setItem(WELCOME_MESSAGE_KEY, 'true');
 
       // Hide after 4 seconds
       const timer = setTimeout(() => {
@@ -38,12 +41,12 @@ export default function HomePage() {
 
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [user]);
 
   // Clear welcome flag on logout
   useEffect(() => {
     const unsubscribe = logoutMutation.subscribe(() => {
-      localStorage.removeItem('welcomeShown');
+      sessionStorage.removeItem(WELCOME_MESSAGE_KEY);
     });
     return () => unsubscribe();
   }, [logoutMutation]);
