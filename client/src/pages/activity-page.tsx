@@ -7,6 +7,7 @@ import {
   Bitcoin,
   DollarSign,
   Coins,
+  Banknote
 } from "lucide-react";
 import { useState } from "react";
 import TransactionReceipt from "@/components/transaction-receipt";
@@ -27,7 +28,7 @@ interface Transaction {
   fromCardNumber: string;
   toCardNumber: string;
   description: string;
-  wallet?: 'btc' | 'eth';
+  wallet?: string;
 }
 
 interface Card {
@@ -38,26 +39,6 @@ interface Card {
   balance: string;
   btcBalance?: string;
   ethBalance?: string;
-}
-
-interface TransactionReceiptProps {
-  transaction: {
-    id: number;
-    type: string;
-    amount: string;
-    convertedAmount?: string;
-    currency: string;
-    date: string;
-    status: string;
-    from: string;
-    to: string;
-    description: string;
-    fromCard?: Card;
-    toCard?: Card;
-    wallet?: 'btc' | 'eth';
-  };
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
 }
 
 const EmptyState = () => (
@@ -92,13 +73,13 @@ export default function ActivityPage() {
   };
 
   const getCurrencyIcon = (type: string) => {
-    switch (type) {
+    switch (type.toLowerCase()) {
       case 'crypto':
         return <Bitcoin className="h-4 w-4" />;
       case 'usd':
         return <DollarSign className="h-4 w-4" />;
       case 'uah':
-        return <Coins className="h-4 w-4" />;
+        return <Banknote className="h-4 w-4" />;
       default:
         return null;
     }
@@ -108,11 +89,17 @@ export default function ActivityPage() {
     const fromCard = cards.find(c => c.id === tx.fromCardId);
     const toCard = cards.find(c => c.id === tx.toCardId);
 
+    if (tx.type === 'commission') {
+      return { type: 'Комиссия', iconColor: 'text-red-500' };
+    }
+
+    if (tx.type === 'exchange') {
+      return { type: 'Обмен', iconColor: 'text-amber-500' };
+    }
+
     if (tx.type === 'transfer') {
-      if (fromCard && toCard && fromCard.userId === toCard.userId) {
-        return { type: 'Обмен', iconColor: 'text-amber-500' };
-      } else if (fromCard?.userId === user?.id) {
-        return { type: tx.wallet ? `Перевод ${tx.wallet.toUpperCase()}` : 'Перевод', iconColor: 'text-primary' };
+      if (fromCard?.userId === user?.id) {
+        return { type: 'Перевод', iconColor: 'text-primary' };
       } else {
         return { type: 'Получение', iconColor: 'text-emerald-500' };
       }
@@ -124,8 +111,10 @@ export default function ActivityPage() {
   const getTransactionIcon = (tx: Transaction) => {
     const { iconColor } = getTransactionType(tx);
     switch (tx.type) {
-      case 'deposit':
-        return <ArrowDownLeft className={`h-4 w-4 ${iconColor}`} />;
+      case 'commission':
+        return <Coins className={`h-4 w-4 ${iconColor}`} />;
+      case 'exchange':
+        return <RefreshCw className={`h-4 w-4 ${iconColor}`} />;
       case 'transfer':
         return <ArrowUpRight className={`h-4 w-4 ${iconColor}`} />;
       default:
@@ -141,13 +130,14 @@ export default function ActivityPage() {
     }
   };
 
-  const getCurrencyLabel = (card: Card | undefined) => {
-    if (!card) return '';
+  const formatAmount = (amount: string, currency: string) => {
+    const num = parseFloat(amount);
+    if (isNaN(num)) return amount;
 
-    if (card.type === 'crypto') {
-      return card.btcBalance ? 'BTC' : 'ETH';
+    if (currency.toLowerCase() === 'crypto') {
+      return num.toFixed(8);
     }
-    return card.type.toUpperCase();
+    return num.toFixed(2);
   };
 
   return (
@@ -176,8 +166,8 @@ export default function ActivityPage() {
                     getTransactionIcon={getTransactionIcon}
                     getTransactionType={getTransactionType}
                     getCurrencyIcon={getCurrencyIcon}
-                    getCurrencyLabel={getCurrencyLabel}
                     formatDate={formatDate}
+                    formatAmount={formatAmount}
                     cards={cards}
                     onSelect={setSelectedTx}
                   />
@@ -218,8 +208,8 @@ interface TransactionListProps {
   getTransactionIcon: (tx: Transaction) => JSX.Element | null;
   getTransactionType: (tx: Transaction) => { type: string; iconColor: string };
   getCurrencyIcon: (type: string) => JSX.Element | null;
-  getCurrencyLabel: (card: Card | undefined) => string;
   formatDate: (date: string) => string;
+  formatAmount: (amount: string, currency: string) => string;
   cards: Card[];
   onSelect: (tx: Transaction) => void;
 }
@@ -229,8 +219,8 @@ function TransactionList({
   getTransactionIcon,
   getTransactionType,
   getCurrencyIcon,
-  getCurrencyLabel,
   formatDate,
+  formatAmount,
   cards,
   onSelect
 }: TransactionListProps) {
@@ -242,7 +232,8 @@ function TransactionList({
         const { type } = getTransactionType(tx);
         const fromCard = cards.find(c => c.id === tx.fromCardId);
         const toCard = cards.find(c => c.id === tx.toCardId);
-        const currency = fromCard?.type || 'unknown';
+        const fromCurrency = fromCard?.type || 'unknown';
+        const toCurrency = toCard?.type || 'unknown';
 
         return (
           <div
@@ -273,18 +264,15 @@ function TransactionList({
             <div className="text-right ml-2 min-w-[60px]">
               <div className="flex items-center gap-1 text-[8px] font-medium justify-end">
                 <div className="flex items-center truncate">
-                  {getCurrencyIcon(currency)}
-                  <span className="ml-0.5">{tx.amount}</span>
+                  {getCurrencyIcon(fromCurrency)}
+                  <span className="ml-0.5">{formatAmount(tx.amount, fromCurrency)}</span>
                 </div>
               </div>
               {tx.convertedAmount && tx.convertedAmount !== tx.amount && (
                 <div className="text-[7px] text-muted-foreground truncate">
-                  → {tx.convertedAmount} {getCurrencyLabel(toCard)}
+                  → {formatAmount(tx.convertedAmount, toCurrency)} {toCurrency.toUpperCase()}
                 </div>
               )}
-              <div className="text-[7px] text-muted-foreground">
-                {tx.wallet ? tx.wallet.toUpperCase() : getCurrencyLabel(fromCard)}
-              </div>
             </div>
           </div>
         );

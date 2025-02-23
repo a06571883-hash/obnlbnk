@@ -160,6 +160,48 @@ export class DatabaseStorage implements IStorage {
     }, 'Create transaction');
   }
 
+  private async createExchangeTransaction(
+    fromCard: Card,
+    toCard: Card,
+    amount: number,
+    convertedAmount: number,
+    commission: number,
+    btcCommission: number,
+    regulator: User
+  ): Promise<Transaction> {
+    // Создаем транзакцию обмена
+    const transaction = await this.createTransaction({
+      fromCardId: fromCard.id,
+      toCardId: toCard.id,
+      amount: amount.toString(),
+      convertedAmount: convertedAmount.toString(),
+      type: 'exchange',
+      status: 'completed',
+      wallet: null,
+      description: `Обмен ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(2)} ${toCard.type.toUpperCase()}`,
+      fromCardNumber: fromCard.number,
+      toCardNumber: toCard.number,
+      createdAt: new Date()
+    });
+
+    // Создаем транзакцию комиссии
+    await this.createTransaction({
+      fromCardId: fromCard.id,
+      toCardId: regulator.id,
+      amount: commission.toString(),
+      convertedAmount: btcCommission.toString(),
+      type: 'commission',
+      status: 'completed',
+      wallet: null,
+      description: `💰 Комиссия за обмен ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} (${btcCommission.toFixed(8)} BTC)`,
+      fromCardNumber: fromCard.number,
+      toCardNumber: "REGULATOR",
+      createdAt: new Date()
+    });
+
+    return transaction;
+  }
+
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withTransaction(async () => {
       try {
@@ -186,9 +228,7 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Parse balances
-        const fromBalanceStr = fromCard.type === 'crypto' ?
-          (fromCard.btcBalance || '0') :
-          fromCard.balance;
+        const fromBalanceStr = fromCard.balance;
         const fromBalance = parseFloat(fromBalanceStr);
 
         if (isNaN(fromBalance)) {
@@ -200,7 +240,7 @@ export class DatabaseStorage implements IStorage {
         const totalDeduction = amount + commission;
 
         if (fromBalance < totalDeduction) {
-          throw new Error(`Недостаточно средств на балансе (${fromBalance} ${fromCard.type.toUpperCase()}) с учетом комиссии 1%`);
+          throw new Error(`Недостаточно средств на балансе (${fromBalance.toFixed(2)} ${fromCard.type.toUpperCase()}) с учетом комиссии 1%`);
         }
 
         // Calculate conversion rates based on latest exchange rates
@@ -240,35 +280,67 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Update balances
-        const newFromBalance = (fromBalance - totalDeduction).toFixed(8);
-        const newToBalance = (parseFloat(toCard.balance) + convertedAmount).toFixed(8);
+        const newFromBalance = (fromBalance - totalDeduction).toFixed(2);
+        const newToBalance = (parseFloat(toCard.balance) + convertedAmount).toFixed(2);
         const newRegulatorBtcBalance = (parseFloat(regulator.regulator_balance || '0') + btcCommission).toFixed(8);
 
-        // Create main transaction
-        const transaction = await this.createTransaction({
-          fromCardId: fromCard.id,
-          toCardId: toCard.id,
-          amount: amount.toString(),
-          convertedAmount: convertedAmount.toString(),
-          type: 'transfer',
-          status: 'completed',
-          wallet: null,
-          description: `Перевод ${amount.toFixed(8)} ${fromCard.type.toUpperCase()} -> ${convertedAmount.toFixed(8)} ${toCard.type.toUpperCase()}`,
-          fromCardNumber: fromCard.number,
-          toCardNumber: toCard.number,
-          createdAt: new Date()
-        });
+        // Check if cards belong to the same user
+        if (fromCard.userId === toCard.userId) {
+          // Create exchange transaction
+          const transaction = await this.createExchangeTransaction(
+            fromCard,
+            toCard,
+            amount,
+            convertedAmount,
+            commission,
+            btcCommission,
+            regulator
+          );
 
-        // Create commission transaction
-        await this.createCommissionTransaction(fromCard, toCard, commission, btcCommission, regulator);
+          // Update balances
+          await this.updateCardBalance(fromCard.id, newFromBalance);
+          await this.updateCardBalance(toCard.id, newToBalance);
+          await this.updateRegulatorBalance(regulator.id, newRegulatorBtcBalance);
 
+          return { success: true, transaction };
+        } else {
+          // Create transfer transaction
+          const transaction = await this.createTransaction({
+            fromCardId: fromCard.id,
+            toCardId: toCard.id,
+            amount: amount.toString(),
+            convertedAmount: convertedAmount.toString(),
+            type: 'transfer',
+            status: 'completed',
+            wallet: null,
+            description: `💸 Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(2)} ${toCard.type.toUpperCase()}`,
+            fromCardNumber: fromCard.number,
+            toCardNumber: toCard.number,
+            createdAt: new Date()
+          });
 
-        // Update balances
-        await this.updateCardBalance(fromCard.id, newFromBalance);
-        await this.updateCardBalance(toCard.id, newToBalance);
-        await this.updateRegulatorBalance(regulator.id, newRegulatorBtcBalance);
+          // Create commission transaction
+          await this.createTransaction({
+            fromCardId: fromCard.id,
+            toCardId: regulator.id,
+            amount: commission.toString(),
+            convertedAmount: btcCommission.toString(),
+            type: 'commission',
+            status: 'completed',
+            wallet: null,
+            description: `💰 Комиссия за перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} (${btcCommission.toFixed(8)} BTC)`,
+            fromCardNumber: fromCard.number,
+            toCardNumber: "REGULATOR",
+            createdAt: new Date()
+          });
 
-        return { success: true, transaction };
+          // Update balances
+          await this.updateCardBalance(fromCard.id, newFromBalance);
+          await this.updateCardBalance(toCard.id, newToBalance);
+          await this.updateRegulatorBalance(regulator.id, newRegulatorBtcBalance);
+
+          return { success: true, transaction };
+        }
 
       } catch (error) {
         console.error("Error in transferMoney:", error);
