@@ -115,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ethWallet = ethers.Wallet.createRandom();
       const ethAddress = ethWallet.address;
 
-      // Create three cards: USD, UAH, and Crypto
+      // Create three cards: USD, UAH, and Crypto with zero initial balance
       const cards = await Promise.all([
         storage.createCard({
           userId: req.user.id,
@@ -123,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           number: Math.random().toString().slice(2, 18),
           expiry,
           cvv,
-          balance: '1000.00',
+          balance: '0.00',
           btcBalance: '0',
           ethBalance: '0',
           btcAddress: null,
@@ -135,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           number: Math.random().toString().slice(2, 18),
           expiry,
           cvv,
-          balance: '37000.00',
+          balance: '0.00',
           btcBalance: '0',
           ethBalance: '0',
           btcAddress: null,
@@ -148,8 +148,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           expiry,
           cvv,
           balance: '0',
-          btcBalance: '0.05',
-          ethBalance: '1.0',
+          btcBalance: '0',
+          ethBalance: '0',
           btcAddress: btcAddress || null,
           ethAddress: ethAddress
         })
