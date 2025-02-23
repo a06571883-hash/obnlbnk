@@ -253,10 +253,10 @@ export default function HomePage() {
                         <div
                           key={transaction.id}
                           onClick={() => setSelectedTransaction(transaction)}
-                          className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 cursor-pointer"
+                          className="flex items-center justify-between p-1.5 rounded-lg hover:bg-accent/50 cursor-pointer"
                         >
-                          <div className="flex items-center gap-2">
-                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                          <div className="flex items-center gap-1.5">
+                            <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center">
                               {transaction.type === 'transfer' && (
                                 <ArrowUpRight className={`h-3 w-3 ${iconColor}`} />
                               )}
@@ -264,18 +264,23 @@ export default function HomePage() {
                                 <ArrowDownLeft className="h-3 w-3 text-emerald-500" />
                               )}
                             </div>
-                            <div>
-                              <p className="text-xs font-medium">
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-medium truncate">
                                 {transactionType}
                               </p>
-                              <p className="text-[10px] text-muted-foreground">
+                              <p className="text-[9px] text-muted-foreground">
                                 {format(new Date(transaction.createdAt), 'dd.MM.yyyy HH:mm')}
                               </p>
                             </div>
                           </div>
-                          <span className="text-xs font-medium">
-                            {transaction.amount} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
-                          </span>
+                          <div className="text-right ml-2">
+                            <p className="text-[11px] font-medium whitespace-nowrap">
+                              {Number(transaction.amount).toFixed(8)} {cards.find(c => c.id === transaction.fromCardId)?.type.toUpperCase()}
+                            </p>
+                            <p className="text-[9px] text-muted-foreground">
+                              ≈ {(Number(transaction.amount) * (transaction.type === 'transfer' ? 95652.99 : 95652.99)).toFixed(2)} USD
+                            </p>
+                          </div>
                         </div>
                       );
                     })
