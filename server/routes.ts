@@ -74,49 +74,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log("Raw request body:", req.body);
-      console.log("Content-Type:", req.headers['content-type']);
 
-      // Получаем параметры из тела запроса
-      const fromCardId = Number(req.body.fromCardId);
-      const toCardNumber = String(req.body.toCardNumber || '').trim();
-      const amount = Number(req.body.amount);
+      const { fromCardId, recipientAddress, amount, transferType, cryptoType } = req.body;
 
-      console.log("Parsed transfer parameters:", {
-        fromCardId,
-        toCardNumber,
-        amount,
-        isFromCardIdValid: !isNaN(fromCardId),
-        isToCardNumberValid: toCardNumber.length === 16,
-        isAmountValid: !isNaN(amount) && amount > 0
-      });
-
-      // Проверяем обязательные параметры
-      if (isNaN(fromCardId)) {
-        return res.status(400).json({ message: "Некорректный ID карты отправителя" });
+      // Базовая валидация
+      if (!fromCardId || !recipientAddress || !amount) {
+        return res.status(400).json({ message: "Не указаны обязательные параметры перевода" });
       }
 
-      if (!toCardNumber) {
-        return res.status(400).json({ message: "Не указана карта получателя" });
-      }
+      let result;
+      if (transferType === 'crypto') {
+        if (!cryptoType) {
+          return res.status(400).json({ message: "Не указан тип криптовалюты" });
+        }
 
-      if (isNaN(amount) || amount <= 0) {
-        return res.status(400).json({ message: "Некорректная сумма перевода" });
+        result = await storage.transferCrypto(
+          parseInt(fromCardId),
+          recipientAddress,
+          parseFloat(amount),
+          cryptoType as 'btc' | 'eth'
+        );
+      } else {
+        result = await storage.transferMoney(
+          parseInt(fromCardId),
+          recipientAddress,
+          parseFloat(amount)
+        );
       }
-
-      // Проверяем формат номера карты
-      if (!/^\d{16}$/.test(toCardNumber)) {
-        return res.status(400).json({ message: "Неверный формат номера карты" });
-      }
-
-      // Проверяем карту отправителя
-      const userCards = await storage.getCardsByUserId(req.user.id);
-      const fromCard = userCards.find(card => card.id === fromCardId);
-      if (!fromCard) {
-        return res.status(403).json({ message: "У вас нет доступа к этой карте" });
-      }
-
-      // Выполняем перевод
-      const result = await storage.transferMoney(fromCardId, toCardNumber, amount);
 
       if (!result.success) {
         return res.status(400).json({ message: result.error });
