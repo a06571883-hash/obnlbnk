@@ -84,9 +84,9 @@ export default function VirtualCard({ card }: { card: Card }) {
       // Проверяем баланс отправителя
       if (card.type === 'crypto') {
         // Для крипто карты проверяем баланс в выбранной криптовалюте
-        const cryptoBalance = selectedWallet === 'btc' ? card.btcBalance : card.ethBalance;
-        if (parseFloat(transferAmount) > parseFloat(cryptoBalance || '0')) {
-          throw new Error(`Недостаточно ${selectedWallet.toUpperCase()}. Доступно: ${cryptoBalance} ${selectedWallet.toUpperCase()}`);
+        const cryptoBalance = selectedWallet === 'btc' ? parseFloat(card.btcBalance || '0') : parseFloat(card.ethBalance || '0');
+        if (parseFloat(transferAmount) > cryptoBalance) {
+          throw new Error(`Недостаточно ${selectedWallet.toUpperCase()}. Доступно: ${cryptoBalance.toFixed(8)} ${selectedWallet.toUpperCase()}`);
         }
       } else {
         // Для фиатной карты проверяем баланс в USD/UAH
@@ -159,16 +159,10 @@ export default function VirtualCard({ card }: { card: Card }) {
     const amount = parseFloat(transferAmount);
     if (isNaN(amount)) return null;
 
-    if (card.type === 'crypto' && recipientType === 'usd_card') {
-      // Конвертация из криптовалюты в USD при переводе на фиат карту
+    if (card.type === 'crypto' ) { //Always show conversion for crypto to fiat
       const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
       return `≈ ${(amount * rate).toFixed(2)} USD`;
-    } else if (card.type !== 'crypto' && recipientType === 'crypto_wallet') {
-      // Конвертация из USD в криптовалюту при переводе на криптокошелек
-      const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
-      return `≈ ${(amount / rate).toFixed(8)} ${selectedWallet.toUpperCase()}`;
     }
-
     return null;
   };
 
@@ -427,7 +421,6 @@ export default function VirtualCard({ card }: { card: Card }) {
                         value={recipientCardNumber}
                         onChange={e => {
                           if (recipientType === 'usd_card') {
-                            // Форматирование номера карты
                             const value = e.target.value.replace(/\D/g, '');
                             const parts = value.match(/.{1,4}/g) || [];
                             setRecipientCardNumber(parts.join(' '));
