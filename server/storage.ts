@@ -4,7 +4,7 @@ import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { db } from "./db";
 import { cards, users, transactions, exchangeRates } from "@shared/schema";
-import type { User, Card, InsertUser, Transaction, ExchangeRate, NFTCollection, NFT, InsertNFT } from "@shared/schema";
+import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
 import { eq, and, or, desc } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
@@ -29,11 +29,10 @@ export interface IStorage {
   transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   getLatestExchangeRates(): Promise<ExchangeRate | undefined>;
   updateExchangeRates(rates: { usdToUah: number; btcToUsd: number; ethToUsd: number }): Promise<ExchangeRate>;
-  // NFT methods
-  createNFTCollection(userId: number, name: string, description: string): Promise<NFTCollection>;
-  createNFT(data: Omit<InsertNFT, "id">): Promise<NFT>;
-  getNFTsByUserId(userId: number): Promise<NFT[]>;
-  getNFTCollectionsByUserId(userId: number): Promise<NFTCollection[]>;
+  createNFTCollection(userId: number, name: string, description: string): Promise<any>;
+  createNFT(data: Omit<any, "id">): Promise<any>;
+  getNFTsByUserId(userId: number): Promise<any[]>;
+  getNFTCollectionsByUserId(userId: number): Promise<any[]>;
   canGenerateNFT(userId: number): Promise<boolean>;
   updateUserNFTGeneration(userId: number): Promise<void>;
 }
@@ -109,8 +108,10 @@ export class DatabaseStorage implements IStorage {
 
   async updateCardBalance(cardId: number, balance: string): Promise<void> {
     await this.withRetry(async () => {
-      await db.update(cards)
-        .set({ balance: balance })
+      console.log(`Updating card ${cardId} balance to ${balance}`);
+      await db
+        .update(cards)
+        .set({ balance })
         .where(eq(cards.id, cardId));
     }, 'Update card balance');
   }
@@ -140,8 +141,12 @@ export class DatabaseStorage implements IStorage {
 
   async getCardByNumber(cardNumber: string): Promise<Card | undefined> {
     return this.withRetry(async () => {
-      const cleanCardNumber = cardNumber.replace(/\s+/g, '');
-      const [card] = await db.select().from(cards).where(eq(cards.number, cleanCardNumber));
+      console.log("Searching for card with number:", cardNumber);
+      const [card] = await db
+        .select()
+        .from(cards)
+        .where(eq(cards.number, cardNumber));
+      console.log("Found card:", card);
       return card;
     }, 'Get card by number');
   }
@@ -212,20 +217,30 @@ export class DatabaseStorage implements IStorage {
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withTransaction(async () => {
       try {
+        console.log(`Starting transfer: fromCardId=${fromCardId}, toCardNumber=${toCardNumber}, amount=${amount}`);
+
+        // Получаем карту отправителя
         const fromCard = await this.getCardById(fromCardId);
         if (!fromCard) {
           throw new Error("Карта отправителя не найдена");
         }
+        console.log("From card:", fromCard);
 
+        // Получаем карту получателя
         const toCard = await this.getCardByNumber(toCardNumber);
         if (!toCard) {
           throw new Error("Карта получателя не найдена");
         }
+        console.log("To card:", toCard);
 
-        // Convert amount to numbers and check balance
+        // Проверяем баланс
         const fromBalance = parseFloat(fromCard.balance);
         if (isNaN(fromBalance)) {
           throw new Error("Ошибка формата баланса отправителя");
+        }
+
+        if (fromBalance < amount) {
+          throw new Error(`Недостаточно средств. Доступно: ${fromBalance.toFixed(2)}, требуется: ${amount.toFixed(2)}`);
         }
 
         const toBalance = parseFloat(toCard.balance);
@@ -233,15 +248,11 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Ошибка формата баланса получателя");
         }
 
-        if (fromBalance < amount) {
-          throw new Error("Недостаточно средств для перевода");
-        }
-
-        // Update balances
+        // Обновляем балансы
         await this.updateCardBalance(fromCard.id, (fromBalance - amount).toFixed(2));
         await this.updateCardBalance(toCard.id, (toBalance + amount).toFixed(2));
 
-        // Create transaction record
+        // Создаем транзакцию
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard.id,
@@ -249,19 +260,20 @@ export class DatabaseStorage implements IStorage {
           convertedAmount: amount.toString(),
           type: 'transfer',
           status: 'completed',
-          description: `Перевод с карты ${fromCard.number} на карту ${toCard.number}`,
+          description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
           wallet: null,
           createdAt: new Date()
         });
 
+        console.log("Transfer completed successfully:", transaction);
         return { success: true, transaction };
       } catch (error) {
         console.error("Transfer error:", error);
-        return { 
-          success: false, 
-          error: error instanceof Error ? error.message : "Ошибка при переводе средств" 
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Ошибка при переводе средств"
         };
       }
     });
@@ -454,6 +466,24 @@ export class DatabaseStorage implements IStorage {
   }
 
 
+  async createNFTCollection(userId: number, name: string, description: string): Promise<any> {
+    throw new Error("Method not implemented.");
+  }
+  async createNFT(data: Omit<any, "id">): Promise<any> {
+    throw new Error("Method not implemented.");
+  }
+  async getNFTsByUserId(userId: number): Promise<any[]> {
+    throw new Error("Method not implemented.");
+  }
+  async getNFTCollectionsByUserId(userId: number): Promise<any[]> {
+    throw new Error("Method not implemented.");
+  }
+  async canGenerateNFT(userId: number): Promise<boolean> {
+    throw new Error("Method not implemented.");
+  }
+  async updateUserNFTGeneration(userId: number): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
 }
 
 export const storage = new DatabaseStorage();

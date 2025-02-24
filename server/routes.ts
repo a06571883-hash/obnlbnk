@@ -70,26 +70,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Необходима авторизация" });
       }
 
-      console.log("Received transfer request:", req.body);
+      console.log("Transfer request body:", req.body);
 
       const { fromCardId, toCardNumber, amount } = req.body;
 
-      // Basic validation
-      if (!fromCardId || !toCardNumber || !amount) {
-        return res.status(400).json({ message: "Не указаны обязательные параметры перевода" });
+      // Проверяем наличие всех необходимых параметров
+      if (!fromCardId) {
+        return res.status(400).json({ message: "Не указана карта отправителя" });
+      }
+      if (!toCardNumber) {
+        return res.status(400).json({ message: "Не указана карта получателя" });
+      }
+      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        return res.status(400).json({ message: "Некорректная сумма перевода" });
       }
 
-      // Check if the card belongs to the authenticated user
+      const transferAmount = parseFloat(amount);
+
+      // Проверяем формат номера карты
+      const cleanCardNumber = toCardNumber.replace(/\s+/g, '');
+      if (!/^\d{16}$/.test(cleanCardNumber)) {
+        return res.status(400).json({ message: "Неверный формат номера карты" });
+      }
+
+      // Проверяем принадлежность карты отправителя пользователю
       const userCards = await storage.getCardsByUserId(req.user.id);
-      const isUserCard = userCards.some(card => card.id === parseInt(fromCardId));
-      if (!isUserCard) {
+      const fromCard = userCards.find(card => card.id === parseInt(fromCardId));
+      if (!fromCard) {
         return res.status(403).json({ message: "У вас нет доступа к этой карте" });
       }
 
+      // Получаем карту получателя для проверки
+      const toCard = await storage.getCardByNumber(cleanCardNumber);
+      if (!toCard) {
+        return res.status(400).json({ message: "Карта получателя не найдена" });
+      }
+
+      console.log("Executing transfer between cards:", {
+        fromCard: fromCard.number,
+        toCard: toCard.number,
+        amount: transferAmount
+      });
+
       const result = await storage.transferMoney(
-        parseInt(fromCardId),
-        toCardNumber.replace(/\s+/g, ''),
-        parseFloat(amount)
+        fromCard.id,
+        toCard.number,
+        transferAmount
       );
 
       if (!result.success) {
@@ -106,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Transfer error:", error);
       res.status(500).json({
         success: false,
-        message: "Произошла ошибка при выполнении перевода"
+        message: error instanceof Error ? error.message : "Произошла ошибка при выполнении перевода"
       });
     }
   });
