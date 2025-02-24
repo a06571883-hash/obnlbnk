@@ -37,6 +37,22 @@ pool.on('error', (err) => {
 // Создаем экземпляр базы данных drizzle
 export const db = drizzle(pool, { schema });
 
+// Проверяем содержимое базы данных
+async function logDatabaseContent() {
+  console.log('Checking database content...');
+  try {
+    const usersResult = await db.select().from(schema.users);
+    console.log('Users in database:', usersResult);
+    
+    const cardsResult = await db.select().from(schema.cards);
+    console.log('Cards in database:', cardsResult);
+  } catch (error) {
+    console.error('Error checking database:', error);
+  }
+}
+
+logDatabaseContent();
+
 // Корректное завершение пула при выходе
 process.on('SIGTERM', () => {
   console.log('Received SIGTERM. Closing pool...');
