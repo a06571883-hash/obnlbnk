@@ -308,8 +308,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error?.message?.includes('429') ||
           error?.message?.includes('rate_limit')) {
         return res.status(503).json({ 
-          message: "Сервис временно недоступен из-за лимитов API. Пожалуйста, подождите несколько минут и попробуйте снова.",
-          error: "OpenAI API temporarily unavailable"
+          message: "В данный момент достигнут лимит генерации NFT. Пожалуйста, подождите 5-10 минут и попробуйте снова.",
+          error: "OpenAI API limit reached"
         });
       }
 
