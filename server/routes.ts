@@ -9,6 +9,7 @@ import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
 import {OpenAI} from "openai";
 import Replicate from 'replicate';
+import express from 'express'; // Import express
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -215,6 +216,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // NFT маршруты были удалены
+
+  // Эндпоинты для бэкапа базы данных
+  import { exportDatabase, importDatabase } from './database/backup';
+
+  app.post('/api/database/backup', async (req, res) => {
+    const success = await exportDatabase();
+    if (success) {
+      res.json({ message: 'Backup completed successfully' });
+    } else {
+      res.status(500).json({ error: 'Backup failed' });
+    }
+  });
+
+  app.post('/api/database/restore', async (req, res) => {
+    const success = await importDatabase();
+    if (success) {
+      res.json({ message: 'Restore completed successfully' });
+    } else {
+      res.status(500).json({ error: 'Restore failed' });
+    }
+  });
+
+  app.use(express.static('dist/client')); //Added this line back
 
   return httpServer;
 }
