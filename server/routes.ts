@@ -302,11 +302,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("NFT generation error:", error);
 
-      // Check for OpenAI billing error
-      if (error?.error?.code === 'billing_hard_limit_reached') {
+      // Check for OpenAI errors
+      if (error?.error?.code === 'billing_hard_limit_reached' || 
+          error?.message?.includes('billing')) {
         return res.status(503).json({ 
-          message: "Сервис временно недоступен. Попробуйте позже.",
-          error: "OpenAI API temporarily unavailable"
+          message: "Сервис временно недоступен из-за лимитов API. Попробуйте позже.",
+          error: "OpenAI API limit reached"
         });
       }
 
