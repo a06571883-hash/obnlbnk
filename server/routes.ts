@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import * as bitcoin from 'bitcoinjs-lib';
 import type { Express } from "express";
+import { exportDatabase, importDatabase } from './database/backup';
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import * as ecc from 'tiny-secp256k1';
@@ -216,9 +217,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // NFT маршруты были удалены
-
-  // Эндпоинты для бэкапа базы данных
-  import { exportDatabase, importDatabase } from './database/backup';
 
   app.post('/api/database/backup', async (req, res) => {
     const success = await exportDatabase();
