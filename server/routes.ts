@@ -250,8 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      import Replicate from 'replicate';
-      const replicate = new Replicate({
+      const replicate = new (await import('replicate')).default({
         auth: process.env.REPLICATE_API_TOKEN,
       });
 
