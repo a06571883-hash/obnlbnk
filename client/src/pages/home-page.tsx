@@ -120,10 +120,10 @@ export default function HomePage() {
       setShowWelcome(true);
       sessionStorage.setItem(WELCOME_MESSAGE_KEY, 'true');
 
-      // Hide after 4 seconds
+      // Hide after 3 seconds (changed from 4)
       const timer = setTimeout(() => {
         setShowWelcome(false);
-      }, 4000);
+      }, 3000);
 
       return () => clearTimeout(timer);
     }

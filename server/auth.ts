@@ -71,11 +71,13 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false,
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       path: '/',
       httpOnly: true
-    }
+    },
+    name: 'bnal.sid' // Unique session cookie name
   }));
 
   app.use(passport.initialize());
@@ -85,14 +87,17 @@ export function setupAuth(app: Express) {
     try {
       const user = await storage.getUserByUsername(username);
       if (!user) {
+        console.log('Login failed: User not found:', username);
         return done(null, false, { message: "Invalid username or password" });
       }
 
       const isValid = await comparePasswords(password, user.password);
       if (!isValid) {
+        console.log('Login failed: Invalid password for user:', username);
         return done(null, false, { message: "Invalid username or password" });
       }
 
+      console.log('Login successful for user:', username);
       return done(null, user);
     } catch (error) {
       console.error("Authentication error:", error);
@@ -142,10 +147,8 @@ export function setupAuth(app: Express) {
         nft_generation_count: 0
       });
 
-      // Create default cards for the new user
       const { btcAddress, ethAddress } = await generateCryptoAddresses();
 
-      // Create USD card
       await storage.createCard({
         userId: user.id,
         type: 'usd',
@@ -159,7 +162,6 @@ export function setupAuth(app: Express) {
         cvv: generateCVV()
       });
 
-      // Create UAH card
       await storage.createCard({
         userId: user.id,
         type: 'uah',
@@ -173,7 +175,6 @@ export function setupAuth(app: Express) {
         cvv: generateCVV()
       });
 
-      // Create crypto card
       await storage.createCard({
         userId: user.id,
         type: 'crypto',
