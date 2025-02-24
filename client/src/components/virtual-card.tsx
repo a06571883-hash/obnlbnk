@@ -51,7 +51,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [isHovered, setIsHovered] = useState(false);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
-  const [recipientType, setRecipientType] = useState<'usd_card' | 'crypto_wallet'>('usd_card');
+  const [recipientType, setRecipientType] = useState<RecipientType>('usd_card');
   const [rates, setRates] = useState<{ usdToUah: number; btcToUsd: number; ethToUsd: number } | null>(null);
 
   useEffect(() => {
@@ -71,15 +71,6 @@ export default function VirtualCard({ card }: { card: Card }) {
     fetchRates();
   }, []);
 
-  const getAvailableBalance = () => {
-    if (card.type === 'crypto') {
-      // Для крипто карты показываем баланс в зависимости от выбранной криптовалюты
-      return `${selectedWallet === 'btc' ? card.btcBalance : card.ethBalance} ${selectedWallet.toUpperCase()}`;
-    }
-    // Для фиатных карт показываем обычный баланс
-    return `${card.balance} ${card.type.toUpperCase()}`;
-  };
-
   const transferMutation = useMutation({
     mutationFn: async () => {
       if (!transferAmount || isNaN(parseFloat(transferAmount)) || parseFloat(transferAmount) <= 0) {
@@ -90,18 +81,9 @@ export default function VirtualCard({ card }: { card: Card }) {
         throw new Error('Пожалуйста, введите номер карты/адрес получателя');
       }
 
-      // Проверка баланса и валидация адреса
-      if (card.type === 'crypto') {
-        // Если отправляем с крипто карты
-        const cryptoBalance = selectedWallet === 'btc' ? card.btcBalance : card.ethBalance;
-        if (parseFloat(transferAmount) > parseFloat(cryptoBalance || '0')) {
-          throw new Error(`Недостаточно ${selectedWallet.toUpperCase()}. Доступно: ${cryptoBalance} ${selectedWallet.toUpperCase()}`);
-        }
-      } else {
-        // Если отправляем с фиатной карты
-        if (parseFloat(transferAmount) > parseFloat(card.balance)) {
-          throw new Error(`Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`);
-        }
+      // Проверка баланса карты отправителя
+      if (parseFloat(transferAmount) > parseFloat(card.balance)) {
+        throw new Error(`Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`);
       }
 
       // Валидация адреса криптокошелька
@@ -182,27 +164,6 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   };
 
-  // Функция для получения конвертированной суммы
-  const getConvertedAmount = () => {
-    if (!rates || !transferAmount) return null;
-    const amount = parseFloat(transferAmount);
-    if (isNaN(amount)) return null;
-
-    if (card.type !== 'crypto' && recipientType === 'crypto_wallet') {
-      // Конвертация из фиатной валюты в криптовалюту
-      const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
-      return `≈ ${(amount / rate).toFixed(8)} ${selectedWallet.toUpperCase()}`;
-    }
-
-    if (card.type === 'crypto' && recipientType === 'usd_card') {
-      // Конвертация из криптовалюты в USD
-      const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
-      return `≈ ${(amount * rate).toFixed(2)} USD`;
-    }
-
-    return null;
-  };
-
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || isMobile) return;
 
@@ -236,6 +197,27 @@ export default function VirtualCard({ card }: { card: Card }) {
       });
     }
   }, [gyroscope, isMobile, isIOS]);
+
+  // Функция для конвертации и отображения суммы
+  const getConvertedAmount = () => {
+    if (!rates || !transferAmount) return null;
+    const amount = parseFloat(transferAmount);
+    if (isNaN(amount)) return null;
+
+    // Если отправляем с фиатной карты на крипто адрес
+    if (recipientType === 'crypto_wallet' && card.type !== 'crypto') {
+      const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
+      return `≈ ${(amount / rate).toFixed(8)} ${selectedWallet.toUpperCase()}`;
+    }
+
+    // Если отправляем с крипто карты на фиатную карту
+    if (recipientType === 'usd_card' && card.type === 'crypto') {
+      const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
+      return `≈ ${(amount * rate).toFixed(2)} USD`;
+    }
+
+    return null;
+  };
 
   return (
     <div
@@ -470,7 +452,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium">
-                        {card.type === 'crypto' ? `Сумма в ${selectedWallet.toUpperCase()}` : `Сумма в ${card.type.toUpperCase()}`}
+                        Сумма в {card.type.toUpperCase()}
                       </label>
                       <div className="relative">
                         <input
@@ -478,12 +460,12 @@ export default function VirtualCard({ card }: { card: Card }) {
                           value={transferAmount}
                           onChange={e => setTransferAmount(e.target.value)}
                           className="w-full p-2 border rounded text-sm pr-12"
-                          step={card.type === 'crypto' ? "0.00000001" : "0.01"}
-                          min={card.type === 'crypto' ? "0.00000001" : "0.01"}
+                          step="0.01"
+                          min="0.01"
                           required
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
-                          {card.type === 'crypto' ? selectedWallet.toUpperCase() : card.type.toUpperCase()}
+                          {card.type.toUpperCase()}
                         </span>
                       </div>
 
@@ -495,7 +477,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                       )}
 
                       <p className="text-xs text-muted-foreground">
-                        Доступно: {getAvailableBalance()}
+                        Доступно: {card.balance} {card.type.toUpperCase()}
                       </p>
                     </div>
 
