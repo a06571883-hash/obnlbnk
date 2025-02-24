@@ -35,10 +35,7 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
-  // Инициализация аутентификации
   setupAuth(app);
-
-  // Запуск автоматического обновления курсов с поддержкой WebSocket на пути /ws
   startRateUpdates(httpServer, '/ws');
 
   // Получение последних курсов валют
@@ -73,26 +70,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Необходима авторизация" });
       }
 
-      // Generate expiry date (current month + 3 years)
       const expiryDate = new Date();
       expiryDate.setFullYear(expiryDate.getFullYear() + 3);
       const expiry = `${String(expiryDate.getMonth() + 1).padStart(2, '0')}/${String(expiryDate.getFullYear()).slice(-2)}`;
 
-      // Generate CVV (3 random digits)
       const cvv = Math.floor(Math.random() * 900 + 100).toString();
 
-      // Generate a unique BTC address
       const keyPair = ECPair.makeRandom();
       const { address: btcAddress } = bitcoin.payments.p2pkh({
         pubkey: Buffer.from(keyPair.publicKey),
         network: bitcoin.networks.bitcoin
       });
 
-      // Generate a unique ETH address
       const ethWallet = ethers.Wallet.createRandom();
       const ethAddress = ethWallet.address;
 
-      // Create three cards: USD, UAH, and Crypto with zero initial balance
       const cards = await Promise.all([
         storage.createCard({
           userId: req.user.id,
@@ -175,10 +167,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Необходима авторизация" });
       }
 
-      const { fromCardId, amount, recipientAddress, transferType, cryptoType } = req.body;
+      const { fromCardId, toCardNumber, amount } = req.body;
 
       // Basic validation
-      if (!fromCardId || !recipientAddress || !amount || !transferType) {
+      if (!fromCardId || !toCardNumber || !amount) {
         return res.status(400).json({ message: "Не указаны обязательные параметры перевода" });
       }
 
@@ -188,22 +180,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Некорректная сумма перевода" });
       }
 
-      // Validate recipient address based on transfer type
-      if (transferType === 'card') {
-        const cleanRecipientAddress = recipientAddress.replace(/\s+/g, '');
-        if (!/^\d{16}$/.test(cleanRecipientAddress)) {
-          return res.status(400).json({ message: "Неверный формат номера карты" });
-        }
-      } else if (transferType === 'crypto') {
-        if (!cryptoType) {
-          return res.status(400).json({ message: "Не указан тип криптовалюты" });
-        }
-
-        if (!validateCryptoAddress(recipientAddress, cryptoType as 'btc' | 'eth')) {
-          return res.status(400).json({ message: `Неверный формат ${cryptoType.toUpperCase()} адреса` });
-        }
-      } else {
-        return res.status(400).json({ message: "Неподдерживаемый тип перевода" });
+      // Clean card number
+      const cleanCardNumber = toCardNumber.replace(/\s+/g, '');
+      if (!/^\d{16}$/.test(cleanCardNumber)) {
+        return res.status(400).json({ message: "Неверный формат номера карты" });
       }
 
       // Check if the card belongs to the authenticated user
@@ -213,22 +193,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "У вас нет доступа к этой карте" });
       }
 
-      // Execute transfer based on type
-      let result;
-      if (transferType === 'card') {
-        result = await storage.transferMoney(
-          parseInt(fromCardId),
-          recipientAddress.replace(/\s+/g, ''),
-          transferAmount
-        );
-      } else {
-        result = await storage.transferCrypto(
-          parseInt(fromCardId),
-          recipientAddress,
-          transferAmount,
-          cryptoType as 'btc' | 'eth'
-        );
-      }
+      const result = await storage.transferMoney(
+        parseInt(fromCardId),
+        cleanCardNumber,
+        transferAmount
+      );
 
       if (!result.success) {
         return res.status(400).json({ message: result.error });

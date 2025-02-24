@@ -210,68 +210,61 @@ export class DatabaseStorage implements IStorage {
   }
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
-    const conn = await db.transaction();
+    return this.withTransaction(async () => {
+      try {
+        const fromCard = await this.getCardById(fromCardId);
+        if (!fromCard) {
+          throw new Error("Карта отправителя не найдена");
+        }
 
-    try {
-      const fromCard = await conn.query.cards.findFirst({
-        where: eq(cards.id, fromCardId)
-      });
+        const toCard = await this.getCardByNumber(toCardNumber);
+        if (!toCard) {
+          throw new Error("Карта получателя не найдена");
+        }
 
-      if (!fromCard) {
-        await conn.rollback();
-        return { success: false, error: "Карта отправителя не найдена" };
-      }
+        // Convert amount to numbers and check balance
+        const fromBalance = parseFloat(fromCard.balance);
+        if (isNaN(fromBalance)) {
+          throw new Error("Ошибка формата баланса отправителя");
+        }
 
-      const toCard = await conn.query.cards.findFirst({
-        where: eq(cards.number, toCardNumber)
-      });
+        const toBalance = parseFloat(toCard.balance);
+        if (isNaN(toBalance)) {
+          throw new Error("Ошибка формата баланса получателя");
+        }
 
-      if (!toCard) {
-        await conn.rollback();
-        return { success: false, error: "Карта получателя не найдена" };
-      }
+        if (fromBalance < amount) {
+          throw new Error("Недостаточно средств для перевода");
+        }
 
-      // Convert amount to numbers and check balance
-      const fromBalance = parseFloat(fromCard.balance);
-      const toBalance = parseFloat(toCard.balance);
+        // Update balances
+        await this.updateCardBalance(fromCard.id, (fromBalance - amount).toFixed(2));
+        await this.updateCardBalance(toCard.id, (toBalance + amount).toFixed(2));
 
-      if (fromBalance < amount) {
-        await conn.rollback();
-        return { success: false, error: "Недостаточно средств" };
-      }
-
-      // Perform transfer
-      await conn.update(cards)
-        .set({ balance: (fromBalance - amount).toFixed(2) })
-        .where(eq(cards.id, fromCardId));
-
-      await conn.update(cards)
-        .set({ balance: (toBalance + amount).toFixed(2) })
-        .where(eq(cards.id, toCard.id));
-
-      // Create transaction record
-      const [transaction] = await conn.insert(transactions)
-        .values({
-          fromCardId: fromCardId,
+        // Create transaction record
+        const transaction = await this.createTransaction({
+          fromCardId: fromCard.id,
           toCardId: toCard.id,
-          amount: amount.toFixed(2),
+          amount: amount.toString(),
+          convertedAmount: amount.toString(),
           type: 'transfer',
           status: 'completed',
+          description: `Перевод с карты ${fromCard.number} на карту ${toCard.number}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
-          convertedAmount: amount.toFixed(2),
-          description: `Перевод с карты ${fromCard.number} на карту ${toCard.number}`,
+          wallet: null,
           createdAt: new Date()
-        })
-        .returning();
+        });
 
-      await conn.commit();
-      return { success: true, transaction };
-    } catch (error) {
-      await conn.rollback();
-      console.error("Transfer error:", error);
-      return { success: false, error: "Ошибка при переводе средств" };
-    }
+        return { success: true, transaction };
+      } catch (error) {
+        console.error("Transfer error:", error);
+        return { 
+          success: false, 
+          error: error instanceof Error ? error.message : "Ошибка при переводе средств" 
+        };
+      }
+    });
   }
 
   async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
