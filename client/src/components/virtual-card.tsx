@@ -172,6 +172,14 @@ export default function VirtualCard({ card }: { card: Card }) {
     setTransferError('');
 
     try {
+      const transferRequest = {
+        fromCardId: card.id,
+        recipientAddress: recipientCardNumber.replace(/\s+/g, ''),
+        amount: parseFloat(transferAmount),
+        transferType: recipientType === 'crypto_wallet' ? 'crypto' : 'fiat',
+        cryptoType: recipientType === 'crypto_wallet' ? selectedWallet : undefined
+      };
+
       await transferMutation.mutateAsync();
     } catch (error: any) {
       console.error("Transfer error:", error);
@@ -213,12 +221,6 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   }, [gyroscope, isMobile, isIOS]);
 
-  const getTransferCurrency = () => {
-    if (card.type === 'crypto') {
-      return selectedWallet.toUpperCase();
-    }
-    return card.type.toUpperCase();
-  };
 
   return (
     <div
@@ -459,7 +461,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium">
-                        Сумма в {getTransferCurrency()}
+                        {`Сумма в ${card.type === 'crypto' || recipientType === 'crypto_wallet' ? 'USD' : card.type.toUpperCase()}`}
                       </label>
                       <div className="relative">
                         <input
@@ -467,21 +469,21 @@ export default function VirtualCard({ card }: { card: Card }) {
                           value={transferAmount}
                           onChange={e => setTransferAmount(e.target.value)}
                           className="w-full p-2 border rounded text-sm pr-12"
-                          step="0.00000001"
-                          min="0.00000001"
+                          step="0.01"
+                          min="0.01"
                           required
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
-                          {getTransferCurrency()}
+                          {card.type === 'crypto' || recipientType === 'crypto_wallet' ? 'USD' : card.type.toUpperCase()}
                         </span>
                       </div>
-                      {recipientType === 'usd_card' && card.type === 'crypto' && transferAmount && (
+                      {card.type === 'crypto' && transferAmount && rates && (
                         <p className="text-xs text-muted-foreground">
-                          Получатель получит примерно: {calculateUsdEquivalent(transferAmount)?.toFixed(2)} USD
+                          Будет списано: {(parseFloat(transferAmount) / (selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd)).toFixed(8)} {selectedWallet.toUpperCase()}
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        Доступно: {getSelectedBalance()} {getTransferCurrency()}
+                        Доступно: {getSelectedBalance()} {card.type === 'crypto' ? selectedWallet.toUpperCase() : card.type.toUpperCase()}
                       </p>
                     </div>
 
