@@ -32,13 +32,13 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
   const getTypeIcon = () => {
     switch (transaction.type.toLowerCase()) {
       case 'обмен':
-        return <RefreshCw className="h-5 w-5 text-amber-500" />;
+        return <RefreshCw className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-amber-500" />;
       case 'перевод':
-        return <ArrowUpRight className="h-5 w-5 text-primary" />;
+        return <ArrowUpRight className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />;
       case 'получение':
-        return <ArrowUpRight className="h-5 w-5 text-emerald-500" />;
+        return <ArrowUpRight className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-emerald-500" />;
       case 'комиссия':
-        return <Coins className="h-5 w-5 text-red-500" />;
+        return <Coins className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-red-500" />;
       default:
         return null;
     }
@@ -47,11 +47,11 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
   const getCurrencyIcon = (type: string) => {
     switch (type?.toLowerCase()) {
       case 'crypto':
-        return <Bitcoin className="h-4 w-4" />;
+        return <Bitcoin className="h-3 w-3 sm:h-4 sm:w-4" />;
       case 'usd':
-        return <DollarSign className="h-4 w-4" />;
+        return <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />;
       case 'uah':
-        return <Banknote className="h-4 w-4" />;
+        return <Banknote className="h-3 w-3 sm:h-4 sm:w-4" />;
       default:
         return null;
     }
@@ -68,10 +68,20 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
     const num = parseFloat(amount);
     if (isNaN(num)) return '0';
 
+    // Сократим количество знаков после запятой для крипты
     if (currency?.toLowerCase() === 'crypto') {
-      return num.toFixed(8);
+      return num.toFixed(4); // Уменьшили с 8 до 4 знаков
     }
     return num.toFixed(2);
+  };
+
+  // Функция для сокращения длинных адресов
+  const formatAddress = (address: string) => {
+    if (!address) return '';
+    if (address.length > 16) {
+      return `${address.slice(0, 8)}...${address.slice(-8)}`;
+    }
+    return address;
   };
 
   return (
@@ -80,15 +90,15 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
         <DialogHeader>
           <DialogTitle className="text-center">Чек</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex justify-center">
-            <Logo size={40} className="text-primary" />
+            <Logo size={32} className="text-primary" />
           </div>
 
-          <div className="space-y-3 text-sm">
+          <div className="space-y-2.5 text-[11px] sm:text-sm">
             <div className="flex items-center justify-between pb-2 border-b">
               <span className="text-muted-foreground">Тип</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {getTypeIcon()}
                 <span>{transaction.type}</span>
               </div>
@@ -96,7 +106,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">ID</span>
-              <span className="font-mono text-xs">{transaction.id}</span>
+              <span className="font-mono text-[10px] sm:text-xs">{transaction.id}</span>
             </div>
 
             <div className="flex justify-between items-center">
@@ -111,7 +121,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             {transaction.convertedAmount && transaction.convertedAmount !== transaction.amount && transaction.toCard?.type && (
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Конвертировано в</span>
+                <span className="text-muted-foreground">Конверт.</span>
                 <div className="flex items-center gap-1">
                   {getCurrencyIcon(transaction.toCard.type)}
                   <span className="font-semibold">
@@ -125,9 +135,9 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Откуда</span>
                 <div className="text-right">
-                  <span className="font-mono text-xs block">{getCardDetails(transaction.fromCard)}</span>
+                  <span className="font-mono text-[10px] sm:text-xs block">{getCardDetails(transaction.fromCard)}</span>
                   {transaction.fromCard?.userId && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">
                       {transaction.fromCard.userId === transaction.toCard?.userId ? 'Ваша карта' : transaction.fromCard.username}
                     </span>
                   )}
@@ -139,11 +149,11 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Куда</span>
                 <div className="text-right">
-                  <span className="font-mono text-xs block">
+                  <span className="font-mono text-[10px] sm:text-xs block">
                     {transaction.to === "REGULATOR" ? "Регулятор" : getCardDetails(transaction.toCard)}
                   </span>
                   {transaction.toCard?.userId && transaction.to !== "REGULATOR" && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">
                       {transaction.toCard.userId === transaction.fromCard?.userId ? 'Ваша карта' : transaction.toCard.username}
                     </span>
                   )}
@@ -153,8 +163,8 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             {transaction.wallet && (
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Адрес кошелька</span>
-                <span className="font-mono text-xs">{transaction.wallet}</span>
+                <span className="text-muted-foreground">Адрес</span>
+                <span className="font-mono text-[10px] sm:text-xs">{formatAddress(transaction.wallet)}</span>
               </div>
             )}
 
@@ -167,13 +177,13 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Дата</span>
-              <span className="text-xs">
+              <span className="text-[10px] sm:text-xs">
                 {format(new Date(transaction.date), 'dd.MM.yyyy HH:mm')}
               </span>
             </div>
           </div>
 
-          <div className="text-center text-[10px] text-muted-foreground pt-2 border-t">
+          <div className="text-[9px] sm:text-[10px] text-muted-foreground pt-2 border-t text-center">
             <p>Поддержка: @KA7777AA</p>
             <p>BNAL Bank © {new Date().getFullYear()}</p>
           </div>
