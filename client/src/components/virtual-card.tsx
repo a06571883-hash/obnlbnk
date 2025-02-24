@@ -51,7 +51,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [isHovered, setIsHovered] = useState(false);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
-  const [recipientType, setRecipientType] = useState<RecipientType>('usd_card');
+  const [recipientType, setRecipientType] = useState<'usd_card' | 'crypto_wallet'>('usd_card');
   const [rates, setRates] = useState<{ usdToUah: number; btcToUsd: number; ethToUsd: number } | null>(null);
 
   useEffect(() => {
@@ -71,18 +71,38 @@ export default function VirtualCard({ card }: { card: Card }) {
     fetchRates();
   }, []);
 
+  // Calculate how much crypto will be received for the given fiat amount
+  const calculateCryptoAmount = (amount: string): string => {
+    if (!rates || !amount) return "0";
+    const value = parseFloat(amount);
+    if (isNaN(value)) return "0";
+
+    const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
+    return (value / rate).toFixed(8);
+  };
+
   const transferMutation = useMutation({
     mutationFn: async () => {
       if (!transferAmount || isNaN(parseFloat(transferAmount)) || parseFloat(transferAmount) <= 0) {
         throw new Error('Пожалуйста, введите корректную сумму');
       }
 
-      if (parseFloat(transferAmount) > parseFloat(card.balance)) {
+      if (recipientType === 'usd_card' && parseFloat(transferAmount) > parseFloat(card.balance)) {
         throw new Error(`Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`);
       }
 
       if (!recipientCardNumber.trim()) {
         throw new Error('Пожалуйста, введите номер карты/адрес получателя');
+      }
+
+      // Validate crypto address format if sending to crypto wallet
+      if (recipientType === 'crypto_wallet') {
+        const address = recipientCardNumber.trim();
+        if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
+          throw new Error('Неверный формат BTC адреса');
+        } else if (selectedWallet === 'eth' && !validateEthAddress(address)) {
+          throw new Error('Неверный формат ETH адреса');
+        }
       }
 
       const transferRequest = {
@@ -423,7 +443,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium">
-                        Сумма в {card.type.toUpperCase()}
+                        Сумма в USD
                       </label>
                       <div className="relative">
                         <input
@@ -436,17 +456,15 @@ export default function VirtualCard({ card }: { card: Card }) {
                           required
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
-                          {card.type.toUpperCase()}
+                          USD
                         </span>
                       </div>
                       {recipientType === 'crypto_wallet' && transferAmount && rates && (
                         <p className="text-xs text-muted-foreground">
-                          Будет отправлено: {(parseFloat(transferAmount) / (selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd)).toFixed(8)} {selectedWallet.toUpperCase()}
+                          Будет отправлено: {calculateCryptoAmount(transferAmount)} {selectedWallet.toUpperCase()}
                         </p>
                       )}
-                      <p className="text-xs text-muted-foreground">
-                        Доступно: {card.balance} {card.type.toUpperCase()}
-                      </p>
+                      {/* Removed balance check for fiat cards */}
                     </div>
 
                     {transferError && (

@@ -35,7 +35,7 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 function generateCardNumber(): string {
-  const prefix = "4111"; // Using a test Visa prefix
+  const prefix = "4111";
   const remainingDigits = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join("");
   return prefix + remainingDigits;
 }
@@ -47,21 +47,18 @@ function generateExpiryDate(): string {
   return `${expMonth}/${expYear.toString().slice(-2)}`;
 }
 
+function generateCVV(): string {
+  return Math.floor(100 + Math.random() * 900).toString();
+}
+
 async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddress: string }> {
   const mnemonic = generateMnemonic();
   const wallet = ethers.Wallet.fromPhrase(mnemonic);
-
-  // For testing purposes, using a fixed BTC testnet address format
   const btcAddress = "bc1" + randomBytes(32).toString("hex").slice(0, 39);
-
   return {
     btcAddress,
     ethAddress: wallet.address
   };
-}
-
-function generateCVV(): string {
-  return Math.floor(100 + Math.random() * 900).toString();
 }
 
 export function setupAuth(app: Express) {
@@ -123,6 +120,87 @@ export function setupAuth(app: Express) {
     }
   });
 
+  app.post("/api/register", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const hashedPassword = await hashPassword(password);
+      const user = await storage.createUser({
+        username,
+        password: hashedPassword,
+        is_regulator: false,
+        regulator_balance: "0",
+        nft_generation_count: 0
+      });
+
+      // Create default cards for the new user
+      const { btcAddress, ethAddress } = await generateCryptoAddresses();
+
+      // Create USD card
+      await storage.createCard({
+        userId: user.id,
+        type: 'usd',
+        number: generateCardNumber(),
+        balance: "0",
+        expiry: generateExpiryDate(),
+        btcAddress: "0",
+        ethAddress: "0",
+        btcBalance: "0",
+        ethBalance: "0",
+        cvv: generateCVV()
+      });
+
+      // Create UAH card
+      await storage.createCard({
+        userId: user.id,
+        type: 'uah',
+        number: generateCardNumber(),
+        balance: "0",
+        expiry: generateExpiryDate(),
+        btcAddress: "0",
+        ethAddress: "0",
+        btcBalance: "0",
+        ethBalance: "0",
+        cvv: generateCVV()
+      });
+
+      // Create crypto card
+      await storage.createCard({
+        userId: user.id,
+        type: 'crypto',
+        number: generateCardNumber(),
+        balance: "0",
+        expiry: generateExpiryDate(),
+        btcAddress: btcAddress,
+        ethAddress: ethAddress,
+        btcBalance: "0",
+        ethBalance: "0",
+        cvv: generateCVV()
+      });
+
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Registration session error:", err);
+          return res.status(500).json({ message: "Error creating session" });
+        }
+        console.log("New user registered:", username);
+        res.status(201).json(user);
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration error" });
+    }
+  });
+
   app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
@@ -152,83 +230,6 @@ export function setupAuth(app: Express) {
     }
     console.log("User session active:", req.user.username);
     res.json(req.user);
-  });
-
-  app.post("/api/register", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-
-      const hashedPassword = await hashPassword(password);
-      const user = await storage.createUser({
-        username,
-        password: hashedPassword,
-        is_regulator: false,
-        regulator_balance: "0",
-        nft_generation_count: 0
-      });
-
-      const { btcAddress, ethAddress } = await generateCryptoAddresses();
-
-      await storage.createCard({
-        userId: user.id,
-        type: 'usd',
-        number: generateCardNumber(),
-        balance: "0",
-        expiry: generateExpiryDate(),
-        btcAddress: null,
-        ethAddress: null,
-        btcBalance: null,
-        ethBalance: null,
-        cvv: generateCVV()
-      });
-
-      await storage.createCard({
-        userId: user.id,
-        type: 'uah',
-        number: generateCardNumber(),
-        balance: "0",
-        expiry: generateExpiryDate(),
-        btcAddress: null,
-        ethAddress: null,
-        btcBalance: null,
-        ethBalance: null,
-        cvv: generateCVV()
-      });
-
-      await storage.createCard({
-        userId: user.id,
-        type: 'crypto',
-        number: generateCardNumber(),
-        balance: "0",
-        expiry: generateExpiryDate(),
-        btcAddress: btcAddress,
-        ethAddress: ethAddress,
-        btcBalance: "0",
-        ethBalance: "0",
-        cvv: generateCVV()
-      });
-
-      req.login(user, (err) => {
-        if (err) {
-          console.error("Registration session error:", err);
-          return res.status(500).json({ message: "Error creating session" });
-        }
-        console.log("New user registered:", username);
-        res.status(201).json(user);
-      });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Registration error" });
-    }
   });
 
   app.post("/api/logout", (req, res) => {
