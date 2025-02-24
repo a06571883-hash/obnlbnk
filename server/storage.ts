@@ -228,6 +228,34 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Карта получателя не найдена");
         }
 
+        // Get latest exchange rates
+        const rates = await this.getLatestExchangeRates();
+        if (!rates) {
+          throw new Error("Не удалось получить актуальные курсы валют");
+        }
+
+        // Convert amount to recipient's currency
+        let convertedAmount = amount;
+        if (fromCard.type !== toCard.type) {
+          if (fromCard.type === 'usd' && toCard.type === 'uah') {
+            convertedAmount = amount * parseFloat(rates.usdToUah);
+          } else if (fromCard.type === 'uah' && toCard.type === 'usd') {
+            convertedAmount = amount / parseFloat(rates.usdToUah);
+          }
+        }
+
+        // Calculate commission (1%)
+        const commission = amount * 0.01;
+
+        // Convert commission to BTC for regulator
+        const btcCommission = (commission * parseFloat(rates.btcToUsd)) / parseFloat(rates.btcToUsd);
+
+        // Get regulator
+        const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
+        if (!regulator) {
+          throw new Error("Регулятор не найден в системе");
+        }
+
         const fromBalance = parseFloat(fromCard.balance);
         const toBalance = parseFloat(toCard.balance);
 
@@ -235,24 +263,49 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Ошибка формата баланса");
         }
 
-        if (fromBalance < amount) {
-          throw new Error(`Недостаточно средств. Доступно: ${fromBalance.toFixed(2)}, требуется: ${amount.toFixed(2)}`);
+        // Check if sender has enough funds including commission
+        if (fromBalance < (amount + commission)) {
+          throw new Error(`Недостаточно средств. Доступно: ${fromBalance.toFixed(2)}, требуется: ${(amount + commission).toFixed(2)} (включая комиссию 1%)`);
         }
 
-        await this.updateCardBalance(fromCard.id, (fromBalance - amount).toFixed(2));
-        await this.updateCardBalance(toCard.id, (toBalance + amount).toFixed(2));
+        // Update balances
+        await this.updateCardBalance(fromCard.id, (fromBalance - amount - commission).toFixed(2));
+        await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
 
+        // Update regulator's BTC balance
+        const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
+        const newRegulatorBalance = (regulatorBtcBalance + btcCommission).toFixed(8);
+        await this.updateRegulatorBalance(regulator.id, newRegulatorBalance);
+
+        // Create main transaction
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard.id,
           amount: amount.toString(),
-          convertedAmount: amount.toString(),
+          convertedAmount: convertedAmount.toString(),
           type: 'transfer',
           status: 'completed',
-          description: `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}`,
+          description: fromCard.type === toCard.type ?
+            `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}` :
+            `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(2)} ${toCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
           wallet: null,
+          createdAt: new Date()
+        });
+
+        // Create commission transaction
+        await this.createTransaction({
+          fromCardId: fromCard.id,
+          toCardId: regulator.id,
+          amount: commission.toString(),
+          convertedAmount: btcCommission.toString(),
+          type: 'commission',
+          status: 'completed',
+          wallet: null,
+          description: `Комиссия 1% за перевод (${btcCommission.toFixed(8)} BTC)`,
+          fromCardNumber: fromCard.number,
+          toCardNumber: "REGULATOR",
           createdAt: new Date()
         });
 
@@ -301,9 +354,9 @@ export class DatabaseStorage implements IStorage {
 
         if (cryptoBalance < totalCryptoNeeded) {
           throw new Error(
-            `Недостаточно средств для перевода ${usdAmount.toFixed(2)} USD. ` +
-            `Будет списано: ${totalCryptoNeeded.toFixed(8)} ${cryptoType.toUpperCase()}, ` +
-            `доступно: ${cryptoBalance.toFixed(8)} ${cryptoType.toUpperCase()}`
+            `Недостаточно средств для перевода ${usdAmount.toFixed(2)} USD ` +
+            `(${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()} + комиссия ${cryptoCommission.toFixed(8)} ${cryptoType.toUpperCase()}). ` +
+            `Доступно: ${cryptoBalance.toFixed(8)} ${cryptoType.toUpperCase()}`
           );
         }
 
@@ -363,8 +416,7 @@ export class DatabaseStorage implements IStorage {
           status: 'completed',
           wallet: recipientAddress,
           description:
-            `Перевод ${usdAmount.toFixed(2)} USD ` +
-            `(будет списано ${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()})` +
+            `Перевод ${usdAmount.toFixed(2)} USD → ${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()}` +
             `${toCard ? ' на карту' : ' на адрес'} ${recipientAddress}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard?.number || null,
@@ -376,13 +428,11 @@ export class DatabaseStorage implements IStorage {
           fromCardId: fromCard.id,
           toCardId: regulator.id,
           amount: usdCommission.toString(),
-          convertedAmount: cryptoCommission.toString(),
+          convertedAmount: btcCommission.toString(),
           type: 'commission',
           status: 'completed',
           wallet: null,
-          description:
-            `Комиссия 1% за перевод ${usdAmount.toFixed(2)} USD ` +
-            `(${cryptoCommission.toFixed(8)} ${cryptoType.toUpperCase()})`,
+          description: `Комиссия 1% (${btcCommission.toFixed(8)} BTC)`,
           fromCardNumber: fromCard.number,
           toCardNumber: "REGULATOR",
           createdAt: new Date()
@@ -476,6 +526,7 @@ export class DatabaseStorage implements IStorage {
       return result;
     }, 'Update exchange rates');
   }
+
 
 
   async createNFTCollection(userId: number, name: string, description: string): Promise<any> {
