@@ -304,10 +304,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check for OpenAI errors
       if (error?.error?.code === 'billing_hard_limit_reached' || 
-          error?.message?.includes('billing')) {
+          error?.message?.includes('billing') ||
+          error?.message?.includes('429') ||
+          error?.message?.includes('rate_limit')) {
         return res.status(503).json({ 
-          message: "Сервис временно недоступен из-за лимитов API. Попробуйте позже.",
-          error: "OpenAI API limit reached"
+          message: "Сервис временно недоступен из-за лимитов API. Пожалуйста, подождите несколько минут и попробуйте снова.",
+          error: "OpenAI API temporarily unavailable"
         });
       }
 
