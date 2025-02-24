@@ -78,14 +78,6 @@ export default function VirtualCard({ card }: { card: Card }) {
     return card.balance;
   };
 
-  const calculateUsdEquivalent = (amount: string) => {
-    if (!rates || !amount) return null;
-    const value = parseFloat(amount);
-    if (isNaN(value)) return null;
-
-    return value * (selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd);
-  };
-
   const transferMutation = useMutation({
     mutationFn: async () => {
       if (!transferAmount || isNaN(parseFloat(transferAmount)) || parseFloat(transferAmount) <= 0) {
@@ -98,16 +90,18 @@ export default function VirtualCard({ card }: { card: Card }) {
       }
 
       if (!recipientCardNumber.trim()) {
-        throw new Error('Пожалуйста, введите номер карты получателя');
+        throw new Error('Пожалуйста, введите номер карты/адрес получателя');
       }
 
       const transferRequest = {
         fromCardId: card.id,
-        amount: parseFloat(transferAmount),
         recipientAddress: recipientCardNumber.replace(/\s+/g, ''),
-        transferType: recipientType,
-        cryptoType: card.type === 'crypto' ? selectedWallet : undefined
+        amount: parseFloat(transferAmount),
+        transferType: recipientType === 'crypto_wallet' ? 'crypto' : 'fiat',
+        cryptoType: recipientType === 'crypto_wallet' ? selectedWallet : undefined
       };
+
+      console.log('Transfer request:', transferRequest);
 
       const response = await apiRequest("POST", "/api/transfer", transferRequest);
 
@@ -172,14 +166,6 @@ export default function VirtualCard({ card }: { card: Card }) {
     setTransferError('');
 
     try {
-      const transferRequest = {
-        fromCardId: card.id,
-        recipientAddress: recipientCardNumber.replace(/\s+/g, ''),
-        amount: parseFloat(transferAmount),
-        transferType: recipientType === 'crypto_wallet' ? 'crypto' : 'fiat',
-        cryptoType: recipientType === 'crypto_wallet' ? selectedWallet : undefined
-      };
-
       await transferMutation.mutateAsync();
     } catch (error: any) {
       console.error("Transfer error:", error);
@@ -461,7 +447,9 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium">
-                        {`Сумма в ${(card.type === 'crypto' && recipientType === 'crypto_wallet') ? selectedWallet.toUpperCase() : 'USD'}`}
+                        {card.type === 'crypto' && recipientType === 'crypto_wallet' 
+                          ? `Сумма в ${selectedWallet.toUpperCase()}`
+                          : 'Сумма в USD'}
                       </label>
                       <div className="relative">
                         <input
@@ -474,7 +462,9 @@ export default function VirtualCard({ card }: { card: Card }) {
                           required
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
-                          {(card.type === 'crypto' && recipientType === 'crypto_wallet') ? selectedWallet.toUpperCase() : 'USD'}
+                          {card.type === 'crypto' && recipientType === 'crypto_wallet' 
+                            ? selectedWallet.toUpperCase()
+                            : 'USD'}
                         </span>
                       </div>
                       {card.type === 'crypto' && transferAmount && rates && (

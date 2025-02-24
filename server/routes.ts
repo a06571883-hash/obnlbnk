@@ -22,14 +22,19 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
 
   try {
     if (type === 'btc') {
-      bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
-      return true;
-    } else {
-      return ethers.isAddress(address);
+      const cleanAddress = address.trim();
+      // Проверка для legacy и SegWit адресов
+      const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
+      const segwitRegex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
+      return legacyRegex.test(cleanAddress) || segwitRegex.test(cleanAddress);
+    } else if (type === 'eth') {
+      const cleanAddress = address.trim().toLowerCase();
+      return ethers.isAddress(cleanAddress);
     }
   } catch {
     return false;
   }
+  return false;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -90,12 +95,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Проверяем формат криптоадреса
         if (!validateCryptoAddress(recipientAddress, cryptoType)) {
-          return res.status(400).json({ message: `Неверный формат ${cryptoType.toUpperCase()} адреса` });
+          return res.status(400).json({ 
+            message: `Неверный формат ${cryptoType.toUpperCase()} адреса. Введите корректный ${cryptoType.toUpperCase()} адрес`
+          });
         }
 
         result = await storage.transferCrypto(
           parseInt(fromCardId),
-          recipientAddress,
+          recipientAddress.trim(),
           parseFloat(amount),
           cryptoType as 'btc' | 'eth'
         );
@@ -103,12 +110,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Проверяем формат номера карты для фиатного перевода
         const cleanCardNumber = recipientAddress.replace(/\s+/g, '');
         if (!/^\d{16}$/.test(cleanCardNumber)) {
-          return res.status(400).json({ message: "Неверный формат номера карты" });
+          return res.status(400).json({ message: "Неверный формат номера карты. Введите 16 цифр" });
         }
 
         result = await storage.transferMoney(
           parseInt(fromCardId),
-          recipientAddress,
+          cleanCardNumber,
           parseFloat(amount)
         );
       }
