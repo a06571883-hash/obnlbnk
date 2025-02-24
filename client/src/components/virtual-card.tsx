@@ -72,9 +72,6 @@ export default function VirtualCard({ card }: { card: Card }) {
   }, []);
 
   const getSelectedBalance = () => {
-    if (card.type === 'crypto') {
-      return selectedWallet === 'btc' ? card.btcBalance : card.ethBalance;
-    }
     return card.balance;
   };
 
@@ -202,8 +199,6 @@ export default function VirtualCard({ card }: { card: Card }) {
       });
     }
   }, [gyroscope, isMobile, isIOS]);
-
-
 
   return (
     <div
@@ -460,7 +455,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        Доступно: {getSelectedBalance()} {card.type.toUpperCase()}
+                        Доступно: {card.balance} {card.type.toUpperCase()}
                       </p>
                     </div>
 

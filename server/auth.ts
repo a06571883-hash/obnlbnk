@@ -6,6 +6,8 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { ethers } from "ethers";
+import { generateMnemonic } from "bip39";
 
 const scryptAsync = promisify(scrypt);
 
@@ -32,8 +34,33 @@ async function comparePasswords(supplied: string, stored: string) {
   }
 }
 
+function generateCardNumber(): string {
+  const prefix = "4111"; // Using a test Visa prefix
+  const remainingDigits = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join("");
+  return prefix + remainingDigits;
+}
+
+function generateExpiryDate(): string {
+  const now = new Date();
+  const expYear = now.getFullYear() + 4;
+  const expMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+  return `${expMonth}/${expYear.toString().slice(-2)}`;
+}
+
+async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddress: string }> {
+  const mnemonic = generateMnemonic();
+  const wallet = ethers.Wallet.fromPhrase(mnemonic);
+
+  // For testing purposes, using a fixed BTC testnet address format
+  const btcAddress = "bc1" + randomBytes(32).toString("hex").slice(0, 39);
+
+  return {
+    btcAddress,
+    ethAddress: wallet.address
+  };
+}
+
 export function setupAuth(app: Express) {
-  // Используем случайный секрет, если SESSION_SECRET не установлен
   const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
   console.log('Setting up session with secret length:', sessionSecret.length);
 
@@ -43,8 +70,8 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false, // для локальной разработки
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+      secure: false,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/',
       httpOnly: true
     }
@@ -141,7 +168,50 @@ export function setupAuth(app: Express) {
         username,
         password: hashedPassword,
         is_regulator: false,
-        regulator_balance: "0"
+        regulator_balance: "0",
+        nft_generation_count: 0
+      });
+
+      // Create default cards for the new user
+      const { btcAddress, ethAddress } = await generateCryptoAddresses();
+
+      // Create USD card
+      await storage.createCard({
+        userId: user.id,
+        type: 'usd',
+        number: generateCardNumber(),
+        balance: "0",
+        expiry: generateExpiryDate(),
+        btcAddress: null,
+        ethAddress: null,
+        btcBalance: null,
+        ethBalance: null
+      });
+
+      // Create UAH card
+      await storage.createCard({
+        userId: user.id,
+        type: 'uah',
+        number: generateCardNumber(),
+        balance: "0",
+        expiry: generateExpiryDate(),
+        btcAddress: null,
+        ethAddress: null,
+        btcBalance: null,
+        ethBalance: null
+      });
+
+      // Create crypto card
+      await storage.createCard({
+        userId: user.id,
+        type: 'crypto',
+        number: generateCardNumber(),
+        balance: "0",
+        expiry: generateExpiryDate(),
+        btcAddress: btcAddress,
+        ethAddress: ethAddress,
+        btcBalance: "0",
+        ethBalance: "0"
       });
 
       req.login(user, (err) => {
