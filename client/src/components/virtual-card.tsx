@@ -81,7 +81,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         throw new Error('Пожалуйста, введите номер карты/адрес получателя');
       }
 
-      // Проверка баланса карты отправителя
+      // Проверка баланса только в валюте карты отправителя
       if (parseFloat(transferAmount) > parseFloat(card.balance)) {
         throw new Error(`Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`);
       }
@@ -469,7 +469,6 @@ export default function VirtualCard({ card }: { card: Card }) {
                         </span>
                       </div>
 
-                      {/* Показываем конвертацию */}
                       {getConvertedAmount() && (
                         <p className="text-xs text-muted-foreground">
                           {getConvertedAmount()}
