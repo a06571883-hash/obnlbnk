@@ -377,40 +377,48 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Не удалось получить актуальные курсы валют");
         }
 
-        // Convert amount if needed
-        let cryptoAmount = amount;
-        if (fromCard.type !== 'crypto') {
-          const rate = cryptoType === 'btc' ? parseFloat(rates.btcToUsd) : parseFloat(rates.ethToUsd);
-          cryptoAmount = amount / rate;
+        let cryptoAmount: number;
+        let usdAmount: number;
+
+        // Determine amounts based on sender's card type
+        if (fromCard.type === 'crypto') {
+          // Sending from crypto card
+          cryptoAmount = amount;
+          usdAmount = amount * parseFloat(cryptoType === 'btc' ? rates.btcToUsd : rates.ethToUsd);
+        } else {
+          // Sending from fiat card
+          usdAmount = amount;
+          cryptoAmount = amount / parseFloat(cryptoType === 'btc' ? rates.btcToUsd : rates.ethToUsd);
         }
 
         // Calculate commission (1%)
         const cryptoCommission = cryptoAmount * 0.01;
-        const totalCryptoNeeded = cryptoAmount + cryptoCommission;
+        const totalCryptoNeeded = cryptoAmount + (fromCard.type === 'crypto' ? cryptoCommission : 0);
 
-        // Check crypto balance
-        const cryptoBalance = cryptoType === 'btc'
-          ? parseFloat(fromCard.btcBalance || '0')
-          : parseFloat(fromCard.ethBalance || '0');
-
-        if (isNaN(cryptoBalance)) {
-          throw new Error("Ошибка формата баланса");
-        }
-
-        if (cryptoBalance < totalCryptoNeeded) {
-          throw new Error(
-            `Недостаточно ${cryptoType.toUpperCase()} для перевода. ` +
-            `Сумма: ${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()}, ` +
-            `комиссия: ${cryptoCommission.toFixed(8)} ${cryptoType.toUpperCase()}, ` +
-            `доступно: ${cryptoBalance.toFixed(8)} ${cryptoType.toUpperCase()}`
-          );
+        // Check sender's balance
+        if (fromCard.type === 'crypto') {
+          const cryptoBalance = cryptoType === 'btc' ? parseFloat(fromCard.btcBalance || '0') : parseFloat(fromCard.ethBalance || '0');
+          if (cryptoBalance < totalCryptoNeeded) {
+            throw new Error(
+              `Недостаточно ${cryptoType.toUpperCase()} для перевода. ` +
+              `Сумма: ${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()}, ` +
+              `комиссия: ${cryptoCommission.toFixed(8)} ${cryptoType.toUpperCase()}, ` +
+              `доступно: ${cryptoBalance.toFixed(8)} ${cryptoType.toUpperCase()}`
+            );
+          }
+        } else {
+          const usdCommission = usdAmount * 0.01;
+          if (parseFloat(fromCard.balance) < (usdAmount + usdCommission)) {
+            throw new Error(
+              `Недостаточно средств. ` +
+              `Доступно: ${fromCard.balance} ${fromCard.type.toUpperCase()}, ` +
+              `требуется: ${usdAmount.toFixed(2)} + ${usdCommission.toFixed(2)} комиссия = ${(usdAmount + usdCommission).toFixed(2)} ${fromCard.type.toUpperCase()}`
+            );
+          }
         }
 
         // Convert commission to BTC for regulator
-        let btcCommission = cryptoCommission;
-        if (cryptoType === 'eth') {
-          btcCommission = (cryptoCommission * parseFloat(rates.ethToUsd)) / parseFloat(rates.btcToUsd);
-        }
+        let btcCommission = cryptoType === 'btc' ? cryptoCommission : (cryptoCommission * parseFloat(rates.ethToUsd)) / parseFloat(rates.btcToUsd);
 
         // Get regulator
         const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
@@ -419,11 +427,19 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Update sender's balance
-        const newSenderBalance = (cryptoBalance - totalCryptoNeeded).toFixed(8);
-        if (cryptoType === 'btc') {
-          await this.updateCardBtcBalance(fromCard.id, newSenderBalance);
+        if (fromCard.type === 'crypto') {
+          const newBalance = cryptoType === 'btc' ?
+            (parseFloat(fromCard.btcBalance || '0') - totalCryptoNeeded).toFixed(8) :
+            (parseFloat(fromCard.ethBalance || '0') - totalCryptoNeeded).toFixed(8);
+
+          if (cryptoType === 'btc') {
+            await this.updateCardBtcBalance(fromCard.id, newBalance);
+          } else {
+            await this.updateCardEthBalance(fromCard.id, newBalance);
+          }
         } else {
-          await this.updateCardEthBalance(fromCard.id, newSenderBalance);
+          const usdCommission = usdAmount * 0.01;
+          await this.updateCardBalance(fromCard.id, (parseFloat(fromCard.balance) - usdAmount - usdCommission).toFixed(2));
         }
 
         // Update regulator's balance
@@ -431,40 +447,20 @@ export class DatabaseStorage implements IStorage {
         const newRegulatorBalance = (regulatorBtcBalance + btcCommission).toFixed(8);
         await this.updateRegulatorBalance(regulator.id, newRegulatorBalance);
 
-        // Check if recipient is an internal card
-        const allCards = await db.select().from(cards);
-        const toCard = allCards.find(card =>
-          card.btcAddress === recipientAddress ||
-          card.ethAddress === recipientAddress
-        );
-
-        // If internal transfer, update recipient's balance
-        if (toCard) {
-          const recipientBalance = cryptoType === 'btc'
-            ? parseFloat(toCard.btcBalance || '0')
-            : parseFloat(toCard.ethBalance || '0');
-
-          const newRecipientBalance = (recipientBalance + cryptoAmount).toFixed(8);
-
-          if (cryptoType === 'btc') {
-            await this.updateCardBtcBalance(toCard.id, newRecipientBalance);
-          } else {
-            await this.updateCardEthBalance(toCard.id, newRecipientBalance);
-          }
-        }
-
         // Create main transaction
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
-          toCardId: toCard?.id || null,
-          amount: (cryptoAmount * parseFloat(cryptoType === 'btc' ? rates.btcToUsd : rates.ethToUsd)).toString(),
+          toCardId: null,
+          amount: usdAmount.toString(),
           convertedAmount: cryptoAmount.toString(),
           type: 'transfer',
           status: 'completed',
           wallet: recipientAddress,
-          description: `Перевод ${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()} ${toCard ? 'на карту' : 'на адрес'} ${recipientAddress}`,
+          description: fromCard.type === 'crypto' ?
+            `Перевод ${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}` :
+            `Перевод ${usdAmount.toFixed(2)} ${fromCard.type.toUpperCase()} (${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()}) на адрес ${recipientAddress}`,
           fromCardNumber: fromCard.number,
-          toCardNumber: toCard?.number || null,
+          toCardNumber: null,
           createdAt: new Date()
         });
 
@@ -472,7 +468,7 @@ export class DatabaseStorage implements IStorage {
         await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: regulator.id,
-          amount: (cryptoCommission * parseFloat(cryptoType === 'btc' ? rates.btcToUsd : rates.ethToUsd)).toString(),
+          amount: (fromCard.type === 'crypto' ? usdAmount * 0.01 : usdAmount * 0.01).toString(),
           convertedAmount: btcCommission.toString(),
           type: 'commission',
           status: 'completed',
