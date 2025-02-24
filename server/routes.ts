@@ -70,87 +70,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Необходима авторизация" });
       }
 
-      console.log("Received transfer request with body:", req.body);
+      console.log("Received transfer request:", req.body);
 
-      const { fromCardId, toCardNumber, amount, transferType = 'card', recipientAddress, cryptoType } = req.body;
+      const { fromCardId, toCardNumber, amount } = req.body;
 
       // Basic validation
-      if (!fromCardId) {
-        return res.status(400).json({ message: "Не указана карта отправителя" });
+      if (!fromCardId || !toCardNumber || !amount) {
+        return res.status(400).json({ message: "Не указаны обязательные параметры перевода" });
       }
 
-      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-        return res.status(400).json({ message: "Некорректная сумма перевода" });
+      // Check if the card belongs to the authenticated user
+      const userCards = await storage.getCardsByUserId(req.user.id);
+      const isUserCard = userCards.some(card => card.id === parseInt(fromCardId));
+      if (!isUserCard) {
+        return res.status(403).json({ message: "У вас нет доступа к этой карте" });
       }
 
-      const transferAmount = parseFloat(amount);
+      const result = await storage.transferMoney(
+        parseInt(fromCardId),
+        toCardNumber.replace(/\s+/g, ''),
+        parseFloat(amount)
+      );
 
-      // Проверяем тип перевода и соответствующие параметры
-      if (transferType === 'card') {
-        const cardNumber = toCardNumber || recipientAddress;
-        if (!cardNumber) {
-          return res.status(400).json({ message: "Не указан номер карты получателя" });
-        }
-
-        const cleanCardNumber = cardNumber.replace(/\s+/g, '');
-        if (!/^\d{16}$/.test(cleanCardNumber)) {
-          return res.status(400).json({ message: "Неверный формат номера карты" });
-        }
-
-        // Check if the card belongs to the authenticated user
-        const userCards = await storage.getCardsByUserId(req.user.id);
-        const isUserCard = userCards.some(card => card.id === parseInt(fromCardId));
-        if (!isUserCard) {
-          return res.status(403).json({ message: "У вас нет доступа к этой карте" });
-        }
-
-        const result = await storage.transferMoney(
-          parseInt(fromCardId),
-          cleanCardNumber,
-          transferAmount
-        );
-
-        if (!result.success) {
-          return res.status(400).json({ message: result.error });
-        }
-
-        return res.json({
-          success: true,
-          message: "Перевод успешно выполнен",
-          transaction: result.transaction
-        });
-      } else if (transferType === 'crypto') {
-        if (!recipientAddress) {
-          return res.status(400).json({ message: "Не указан адрес получателя" });
-        }
-
-        if (!cryptoType) {
-          return res.status(400).json({ message: "Не указан тип криптовалюты" });
-        }
-
-        if (!validateCryptoAddress(recipientAddress, cryptoType as 'btc' | 'eth')) {
-          return res.status(400).json({ message: `Неверный формат ${cryptoType.toUpperCase()} адреса` });
-        }
-
-        const result = await storage.transferCrypto(
-          parseInt(fromCardId),
-          recipientAddress,
-          transferAmount,
-          cryptoType as 'btc' | 'eth'
-        );
-
-        if (!result.success) {
-          return res.status(400).json({ message: result.error });
-        }
-
-        return res.json({
-          success: true,
-          message: "Крипто-перевод успешно выполнен",
-          transaction: result.transaction
-        });
-      } else {
-        return res.status(400).json({ message: "Неподдерживаемый тип перевода" });
+      if (!result.success) {
+        return res.status(400).json({ message: result.error });
       }
+
+      return res.json({
+        success: true,
+        message: "Перевод успешно выполнен",
+        transaction: result.transaction
+      });
+
     } catch (error) {
       console.error("Transfer error:", error);
       res.status(500).json({
@@ -185,7 +136,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Ошибка при получении транзакций" });
     }
   });
-
 
   // NFT маршруты
   app.get("/api/nfts", async (req, res) => {
