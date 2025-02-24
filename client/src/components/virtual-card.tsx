@@ -77,25 +77,16 @@ export default function VirtualCard({ card }: { card: Card }) {
         throw new Error('Пожалуйста, введите корректную сумму');
       }
 
+      // Проверка баланса для карты отправителя
+      if (parseFloat(transferAmount) > parseFloat(card.balance)) {
+        throw new Error(`Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`);
+      }
+
       if (!recipientCardNumber.trim()) {
         throw new Error('Пожалуйста, введите номер карты/адрес получателя');
       }
 
-      // Проверка баланса для карты отправителя
-      if (card.type === 'crypto') {
-        const cryptoBalance = card.type === 'crypto' ? 
-          (selectedWallet === 'btc' ? card.btcBalance : card.ethBalance) : 
-          null;
-        if (!cryptoBalance || parseFloat(transferAmount) > parseFloat(cryptoBalance)) {
-          throw new Error(`Недостаточно ${selectedWallet.toUpperCase()} на балансе`);
-        }
-      } else {
-        if (parseFloat(transferAmount) > parseFloat(card.balance)) {
-          throw new Error(`Недостаточно ${card.type.toUpperCase()} на балансе`);
-        }
-      }
-
-      // Валидация адреса криптокошелька
+      // Валидация криптоадреса если выбран перевод на криптокошелек
       if (recipientType === 'crypto_wallet') {
         const address = recipientCardNumber.trim();
         if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
@@ -210,7 +201,7 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   }, [gyroscope, isMobile, isIOS]);
 
-  // Функция для конвертации суммы
+  // Функция для получения конвертированной суммы
   const getConvertedAmount = () => {
     if (!rates || !transferAmount) return null;
     const amount = parseFloat(transferAmount);
@@ -490,9 +481,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                       )}
 
                       <p className="text-xs text-muted-foreground">
-                        Доступно: {card.type === 'crypto' ? 
-                          (selectedWallet === 'btc' ? card.btcBalance : card.ethBalance) + ` ${selectedWallet.toUpperCase()}` : 
-                          card.balance + ` ${card.type.toUpperCase()}`}
+                        Доступно: {card.balance} {card.type.toUpperCase()}
                       </p>
                     </div>
 
