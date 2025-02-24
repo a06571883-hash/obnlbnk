@@ -41,23 +41,6 @@ export const transactions = pgTable("transactions", {
   toCardNumber: text("to_card_number").notNull(),
 });
 
-export const nfts = pgTable("nfts", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  imageUrl: text("image_url").notNull(),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  collectionId: integer("collection_id").notNull(),
-});
-
-export const nftCollections = pgTable("nft_collections", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
 
 export const exchangeRates = pgTable("exchange_rates", {
   id: serial("id").primaryKey(),
@@ -85,15 +68,6 @@ export const insertCardSchema = createInsertSchema(cards, {
   ethAddress: z.string().nullable(),
 });
 
-export const insertNftSchema = createInsertSchema(nfts, {
-  id: undefined,
-  createdAt: z.date().optional(),
-});
-
-export const insertNftCollectionSchema = createInsertSchema(nftCollections, {
-  id: undefined,
-  createdAt: z.date().optional(),
-});
 
 export const insertTransactionSchema = z.object({
   fromCardId: z.number(),
@@ -113,18 +87,13 @@ export const insertTransactionSchema = z.object({
 export type User = typeof users.$inferSelect;
 export type Card = typeof cards.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
-export type NFT = typeof nfts.$inferSelect;
-export type NFTCollection = typeof nftCollections.$inferSelect;
+export type ExchangeRate = typeof exchangeRates.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertCard = z.infer<typeof insertCardSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
-export type InsertNFT = z.infer<typeof insertNftSchema>;
-export type InsertNFTCollection = z.infer<typeof insertNftCollectionSchema>;
-export type ExchangeRate = typeof exchangeRates.$inferSelect;
-
-export interface ExchangeRateResponse {
+export type ExchangeRateResponse = {
   usdToUah: string;
   btcToUsd: string;
   ethToUsd: string;
   updatedAt?: Date;
-}
+};
