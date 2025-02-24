@@ -83,13 +83,13 @@ export default function VirtualCard({ card }: { card: Card }) {
 
       // Проверяем баланс отправителя
       if (card.type === 'crypto') {
-        // Для крипто карты проверяем баланс в нужной криптовалюте
+        // Для крипто карты проверяем баланс в выбранной криптовалюте
         const cryptoBalance = selectedWallet === 'btc' ? card.btcBalance : card.ethBalance;
         if (parseFloat(transferAmount) > parseFloat(cryptoBalance || '0')) {
           throw new Error(`Недостаточно ${selectedWallet.toUpperCase()}. Доступно: ${cryptoBalance} ${selectedWallet.toUpperCase()}`);
         }
       } else {
-        // Для фиатной карты проверяем баланс в валюте карты
+        // Для фиатной карты проверяем баланс в USD/UAH
         if (parseFloat(transferAmount) > parseFloat(card.balance)) {
           throw new Error(`Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`);
         }
@@ -110,7 +110,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         recipientAddress: recipientCardNumber.replace(/\s+/g, ''),
         amount: parseFloat(transferAmount),
         transferType: recipientType === 'crypto_wallet' ? 'crypto' : 'fiat',
-        // Для крипто карты всегда указываем тип криптовалюты
+        // Для крипто карты всегда указываем её криптовалюту
         cryptoType: card.type === 'crypto' ? selectedWallet : (recipientType === 'crypto_wallet' ? selectedWallet : undefined)
       };
 
@@ -147,6 +147,12 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   });
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsTransferring(true);
+    transferMutation.mutate();
+  };
+
   // Функция для конвертации и отображения суммы
   const getConvertedAmount = () => {
     if (!rates || !transferAmount) return null;
@@ -154,11 +160,11 @@ export default function VirtualCard({ card }: { card: Card }) {
     if (isNaN(amount)) return null;
 
     if (card.type === 'crypto' && recipientType === 'usd_card') {
-      // Конвертация из крипты в USD при переводе на фиат карту
+      // Конвертация из криптовалюты в USD при переводе на фиат карту
       const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
       return `≈ ${(amount * rate).toFixed(2)} USD`;
     } else if (card.type !== 'crypto' && recipientType === 'crypto_wallet') {
-      // Конвертация из USD в крипту при переводе на криптокошелек
+      // Конвертация из USD в криптовалюту при переводе на криптокошелек
       const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
       return `≈ ${(amount / rate).toFixed(8)} ${selectedWallet.toUpperCase()}`;
     }
@@ -199,12 +205,6 @@ export default function VirtualCard({ card }: { card: Card }) {
       });
     }
   }, [gyroscope, isMobile, isIOS]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsTransferring(true);
-    transferMutation.mutate();
-  };
 
   return (
     <div
