@@ -251,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const Replicate = require('replicate');
       const replicate = new Replicate({
-        auth: process.env.REPLICATE_API_TOKEN || 'r8_',
+        auth: process.env.REPLICATE_API_TOKEN,
       });
 
       const output = await replicate.run(
