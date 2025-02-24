@@ -32,13 +32,13 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
   const getTypeIcon = () => {
     switch (transaction.type.toLowerCase()) {
       case 'обмен':
-        return <RefreshCw className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-amber-500" />;
+        return <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500" />;
       case 'перевод':
-        return <ArrowUpRight className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />;
+        return <ArrowUpRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />;
       case 'получение':
-        return <ArrowUpRight className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-emerald-500" />;
+        return <ArrowUpRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500" />;
       case 'комиссия':
-        return <Coins className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-red-500" />;
+        return <Coins className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500" />;
       default:
         return null;
     }
@@ -47,11 +47,11 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
   const getCurrencyIcon = (type: string) => {
     switch (type?.toLowerCase()) {
       case 'crypto':
-        return <Bitcoin className="h-3 w-3 sm:h-4 sm:w-4" />;
+        return <Bitcoin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />;
       case 'usd':
-        return <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />;
+        return <DollarSign className="h-3 w-3 sm:h-3.5 sm:w-3.5" />;
       case 'uah':
-        return <Banknote className="h-3 w-3 sm:h-4 sm:w-4" />;
+        return <Banknote className="h-3 w-3 sm:h-3.5 sm:w-3.5" />;
       default:
         return null;
     }
@@ -70,7 +70,10 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
     // Сократим количество знаков после запятой для крипты
     if (currency?.toLowerCase() === 'crypto') {
-      return num.toFixed(4); // Уменьшили с 8 до 4 знаков
+      if (num < 0.0001) {
+        return num.toFixed(8); // Для очень маленьких сумм показываем все знаки
+      }
+      return num.toFixed(4); // Для обычных сумм показываем 4 знака
     }
     return num.toFixed(2);
   };
@@ -78,8 +81,8 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
   // Функция для сокращения длинных адресов
   const formatAddress = (address: string) => {
     if (!address) return '';
-    if (address.length > 16) {
-      return `${address.slice(0, 8)}...${address.slice(-8)}`;
+    if (address.length > 12) {
+      return `${address.slice(0, 6)}...${address.slice(-6)}`;
     }
     return address;
   };
@@ -90,15 +93,15 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
         <DialogHeader>
           <DialogTitle className="text-center">Чек</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           <div className="flex justify-center">
-            <Logo size={32} className="text-primary" />
+            <Logo size={28} className="text-primary" />
           </div>
 
-          <div className="space-y-2.5 text-[11px] sm:text-sm">
+          <div className="space-y-2 text-[10px] sm:text-xs">
             <div className="flex items-center justify-between pb-2 border-b">
               <span className="text-muted-foreground">Тип</span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 {getTypeIcon()}
                 <span>{transaction.type}</span>
               </div>
@@ -106,7 +109,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">ID</span>
-              <span className="font-mono text-[10px] sm:text-xs">{transaction.id}</span>
+              <span className="font-mono text-[9px] sm:text-[10px]">{transaction.id}</span>
             </div>
 
             <div className="flex justify-between items-center">
@@ -121,7 +124,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             {transaction.convertedAmount && transaction.convertedAmount !== transaction.amount && transaction.toCard?.type && (
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Конверт.</span>
+                <span className="text-muted-foreground">Конв.</span>
                 <div className="flex items-center gap-1">
                   {getCurrencyIcon(transaction.toCard.type)}
                   <span className="font-semibold">
@@ -133,11 +136,11 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             {transaction.from && (
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Откуда</span>
+                <span className="text-muted-foreground">От</span>
                 <div className="text-right">
-                  <span className="font-mono text-[10px] sm:text-xs block">{getCardDetails(transaction.fromCard)}</span>
+                  <span className="font-mono text-[9px] sm:text-[10px] block">{getCardDetails(transaction.fromCard)}</span>
                   {transaction.fromCard?.userId && (
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">
+                    <span className="text-[9px] sm:text-[10px] text-muted-foreground">
                       {transaction.fromCard.userId === transaction.toCard?.userId ? 'Ваша карта' : transaction.fromCard.username}
                     </span>
                   )}
@@ -147,13 +150,13 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             {transaction.to && (
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Куда</span>
+                <span className="text-muted-foreground">К</span>
                 <div className="text-right">
-                  <span className="font-mono text-[10px] sm:text-xs block">
+                  <span className="font-mono text-[9px] sm:text-[10px] block">
                     {transaction.to === "REGULATOR" ? "Регулятор" : getCardDetails(transaction.toCard)}
                   </span>
                   {transaction.toCard?.userId && transaction.to !== "REGULATOR" && (
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">
+                    <span className="text-[9px] sm:text-[10px] text-muted-foreground">
                       {transaction.toCard.userId === transaction.fromCard?.userId ? 'Ваша карта' : transaction.toCard.username}
                     </span>
                   )}
@@ -164,7 +167,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
             {transaction.wallet && (
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Адрес</span>
-                <span className="font-mono text-[10px] sm:text-xs">{formatAddress(transaction.wallet)}</span>
+                <span className="font-mono text-[9px] sm:text-[10px]">{formatAddress(transaction.wallet)}</span>
               </div>
             )}
 
@@ -177,13 +180,13 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Дата</span>
-              <span className="text-[10px] sm:text-xs">
+              <span className="text-[9px] sm:text-[10px]">
                 {format(new Date(transaction.date), 'dd.MM.yyyy HH:mm')}
               </span>
             </div>
           </div>
 
-          <div className="text-[9px] sm:text-[10px] text-muted-foreground pt-2 border-t text-center">
+          <div className="text-[8px] sm:text-[9px] text-muted-foreground pt-2 border-t text-center">
             <p>Поддержка: @KA7777AA</p>
             <p>BNAL Bank © {new Date().getFullYear()}</p>
           </div>
