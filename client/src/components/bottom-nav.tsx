@@ -12,7 +12,6 @@ export default function BottomNav() {
     { icon: Home, label: "Home", path: "/" },
     { icon: CreditCard, label: "Cards", path: "/cards" },
     { icon: Activity, label: "Activity", path: "/activity" },
-    { icon: Image, label: "NFT", path: "/nft" },
     { icon: User, label: "Profile", path: "/profile" },
   ];
 
