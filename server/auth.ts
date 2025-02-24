@@ -60,6 +60,10 @@ async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddre
   };
 }
 
+function generateCVV(): string {
+  return Math.floor(100 + Math.random() * 900).toString();
+}
+
 export function setupAuth(app: Express) {
   const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
   console.log('Setting up session with secret length:', sessionSecret.length);
@@ -172,10 +176,8 @@ export function setupAuth(app: Express) {
         nft_generation_count: 0
       });
 
-      // Create default cards for the new user
       const { btcAddress, ethAddress } = await generateCryptoAddresses();
 
-      // Create USD card
       await storage.createCard({
         userId: user.id,
         type: 'usd',
@@ -185,10 +187,10 @@ export function setupAuth(app: Express) {
         btcAddress: null,
         ethAddress: null,
         btcBalance: null,
-        ethBalance: null
+        ethBalance: null,
+        cvv: generateCVV()
       });
 
-      // Create UAH card
       await storage.createCard({
         userId: user.id,
         type: 'uah',
@@ -198,10 +200,10 @@ export function setupAuth(app: Express) {
         btcAddress: null,
         ethAddress: null,
         btcBalance: null,
-        ethBalance: null
+        ethBalance: null,
+        cvv: generateCVV()
       });
 
-      // Create crypto card
       await storage.createCard({
         userId: user.id,
         type: 'crypto',
@@ -211,7 +213,8 @@ export function setupAuth(app: Express) {
         btcAddress: btcAddress,
         ethAddress: ethAddress,
         btcBalance: "0",
-        ethBalance: "0"
+        ethBalance: "0",
+        cvv: generateCVV()
       });
 
       req.login(user, (err) => {

@@ -29,7 +29,7 @@ const cardColors = {
 
 function validateBtcAddress(address: string): boolean {
   const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
-  const bech32Regex = /^(bc1)[a-zA-HJ-NP-Z0-9]{11,71}$/;
+  const bech32Regex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
   return legacyRegex.test(address) || bech32Regex.test(address);
 }
 
@@ -71,28 +71,18 @@ export default function VirtualCard({ card }: { card: Card }) {
     fetchRates();
   }, []);
 
-  const getSelectedBalance = () => {
-    return card.balance;
-  };
-
   const transferMutation = useMutation({
     mutationFn: async () => {
       if (!transferAmount || isNaN(parseFloat(transferAmount)) || parseFloat(transferAmount) <= 0) {
         throw new Error('Пожалуйста, введите корректную сумму');
       }
 
-      if (!recipientCardNumber.trim()) {
-        throw new Error('Пожалуйста, введите номер карты/адрес получателя');
+      if (parseFloat(transferAmount) > parseFloat(card.balance)) {
+        throw new Error(`Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`);
       }
 
-      // Валидация криптоадреса если выбран перевод на криптокошелек
-      if (recipientType === 'crypto_wallet') {
-        const address = recipientCardNumber.trim();
-        if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
-          throw new Error('Неверный формат BTC адреса');
-        } else if (selectedWallet === 'eth' && !validateEthAddress(address)) {
-          throw new Error('Неверный формат ETH адреса');
-        }
+      if (!recipientCardNumber.trim()) {
+        throw new Error('Пожалуйста, введите номер карты/адрес получателя');
       }
 
       const transferRequest = {
@@ -382,7 +372,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                     {recipientType === 'crypto_wallet' && (
                       <div className="space-y-2">
                         <label className="block text-sm font-medium">
-                          Выберите криптовалюту
+                          Выберите криптовалюту для получения
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                           <Button
