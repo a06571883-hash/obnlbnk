@@ -7,7 +7,8 @@ import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
 import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
-import {OpenAI} from "openai"; // Added import
+import {OpenAI} from "openai";
+import Replicate from 'replicate';
 
 
 const ECPair = ECPairFactory(ecc);
@@ -249,7 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const Replicate = require('replicate');
+      import Replicate from 'replicate';
       const replicate = new Replicate({
         auth: process.env.REPLICATE_API_TOKEN,
       });
