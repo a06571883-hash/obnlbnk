@@ -84,13 +84,18 @@ export default function VirtualCard({ card }: { card: Card }) {
         throw new Error('Пожалуйста, введите корректную сумму');
       }
 
-      const selectedBalance = getSelectedBalance();
-      if (selectedBalance < parseFloat(transferAmount)) {
-        throw new Error(`Недостаточно ${card.type.toUpperCase()} на балансе (${selectedBalance} ${card.type.toUpperCase()})`);
-      }
-
       if (!recipientCardNumber.trim()) {
         throw new Error('Пожалуйста, введите номер карты/адрес получателя');
+      }
+
+      // Валидация криптоадреса если выбран перевод на криптокошелек
+      if (recipientType === 'crypto_wallet') {
+        const address = recipientCardNumber.trim();
+        if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
+          throw new Error('Неверный формат BTC адреса');
+        } else if (selectedWallet === 'eth' && !validateEthAddress(address)) {
+          throw new Error('Неверный формат ETH адреса');
+        }
       }
 
       const transferRequest = {
@@ -151,15 +156,6 @@ export default function VirtualCard({ card }: { card: Card }) {
         setTransferError('Номер карты должен состоять из 16 цифр');
         return;
       }
-    } else if (recipientType === 'crypto_wallet') {
-      const address = recipientCardNumber.trim();
-      if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
-        setTransferError('Неверный формат BTC адреса');
-        return;
-      } else if (selectedWallet === 'eth' && !validateEthAddress(address)) {
-        setTransferError('Неверный формат ETH адреса');
-        return;
-      }
     }
 
     setIsTransferring(true);
@@ -206,6 +202,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       });
     }
   }, [gyroscope, isMobile, isIOS]);
+
 
 
   return (
@@ -382,15 +379,15 @@ export default function VirtualCard({ card }: { card: Card }) {
                           onClick={() => setRecipientType('crypto_wallet')}
                         >
                           <Wallet className="h-3 w-3 mr-1" />
-                          Крипто карта
+                          Крипто адрес
                         </Button>
                       </div>
                     </div>
 
-                    {card.type === 'crypto' && (
+                    {recipientType === 'crypto_wallet' && (
                       <div className="space-y-2">
                         <label className="block text-sm font-medium">
-                          Выберите криптовалюту для перевода
+                          Выберите криптовалюту
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                           <Button
@@ -401,10 +398,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                             onClick={() => setSelectedWallet('btc')}
                           >
                             <Bitcoin className="h-3 w-3 mr-1" />
-                            <span>BTC</span>
-                            <span className="text-[10px] ml-1 opacity-80">
-                              ({card.btcBalance})
-                            </span>
+                            BTC
                           </Button>
                           <Button
                             type="button"
@@ -414,10 +408,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                             onClick={() => setSelectedWallet('eth')}
                           >
                             <Coins className="h-3 w-3 mr-1" />
-                            <span>ETH</span>
-                            <span className="text-[10px] ml-1 opacity-80">
-                              ({card.ethBalance})
-                            </span>
+                            ETH
                           </Button>
                         </div>
                       </div>
@@ -425,7 +416,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium">
-                        {recipientType === 'usd_card' ? 'Номер карты получателя' : `Адрес ${selectedWallet.toUpperCase()} кошелька`}
+                        {recipientType === 'crypto_wallet' ? `Адрес ${selectedWallet.toUpperCase()} кошелька` : 'Номер карты получателя'}
                       </label>
                       <input
                         type="text"
@@ -447,9 +438,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium">
-                        {card.type === 'crypto' && recipientType === 'crypto_wallet' 
-                          ? `Сумма в ${selectedWallet.toUpperCase()}`
-                          : 'Сумма в USD'}
+                        Сумма в {card.type.toUpperCase()}
                       </label>
                       <div className="relative">
                         <input
@@ -457,26 +446,21 @@ export default function VirtualCard({ card }: { card: Card }) {
                           value={transferAmount}
                           onChange={e => setTransferAmount(e.target.value)}
                           className="w-full p-2 border rounded text-sm pr-12"
-                          step={card.type === 'crypto' && recipientType === 'crypto_wallet' ? "0.00000001" : "0.01"}
-                          min={card.type === 'crypto' && recipientType === 'crypto_wallet' ? "0.00000001" : "0.01"}
+                          step="0.01"
+                          min="0.01"
                           required
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
-                          {card.type === 'crypto' && recipientType === 'crypto_wallet' 
-                            ? selectedWallet.toUpperCase()
-                            : 'USD'}
+                          {card.type.toUpperCase()}
                         </span>
                       </div>
-                      {card.type === 'crypto' && transferAmount && rates && (
+                      {recipientType === 'crypto_wallet' && transferAmount && rates && (
                         <p className="text-xs text-muted-foreground">
-                          {recipientType === 'crypto_wallet' 
-                            ? `≈ ${(parseFloat(transferAmount) * (selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd)).toFixed(2)} USD`
-                            : `Будет списано: ${(parseFloat(transferAmount) / (selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd)).toFixed(8)} ${selectedWallet.toUpperCase()}`
-                          }
+                          Будет отправлено: {(parseFloat(transferAmount) / (selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd)).toFixed(8)} {selectedWallet.toUpperCase()}
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        Доступно: {getSelectedBalance()} {card.type === 'crypto' ? selectedWallet.toUpperCase() : card.type.toUpperCase()}
+                        Доступно: {getSelectedBalance()} {card.type.toUpperCase()}
                       </p>
                     </div>
 
