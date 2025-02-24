@@ -10,6 +10,10 @@ import { startRateUpdates } from './rates';
 import {OpenAI} from "openai";
 import Replicate from 'replicate';
 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
 
 const ECPair = ECPairFactory(ecc);
 
