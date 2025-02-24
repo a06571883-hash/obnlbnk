@@ -249,18 +249,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
-
-      // Генерируем изображение с оптимизированными параметрами
-      const imageResponse = await openai.images.generate({
-        model: "dall-e-2",
-        prompt: "Luxury lifestyle pixel art with Mercedes or Rolex watch in modern style",
-        n: 1,
-        size: "512x512",
-        quality: "standard"
+      const Replicate = require('replicate');
+      const replicate = new Replicate({
+        auth: process.env.REPLICATE_API_TOKEN || 'r8_',
       });
 
-      const imageUrl = imageResponse.data[0].url;
+      const output = await replicate.run(
+        "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
+        {
+          input: {
+            prompt: "Luxury lifestyle pixel art with Mercedes or Rolex watch in modern style, high quality, detailed",
+            width: 512,
+            height: 512,
+            num_outputs: 1
+          }
+        }
+      );
+
+      const imageUrl = output[0];
 
       // Генерируем название и описание используя более простую модель
       const completionResponse = await openai.chat.completions.create({
