@@ -27,6 +27,11 @@ pool.on('error', (err) => {
 
 pool.on('connect', () => {
   console.log('New database connection established');
+  console.log('Database URL:', process.env.DATABASE_URL?.split('@')[1]); // Логируем только часть URL без креденшиалов
+});
+
+pool.on('error', (err) => {
+  console.error('Database connection error:', err.message);
 });
 
 // Создаем экземпляр базы данных drizzle
