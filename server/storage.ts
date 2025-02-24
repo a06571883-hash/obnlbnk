@@ -328,6 +328,13 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Карта отправителя не найдена");
         }
 
+        // Validate crypto address format
+        if (cryptoType === 'btc' && !validateBtcAddress(recipientAddress)) {
+          throw new Error("Неверный формат BTC адреса");
+        } else if (cryptoType === 'eth' && !validateEthAddress(recipientAddress)) {
+          throw new Error("Неверный формат ETH адреса");
+        }
+
         // Get latest exchange rates
         const rates = await this.getLatestExchangeRates();
         if (!rates) {
@@ -384,42 +391,18 @@ export class DatabaseStorage implements IStorage {
         const newRegulatorBalance = (regulatorBtcBalance + btcCommission).toFixed(8);
         await this.updateRegulatorBalance(regulator.id, newRegulatorBalance);
 
-        // Check if recipient is internal
-        const allCards = await db.select().from(cards);
-        const toCard = allCards.find(card =>
-          card.btcAddress === recipientAddress ||
-          card.ethAddress === recipientAddress
-        );
-
-        // If internal transfer, update recipient's balance
-        if (toCard) {
-          const recipientBalance = cryptoType === 'btc'
-            ? parseFloat(toCard.btcBalance || '0')
-            : parseFloat(toCard.ethBalance || '0');
-
-          const newRecipientBalance = (recipientBalance + cryptoAmount).toFixed(8);
-
-          if (cryptoType === 'btc') {
-            await this.updateCardBtcBalance(toCard.id, newRecipientBalance);
-          } else {
-            await this.updateCardEthBalance(toCard.id, newRecipientBalance);
-          }
-        }
-
         // Create main transaction
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
-          toCardId: toCard?.id || null,
+          toCardId: null,
           amount: usdAmount.toString(),
           convertedAmount: cryptoAmount.toString(),
           type: 'transfer',
           status: 'completed',
           wallet: recipientAddress,
-          description:
-            `Перевод ${usdAmount.toFixed(2)} USD → ${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()}` +
-            `${toCard ? ' на карту' : ' на адрес'} ${recipientAddress}`,
+          description: `Перевод ${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}`,
           fromCardNumber: fromCard.number,
-          toCardNumber: toCard?.number || null,
+          toCardNumber: null,
           createdAt: new Date()
         });
 
@@ -528,7 +511,6 @@ export class DatabaseStorage implements IStorage {
   }
 
 
-
   async createNFTCollection(userId: number, name: string, description: string): Promise<any> {
     throw new Error("Method not implemented.");
   }
@@ -550,3 +532,14 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+// Add validation functions (replace with your actual validation logic)
+function validateBtcAddress(address: string): boolean {
+  // Implement BTC address validation here
+  return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address);
+}
+
+function validateEthAddress(address: string): boolean {
+  // Implement ETH address validation here
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
+}

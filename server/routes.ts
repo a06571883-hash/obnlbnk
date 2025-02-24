@@ -88,6 +88,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Не указан тип криптовалюты" });
         }
 
+        // Проверяем формат криптоадреса
+        if (!validateCryptoAddress(recipientAddress, cryptoType)) {
+          return res.status(400).json({ message: `Неверный формат ${cryptoType.toUpperCase()} адреса` });
+        }
+
         result = await storage.transferCrypto(
           parseInt(fromCardId),
           recipientAddress,
@@ -95,6 +100,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cryptoType as 'btc' | 'eth'
         );
       } else {
+        // Проверяем формат номера карты для фиатного перевода
+        const cleanCardNumber = recipientAddress.replace(/\s+/g, '');
+        if (!/^\d{16}$/.test(cleanCardNumber)) {
+          return res.status(400).json({ message: "Неверный формат номера карты" });
+        }
+
         result = await storage.transferMoney(
           parseInt(fromCardId),
           recipientAddress,

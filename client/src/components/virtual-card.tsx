@@ -461,7 +461,7 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium">
-                        {`Сумма в ${card.type === 'crypto' || recipientType === 'crypto_wallet' ? 'USD' : card.type.toUpperCase()}`}
+                        {`Сумма в ${(card.type === 'crypto' && recipientType === 'crypto_wallet') ? selectedWallet.toUpperCase() : 'USD'}`}
                       </label>
                       <div className="relative">
                         <input
@@ -469,17 +469,20 @@ export default function VirtualCard({ card }: { card: Card }) {
                           value={transferAmount}
                           onChange={e => setTransferAmount(e.target.value)}
                           className="w-full p-2 border rounded text-sm pr-12"
-                          step="0.01"
-                          min="0.01"
+                          step={card.type === 'crypto' && recipientType === 'crypto_wallet' ? "0.00000001" : "0.01"}
+                          min={card.type === 'crypto' && recipientType === 'crypto_wallet' ? "0.00000001" : "0.01"}
                           required
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
-                          {card.type === 'crypto' || recipientType === 'crypto_wallet' ? 'USD' : card.type.toUpperCase()}
+                          {(card.type === 'crypto' && recipientType === 'crypto_wallet') ? selectedWallet.toUpperCase() : 'USD'}
                         </span>
                       </div>
                       {card.type === 'crypto' && transferAmount && rates && (
                         <p className="text-xs text-muted-foreground">
-                          Будет списано: {(parseFloat(transferAmount) / (selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd)).toFixed(8)} {selectedWallet.toUpperCase()}
+                          {recipientType === 'crypto_wallet' 
+                            ? `≈ ${(parseFloat(transferAmount) * (selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd)).toFixed(2)} USD`
+                            : `Будет списано: ${(parseFloat(transferAmount) / (selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd)).toFixed(8)} ${selectedWallet.toUpperCase()}`
+                          }
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">
