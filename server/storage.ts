@@ -210,150 +210,68 @@ export class DatabaseStorage implements IStorage {
   }
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
-    return this.withTransaction(async () => {
-      try {
-        const fromCard = await this.getCardById(fromCardId);
-        if (!fromCard) {
-          throw new Error("Карта отправителя не найдена");
-        }
+    const conn = await db.transaction();
 
-        const toCard = await this.getCardByNumber(toCardNumber);
-        if (!toCard) {
-          throw new Error("Карта получателя не найдена");
-        }
+    try {
+      const fromCard = await conn.query.cards.findFirst({
+        where: eq(cards.id, fromCardId)
+      });
 
-        // Get regulator user for commission
-        const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
-        if (!regulator) {
-          throw new Error("Регулятор не найден в системе");
-        }
-
-        // Get latest exchange rates
-        const rates = await this.getLatestExchangeRates();
-        if (!rates) {
-          throw new Error("Не удалось получить актуальные курсы валют");
-        }
-
-        // Parse balances
-        const fromBalanceStr = fromCard.balance;
-        const fromBalance = parseFloat(fromBalanceStr);
-
-        if (isNaN(fromBalance)) {
-          throw new Error("Ошибка формата баланса");
-        }
-
-        // Calculate commission (1%)
-        const commission = amount * 0.01;
-        const totalDeduction = amount + commission;
-
-        if (fromBalance < totalDeduction) {
-          throw new Error(`Недостаточно средств на балансе (${fromBalance.toFixed(2)} ${fromCard.type.toUpperCase()}) с учетом комиссии 1%`);
-        }
-
-        // Calculate conversion rates based on latest exchange rates
-        type CurrencyType = 'usd' | 'uah' | 'crypto';
-
-        const conversionRates: Record<CurrencyType, Record<'usd' | 'uah' | 'crypto', number>> = {
-          usd: {
-            usd: 1,
-            uah: parseFloat(rates.usdToUah),
-            crypto: 1 / parseFloat(rates.btcToUsd)
-          },
-          uah: {
-            usd: 1 / parseFloat(rates.usdToUah),
-            uah: 1,
-            crypto: 1 / (parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah))
-          },
-          crypto: {
-            usd: parseFloat(rates.btcToUsd),
-            uah: parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah),
-            crypto: 1
-          }
-        };
-
-        // Calculate converted amount for recipient
-        let convertedAmount = amount;
-        if (fromCard.type !== toCard.type) {
-          const fromType = fromCard.type.toLowerCase() as CurrencyType;
-          const toType = toCard.type.toLowerCase() as CurrencyType;
-          convertedAmount = amount * conversionRates[fromType][toType];
-        }
-
-        // Convert commission to BTC
-        let btcCommission = commission;
-        if (fromCard.type !== 'crypto') {
-          const fromType = fromCard.type.toLowerCase() as CurrencyType;
-          btcCommission = commission * conversionRates[fromType]['crypto'];
-        }
-
-        // Update balances
-        const newFromBalance = (fromBalance - totalDeduction).toFixed(2);
-        const newToBalance = (parseFloat(toCard.balance) + convertedAmount).toFixed(2);
-        const newRegulatorBtcBalance = (parseFloat(regulator.regulator_balance || '0') + btcCommission).toFixed(8);
-
-        // Check if cards belong to the same user
-        if (fromCard.userId === toCard.userId) {
-          // Create exchange transaction
-          const transaction = await this.createExchangeTransaction(
-            fromCard,
-            toCard,
-            amount,
-            convertedAmount,
-            commission,
-            btcCommission,
-            regulator
-          );
-
-          // Update balances
-          await this.updateCardBalance(fromCard.id, newFromBalance);
-          await this.updateCardBalance(toCard.id, newToBalance);
-          await this.updateRegulatorBalance(regulator.id, newRegulatorBtcBalance);
-
-          return { success: true, transaction };
-        } else {
-          // Create transfer transaction
-          const transaction = await this.createTransaction({
-            fromCardId: fromCard.id,
-            toCardId: toCard.id,
-            amount: amount.toString(),
-            convertedAmount: convertedAmount.toString(),
-            type: 'transfer',
-            status: 'completed',
-            wallet: null,
-            description: `💸 Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(2)} ${toCard.type.toUpperCase()}`,
-            fromCardNumber: fromCard.number,
-            toCardNumber: toCard.number,
-            createdAt: new Date()
-          });
-
-          // Create commission transaction
-          await this.createTransaction({
-            fromCardId: fromCard.id,
-            toCardId: regulator.id,
-            amount: commission.toString(),
-            convertedAmount: btcCommission.toString(),
-            type: 'commission',
-            status: 'completed',
-            wallet: null,
-            description: `💰 Комиссия за перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} (${btcCommission.toFixed(8)} BTC)`,
-            fromCardNumber: fromCard.number,
-            toCardNumber: "REGULATOR",
-            createdAt: new Date()
-          });
-
-          // Update balances
-          await this.updateCardBalance(fromCard.id, newFromBalance);
-          await this.updateCardBalance(toCard.id, newToBalance);
-          await this.updateRegulatorBalance(regulator.id, newRegulatorBtcBalance);
-
-          return { success: true, transaction };
-        }
-
-      } catch (error) {
-        console.error("Error in transferMoney:", error);
-        return { success: false, error: (error as Error).message };
+      if (!fromCard) {
+        await conn.rollback();
+        return { success: false, error: "Карта отправителя не найдена" };
       }
-    }, 'Transfer money');
+
+      const toCard = await conn.query.cards.findFirst({
+        where: eq(cards.number, toCardNumber)
+      });
+
+      if (!toCard) {
+        await conn.rollback();
+        return { success: false, error: "Карта получателя не найдена" };
+      }
+
+      // Convert amount to numbers and check balance
+      const fromBalance = parseFloat(fromCard.balance);
+      const toBalance = parseFloat(toCard.balance);
+
+      if (fromBalance < amount) {
+        await conn.rollback();
+        return { success: false, error: "Недостаточно средств" };
+      }
+
+      // Perform transfer
+      await conn.update(cards)
+        .set({ balance: (fromBalance - amount).toFixed(2) })
+        .where(eq(cards.id, fromCardId));
+
+      await conn.update(cards)
+        .set({ balance: (toBalance + amount).toFixed(2) })
+        .where(eq(cards.id, toCard.id));
+
+      // Create transaction record
+      const [transaction] = await conn.insert(transactions)
+        .values({
+          fromCardId: fromCardId,
+          toCardId: toCard.id,
+          amount: amount.toFixed(2),
+          type: 'transfer',
+          status: 'completed',
+          fromCardNumber: fromCard.number,
+          toCardNumber: toCard.number,
+          convertedAmount: amount.toFixed(2),
+          description: `Перевод с карты ${fromCard.number} на карту ${toCard.number}`,
+          createdAt: new Date()
+        })
+        .returning();
+
+      await conn.commit();
+      return { success: true, transaction };
+    } catch (error) {
+      await conn.rollback();
+      console.error("Transfer error:", error);
+      return { success: false, error: "Ошибка при переводе средств" };
+    }
   }
 
   async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
@@ -542,7 +460,7 @@ export class DatabaseStorage implements IStorage {
     }, 'Update exchange rates');
   }
 
-  
+
 }
 
 export const storage = new DatabaseStorage();
