@@ -22,9 +22,9 @@ import { useToast } from "@/hooks/use-toast";
 type RecipientType = 'usd_card' | 'crypto_wallet';
 
 const cardColors = {
-  crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl",
-  usd: "bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400",
-  uah: "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400",
+  crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl animate-gradient",
+  usd: "bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 animate-gradient",
+  uah: "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 animate-gradient",
 } as const;
 
 function validateBtcAddress(address: string): boolean {
@@ -217,13 +217,15 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-44 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-4 sm:p-6 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
+        className={`relative h-44 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-4 sm:p-6 text-white shadow-xl overflow-hidden backdrop-blur-sm transition-all duration-500`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
             0 6px 6px rgba(0,0,0,0.23),
             ${Math.abs(rotation.y)}px ${Math.abs(rotation.x)}px 20px rgba(0,0,0,0.1)
-          `
+          `,
+          backgroundSize: '400% 400%',
+          animation: 'gradient 15s ease infinite'
         }}
       >
         {card.type === 'crypto' && (
