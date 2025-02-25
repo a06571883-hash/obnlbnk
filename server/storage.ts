@@ -238,44 +238,51 @@ export class DatabaseStorage implements IStorage {
         let convertedAmount = amount;
         let sourceAmount = amount;
 
+        const isBtcCard = (card: Card) => card.type === 'crypto' && card.btcBalance !== null;
+        const isEthCard = (card: Card) => card.type === 'crypto' && card.ethBalance !== null;
+
         if (fromCard.type !== toCard.type) {
-          // USD ↔ UAH конвертация
           if (fromCard.type === 'usd' && toCard.type === 'uah') {
             convertedAmount = amount * parseFloat(rates.usdToUah);
           } else if (fromCard.type === 'uah' && toCard.type === 'usd') {
             convertedAmount = amount / parseFloat(rates.usdToUah);
           }
-          // Крипто ↔ USD конвертация
-          else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
-            if (fromCard.btcBalance && parseFloat(fromCard.btcBalance) > 0) {
-              convertedAmount = amount * parseFloat(rates.btcToUsd);
-              sourceAmount = amount;
-            } else if (fromCard.ethBalance && parseFloat(fromCard.ethBalance) > 0) {
-              convertedAmount = amount * parseFloat(rates.ethToUsd);
-              sourceAmount = amount;
+          // USD или UAH -> Crypto
+          else if ((fromCard.type === 'usd' || fromCard.type === 'uah') && toCard.type === 'crypto') {
+            let usdAmount = fromCard.type === 'usd' ? amount : amount / parseFloat(rates.usdToUah);
+            if (isBtcCard(toCard)) {
+              convertedAmount = usdAmount / parseFloat(rates.btcToUsd);
+            } else if (isEthCard(toCard)) {
+              convertedAmount = usdAmount / parseFloat(rates.ethToUsd);
             }
           }
-          // USD ↔ Крипто конвертация
-          else if (fromCard.type === 'usd' && toCard.type === 'crypto') {
-            if (toCard.btcBalance !== null) {
-              convertedAmount = amount / parseFloat(rates.btcToUsd);
-            } else if (toCard.ethBalance !== null) {
-              convertedAmount = amount / parseFloat(rates.ethToUsd);
+          // Crypto -> USD или UAH
+          else if (fromCard.type === 'crypto' && (toCard.type === 'usd' || toCard.type === 'uah')) {
+            let usdAmount;
+            if (isBtcCard(fromCard)) {
+              usdAmount = amount * parseFloat(rates.btcToUsd);
+            } else if (isEthCard(fromCard)) {
+              usdAmount = amount * parseFloat(rates.ethToUsd);
+            } else {
+              throw new Error("Неизвестный тип криптовалюты");
             }
+            convertedAmount = toCard.type === 'usd' ? usdAmount : usdAmount * parseFloat(rates.usdToUah);
           }
-          // Крипто ↔ Крипто конвертация
+          // Crypto -> Crypto (BTC <-> ETH)
           else if (fromCard.type === 'crypto' && toCard.type === 'crypto') {
-            const isBtcToEth = fromCard.btcBalance !== null && toCard.ethBalance !== null;
-            const isEthToBtc = fromCard.ethBalance !== null && toCard.btcBalance !== null;
-
-            if (isBtcToEth) {
-              // BTC -> USD -> ETH
+            if (isBtcCard(fromCard) && isEthCard(toCard)) {
+              // BTC -> ETH через USD
               const usdAmount = amount * parseFloat(rates.btcToUsd);
               convertedAmount = usdAmount / parseFloat(rates.ethToUsd);
-            } else if (isEthToBtc) {
-              // ETH -> USD -> BTC
+            } else if (isEthCard(fromCard) && isBtcCard(toCard)) {
+              // ETH -> BTC через USD
               const usdAmount = amount * parseFloat(rates.ethToUsd);
               convertedAmount = usdAmount / parseFloat(rates.btcToUsd);
+            } else if ((isBtcCard(fromCard) && isBtcCard(toCard)) || (isEthCard(fromCard) && isEthCard(toCard))) {
+              // BTC -> BTC или ETH -> ETH
+              convertedAmount = amount;
+            } else {
+              throw new Error("Несовместимые типы криптовалют");
             }
           }
         }
@@ -291,65 +298,72 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Регулятор не найден в системе");
         }
 
-        const fromBalance = parseFloat(fromCard.balance);
-        const toBalance = parseFloat(toCard.balance);
-
-        if (isNaN(fromBalance) || isNaN(toBalance)) {
-          throw new Error("Ошибка формата баланса");
-        }
-
         // Check if sender has enough funds including commission
         if (fromCard.type === 'crypto') {
-          const cryptoBalance = fromCard.btcBalance ? parseFloat(fromCard.btcBalance) : parseFloat(fromCard.ethBalance || '0');
+          const cryptoBalance = isBtcCard(fromCard) ? 
+            parseFloat(fromCard.btcBalance || '0') : 
+            parseFloat(fromCard.ethBalance || '0');
+
           if (cryptoBalance < (sourceAmount + commission)) {
             throw new Error(
               `Недостаточно средств. ` +
-              `Доступно: ${cryptoBalance.toFixed(8)} ${fromCard.btcBalance ? 'BTC' : 'ETH'}, ` +
-              `требуется: ${sourceAmount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ${(sourceAmount + commission).toFixed(8)} ${fromCard.btcBalance ? 'BTC' : 'ETH'}`
+              `Доступно: ${cryptoBalance.toFixed(8)} ${isBtcCard(fromCard) ? 'BTC' : 'ETH'}, ` +
+              `требуется: ${sourceAmount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ` +
+              `${(sourceAmount + commission).toFixed(8)} ${isBtcCard(fromCard) ? 'BTC' : 'ETH'}`
             );
           }
+
+          // Update sender's crypto balance
+          if (isBtcCard(fromCard)) {
+            await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - sourceAmount - commission).toFixed(8));
+          } else {
+            await this.updateCardEthBalance(fromCard.id, (cryptoBalance - sourceAmount - commission).toFixed(8));
+          }
+
+          // Update recipient's balance
+          if (toCard.type === 'crypto') {
+            const recipientCryptoBalance = isBtcCard(toCard) ?
+              parseFloat(toCard.btcBalance || '0') :
+              parseFloat(toCard.ethBalance || '0');
+
+            if (isBtcCard(toCard)) {
+              await this.updateCardBtcBalance(toCard.id, (recipientCryptoBalance + convertedAmount).toFixed(8));
+            } else {
+              await this.updateCardEthBalance(toCard.id, (recipientCryptoBalance + convertedAmount).toFixed(8));
+            }
+          } else {
+            // Crypto -> Fiat
+            await this.updateCardBalance(toCard.id, (parseFloat(toCard.balance) + convertedAmount).toFixed(2));
+          }
         } else {
-          if (fromBalance < (sourceAmount + commission)) {
+          // Fiat card
+          const fiatBalance = parseFloat(fromCard.balance);
+          if (fiatBalance < (sourceAmount + commission)) {
             throw new Error(
               `Недостаточно средств. ` +
-              `Доступно: ${fromBalance.toFixed(2)} ${fromCard.type.toUpperCase()}, ` +
-              `требуется: ${sourceAmount.toFixed(2)} + ${commission.toFixed(2)} комиссия = ${(sourceAmount + commission).toFixed(2)} ${fromCard.type.toUpperCase()}`
+              `Доступно: ${fiatBalance.toFixed(2)} ${fromCard.type.toUpperCase()}, ` +
+              `требуется: ${sourceAmount.toFixed(2)} + ${commission.toFixed(2)} комиссия = ` +
+              `${(sourceAmount + commission).toFixed(2)} ${fromCard.type.toUpperCase()}`
             );
           }
-        }
 
-        // Update balances
-        if (fromCard.type === 'crypto') {
-          if (fromCard.btcBalance) {
-            await this.updateCardBtcBalance(fromCard.id, (parseFloat(fromCard.btcBalance) - sourceAmount - commission).toFixed(8));
-          } else if (fromCard.ethBalance) {
-            await this.updateCardEthBalance(fromCard.id, (parseFloat(fromCard.ethBalance) - sourceAmount - commission).toFixed(8));
-          }
+          // Update sender's fiat balance
+          await this.updateCardBalance(fromCard.id, (fiatBalance - sourceAmount - commission).toFixed(2));
 
+          // Update recipient's balance
           if (toCard.type === 'crypto') {
-            // Крипто -> Крипто перевод
-            if (toCard.btcBalance !== null) {
-              await this.updateCardBtcBalance(toCard.id, (parseFloat(toCard.btcBalance || '0') + convertedAmount).toFixed(8));
-            } else if (toCard.ethBalance !== null) {
-              await this.updateCardEthBalance(toCard.id, (parseFloat(toCard.ethBalance || '0') + convertedAmount).toFixed(8));
+            const recipientCryptoBalance = isBtcCard(toCard) ?
+              parseFloat(toCard.btcBalance || '0') :
+              parseFloat(toCard.ethBalance || '0');
+
+            if (isBtcCard(toCard)) {
+              await this.updateCardBtcBalance(toCard.id, (recipientCryptoBalance + convertedAmount).toFixed(8));
+            } else {
+              await this.updateCardEthBalance(toCard.id, (recipientCryptoBalance + convertedAmount).toFixed(8));
             }
           } else {
-            // Крипто -> Фиат перевод
-            await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
-          }
-        } else {
-          await this.updateCardBalance(fromCard.id, (fromBalance - sourceAmount - commission).toFixed(2));
-
-          if (toCard.type === 'crypto') {
-            // Фиат -> Крипто перевод
-            if (toCard.btcBalance !== null) {
-              await this.updateCardBtcBalance(toCard.id, (parseFloat(toCard.btcBalance || '0') + convertedAmount).toFixed(8));
-            } else if (toCard.ethBalance !== null) {
-              await this.updateCardEthBalance(toCard.id, (parseFloat(toCard.ethBalance || '0') + convertedAmount).toFixed(8));
-            }
-          } else {
-            // Фиат -> Фиат перевод
-            await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
+            // Fiat -> Fiat
+            await this.updateCardBalance(toCard.id, (parseFloat(toCard.balance) + convertedAmount).toFixed(2));
           }
         }
 
@@ -367,8 +381,9 @@ export class DatabaseStorage implements IStorage {
           type: 'transfer',
           status: 'completed',
           description: fromCard.type === toCard.type ?
-            `Перевод ${sourceAmount.toFixed(2)} ${fromCard.type.toUpperCase()}` :
-            `Перевод ${sourceAmount.toFixed(8)} ${fromCard.type === 'crypto' ? (fromCard.btcBalance ? 'BTC' : 'ETH') : fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(2)} ${toCard.type.toUpperCase()}`,
+            `Перевод ${sourceAmount.toFixed(fromCard.type === 'crypto' ? 8 : 2)} ${fromCard.type.toUpperCase()}` :
+            `Перевод ${sourceAmount.toFixed(fromCard.type === 'crypto' ? 8 : 2)} ${fromCard.type.toUpperCase()} → ` +
+            `${convertedAmount.toFixed(toCard.type === 'crypto' ? 8 : 2)} ${toCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
           wallet: null,
@@ -398,7 +413,7 @@ export class DatabaseStorage implements IStorage {
           error: error instanceof Error ? error.message : "Ошибка при переводе средств"
         };
       }
-    });
+    }, 'Process money transfer');
   }
 
   async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
