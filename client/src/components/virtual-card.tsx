@@ -95,26 +95,38 @@ export default function VirtualCard({ card }: { card: Card }) {
         }
       }
 
-      // Валидация криптоадреса
+      let transferRequest;
+
       if (recipientType === 'crypto_wallet') {
+        // Валидация криптоадреса для переводов на внешний кошелек
         const address = recipientCardNumber.trim();
         if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
           throw new Error('Неверный формат BTC адреса');
         } else if (selectedWallet === 'eth' && !validateEthAddress(address)) {
           throw new Error('Неверный формат ETH адреса');
         }
+
+        transferRequest = {
+          fromCardId: card.id,
+          recipientAddress: address,
+          amount: parseFloat(transferAmount),
+          transferType: 'crypto',
+          cryptoType: selectedWallet
+        };
+      } else {
+        // Перевод между картами
+        transferRequest = {
+          fromCardId: card.id,
+          toCardNumber: recipientCardNumber.replace(/\s+/g, ''),
+          amount: parseFloat(transferAmount)
+        };
       }
 
-      const transferRequest = {
-        fromCardId: card.id,
-        recipientAddress: recipientCardNumber.replace(/\s+/g, ''),
-        amount: parseFloat(transferAmount),
-        transferType: recipientType === 'crypto_wallet' ? 'crypto' : 'fiat',
-        // Для крипто карты всегда указываем её криптовалюту
-        cryptoType: card.type === 'crypto' ? selectedWallet : (recipientType === 'crypto_wallet' ? selectedWallet : undefined)
-      };
-
-      const response = await apiRequest("POST", "/api/transfer", transferRequest);
+      const response = await apiRequest(
+        "POST",
+        recipientType === 'crypto_wallet' ? "/api/transfer-crypto" : "/api/transfer",
+        transferRequest
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
