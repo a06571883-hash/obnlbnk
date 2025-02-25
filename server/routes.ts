@@ -38,8 +38,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // Настройка сессии и авторизации
   setupAuth(app);
-  startRateUpdates(httpServer, '/ws');
+
+  // Запуск WebSocket сервера для обновления курсов
+  await startRateUpdates(httpServer, '/ws');
+
+  // Middleware для проверки авторизации
+  const requireAuth = (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Необходима авторизация" });
+    }
+    next();
+  };
 
   app.get("/api/rates", async (req, res) => {
     try {
@@ -51,11 +62,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/cards", async (req, res) => {
+  app.get("/api/cards", requireAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
       const cards = await storage.getCardsByUserId(req.user.id);
       res.json(cards);
     } catch (error) {
@@ -64,12 +72,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/transfer", async (req, res) => {
+  app.post("/api/transfer", requireAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-
       const { fromCardId, toCardNumber, amount } = req.body;
 
       // Базовая валидация
@@ -108,12 +112,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/transfer-crypto", async (req, res) => {
+  app.post("/api/transfer-crypto", requireAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-
       const { fromCardId, recipientAddress, amount, cryptoType } = req.body;
 
       // Базовая валидация
@@ -161,12 +161,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/transactions", async (req, res) => {
+  app.get("/api/transactions", requireAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-
       const userCards = await storage.getCardsByUserId(req.user.id);
       const allTransactions = [];
 
@@ -186,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/database/backup', async (req, res) => {
+  app.post('/api/database/backup', requireAuth, async (req, res) => {
     const success = await exportDatabase();
     if (success) {
       res.json({ message: 'Backup completed successfully' });
@@ -195,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/database/restore', async (req, res) => {
+  app.post('/api/database/restore', requireAuth, async (req, res) => {
     const success = await importDatabase();
     if (success) {
       res.json({ message: 'Restore completed successfully' });
@@ -204,6 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Serve static files
   app.use(express.static('dist/client'));
 
   return httpServer;
