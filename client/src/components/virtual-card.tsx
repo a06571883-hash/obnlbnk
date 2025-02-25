@@ -22,9 +22,9 @@ import { useToast } from "@/hooks/use-toast";
 type RecipientType = 'usd_card' | 'crypto_wallet';
 
 const cardColors = {
-  crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl hover:before:opacity-30 transition-all duration-700",
-  usd: "bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 hover:shadow-emerald-200/20 transition-all duration-700",
-  uah: "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 hover:shadow-blue-200/20 transition-all duration-700",
+  crypto: "bg-gradient-to-r from-violet-600 via-violet-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl hover:before:opacity-30 transition-all duration-700 animate-shimmer",
+  usd: "bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 hover:shadow-emerald-200/20 transition-all duration-700 animate-shimmer",
+  uah: "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 hover:shadow-blue-200/20 transition-all duration-700 animate-shimmer",
 } as const;
 
 function validateBtcAddress(address: string): boolean {
