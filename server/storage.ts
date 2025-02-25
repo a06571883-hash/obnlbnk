@@ -263,6 +263,21 @@ export class DatabaseStorage implements IStorage {
               convertedAmount = amount / parseFloat(rates.ethToUsd);
             }
           }
+          // Крипто ↔ Крипто конвертация
+          else if (fromCard.type === 'crypto' && toCard.type === 'crypto') {
+            const isBtcToEth = fromCard.btcBalance !== null && toCard.ethBalance !== null;
+            const isEthToBtc = fromCard.ethBalance !== null && toCard.btcBalance !== null;
+
+            if (isBtcToEth) {
+              // BTC -> USD -> ETH
+              const usdAmount = amount * parseFloat(rates.btcToUsd);
+              convertedAmount = usdAmount / parseFloat(rates.ethToUsd);
+            } else if (isEthToBtc) {
+              // ETH -> USD -> BTC
+              const usdAmount = amount * parseFloat(rates.ethToUsd);
+              convertedAmount = usdAmount / parseFloat(rates.btcToUsd);
+            }
+          }
         }
 
         // Calculate commission (1% от исходной суммы)
@@ -310,10 +325,32 @@ export class DatabaseStorage implements IStorage {
           } else if (fromCard.ethBalance) {
             await this.updateCardEthBalance(fromCard.id, (parseFloat(fromCard.ethBalance) - sourceAmount - commission).toFixed(8));
           }
-          await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
+
+          if (toCard.type === 'crypto') {
+            // Крипто -> Крипто перевод
+            if (toCard.btcBalance !== null) {
+              await this.updateCardBtcBalance(toCard.id, (parseFloat(toCard.btcBalance || '0') + convertedAmount).toFixed(8));
+            } else if (toCard.ethBalance !== null) {
+              await this.updateCardEthBalance(toCard.id, (parseFloat(toCard.ethBalance || '0') + convertedAmount).toFixed(8));
+            }
+          } else {
+            // Крипто -> Фиат перевод
+            await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
+          }
         } else {
           await this.updateCardBalance(fromCard.id, (fromBalance - sourceAmount - commission).toFixed(2));
-          await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
+
+          if (toCard.type === 'crypto') {
+            // Фиат -> Крипто перевод
+            if (toCard.btcBalance !== null) {
+              await this.updateCardBtcBalance(toCard.id, (parseFloat(toCard.btcBalance || '0') + convertedAmount).toFixed(8));
+            } else if (toCard.ethBalance !== null) {
+              await this.updateCardEthBalance(toCard.id, (parseFloat(toCard.ethBalance || '0') + convertedAmount).toFixed(8));
+            }
+          } else {
+            // Фиат -> Фиат перевод
+            await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
+          }
         }
 
         // Update regulator's BTC balance
