@@ -37,6 +37,17 @@ export interface IStorage {
   updateUserNFTGeneration(userId: number): Promise<void>;
 }
 
+function validateBtcAddress(address: string): boolean {
+  // Обновляем валидацию для поддержки всех форматов BTC адресов
+  const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
+  const bech32Regex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
+  return legacyRegex.test(address) || bech32Regex.test(address);
+}
+
+function validateEthAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/i.test(address);
+}
+
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
@@ -436,124 +447,103 @@ export class DatabaseStorage implements IStorage {
   async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withTransaction(async () => {
       try {
+        console.log(`Starting crypto transfer: ${amount} ${cryptoType.toUpperCase()} from card ${fromCardId} to ${recipientAddress}`);
+
+        // Получаем карту отправителя и проверяем баланс
         const fromCard = await this.getCardById(fromCardId);
         if (!fromCard) {
           throw new Error("Карта отправителя не найдена");
         }
 
-        // Get latest exchange rates
-        const rates = await this.getLatestExchangeRates();
-        if (!rates) {
-          throw new Error("Не удалось получить актуальные курсы валют");
+        // Проверяем наличие нужного баланса
+        const balance = cryptoType === 'btc' ?
+          parseFloat(fromCard.btcBalance || '0') :
+          parseFloat(fromCard.ethBalance || '0');
+
+        // Комиссия 1%
+        const commission = amount * 0.01;
+        const totalAmount = amount + commission;
+
+        console.log(`Current balance: ${balance} ${cryptoType.toUpperCase()}`);
+        console.log(`Required amount with commission: ${totalAmount} ${cryptoType.toUpperCase()}`);
+
+        if (balance < totalAmount) {
+          throw new Error(
+            `Недостаточно ${cryptoType.toUpperCase()} для перевода. ` +
+            `Доступно: ${balance.toFixed(8)} ${cryptoType.toUpperCase()}, ` +
+            `требуется: ${amount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ${totalAmount.toFixed(8)} ${cryptoType.toUpperCase()}`
+          );
         }
 
-        let cryptoAmount: number;
-        let usdAmount: number;
-
-        // Determine amounts based on sender's card type
-        if (fromCard.type === 'crypto') {
-          // Sending from crypto card
-          cryptoAmount = amount;
-          usdAmount = amount * parseFloat(cryptoType === 'btc' ? rates.btcToUsd : rates.ethToUsd);
-        } else {
-          // Sending from fiat card
-          usdAmount = amount;
-          cryptoAmount = amount / parseFloat(cryptoType === 'btc' ? rates.btcToUsd : rates.ethToUsd);
-        }
-
-        // Calculate commission (1%)
-        const cryptoCommission = cryptoAmount * 0.01;
-        const totalCryptoNeeded = cryptoAmount + (fromCard.type === 'crypto' ? cryptoCommission : 0);
-
-        // Check sender's balance
-        if (fromCard.type === 'crypto') {
-          const cryptoBalance = cryptoType === 'btc' ? parseFloat(fromCard.btcBalance || '0') : parseFloat(fromCard.ethBalance || '0');
-          if (cryptoBalance < totalCryptoNeeded) {
-            throw new Error(
-              `Недостаточно ${cryptoType.toUpperCase()} для перевода. ` +
-              `Сумма: ${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()}, ` +
-              `комиссия: ${cryptoCommission.toFixed(8)} ${cryptoType.toUpperCase()}, ` +
-              `доступно: ${cryptoBalance.toFixed(8)} ${cryptoType.toUpperCase()}`
-            );
-          }
-        } else {
-          const usdCommission = usdAmount * 0.01;
-          if (parseFloat(fromCard.balance) < (usdAmount + usdCommission)) {
-            throw new Error(
-              `Недостаточно средств. ` +
-              `Доступно: ${fromCard.balance} ${fromCard.type.toUpperCase()}, ` +
-              `требуется: ${usdAmount.toFixed(2)} + ${usdCommission.toFixed(2)} комиссия = ${(usdAmount + usdCommission).toFixed(2)} ${fromCard.type.toUpperCase()}`
-            );
-          }
-        }
-
-        // Convert commission to BTC for regulator
-        let btcCommission = cryptoType === 'btc' ? cryptoCommission : (cryptoCommission * parseFloat(rates.ethToUsd)) / parseFloat(rates.btcToUsd);
-
-        // Get regulator
+        // Получаем регулятора для комиссии
         const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
         if (!regulator) {
           throw new Error("Регулятор не найден в системе");
         }
 
-        // Update sender's balance
-        if (fromCard.type === 'crypto') {
-          const newBalance = cryptoType === 'btc' ?
-            (parseFloat(fromCard.btcBalance || '0') - totalCryptoNeeded).toFixed(8) :
-            (parseFloat(fromCard.ethBalance || '0') - totalCryptoNeeded).toFixed(8);
-
-          if (cryptoType === 'btc') {
-            await this.updateCardBtcBalance(fromCard.id, newBalance);
-          } else {
-            await this.updateCardEthBalance(fromCard.id, newBalance);
-          }
+        // Списываем средства с карты отправителя
+        const newBalance = balance - totalAmount;
+        if (cryptoType === 'btc') {
+          await this.updateCardBtcBalance(fromCard.id, newBalance.toFixed(8));
         } else {
-          const usdCommission = usdAmount * 0.01;
-          await this.updateCardBalance(fromCard.id, (parseFloat(fromCard.balance) - usdAmount - usdCommission).toFixed(2));
+          await this.updateCardEthBalance(fromCard.id, newBalance.toFixed(8));
         }
 
-        // Update regulator's balance
-        const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
-        const newRegulatorBalance = (regulatorBtcBalance + btcCommission).toFixed(8);
-        await this.updateRegulatorBalance(regulator.id, newRegulatorBalance);
+        console.log(`Updated sender's balance: ${newBalance.toFixed(8)} ${cryptoType.toUpperCase()}`);
 
-        // Create main transaction
+        // Комиссия регулятору (всегда в BTC)
+        let btcCommission = commission;
+        if (cryptoType === 'eth') {
+          // Если перевод в ETH, конвертируем комиссию в BTC
+          const rates = await this.getLatestExchangeRates();
+          if (!rates) {
+            throw new Error("Не удалось получить курсы валют");
+          }
+          btcCommission = (commission * parseFloat(rates.ethToUsd)) / parseFloat(rates.btcToUsd);
+        }
+
+        // Обновляем баланс регулятора
+        const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
+        await this.updateRegulatorBalance(regulator.id, (regulatorBtcBalance + btcCommission).toFixed(8));
+
+        console.log(`Updated regulator's balance, added ${btcCommission.toFixed(8)} BTC`);
+
+        // Создаем транзакцию перевода
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: null,
-          amount: usdAmount.toString(),
-          convertedAmount: cryptoAmount.toString(),
+          amount: amount.toString(),
+          convertedAmount: amount.toString(),
           type: 'transfer',
           status: 'completed',
           wallet: recipientAddress,
-          description: fromCard.type === 'crypto' ?
-            `Перевод ${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}` :
-            `Перевод ${usdAmount.toFixed(2)} ${fromCard.type.toUpperCase()} (${cryptoAmount.toFixed(8)} ${cryptoType.toUpperCase()}) на адрес ${recipientAddress}`,
+          description: `Перевод ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}`,
           fromCardNumber: fromCard.number,
           toCardNumber: null,
           createdAt: new Date()
         });
 
-        // Create commission transaction
+        // Создаем транзакцию комиссии
         await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: regulator.id,
-          amount: (fromCard.type === 'crypto' ? usdAmount * 0.01 : usdAmount * 0.01).toString(),
+          amount: commission.toString(),
           convertedAmount: btcCommission.toString(),
           type: 'commission',
           status: 'completed',
-          wallet: null,
-          description: `Комиссия 1% (${btcCommission.toFixed(8)} BTC)`,
+          description: `Комиссия за перевод (${btcCommission.toFixed(8)} BTC)`,
           fromCardNumber: fromCard.number,
           toCardNumber: "REGULATOR",
+          wallet: null,
           createdAt: new Date()
         });
 
+        console.log("Crypto transfer completed successfully");
         return { success: true, transaction };
 
       } catch (error) {
-        console.error("Error in transferCrypto:", error);
-        return { success: false, error: error instanceof Error ? error.message : "Ошибка при переводе" };
+        console.error("Crypto transfer error:", error);
+        throw error;
       }
     });
   }
@@ -660,14 +650,3 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
-
-// Add validation functions (replace with your actual validation logic)
-function validateBtcAddress(address: string): boolean {
-  // Implement BTC address validation here
-  return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address);
-}
-
-function validateEthAddress(address: string): boolean {
-  // Implement ETH address validation here
-  return /^0x[a-fA-F0-9]{40}$/.test(address);
-}
