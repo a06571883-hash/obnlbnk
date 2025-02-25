@@ -223,7 +223,9 @@ export default function VirtualCard({ card }: { card: Card }) {
             0 10px 20px rgba(0,0,0,0.19), 
             0 6px 6px rgba(0,0,0,0.23),
             ${Math.abs(rotation.y)}px ${Math.abs(rotation.x)}px 20px rgba(0,0,0,0.1)
-          `
+          `,
+          backgroundSize: '200% 200%',
+          animation: 'colorShift 10s ease infinite'
         }}
       >
         {card.type === 'crypto' && (
