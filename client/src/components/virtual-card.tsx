@@ -22,9 +22,9 @@ import { useToast } from "@/hooks/use-toast";
 type RecipientType = 'usd_card' | 'crypto_wallet';
 
 const cardColors = {
-  crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl animate-gradient",
-  usd: "bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 animate-gradient",
-  uah: "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 animate-gradient",
+  crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl hover:before:opacity-30 transition-all duration-700",
+  usd: "bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 hover:shadow-emerald-200/20 transition-all duration-700",
+  uah: "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 hover:shadow-blue-200/20 transition-all duration-700",
 } as const;
 
 function validateBtcAddress(address: string): boolean {
@@ -217,22 +217,20 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-44 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-4 sm:p-6 text-white shadow-xl overflow-hidden backdrop-blur-sm transition-all duration-500`}
+        className={`relative h-44 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-4 sm:p-6 text-white shadow-xl overflow-hidden backdrop-blur-sm hover:scale-[1.02] transition-all duration-700`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
             0 6px 6px rgba(0,0,0,0.23),
             ${Math.abs(rotation.y)}px ${Math.abs(rotation.x)}px 20px rgba(0,0,0,0.1)
-          `,
-          backgroundSize: '400% 400%',
-          animation: 'gradient 15s ease infinite'
+          `
         }}
       >
         {card.type === 'crypto' && (
           <>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 hover:opacity-20 transition-opacity duration-700 pointer-events-none" />
             <div 
-              className="absolute inset-0 opacity-30 pointer-events-none"
+              className="absolute inset-0 opacity-30 pointer-events-none transition-opacity duration-700"
               style={{
                 background: 'radial-gradient(circle at 0% 0%, rgba(255,255,255,0.3) 0%, transparent 50%)'
               }}
