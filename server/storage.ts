@@ -244,31 +244,18 @@ export class DatabaseStorage implements IStorage {
             convertedAmount = amount * parseFloat(rates.usdToUah);
           } else if (fromCard.type === 'uah' && toCard.type === 'usd') {
             convertedAmount = amount / parseFloat(rates.usdToUah);
-          }
-          // Крипто ↔ USD конвертация
-          else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
-            if (fromCard.btcBalance && parseFloat(fromCard.btcBalance) > 0) {
-              convertedAmount = amount * parseFloat(rates.btcToUsd);
-              sourceAmount = amount;
-            } else if (fromCard.ethBalance && parseFloat(fromCard.ethBalance) > 0) {
-              convertedAmount = amount * parseFloat(rates.ethToUsd);
-              sourceAmount = amount;
-            }
-          }
-          // USD ↔ Крипто конвертация
-          else if (fromCard.type === 'usd' && toCard.type === 'crypto') {
-            if (toCard.btcBalance !== null) {
-              convertedAmount = amount / parseFloat(rates.btcToUsd);
-            } else if (toCard.ethBalance !== null) {
-              convertedAmount = amount / parseFloat(rates.ethToUsd);
-            }
+          } else if (fromCard.type === 'usd' && toCard.type === 'crypto') {
+            // Convert USD to BTC
+            convertedAmount = amount / parseFloat(rates.btcToUsd);
+          } else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
+            // Convert BTC to USD
+            convertedAmount = amount * parseFloat(rates.btcToUsd);
           }
         }
 
-        // Calculate commission (1% от исходной суммы)
+        // Calculate commission (1%)
         const commission = sourceAmount * 0.01;
-        // Конвертируем комиссию в BTC для регулятора
-        const btcCommission = (commission * parseFloat(rates.btcToUsd)) / parseFloat(rates.btcToUsd);
+        const btcCommission = commission / parseFloat(rates.btcToUsd);
 
         // Get regulator
         const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
@@ -276,50 +263,43 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Регулятор не найден в системе");
         }
 
+        // Check sender's balance and process transfer
         const fromBalance = parseFloat(fromCard.balance);
-        const toBalance = parseFloat(toCard.balance);
-
-        if (isNaN(fromBalance) || isNaN(toBalance)) {
-          throw new Error("Ошибка формата баланса");
+        if (fromCard.type !== 'crypto' && fromBalance < (sourceAmount + commission)) {
+          throw new Error(
+            `Недостаточно средств. Доступно: ${fromBalance.toFixed(2)} ${fromCard.type.toUpperCase()}, ` +
+            `требуется: ${sourceAmount.toFixed(2)} + ${commission.toFixed(2)} комиссия = ${(sourceAmount + commission).toFixed(2)} ${fromCard.type.toUpperCase()}`
+          );
         }
 
-        // Check if sender has enough funds including commission
-        if (fromCard.type === 'crypto') {
-          const cryptoBalance = fromCard.btcBalance ? parseFloat(fromCard.btcBalance) : parseFloat(fromCard.ethBalance || '0');
+        // Update balances based on card types
+        if (toCard.type === 'crypto') {
+          // Transfer from fiat to crypto
+          await this.updateCardBalance(fromCard.id, (fromBalance - sourceAmount - commission).toFixed(2));
+          const cryptoBalance = parseFloat(toCard.btcBalance || '0');
+          await this.updateCardBtcBalance(toCard.id, (cryptoBalance + convertedAmount).toFixed(8));
+        } else if (fromCard.type === 'crypto') {
+          // Transfer from crypto to fiat
+          const cryptoBalance = parseFloat(fromCard.btcBalance || '0');
           if (cryptoBalance < (sourceAmount + commission)) {
             throw new Error(
-              `Недостаточно средств. ` +
-              `Доступно: ${cryptoBalance.toFixed(8)} ${fromCard.btcBalance ? 'BTC' : 'ETH'}, ` +
-              `требуется: ${sourceAmount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ${(sourceAmount + commission).toFixed(8)} ${fromCard.btcBalance ? 'BTC' : 'ETH'}`
+              `Недостаточно BTC. Доступно: ${cryptoBalance.toFixed(8)} BTC, ` +
+              `требуется: ${sourceAmount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ${(sourceAmount + commission).toFixed(8)} BTC`
             );
           }
-        } else {
-          if (fromBalance < (sourceAmount + commission)) {
-            throw new Error(
-              `Недостаточно средств. ` +
-              `Доступно: ${fromBalance.toFixed(2)} ${fromCard.type.toUpperCase()}, ` +
-              `требуется: ${sourceAmount.toFixed(2)} + ${commission.toFixed(2)} комиссия = ${(sourceAmount + commission).toFixed(2)} ${fromCard.type.toUpperCase()}`
-            );
-          }
-        }
-
-        // Update balances
-        if (fromCard.type === 'crypto') {
-          if (fromCard.btcBalance) {
-            await this.updateCardBtcBalance(fromCard.id, (parseFloat(fromCard.btcBalance) - sourceAmount - commission).toFixed(8));
-          } else if (fromCard.ethBalance) {
-            await this.updateCardEthBalance(fromCard.id, (parseFloat(fromCard.ethBalance) - sourceAmount - commission).toFixed(8));
-          }
+          await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - sourceAmount - commission).toFixed(8));
+          const toBalance = parseFloat(toCard.balance);
           await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
         } else {
+          // Fiat to fiat transfer
           await this.updateCardBalance(fromCard.id, (fromBalance - sourceAmount - commission).toFixed(2));
+          const toBalance = parseFloat(toCard.balance);
           await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
         }
 
         // Update regulator's BTC balance
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
-        const newRegulatorBalance = (regulatorBtcBalance + btcCommission).toFixed(8);
-        await this.updateRegulatorBalance(regulator.id, newRegulatorBalance);
+        await this.updateRegulatorBalance(regulator.id, (regulatorBtcBalance + btcCommission).toFixed(8));
 
         // Create main transaction
         const transaction = await this.createTransaction({
@@ -358,7 +338,7 @@ export class DatabaseStorage implements IStorage {
         console.error("Transfer error:", error);
         return {
           success: false,
-          error: error instanceof Error ? error.message : "Ошибка при переводе средств"
+          error: error instanceof Error ? error.message : "Ошибка при выполнении перевода"
         };
       }
     });
