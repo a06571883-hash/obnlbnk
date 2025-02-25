@@ -141,14 +141,17 @@ export class DatabaseStorage implements IStorage {
 
   async getCardByNumber(cardNumber: string): Promise<Card | undefined> {
     return this.withRetry(async () => {
-      console.log("Searching for card with number:", cardNumber);
+      console.log("Searching for card with number or BTC address:", cardNumber);
       const [card] = await db
         .select()
         .from(cards)
-        .where(eq(cards.number, cardNumber));
+        .where(or(
+          eq(cards.number, cardNumber),
+          eq(cards.btcAddress, cardNumber)
+        ));
       console.log("Found card:", card);
       return card;
-    }, 'Get card by number');
+    }, 'Get card by number or BTC address');
   }
 
   async getTransactionsByCardId(cardId: number): Promise<Transaction[]> {
@@ -292,21 +295,25 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Не удалось получить актуальные курсы валют");
         }
 
+        // Найти карту получателя по BTC адресу
+        const toCard = await this.getCardByNumber(recipientAddress);
+        console.log(`Поиск карты получателя по адресу ${recipientAddress}:`, toCard);
+
         const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
         if (!regulator) {
           throw new Error("Регулятор не найден в системе");
         }
 
-        // Calculate commission in original currency
+        // Calculate amounts
         const commission = amount * 0.01;
         const totalDebit = amount + commission;
 
-        let btcAmount: number;
+        let btcToSend: number;
         let btcCommission: number;
 
         if (fromCard.type === 'crypto') {
-          // Sending directly in BTC
-          btcAmount = amount;
+          // Отправляем напрямую в BTC
+          btcToSend = amount;
           btcCommission = commission;
 
           const cryptoBalance = parseFloat(fromCard.btcBalance || '0');
@@ -317,23 +324,25 @@ export class DatabaseStorage implements IStorage {
             );
           }
 
+          // Снимаем BTC с отправителя
           await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - totalDebit).toFixed(8));
+          console.log(`Снято с отправителя: ${totalDebit.toFixed(8)} BTC`);
+
         } else {
-          // Convert fiat to BTC
+          // Конвертируем из фиатной валюты в BTC
           let usdAmount: number;
 
-          // Convert to USD first if needed
+          // Сначала конвертируем в USD если нужно
           if (fromCard.type === 'uah') {
             usdAmount = amount / parseFloat(rates.usdToUah);
           } else {
             usdAmount = amount;
           }
 
-          // Convert USD to BTC
-          btcAmount = usdAmount / parseFloat(rates.btcToUsd);
+          // Конвертируем USD в BTC
+          btcToSend = usdAmount / parseFloat(rates.btcToUsd);
           btcCommission = (usdAmount * 0.01) / parseFloat(rates.btcToUsd);
 
-          // Check and update fiat balance
           const fiatBalance = parseFloat(fromCard.balance);
           if (fiatBalance < totalDebit) {
             throw new Error(
@@ -342,31 +351,42 @@ export class DatabaseStorage implements IStorage {
             );
           }
 
+          // Снимаем фиатные деньги с отправителя
           await this.updateCardBalance(fromCard.id, (fiatBalance - totalDebit).toFixed(2));
+          console.log(`Снято с отправителя: ${totalDebit.toFixed(2)} ${fromCard.type}`);
         }
 
-        // Update regulator's BTC balance
+        // Если это перевод на карту - зачисляем BTC
+        if (toCard) {
+          const toCardCryptoBalance = parseFloat(toCard.btcBalance || '0');
+          const newBalance = toCardCryptoBalance + btcToSend;
+          await this.updateCardBtcBalance(toCard.id, newBalance.toFixed(8));
+          console.log(`Зачислено получателю: ${btcToSend.toFixed(8)} BTC, новый баланс: ${newBalance.toFixed(8)} BTC`);
+        }
+
+        // Зачисляем комиссию регулятору
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
         await this.updateRegulatorBalance(regulator.id, (regulatorBtcBalance + btcCommission).toFixed(8));
+        console.log(`Комиссия регулятору: ${btcCommission.toFixed(8)} BTC`);
 
-        // Create main transaction
+        // Создаем транзакцию перевода
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
-          toCardId: null,
+          toCardId: toCard?.id || null,
           amount: amount.toString(),
-          convertedAmount: btcAmount.toString(),
+          convertedAmount: btcToSend.toString(),
           type: 'transfer',
           status: 'completed',
-          wallet: recipientAddress,
+          wallet: toCard ? null : recipientAddress,
           description: fromCard.type === 'crypto' ?
             `Перевод ${amount.toFixed(8)} BTC на адрес ${recipientAddress}` :
-            `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} (${btcAmount.toFixed(8)} BTC) на адрес ${recipientAddress}`,
+            `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} (${btcToSend.toFixed(8)} BTC) на адрес ${recipientAddress}`,
           fromCardNumber: fromCard.number,
-          toCardNumber: "EXTERNAL",
+          toCardNumber: toCard?.number || "EXTERNAL",
           createdAt: new Date()
         });
 
-        // Create commission transaction
+        // Создаем транзакцию комиссии
         await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: regulator.id,
