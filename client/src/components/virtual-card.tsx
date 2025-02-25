@@ -96,7 +96,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       let response;
 
       if (recipientType === 'crypto_wallet') {
-        // Проверяем формат криптоадреса
+        // Валидация криптоадреса
         const address = recipientCardNumber.trim();
         if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
           throw new Error('Неверный формат BTC адреса');
@@ -403,11 +403,9 @@ export default function VirtualCard({ card }: { card: Card }) {
                       </div>
                     </div>
 
-                    {recipientType === 'crypto_wallet' && card.type !== 'crypto' && (
+                    {recipientType === 'crypto_wallet' && card.type === 'crypto' && (
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          Выберите криптовалюту для получения
-                        </label>
+                        <label className="block text-sm font-medium">Выберите криптовалюту</label>
                         <div className="grid grid-cols-2 gap-2">
                           <Button
                             type="button"

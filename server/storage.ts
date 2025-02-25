@@ -481,8 +481,8 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Регулятор не найден в системе");
         }
 
-        // Списываем средства с карты отправителя
-        const newBalance = balance - amount - commission;
+        // Списываем с отправителя
+        const newBalance = balance - totalAmount;
         if (cryptoType === 'btc') {
           await db.update(cards)
             .set({ btcBalance: newBalance.toFixed(8) })
@@ -495,22 +495,9 @@ export class DatabaseStorage implements IStorage {
             .execute();
         }
 
-        console.log(`Updated sender's balance: ${newBalance.toFixed(8)} ${cryptoType.toUpperCase()}`);
-
-        // Комиссия регулятору (всегда в BTC)
-        let btcCommission = commission;
-        if (cryptoType === 'eth') {
-          // Если перевод в ETH, конвертируем комиссию в BTC
-          const rates = await this.getLatestExchangeRates();
-          if (!rates) {
-            throw new Error("Не удалось получить курсы валют");
-          }
-          btcCommission = (commission * parseFloat(rates.ethToUsd)) / parseFloat(rates.btcToUsd);
-        }
-
         // Обновляем баланс регулятора
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
-        await this.updateRegulatorBalance(regulator.id, (regulatorBtcBalance + btcCommission).toFixed(8));
+        await this.updateRegulatorBalance(regulator.id, (regulatorBtcBalance + commission).toFixed(8));
 
         // Создаем транзакцию перевода
         const transaction = await this.createTransaction({
@@ -532,10 +519,10 @@ export class DatabaseStorage implements IStorage {
           fromCardId: fromCard.id,
           toCardId: regulator.id,
           amount: commission.toString(),
-          convertedAmount: btcCommission.toString(),
+          convertedAmount: commission.toString(),
           type: 'commission',
           status: 'completed',
-          description: `Комиссия за перевод (${btcCommission.toFixed(8)} BTC)`,
+          description: `Комиссия за перевод (${commission.toFixed(8)} ${cryptoType.toUpperCase()})`,
           fromCardNumber: fromCard.number,
           toCardNumber: "REGULATOR",
           wallet: null,

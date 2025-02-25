@@ -46,7 +46,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   startRateUpdates(httpServer, '/ws');
 
-  // API для получения курсов валют
   app.get("/api/rates", async (req, res) => {
     try {
       const rates = await storage.getLatestExchangeRates();
@@ -57,7 +56,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API для получения карт пользователя
   app.get("/api/cards", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
@@ -71,7 +69,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API для перевода между картами
   app.post("/api/transfer", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
@@ -116,7 +113,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // NEW: API для крипто-переводов на внешние кошельки
   app.post("/api/transfer-crypto", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
@@ -170,7 +166,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API для получения транзакций пользователя
   app.get("/api/transactions", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
@@ -193,98 +188,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Transactions fetch error:", error);
       res.status(500).json({ message: "Ошибка при получении транзакций" });
-    }
-  });
-
-  // NFT маршруты
-  app.get("/api/nfts", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-      const nfts = await storage.getNFTsByUserId(req.user.id);
-      res.json(nfts);
-    } catch (error) {
-      console.error("NFTs fetch error:", error);
-      res.status(500).json({ message: "Ошибка при получении NFT" });
-    }
-  });
-
-  app.get("/api/nft-collections", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-      const collections = await storage.getNFTCollectionsByUserId(req.user.id);
-      res.json(collections);
-    } catch (error) {
-      console.error("NFT collections fetch error:", error);
-      res.status(500).json({ message: "Ошибка при получении коллекций" });
-    }
-  });
-
-  app.post("/api/nfts/generate", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-
-      const canGenerate = await storage.canGenerateNFT(req.user.id);
-      if (!canGenerate) {
-        return res.status(400).json({ 
-          message: "Достигнут лимит генерации NFT на сегодня (максимум 2 в день)" 
-        });
-      }
-
-      const imageResponse = await openai.images.generate({
-        model: "dall-e-2",
-        prompt: "Luxury lifestyle pixel art with Mercedes or Rolex watch in modern style",
-        n: 1,
-        size: "512x512",
-        quality: "standard"
-      });
-
-      const imageUrl = imageResponse.data[0].url;
-
-      const completionResponse = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [{
-          role: "system",
-          content: "Create a short name and description for a luxury NFT"
-        }],
-        temperature: 0.7,
-        max_tokens: 100
-      });
-
-      const suggestion = completionResponse.choices[0].message.content;
-
-      let collection = (await storage.getNFTCollectionsByUserId(req.user.id))[0];
-      if (!collection) {
-        collection = await storage.createNFTCollection(
-          req.user.id,
-          "Luxury Lifestyle Collection",
-          "Эксклюзивная коллекция NFT в стиле люкс"
-        );
-      }
-
-      const nft = await storage.createNFT({
-        userId: req.user.id,
-        imageUrl,
-        name: suggestion?.split('\n')[0] || "Luxury NFT",
-        description: suggestion?.split('\n')[1] || "Эксклюзивный NFT в стиле люкс",
-        collectionId: collection.id,
-        createdAt: new Date()
-      });
-
-      await storage.updateUserNFTGeneration(req.user.id);
-
-      res.json(nft);
-    } catch (error) {
-      console.error("NFT generation error:", error);
-      res.status(500).json({ 
-        message: "Ошибка при генерации NFT",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
     }
   });
 
