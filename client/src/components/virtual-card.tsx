@@ -22,9 +22,9 @@ import { useToast } from "@/hooks/use-toast";
 type RecipientType = 'usd_card' | 'crypto_wallet';
 
 const cardColors = {
-  crypto: "bg-gradient-to-br from-violet-600 via-indigo-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl hover:before:opacity-30 transition-all duration-700",
-  usd: "bg-gradient-to-br from-emerald-600 via-teal-500 to-green-500 hover:shadow-emerald-200/20 transition-all duration-700",
-  uah: "bg-gradient-to-br from-blue-600 via-sky-500 to-cyan-500 hover:shadow-blue-200/20 transition-all duration-700",
+  crypto: "bg-gradient-to-r from-violet-800 via-indigo-600 to-fuchsia-600 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl hover:before:opacity-30 transition-all duration-700",
+  usd: "bg-gradient-to-r from-emerald-700 via-teal-600 to-green-600 hover:shadow-emerald-200/20 transition-all duration-700",
+  uah: "bg-gradient-to-r from-blue-700 via-sky-600 to-cyan-600 hover:shadow-blue-200/20 transition-all duration-700",
 } as const;
 
 function validateBtcAddress(address: string): boolean {
@@ -224,6 +224,11 @@ export default function VirtualCard({ card }: { card: Card }) {
             0 6px 6px rgba(0,0,0,0.23),
             ${Math.abs(rotation.y)}px ${Math.abs(rotation.x)}px 20px rgba(0,0,0,0.1)
           `,
+          backgroundImage: card.type === 'crypto' ? 
+            'linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(99, 102, 241) 50%, rgb(219, 39, 119) 100%)' :
+            card.type === 'usd' ?
+            'linear-gradient(135deg, rgb(16, 185, 129) 0%, rgb(20, 184, 166) 50%, rgb(22, 163, 74) 100%)' :
+            'linear-gradient(135deg, rgb(37, 99, 235) 0%, rgb(14, 165, 233) 50%, rgb(34, 211, 238) 100%)',
           backgroundSize: '200% 200%'
         }}
       >
