@@ -120,6 +120,7 @@ export default function HomePage() {
       setShowWelcome(true);
       sessionStorage.setItem(WELCOME_MESSAGE_KEY, 'true');
 
+      // Hide after 3 seconds (changed from 4)
       const timer = setTimeout(() => {
         setShowWelcome(false);
       }, 3000);
@@ -186,22 +187,19 @@ export default function HomePage() {
       <main className="container mx-auto p-4 pt-8 max-w-4xl">
         <div
           className={`
-            fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-md z-50
             transition-all duration-500 ease-in-out transform
             ${showWelcome
-              ? 'opacity-100 translate-y-0'
-              : 'opacity-0 -translate-y-full pointer-events-none'
+              ? 'opacity-100 translate-y-0 h-[100px] mb-8'
+              : 'opacity-0 -translate-y-full h-0 overflow-hidden mb-0'
             }
           `}
         >
-          <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg p-4 border">
-            <h2 className="text-xl font-medium mb-2 text-center">
-              С возвращением, <span className="text-primary">{user?.username}</span>
-            </h2>
-            <p className="text-muted-foreground text-center">
-              Управляйте своими мультивалютными картами
-            </p>
-          </div>
+          <h2 className="text-2xl font-medium mb-2 text-center">
+            С возвращением, <span className="text-primary">{user?.username}</span>
+          </h2>
+          <p className="text-muted-foreground text-center">
+            Управляйте своими мультивалютными картами
+          </p>
         </div>
 
         {cards && cards.length > 0 ? (

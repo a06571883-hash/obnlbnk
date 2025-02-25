@@ -8,7 +8,12 @@ import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
 import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
+import {OpenAI} from "openai";
 import express from 'express';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 const ECPair = ECPairFactory(ecc);
 
@@ -20,8 +25,8 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
       const cleanAddress = address.trim();
       // Проверка для legacy и SegWit адресов
       const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
-      const bech32Regex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
-      return legacyRegex.test(cleanAddress) || bech32Regex.test(cleanAddress);
+      const segwitRegex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
+      return legacyRegex.test(cleanAddress) || segwitRegex.test(cleanAddress);
     } else if (type === 'eth') {
       const cleanAddress = address.trim().toLowerCase();
       return ethers.isAddress(cleanAddress);
@@ -38,20 +43,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Настройка сессии и авторизации
   setupAuth(app);
+  startRateUpdates(httpServer, '/ws');
 
-  // Запуск WebSocket сервера для обновления курсов
-  await startRateUpdates(httpServer, '/ws');
-
-  // Middleware для проверки авторизации
-  const requireAuth = (req: any, res: any, next: any) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Необходима авторизация" });
-    }
-    next();
-  };
-
+  // Получение последних курсов валют
   app.get("/api/rates", async (req, res) => {
     try {
       const rates = await storage.getLatestExchangeRates();
@@ -62,8 +57,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/cards", requireAuth, async (req, res) => {
+  // Получение карт пользователя
+  app.get("/api/cards", async (req, res) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
       const cards = await storage.getCardsByUserId(req.user.id);
       res.json(cards);
     } catch (error) {
@@ -72,26 +71,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/transfer", requireAuth, async (req, res) => {
+  // Перевод средств
+  app.post("/api/transfer", async (req, res) => {
     try {
-      const { fromCardId, toCardNumber, amount } = req.body;
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+
+      console.log("Raw request body:", req.body);
+
+      const { fromCardId, recipientAddress, amount, transferType, cryptoType } = req.body;
 
       // Базовая валидация
-      if (!fromCardId || !toCardNumber || !amount) {
+      if (!fromCardId || !recipientAddress || !amount) {
         return res.status(400).json({ message: "Не указаны обязательные параметры перевода" });
       }
 
-      // Проверяем формат номера карты
-      const cleanCardNumber = toCardNumber.replace(/\s+/g, '');
-      if (!/^\d{16}$/.test(cleanCardNumber)) {
-        return res.status(400).json({ message: "Неверный формат номера карты. Введите 16 цифр" });
-      }
+      let result;
+      if (transferType === 'crypto') {
+        if (!cryptoType) {
+          return res.status(400).json({ message: "Не указан тип криптовалюты" });
+        }
 
-      const result = await storage.transferMoney(
-        parseInt(fromCardId),
-        cleanCardNumber,
-        parseFloat(amount)
-      );
+        // Проверяем формат криптоадреса
+        if (!validateCryptoAddress(recipientAddress, cryptoType)) {
+          return res.status(400).json({ 
+            message: `Неверный формат ${cryptoType.toUpperCase()} адреса. Введите корректный ${cryptoType.toUpperCase()} адрес`
+          });
+        }
+
+        result = await storage.transferCrypto(
+          parseInt(fromCardId),
+          recipientAddress.trim(),
+          parseFloat(amount),
+          cryptoType as 'btc' | 'eth'
+        );
+      } else {
+        // Проверяем формат номера карты для фиатного перевода
+        const cleanCardNumber = recipientAddress.replace(/\s+/g, '');
+        if (!/^\d{16}$/.test(cleanCardNumber)) {
+          return res.status(400).json({ message: "Неверный формат номера карты. Введите 16 цифр" });
+        }
+
+        result = await storage.transferMoney(
+          parseInt(fromCardId),
+          cleanCardNumber,
+          parseFloat(amount)
+        );
+      }
 
       if (!result.success) {
         return res.status(400).json({ message: result.error });
@@ -112,57 +139,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/transfer-crypto", requireAuth, async (req, res) => {
+  // Получение транзакций пользователя
+  app.get("/api/transactions", async (req, res) => {
     try {
-      const { fromCardId, recipientAddress, amount, cryptoType } = req.body;
-
-      // Базовая валидация
-      if (!fromCardId || !recipientAddress || !amount || !cryptoType) {
-        return res.status(400).json({ message: "Не указаны обязательные параметры перевода" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
       }
 
-      // Проверяем формат криптоадреса
-      if (!validateCryptoAddress(recipientAddress, cryptoType)) {
-        return res.status(400).json({ 
-          message: `Неверный формат ${cryptoType.toUpperCase()} адреса`
-        });
-      }
-
-      console.log("Starting crypto transfer:", {
-        fromCardId,
-        recipientAddress,
-        amount,
-        cryptoType
-      });
-
-      const result = await storage.transferCrypto(
-        parseInt(fromCardId),
-        recipientAddress.trim(),
-        parseFloat(amount),
-        cryptoType as 'btc' | 'eth'
-      );
-
-      if (!result.success) {
-        return res.status(400).json({ message: result.error });
-      }
-
-      return res.json({
-        success: true,
-        message: "Крипто-перевод успешно выполнен",
-        transaction: result.transaction
-      });
-
-    } catch (error) {
-      console.error("Crypto transfer error:", error);
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Произошла ошибка при выполнении крипто-перевода"
-      });
-    }
-  });
-
-  app.get("/api/transactions", requireAuth, async (req, res) => {
-    try {
       const userCards = await storage.getCardsByUserId(req.user.id);
       const allTransactions = [];
 
@@ -182,7 +165,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/database/backup', requireAuth, async (req, res) => {
+  // NFT маршруты
+  app.get("/api/nfts", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+      const nfts = await storage.getNFTsByUserId(req.user.id);
+      res.json(nfts);
+    } catch (error) {
+      console.error("NFTs fetch error:", error);
+      res.status(500).json({ message: "Ошибка при получении NFT" });
+    }
+  });
+
+  app.get("/api/nft-collections", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+      const collections = await storage.getNFTCollectionsByUserId(req.user.id);
+      res.json(collections);
+    } catch (error) {
+      console.error("NFT collections fetch error:", error);
+      res.status(500).json({ message: "Ошибка при получении коллекций" });
+    }
+  });
+
+  app.post("/api/nfts/generate", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+
+      const canGenerate = await storage.canGenerateNFT(req.user.id);
+      if (!canGenerate) {
+        return res.status(400).json({ 
+          message: "Достигнут лимит генерации NFT на сегодня (максимум 2 в день)" 
+        });
+      }
+
+      const imageResponse = await openai.images.generate({
+        model: "dall-e-2",
+        prompt: "Luxury lifestyle pixel art with Mercedes or Rolex watch in modern style",
+        n: 1,
+        size: "512x512",
+        quality: "standard"
+      });
+
+      const imageUrl = imageResponse.data[0].url;
+
+      const completionResponse = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{
+          role: "system",
+          content: "Create a short name and description for a luxury NFT"
+        }],
+        temperature: 0.7,
+        max_tokens: 100
+      });
+
+      const suggestion = completionResponse.choices[0].message.content;
+
+      let collection = (await storage.getNFTCollectionsByUserId(req.user.id))[0];
+      if (!collection) {
+        collection = await storage.createNFTCollection(
+          req.user.id,
+          "Luxury Lifestyle Collection",
+          "Эксклюзивная коллекция NFT в стиле люкс"
+        );
+      }
+
+      const nft = await storage.createNFT({
+        userId: req.user.id,
+        imageUrl,
+        name: suggestion?.split('\n')[0] || "Luxury NFT",
+        description: suggestion?.split('\n')[1] || "Эксклюзивный NFT в стиле люкс",
+        collectionId: collection.id,
+        createdAt: new Date()
+      });
+
+      await storage.updateUserNFTGeneration(req.user.id);
+
+      res.json(nft);
+    } catch (error) {
+      console.error("NFT generation error:", error);
+      res.status(500).json({ 
+        message: "Ошибка при генерации NFT",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.post('/api/database/backup', async (req, res) => {
     const success = await exportDatabase();
     if (success) {
       res.json({ message: 'Backup completed successfully' });
@@ -191,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/database/restore', requireAuth, async (req, res) => {
+  app.post('/api/database/restore', async (req, res) => {
     const success = await importDatabase();
     if (success) {
       res.json({ message: 'Restore completed successfully' });
@@ -200,7 +275,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve static files
   app.use(express.static('dist/client'));
 
   return httpServer;
