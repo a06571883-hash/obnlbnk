@@ -8,34 +8,9 @@ import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
 import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
-import {OpenAI} from "openai";
 import express from 'express';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
 const ECPair = ECPairFactory(ecc);
-
-function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
-  if (!address) return false;
-
-  try {
-    if (type === 'btc') {
-      const cleanAddress = address.trim();
-      // Проверка для legacy и SegWit адресов
-      const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
-      const segwitRegex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
-      return legacyRegex.test(cleanAddress) || segwitRegex.test(cleanAddress);
-    } else if (type === 'eth') {
-      const cleanAddress = address.trim().toLowerCase();
-      return ethers.isAddress(cleanAddress);
-    }
-  } catch {
-    return false;
-  }
-  return false;
-}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -71,54 +46,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Перевод средств
+  // Transfer funds
   app.post("/api/transfer", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Необходима авторизация" });
       }
 
-      console.log("Raw request body:", req.body);
+      const { fromCardId, recipientAddress, amount, transferType } = req.body;
 
-      const { fromCardId, recipientAddress, amount, transferType, cryptoType } = req.body;
-
-      // Базовая валидация
+      // Basic validation
       if (!fromCardId || !recipientAddress || !amount) {
         return res.status(400).json({ message: "Не указаны обязательные параметры перевода" });
       }
 
-      let result;
-      if (transferType === 'crypto') {
-        if (!cryptoType) {
-          return res.status(400).json({ message: "Не указан тип криптовалюты" });
-        }
-
-        // Проверяем формат криптоадреса
-        if (!validateCryptoAddress(recipientAddress, cryptoType)) {
-          return res.status(400).json({ 
-            message: `Неверный формат ${cryptoType.toUpperCase()} адреса. Введите корректный ${cryptoType.toUpperCase()} адрес`
-          });
-        }
-
-        result = await storage.transferCrypto(
-          parseInt(fromCardId),
-          recipientAddress.trim(),
-          parseFloat(amount),
-          cryptoType as 'btc' | 'eth'
-        );
-      } else {
-        // Проверяем формат номера карты для фиатного перевода
-        const cleanCardNumber = recipientAddress.replace(/\s+/g, '');
-        if (!/^\d{16}$/.test(cleanCardNumber)) {
-          return res.status(400).json({ message: "Неверный формат номера карты. Введите 16 цифр" });
-        }
-
-        result = await storage.transferMoney(
-          parseInt(fromCardId),
-          cleanCardNumber,
-          parseFloat(amount)
-        );
+      // TEMPORARILY DISABLE ALL CRYPTO TRANSFERS
+      if (transferType === 'crypto' || recipientAddress.startsWith('bc1') || recipientAddress.startsWith('0x')) {
+        return res.status(503).json({ 
+          message: "Криптопереводы временно отключены для обслуживания. Обратитесь в поддержку если у вас есть незавершенные переводы." 
+        });
       }
+
+      // For fiat transfers, validate card number
+      const cleanCardNumber = recipientAddress.replace(/\s+/g, '');
+      if (!/^\d{16}$/.test(cleanCardNumber)) {
+        return res.status(400).json({ message: "Неверный формат номера карты. Введите 16 цифр" });
+      }
+
+      const result = await storage.transferMoney(
+        parseInt(fromCardId),
+        cleanCardNumber,
+        parseFloat(amount)
+      );
 
       if (!result.success) {
         return res.status(400).json({ message: result.error });
