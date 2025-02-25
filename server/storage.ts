@@ -313,7 +313,7 @@ export class DatabaseStorage implements IStorage {
           wallet: recipientAddress,
           description: `Перевод ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}`,
           fromCardNumber: fromCard.number,
-          toCardNumber: null,
+          toCardNumber: "EXTERNAL", 
           createdAt: new Date()
         });
 
