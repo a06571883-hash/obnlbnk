@@ -235,7 +235,6 @@ export class DatabaseStorage implements IStorage {
         }
 
         let convertedAmount = amount;
-        let sourceAmount = amount;
 
         // Calculate converted amount based on card types
         if (fromCard.type !== toCard.type) {
@@ -243,12 +242,12 @@ export class DatabaseStorage implements IStorage {
             convertedAmount = amount * parseFloat(rates.usdToUah);
           } else if (fromCard.type === 'uah' && toCard.type === 'usd') {
             convertedAmount = amount / parseFloat(rates.usdToUah);
-          } else if (fromCard.type === 'usd' && toCard.type === 'crypto') {
-            // Конвертируем USD в BTC
-            convertedAmount = amount / parseFloat(rates.btcToUsd);
           } else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
-            // Конвертируем BTC в USD
+            // Крипто в USD: умножаем на курс BTC/USD
             convertedAmount = amount * parseFloat(rates.btcToUsd);
+          } else if (fromCard.type === 'usd' && toCard.type === 'crypto') {
+            // USD в крипто: делим на курс BTC/USD
+            convertedAmount = amount / parseFloat(rates.btcToUsd);
           }
         }
 
@@ -262,9 +261,9 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Регулятор не найден в системе");
         }
 
-        // Check balance and process transfer based on card types
+        // Process transfer based on card types
         if (fromCard.type === 'crypto') {
-          // Sending from crypto card
+          // Отправляем с крипто-карты
           const cryptoBalance = parseFloat(fromCard.btcBalance || '0');
           if (cryptoBalance < (amount + commission)) {
             throw new Error(
@@ -274,11 +273,11 @@ export class DatabaseStorage implements IStorage {
           }
           // Снимаем BTC
           await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - amount - commission).toFixed(8));
-          // Зачисляем конвертированную сумму в USD/UAH
+          // Зачисляем конвертированные USD/UAH
           const toBalance = parseFloat(toCard.balance);
           await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
         } else if (toCard.type === 'crypto') {
-          // Sending to crypto card
+          // Отправляем на крипто-карту
           const fromBalance = parseFloat(fromCard.balance);
           if (fromBalance < (amount + commission)) {
             throw new Error(
@@ -288,11 +287,11 @@ export class DatabaseStorage implements IStorage {
           }
           // Снимаем USD/UAH
           await this.updateCardBalance(fromCard.id, (fromBalance - amount - commission).toFixed(2));
-          // Зачисляем конвертированную сумму в BTC
+          // Зачисляем конвертированные BTC
           const cryptoBalance = parseFloat(toCard.btcBalance || '0');
           await this.updateCardBtcBalance(toCard.id, (cryptoBalance + convertedAmount).toFixed(8));
         } else {
-          // Standard fiat transfer
+          // Обычный фиатный перевод
           const fromBalance = parseFloat(fromCard.balance);
           const toBalance = parseFloat(toCard.balance);
 
@@ -324,7 +323,6 @@ export class DatabaseStorage implements IStorage {
             `Перевод ${amount.toFixed(fromCard.type === 'crypto' ? 8 : 2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(toCard.type === 'crypto' ? 8 : 2)} ${toCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
-          wallet: null,
           createdAt: new Date()
         });
 
