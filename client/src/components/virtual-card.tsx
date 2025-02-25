@@ -83,22 +83,20 @@ export default function VirtualCard({ card }: { card: Card }) {
 
       // Проверяем баланс отправителя
       if (card.type === 'crypto') {
-        // Для крипто карты проверяем баланс в выбранной криптовалюте
         const cryptoBalance = selectedWallet === 'btc' ? parseFloat(card.btcBalance || '0') : parseFloat(card.ethBalance || '0');
         if (parseFloat(transferAmount) > cryptoBalance) {
           throw new Error(`Недостаточно ${selectedWallet.toUpperCase()}. Доступно: ${cryptoBalance.toFixed(8)} ${selectedWallet.toUpperCase()}`);
         }
       } else {
-        // Для фиатной карты проверяем баланс в USD/UAH
         if (parseFloat(transferAmount) > parseFloat(card.balance)) {
           throw new Error(`Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`);
         }
       }
 
-      let transferRequest;
+      let response;
 
       if (recipientType === 'crypto_wallet') {
-        // Валидация криптоадреса для переводов на внешний кошелек
+        // Проверяем формат криптоадреса
         const address = recipientCardNumber.trim();
         if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
           throw new Error('Неверный формат BTC адреса');
@@ -106,27 +104,35 @@ export default function VirtualCard({ card }: { card: Card }) {
           throw new Error('Неверный формат ETH адреса');
         }
 
-        transferRequest = {
-          fromCardId: card.id,
-          recipientAddress: address,
-          amount: parseFloat(transferAmount),
-          transferType: 'crypto',
-          cryptoType: selectedWallet
-        };
+        // Отправка на внешний криптокошелек
+        response = await apiRequest(
+          "POST",
+          "/api/transfer-crypto",
+          {
+            fromCardId: card.id,
+            recipientAddress: address,
+            amount: parseFloat(transferAmount),
+            cryptoType: selectedWallet
+          }
+        );
       } else {
-        // Перевод между картами
-        transferRequest = {
-          fromCardId: card.id,
-          toCardNumber: recipientCardNumber.replace(/\s+/g, ''),
-          amount: parseFloat(transferAmount)
-        };
-      }
+        // Проверяем формат номера карты для фиатного перевода
+        const cleanCardNumber = recipientCardNumber.replace(/\s+/g, '');
+        if (!/^\d{16}$/.test(cleanCardNumber)) {
+          throw new Error('Неверный формат номера карты. Введите 16 цифр');
+        }
 
-      const response = await apiRequest(
-        "POST",
-        recipientType === 'crypto_wallet' ? "/api/transfer-crypto" : "/api/transfer",
-        transferRequest
-      );
+        // Обычный перевод между картами
+        response = await apiRequest(
+          "POST",
+          "/api/transfer",
+          {
+            fromCardId: card.id,
+            toCardNumber: cleanCardNumber,
+            amount: parseFloat(transferAmount)
+          }
+        );
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -171,7 +177,7 @@ export default function VirtualCard({ card }: { card: Card }) {
     const amount = parseFloat(transferAmount);
     if (isNaN(amount)) return null;
 
-    if (card.type === 'crypto' ) { //Always show conversion for crypto to fiat
+    if (card.type === 'crypto') { //Always show conversion for crypto to fiat
       const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
       return `≈ ${(amount * rate).toFixed(2)} USD`;
     }
@@ -236,7 +242,7 @@ export default function VirtualCard({ card }: { card: Card }) {
             0 6px 6px rgba(0,0,0,0.23),
             ${Math.abs(rotation.y)}px ${Math.abs(rotation.x)}px 20px rgba(0,0,0,0.1)
           `,
-          backgroundImage: card.type === 'crypto' ? 
+          backgroundImage: card.type === 'crypto' ?
             'linear-gradient(135deg, rgb(124, 58, 237) 0%, rgb(99, 102, 241) 50%, rgb(219, 39, 119) 100%)' :
             card.type === 'usd' ?
             'linear-gradient(135deg, rgb(16, 185, 129) 0%, rgb(20, 184, 166) 50%, rgb(22, 163, 74) 100%)' :
@@ -247,7 +253,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         {card.type === 'crypto' && (
           <>
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 hover:opacity-20 transition-opacity duration-700 pointer-events-none" />
-            <div 
+            <div
               className="absolute inset-0 opacity-30 pointer-events-none transition-opacity duration-700"
               style={{
                 background: 'radial-gradient(circle at 0% 0%, rgba(255,255,255,0.3) 0%, transparent 50%)'
