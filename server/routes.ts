@@ -100,10 +100,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
+        // Получаем карту отправителя для определения типа перевода
+        const fromCard = await storage.getCardById(fromCardId);
+        if (!fromCard) {
+          return res.status(400).json({ message: "Карта отправителя не найдена" });
+        }
+
+        // Получаем курсы для конвертации
+        const rates = await storage.getLatestExchangeRates();
+        if (!rates) {
+          return res.status(400).json({ message: "Не удалось получить актуальные курсы валют" });
+        }
+
+        let transferAmount = amount;
+        if (fromCard.type !== 'crypto') {
+          // Если переводим с фиатной карты, конвертируем в BTC
+          transferAmount = amount / parseFloat(rates.btcToUsd);
+        }
+
         result = await storage.transferCrypto(
           parseInt(fromCardId),
           recipientAddress.trim(),
-          parseFloat(amount),
+          transferAmount,
           cryptoType as 'btc' | 'eth'
         );
       } else {
