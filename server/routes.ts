@@ -8,12 +8,7 @@ import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
 import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
-import {OpenAI} from "openai";
 import express from 'express';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
 
 const ECPair = ECPairFactory(ecc);
 
