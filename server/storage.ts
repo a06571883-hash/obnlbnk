@@ -449,13 +449,13 @@ export class DatabaseStorage implements IStorage {
       try {
         console.log(`Starting crypto transfer: ${amount} ${cryptoType.toUpperCase()} from card ${fromCardId} to ${recipientAddress}`);
 
-        // Получаем карту отправителя и проверяем баланс
+        // Получаем карту отправителя
         const fromCard = await this.getCardById(fromCardId);
         if (!fromCard) {
           throw new Error("Карта отправителя не найдена");
         }
 
-        // Проверяем наличие нужного баланса
+        // Проверяем баланс
         const balance = cryptoType === 'btc' ?
           parseFloat(fromCard.btcBalance || '0') :
           parseFloat(fromCard.ethBalance || '0');
@@ -482,11 +482,17 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Списываем средства с карты отправителя
-        const newBalance = balance - totalAmount;
+        const newBalance = balance - amount - commission;
         if (cryptoType === 'btc') {
-          await this.updateCardBtcBalance(fromCard.id, newBalance.toFixed(8));
+          await db.update(cards)
+            .set({ btcBalance: newBalance.toFixed(8) })
+            .where(eq(cards.id, fromCard.id))
+            .execute();
         } else {
-          await this.updateCardEthBalance(fromCard.id, newBalance.toFixed(8));
+          await db.update(cards)
+            .set({ ethBalance: newBalance.toFixed(8) })
+            .where(eq(cards.id, fromCard.id))
+            .execute();
         }
 
         console.log(`Updated sender's balance: ${newBalance.toFixed(8)} ${cryptoType.toUpperCase()}`);
@@ -505,8 +511,6 @@ export class DatabaseStorage implements IStorage {
         // Обновляем баланс регулятора
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
         await this.updateRegulatorBalance(regulator.id, (regulatorBtcBalance + btcCommission).toFixed(8));
-
-        console.log(`Updated regulator's balance, added ${btcCommission.toFixed(8)} BTC`);
 
         // Создаем транзакцию перевода
         const transaction = await this.createTransaction({
@@ -538,9 +542,7 @@ export class DatabaseStorage implements IStorage {
           createdAt: new Date()
         });
 
-        console.log("Crypto transfer completed successfully");
         return { success: true, transaction };
-
       } catch (error) {
         console.error("Crypto transfer error:", error);
         throw error;
