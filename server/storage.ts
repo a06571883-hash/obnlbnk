@@ -200,12 +200,12 @@ export class DatabaseStorage implements IStorage {
             convertedAmount = amount * parseFloat(rates.usdToUah);
           } else if (fromCard.type === 'uah' && toCard.type === 'usd') {
             convertedAmount = amount / parseFloat(rates.usdToUah);
-          } else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
-            // Крипто в USD: умножаем на курс BTC/USD
-            convertedAmount = amount * parseFloat(rates.btcToUsd);
           } else if (fromCard.type === 'usd' && toCard.type === 'crypto') {
-            // USD в крипто: делим на курс BTC/USD
+            // USD в BTC: делим на курс BTC/USD
             convertedAmount = amount / parseFloat(rates.btcToUsd);
+          } else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
+            // BTC в USD: умножаем на курс BTC/USD
+            convertedAmount = amount * parseFloat(rates.btcToUsd);
           }
         }
 
@@ -251,8 +251,8 @@ export class DatabaseStorage implements IStorage {
           await this.updateCardBalance(fromCard.id, (fromBalance - amount - commission).toFixed(2));
 
           // Зачисляем конвертированные BTC на карту получателя
-          const cryptoBalance = parseFloat(toCard.btcBalance || '0');
-          await this.updateCardBtcBalance(toCard.id, (cryptoBalance + convertedAmount).toFixed(8));
+          const toCryptoBalance = parseFloat(toCard.btcBalance || '0');
+          await this.updateCardBtcBalance(toCard.id, (toCryptoBalance + convertedAmount).toFixed(8));
 
         } else {
           // Обычный фиатный перевод
@@ -274,7 +274,7 @@ export class DatabaseStorage implements IStorage {
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
         await this.updateRegulatorBalance(regulator.id, (regulatorBtcBalance + btcCommission).toFixed(8));
 
-        // Create transaction
+        // Create main transaction
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard.id,
@@ -282,7 +282,6 @@ export class DatabaseStorage implements IStorage {
           convertedAmount: convertedAmount.toString(),
           type: 'transfer',
           status: 'completed',
-          wallet: null,
           description: fromCard.type === toCard.type ?
             `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()}` :
             `Перевод ${amount.toFixed(fromCard.type === 'crypto' ? 8 : 2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(toCard.type === 'crypto' ? 8 : 2)} ${toCard.type.toUpperCase()}`,
@@ -299,7 +298,6 @@ export class DatabaseStorage implements IStorage {
           convertedAmount: btcCommission.toString(),
           type: 'commission',
           status: 'completed',
-          wallet: null,
           description: `Комиссия за перевод (${btcCommission.toFixed(8)} BTC)`,
           fromCardNumber: fromCard.number,
           toCardNumber: "REGULATOR",
