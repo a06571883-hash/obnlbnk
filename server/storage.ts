@@ -184,15 +184,15 @@ export class DatabaseStorage implements IStorage {
           } else if (fromCard.type === 'uah' && toCard.type === 'usd') {
             convertedAmount = amount / parseFloat(rates.usdToUah);
           } else if (fromCard.type === 'usd' && toCard.type === 'crypto') {
-            // Конвертация USD в BTC
+            // Convert USD to BTC
             convertedAmount = amount / parseFloat(rates.btcToUsd);
           } else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
-            // Конвертация BTC в USD
+            // Convert BTC to USD
             convertedAmount = amount * parseFloat(rates.btcToUsd);
           }
         }
 
-        // Calculate commission (1% от исходной суммы)
+        // Calculate commission (1%)
         const commission = sourceAmount * 0.01;
         const btcCommission = commission / parseFloat(rates.btcToUsd);
 
@@ -202,34 +202,29 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Регулятор не найден в системе");
         }
 
-        // Check balances based on card types
+        // Check balances and process transfer based on card types
         if (fromCard.type === 'crypto') {
           const cryptoBalance = parseFloat(fromCard.btcBalance || '0');
           if (cryptoBalance < (sourceAmount + commission)) {
-            throw new Error(`Недостаточно BTC. Доступно: ${cryptoBalance}, нужно: ${sourceAmount + commission}`);
+            throw new Error(`Недостаточно BTC. Доступно: ${cryptoBalance} BTC`);
           }
-          // Update crypto balance
           await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - sourceAmount - commission).toFixed(8));
-          // Update recipient's USD balance
           const toBalance = parseFloat(toCard.balance);
           await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
         } else if (toCard.type === 'crypto') {
           const fromBalance = parseFloat(fromCard.balance);
           if (fromBalance < (sourceAmount + commission)) {
-            throw new Error(`Недостаточно средств. Доступно: ${fromBalance}, нужно: ${sourceAmount + commission}`);
+            throw new Error(`Недостаточно средств. Доступно: ${fromBalance} USD`);
           }
-          // Update USD balance
           await this.updateCardBalance(fromCard.id, (fromBalance - sourceAmount - commission).toFixed(2));
-          // Update recipient's crypto balance
           const cryptoBalance = parseFloat(toCard.btcBalance || '0');
           await this.updateCardBtcBalance(toCard.id, (cryptoBalance + convertedAmount).toFixed(8));
         } else {
-          // Standard fiat transfer
           const fromBalance = parseFloat(fromCard.balance);
           const toBalance = parseFloat(toCard.balance);
 
           if (fromBalance < (sourceAmount + commission)) {
-            throw new Error(`Недостаточно средств. Доступно: ${fromBalance}, нужно: ${sourceAmount + commission}`);
+            throw new Error(`Недостаточно средств. Доступно: ${fromBalance}`);
           }
 
           await this.updateCardBalance(fromCard.id, (fromBalance - sourceAmount - commission).toFixed(2));
@@ -238,8 +233,7 @@ export class DatabaseStorage implements IStorage {
 
         // Update regulator's BTC balance
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
-        const newRegulatorBalance = (regulatorBtcBalance + btcCommission).toFixed(8);
-        await this.updateRegulatorBalance(regulator.id, newRegulatorBalance);
+        await this.updateRegulatorBalance(regulator.id, (regulatorBtcBalance + btcCommission).toFixed(8));
 
         // Create main transaction
         const transaction = await this.createTransaction({
