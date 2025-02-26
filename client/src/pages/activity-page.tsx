@@ -50,11 +50,12 @@ export default function ActivityPage() {
   const { user } = useAuth();
   const { data: cards = [] } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
+    enabled: !!user,
   });
 
-  // Fetch transactions
   const { data: transactions = [] } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
+    enabled: !!user,
   });
 
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
