@@ -30,21 +30,22 @@ export function validateUkrainianCard(cardNumber: string): boolean {
 
 export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {
   try {
-    const response = await fetch(`${API_URL}/exchange/estimated-amount`, {
-      method: 'POST',
+    // Changed to GET request with query parameters
+    const url = new URL(`${API_URL}/exchange/estimated-amount`);
+    url.searchParams.append('fromCurrency', fromCurrency.toLowerCase());
+    url.searchParams.append('toCurrency', toCurrency.toLowerCase());
+    url.searchParams.append('fromAmount', amount);
+
+    const response = await fetch(url.toString(), {
+      method: 'GET', // Changed to GET
       headers: {
-        'Content-Type': 'application/json',
         'x-api-key': API_KEY!
-      },
-      body: JSON.stringify({
-        fromCurrency: fromCurrency.toLowerCase(),
-        toCurrency: toCurrency.toLowerCase(),
-        fromAmount: amount
-      })
+      }
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      console.error('Exchange rate API error:', error);
       throw new Error(error.message || 'Failed to get exchange rate');
     }
 

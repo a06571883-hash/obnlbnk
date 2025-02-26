@@ -271,7 +271,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   const fetchExchangeRate = async (fromCurrency: string, amount: string) => {
     try {
       const response = await fetch(
-        `/api/exchange/rate?fromCurrency=${fromCurrency}&toCurrency=usd&amount=${amount}`
+        `/api/exchange/rate?fromCurrency=${fromCurrency}&toCurrency=uah&amount=${amount}`
       );
 
       if (!response.ok) {
@@ -291,10 +291,28 @@ export default function VirtualCard({ card }: { card: Card }) {
   };
 
   useEffect(() => {
-    if (withdrawalAmount && withdrawalMethod) {
-      fetchExchangeRate(withdrawalMethod, withdrawalAmount);
+    if (withdrawalAmount && withdrawalMethod && rates) {
+      const amount = parseFloat(withdrawalAmount);
+      if (isNaN(amount)) return;
+
+      let estimatedAmount = '0';
+      let rate = '0';
+
+      if (withdrawalMethod === 'btc') {
+        rate = (rates.btcToUsd * rates.usdToUah).toString();
+        estimatedAmount = (amount * parseFloat(rate)).toString();
+      } else if (withdrawalMethod === 'eth') {
+        rate = (rates.ethToUsd * rates.usdToUah).toString();
+        estimatedAmount = (amount * parseFloat(rate)).toString();
+      }
+
+      setExchangeRate({
+        estimatedAmount,
+        rate,
+        transactionSpeedForecast: "15-30 minutes"
+      });
     }
-  }, [withdrawalAmount, withdrawalMethod]);
+  }, [withdrawalAmount, withdrawalMethod, rates]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -553,10 +571,10 @@ export default function VirtualCard({ card }: { card: Card }) {
                         <label className="text-sm font-medium">Exchange Rate Information</label>
                         <div className="p-3 rounded-lg bg-muted">
                           <p className="text-lg font-semibold">
-                            ≈ ${parseFloat(exchangeRate.estimatedAmount).toFixed(2)} USD
+                            ≈ ${parseFloat(exchangeRate.estimatedAmount).toFixed(2)} UAH
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Rate: 1 {withdrawalMethod?.toUpperCase()} = ${parseFloat(exchangeRate.rate).toFixed(2)} USD
+                            Rate: 1 {withdrawalMethod?.toUpperCase()} = {parseFloat(exchangeRate.rate).toFixed(2)} UAH
                           </p>
                           <p className="text-sm text-muted-foreground">
                             Estimated processing time: {exchangeRate.transactionSpeedForecast}

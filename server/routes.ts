@@ -275,16 +275,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required parameters" });
       }
 
-      const rate = await getExchangeRate(
-        fromCurrency as string,
-        toCurrency as string,
-        amount as string
-      );
+      const rates = await storage.getLatestExchangeRates();
+      let estimatedAmount = '0';
+      let rate = '0';
 
-      res.json(rate);
+      // Calculate rate based on our existing rates
+      if (fromCurrency === 'btc' && toCurrency === 'uah') {
+        rate = (parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)).toString();
+        estimatedAmount = (parseFloat(amount as string) * parseFloat(rate)).toString();
+      } else if (fromCurrency === 'eth' && toCurrency === 'uah') {
+        rate = (parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah)).toString();
+        estimatedAmount = (parseFloat(amount as string) * parseFloat(rate)).toString();
+      } else {
+          // Handle other currency pairs or throw an error if unsupported
+          return res.status(400).json({message: "Unsupported currency pair"});
+      }
+
+      res.json({
+        estimatedAmount,
+        rate,
+        transactionSpeedForecast: "15-30 minutes"
+      });
     } catch (error) {
       console.error("Exchange rate error:", error);
-      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to get exchange rate" });
+      res.status(500).json({ message: "Failed to get exchange rate" });
     }
   });
 
