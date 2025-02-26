@@ -1,5 +1,8 @@
 import fetch from 'node-fetch';
 
+const API_KEY = process.env.CHANGENOW_API_KEY;
+const API_URL = 'https://api.changenow.io/v1';
+
 interface ExchangeRate {
   estimatedAmount: string;
   rate: string;
@@ -14,12 +17,10 @@ interface CreateTransaction {
   bankDetails?: {
     cardNumber: string;
   };
-  availableBalance?: string;
 }
 
 function validateUkrainianCard(cardNumber: string): boolean {
   const cleanNumber = cardNumber.replace(/[\s-]/g, '');
-  console.log('Clean card number:', cleanNumber);
   return cleanNumber.length === 16 && /^\d+$/.test(cleanNumber);
 }
 
@@ -27,7 +28,33 @@ export async function createExchangeTransaction(params: CreateTransaction) {
   try {
     console.log('Exchange params:', JSON.stringify(params, null, 2));
 
-    // Use address as card number if bankDetails is not provided
+    // Get user's crypto balance first
+    const cardsResponse = await fetch('http://localhost:5000/api/cards', {
+      credentials: 'include' // Important: include cookies for authentication
+    });
+
+    if (!cardsResponse.ok) {
+      throw new Error('Не удалось получить информацию о картах');
+    }
+
+    const cards = await cardsResponse.json();
+    const cryptoCard = cards.find((card: any) => card.type === 'crypto');
+
+    if (!cryptoCard) {
+      throw new Error('Криптовалютная карта не найдена');
+    }
+
+    // Check available balance
+    const amount = parseFloat(params.fromAmount);
+    const balance = params.fromCurrency === 'btc' ? 
+      parseFloat(cryptoCard.btcBalance) : 
+      parseFloat(cryptoCard.ethBalance);
+
+    if (amount > balance) {
+      throw new Error(`Недостаточно ${params.fromCurrency.toUpperCase()}. Доступно: ${balance}`);
+    }
+
+    // Validate card number
     const cardNumber = params.bankDetails?.cardNumber || params.address;
     const cleanCardNumber = cardNumber.replace(/[\s-]/g, '');
 
@@ -35,30 +62,54 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       throw new Error('Пожалуйста, введите корректный 16-значный номер карты');
     }
 
-    // Get rates and calculate exchange amount
-    const rates = await fetch('http://localhost:5000/api/rates').then(res => res.json());
-    let exchangeRate = 0;
+    // Create exchange via ChangeNow API
+    const requestBody = {
+      from: params.fromCurrency.toLowerCase(),
+      to: "uah",
+      amount: params.fromAmount,
+      address: cleanCardNumber,
+      extraId: null,
+      refundAddress: cryptoCard.btcAddress, // Use user's crypto address for refunds
+      payload: {
+        description: "Crypto to UAH exchange",
+        payoutMethod: "bank_card",
+        bankDetails: {
+          cardNumber: cleanCardNumber,
+          bankName: "Ukrainian Bank",
+          country: "UA"
+        }
+      }
+    };
 
-    if (params.fromCurrency === 'btc') {
-      exchangeRate = parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah);
-    } else if (params.fromCurrency === 'eth') {
-      exchangeRate = parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah);
+    const response = await fetch(`${API_URL}/transactions/${params.fromCurrency.toLowerCase()}_uah`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY!
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      console.error('Exchange error:', error);
+      throw new Error(error.message || 'Ошибка при создании обмена');
     }
 
-    const amount = parseFloat(params.fromAmount);
-    const exchangeAmount = amount * exchangeRate;
+    const result = await response.json();
+    console.log('Exchange created:', result);
 
-    // Return mock transaction
     return {
-      id: `mock-${Date.now()}`,
-      status: 'new',
+      id: result.id,
+      status: result.status,
       fromCurrency: params.fromCurrency,
       toCurrency: 'uah',
       fromAmount: params.fromAmount,
-      toAmount: exchangeAmount.toFixed(2),
-      payoutAddress: cleanCardNumber,
-      createdAt: new Date().toISOString()
+      expectedAmount: result.expectedReceiveAmount,
+      payinAddress: result.payinAddress,
+      payoutAddress: cleanCardNumber
     };
+
   } catch (error) {
     console.error('Create exchange error:', error);
     throw error;
@@ -66,32 +117,41 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 }
 
 export async function getTransactionStatus(id: string) {
-  // Mock successful transaction
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return {
-    id,
-    status: 'completed',
-    updatedAt: new Date().toISOString()
-  };
+  try {
+    const response = await fetch(`${API_URL}/transactions/${id}`, {
+      headers: {
+        'x-api-key': API_KEY!
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || 'Failed to get transaction status');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Transaction status error:', error);
+    throw error;
+  }
 }
 
 export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {
   try {
-    const rates = await fetch('http://localhost:5000/api/rates').then(res => res.json());
-    let estimatedAmount = '0';
-    let rate = '0';
+    // Get real exchange rate from ChangeNow API
+    const response = await fetch(
+      `${API_URL}/exchange-amount/${amount}/${fromCurrency.toLowerCase()}_${toCurrency.toLowerCase()}?api_key=${API_KEY}`
+    );
 
-    if (fromCurrency === 'btc' && toCurrency === 'uah') {
-      rate = (parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)).toString();
-      estimatedAmount = (parseFloat(amount) * parseFloat(rate)).toString();
-    } else if (fromCurrency === 'eth' && toCurrency === 'uah') {
-      rate = (parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah)).toString();
-      estimatedAmount = (parseFloat(amount) * parseFloat(rate)).toString();
+    if (!response.ok) {
+      throw new Error('Failed to get exchange rate');
     }
 
+    const data = await response.json();
+
     return {
-      estimatedAmount,
-      rate,
+      estimatedAmount: data.estimatedAmount,
+      rate: data.rate,
       transactionSpeedForecast: "15-30 minutes"
     };
   } catch (error) {
