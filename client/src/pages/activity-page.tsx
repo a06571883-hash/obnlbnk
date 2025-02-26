@@ -52,6 +52,7 @@ export default function ActivityPage() {
     queryKey: ["/api/cards"],
   });
 
+  // Fetch transactions
   const { data: transactions = [] } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
   });
