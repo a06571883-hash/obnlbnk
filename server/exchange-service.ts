@@ -19,20 +19,16 @@ interface CreateTransaction {
     ethBalance: string;
     btcAddress: string;
   };
-  bankDetails?: {
-    cardNumber: string;
-  };
 }
 
-function validateUkrainianCard(cardNumber: string): boolean {
+// Simple card number validation - only checks format
+function validateCardFormat(cardNumber: string): boolean {
   const cleanNumber = cardNumber.replace(/[\s-]/g, '');
   return cleanNumber.length === 16 && /^\d+$/.test(cleanNumber);
 }
 
 export async function createExchangeTransaction(params: CreateTransaction) {
   try {
-    console.log('Exchange params:', JSON.stringify(params, null, 2));
-
     if (!params.cryptoCard) {
       throw new Error('Криптовалютный кошелек не найден');
     }
@@ -58,10 +54,8 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       );
     }
 
-    const cardNumber = params.bankDetails?.cardNumber || params.address;
-    const cleanCardNumber = cardNumber.replace(/[\s-]/g, '');
-
-    if (!validateUkrainianCard(cleanCardNumber)) {
+    const cleanCardNumber = params.address.replace(/[\s-]/g, '');
+    if (!validateCardFormat(cleanCardNumber)) {
       throw new Error('Пожалуйста, введите корректный 16-значный номер карты');
     }
 
@@ -88,18 +82,14 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       to: "uah",
       amount: params.fromAmount,
       address: cleanCardNumber,
-      extraId: null,
       refundAddress: params.cryptoCard.btcAddress,
       payoutCurrency: "UAH",
       payoutMethod: "bank_card",
       bankDetails: {
         cardNumber: cleanCardNumber,
-        bankName: "Ukrainian Bank",
         country: "UA"
       }
     };
-
-    console.log('Creating exchange request:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(`${API_URL}/transactions/${params.fromCurrency.toLowerCase()}_uah`, {
       method: 'POST',
@@ -117,7 +107,6 @@ export async function createExchangeTransaction(params: CreateTransaction) {
     }
 
     const result = await response.json();
-    console.log('Exchange transaction created:', result);
 
     return {
       id: result.id,
@@ -159,7 +148,6 @@ export async function getExchangeRate(fromCurrency: string, toCurrency: string, 
   }
 }
 
-// Export function to get transaction status
 export async function getTransactionStatus(id: string) {
   try {
     const response = await fetch(`${API_URL}/transactions/${id}`, {

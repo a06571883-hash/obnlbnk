@@ -64,23 +64,7 @@ function validateEthAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/i.test(address);
 }
 
-function validateUkrainianCard(cardNumber: string): boolean {
-  const cleanNumber = cardNumber.replace(/\s+/g, '');
-  if (!/^\d{16}$/.test(cleanNumber)) {
-    return false;
-  }
-
-  const ukrPrefixes = [
-    // PrivatBank
-    '4149', '5168', '5167', '4506', '4508', '4558',
-    // Monobank
-    '5375', '4443',
-    // Universal/Other Ukrainian banks
-    '4000', '4111', '4112', '4627', '5133', '5169', '5351', '5582'
-  ];
-
-  return ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
-}
+//function validateUkrainianCard(cardNumber: string): boolean { ... }  Removed
 
 // Component
 export default function VirtualCard({ card }: { card: Card }) {
@@ -164,15 +148,16 @@ export default function VirtualCard({ card }: { card: Card }) {
   }, [gyroscope, isMobile, isIOS]);
 
   const withdrawalMutation = useMutation({
-    mutationFn: async (request: ExchangeRequest) => { // Updated to accept ExchangeRequest
+    mutationFn: async (request: ExchangeRequest) => {
       setIsProcessingExchange(true);
       setBankCardError('');
 
-      if (!validateUkrainianCard(bankCardNumber)) {
-        throw new Error('Please enter a valid Ukrainian bank card number');
+      const cleanCardNumber = bankCardNumber.replace(/\s+/g, '');
+      if (!/^\d{16}$/.test(cleanCardNumber)) {
+        throw new Error('Номер карты должен содержать 16 цифр');
       }
 
-      const response = await apiRequest("POST", "/api/exchange/create", request); // Sending the ExchangeRequest
+      const response = await apiRequest("POST", "/api/exchange/create", request);
 
       if (!response.ok) {
         const error = await response.json();
@@ -185,8 +170,8 @@ export default function VirtualCard({ card }: { card: Card }) {
       queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
       setExchangeStatus('pending');
       toast({
-        title: "Success",
-        description: "Exchange transaction created successfully. You will receive funds on your card soon.",
+        title: "Успех",
+        description: "Обмен создан успешно. Средства поступят на карту в ближайшее время.",
       });
       setWithdrawalMethod(null);
       setWithdrawalAmount('');
@@ -196,7 +181,7 @@ export default function VirtualCard({ card }: { card: Card }) {
     onError: (error: Error) => {
       setBankCardError(error.message);
       toast({
-        title: "Error",
+        title: "Ошибка",
         description: error.message,
         variant: "destructive"
       });
