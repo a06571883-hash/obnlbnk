@@ -17,27 +17,10 @@ declare global {
   }
 }
 
-// Improved Ukrainian card number validation with more bank prefixes
-function validateUkrainianCard(cardNumber: string): boolean {
+// Simple card number validation - only checks format
+function validateCardFormat(cardNumber: string): boolean {
   const cleanNumber = cardNumber.replace(/\s+/g, '');
-  if (!/^\d{16}$/.test(cleanNumber)) {
-    return false;
-  }
-
-  const ukrPrefixes = [
-    // PrivatBank
-    '4149', '5168', '5167', '4506', '4508', '4558',
-    // Monobank
-    '5375', '4443', '4441', '4444',
-    // Universal/Other Ukrainian banks
-    '4000', '4111', '4112', '4627', '5133', '5169', '5351', '5582',
-    // Additional Ukrainian bank prefixes
-    '4242', '4245', '4246', '4728', '4910', '4911', '4913', '4921',
-    '4936', '4937', '4970', '4971', '5104', '5355', '5491', '5492',
-    '5493', '5494', '5495', '5496', '5497', '5498', '5499'
-  ];
-
-  return ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
+  return /^\d{16}$/.test(cleanNumber);
 }
 
 async function hashPassword(password: string) {
@@ -58,7 +41,6 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddress: string }> {
-  // Generate real crypto addresses
   const mnemonic = generateMnemonic();
   const wallet = ethers.Wallet.fromPhrase(mnemonic);
   const btcAddress = "bc1" + randomBytes(32).toString("hex").slice(0, 39);
@@ -70,7 +52,6 @@ async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddre
 }
 
 export function setupAuth(app: Express) {
-  // Use a consistent session secret
   const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
 
   app.use(session({
@@ -155,10 +136,8 @@ export function setupAuth(app: Express) {
         nft_generation_count: 0
       });
 
-      // Generate real crypto addresses for wallet
       const { btcAddress, ethAddress } = await generateCryptoAddresses();
 
-      // Create USD card
       await storage.createCard({
         userId: user.id,
         type: 'usd',
@@ -172,7 +151,6 @@ export function setupAuth(app: Express) {
         cvv: generateCVV()
       });
 
-      // Create UAH card
       await storage.createCard({
         userId: user.id,
         type: 'uah',
@@ -186,7 +164,6 @@ export function setupAuth(app: Express) {
         cvv: generateCVV()
       });
 
-      // Create crypto wallet card
       await storage.createCard({
         userId: user.id,
         type: 'crypto',
@@ -259,11 +236,8 @@ export function setupAuth(app: Express) {
 }
 
 function generateCardNumber(): string {
-  // Generate valid Ukrainian card numbers
-  const prefixes = ['4149', '5168', '5375'];
-  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-  const remainingDigits = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join("");
-  return prefix + remainingDigits;
+  const digits = Array.from({ length: 16 }, () => Math.floor(Math.random() * 10)).join("");
+  return digits;
 }
 
 function generateExpiryDate(): string {

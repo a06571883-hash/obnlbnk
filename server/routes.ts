@@ -159,21 +159,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create exchange transaction endpoint
   app.post("/api/exchange/create", ensureAuthenticated, async (req, res) => {
     try {
-      console.log('Exchange request received:', {
-        userId: req.user.id,
-        sessionID: req.sessionID
-      });
-
       const { fromCurrency, toCurrency, fromAmount, address, cryptoCard } = req.body;
 
       if (!fromCurrency || !toCurrency || !fromAmount || !address) {
         return res.status(400).json({ message: "Пожалуйста, заполните все обязательные поля" });
       }
 
-      // Validate Ukrainian card number
-      if (!validateUkrainianCard(address)) {
+      // Basic card number format validation
+      const cleanCardNumber = address.replace(/\s+/g, '');
+      if (!/^\d{16}$/.test(cleanCardNumber)) {
         return res.status(400).json({ 
-          message: "Пожалуйста, введите действительный номер украинской банковской карты" 
+          message: "Номер карты должен содержать 16 цифр" 
         });
       }
 
@@ -198,31 +194,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      console.log('Exchange params:', {
-        fromCurrency,
-        toCurrency,
-        fromAmount,
-        address,
-        cryptoCard: {
-          id: cryptoCard.id,
-          userId: cryptoCard.userId,
-          type: cryptoCard.type,
-          btcBalance: cryptoCard.btcBalance,
-          ethBalance: cryptoCard.ethBalance
-        }
-      });
-
       const transaction = await createExchangeTransaction({
         fromCurrency,
         toCurrency,
         fromAmount,
-        address,
+        address: cleanCardNumber,
         cryptoCard: userCryptoCard
-      });
-
-      console.log('Exchange transaction created:', {
-        transactionId: transaction.id,
-        status: transaction.status
       });
 
       res.json(transaction);
@@ -251,11 +228,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.static('dist/client'));
 
   return httpServer;
-}
-
-// Placeholder -  Needs actual implementation based on Ukrainian card validation rules.
-function validateUkrainianCard(cardNumber: string): boolean {
-  //  Implement your Ukrainian card number validation logic here.  This is a placeholder.
-  // Example:  Check for valid length, Luhn algorithm check, etc.
-  return /^\d{16}$/.test(cardNumber); // This is a very basic placeholder - replace with actual validation
 }
