@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./database/connection";
 import { scheduleBackups } from "./database/backup";
-import { startBot } from "./telegram-bot"; // Import telegram bot
+import { startBot } from "./telegram-bot";
 
 // Set development mode
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
@@ -17,7 +17,12 @@ app.use(express.urlencoded({ extended: false }));
 // CORS configuration
 app.use((req, res, next) => {
   const origin = req.headers.origin || '';
-  if (origin.includes('.replit.dev') || origin.includes('replit.com') || process.env.NODE_ENV !== 'production') {
+  // Allow Telegram WebApp and Replit domains
+  if (origin.includes('.telegram.org') || 
+      origin.includes('.t.me') || 
+      origin.includes('.replit.dev') || 
+      origin.includes('replit.com') || 
+      process.env.NODE_ENV !== 'production') {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -104,6 +109,8 @@ app.use((req, res, next) => {
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`Server started at http://0.0.0.0:${PORT}`);
       log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+      // Log the deployment URL for Telegram WebApp
+      console.log('Deployment URL:', process.env.REPLIT_DEPLOYMENT_URL || 'https://bnal-bank.webxcorporation.repl.co');
     });
   } catch (error) {
     console.error('Initialization error:', error);
