@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw, Clock } from "lucide-react";
 
 interface ExchangeRateResponse {
   btcToUsd: string;
@@ -25,23 +25,21 @@ interface ExchangeRateResponse {
 
 const handleExchange = async (formData: FormData, cards: Card[], toast: any) => {
   try {
-    // Find crypto card from available cards
     if (!cards || cards.length === 0) {
       throw new Error('Карты не загружены. Пожалуйста, обновите страницу.');
     }
 
-    console.log('Available cards:', cards); // Added logging for debugging
+    console.log('Available cards:', cards); 
 
     const cryptoCard = cards.find(card => card.type === 'crypto');
-    console.log('Looking for crypto card. Found:', cryptoCard); // Added logging
+    console.log('Looking for crypto card. Found:', cryptoCard); 
 
     if (!cryptoCard) {
       throw new Error('Криптовалютная карта не найдена. Пожалуйста, сгенерируйте карты заново.');
     }
 
-    // Verify card has proper crypto balances and address
     if (!cryptoCard.btcBalance || !cryptoCard.ethBalance || !cryptoCard.btcAddress) {
-      console.log('Invalid crypto card configuration:', cryptoCard); // Added logging
+      console.log('Invalid crypto card configuration:', cryptoCard); 
       throw new Error('Криптовалютный кошелек настроен неправильно. Обратитесь в поддержку.');
     }
 
@@ -53,7 +51,6 @@ const handleExchange = async (formData: FormData, cards: Card[], toast: any) => 
       throw new Error('Заполните все поля формы');
     }
 
-    // Create exchange request
     const response = await apiRequest("POST", "/api/exchange/create", {
       fromCurrency: fromCurrency.toString(),
       toCurrency: "uah",
@@ -100,7 +97,6 @@ export default function HomePage() {
   const [prevRates, setPrevRates] = useState<ExchangeRateResponse | null>(null);
   const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
 
-  // Показываем приветственное сообщение только если это новая регистрация
   useEffect(() => {
     const isNewRegistration = sessionStorage.getItem('isNewRegistration');
     if (isNewRegistration === 'true' && user) {
@@ -113,7 +109,6 @@ export default function HomePage() {
     }
   }, [user]);
 
-  // Initialize WebSocket connection for rates
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
@@ -138,7 +133,6 @@ export default function HomePage() {
       setWsStatus('error');
     };
 
-    // Fallback to HTTP if WebSocket fails
     const fetchRates = async () => {
       try {
         const response = await fetch('/api/rates');
@@ -151,10 +145,8 @@ export default function HomePage() {
       }
     };
 
-    // Initial rates fetch
     fetchRates();
 
-    // Cleanup
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.close();
@@ -162,15 +154,14 @@ export default function HomePage() {
     };
   }, []);
 
-  // Fetch cards with authentication check and retry logic
   const { data: cards = [], isLoading: isLoadingCards, error: cardsError } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
-    enabled: !!user, // Only fetch cards when user is logged in
+    enabled: !!user, 
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
     retry: 3,
     staleTime: 0,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), 
   });
 
   const getPriceChangeColor = (current: string | undefined, previous: string | undefined) => {
@@ -183,7 +174,6 @@ export default function HomePage() {
     return '';
   };
 
-  // Handle card generation
   const handleGenerateCards = async () => {
     try {
       setIsGenerating(true);
@@ -207,9 +197,14 @@ export default function HomePage() {
     }
   };
 
-  // Check if we have a valid crypto card
   const cryptoCard = cards.find(card => card.type === 'crypto');
   const hasCryptoWallet = cryptoCard && cryptoCard.btcBalance && cryptoCard.ethBalance && cryptoCard.btcAddress;
+
+  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
+    queryKey: ["/api/transactions"],
+    enabled: !!user && cards.length > 0,
+  });
+
 
   if (isLoadingCards) {
     return (
@@ -248,7 +243,6 @@ export default function HomePage() {
       </header>
 
       <main className="container mx-auto p-4 pt-8 max-w-4xl">
-        {/* Welcome message */}
         <div className={`transition-all duration-500 ease-in-out transform ${
           showWelcome ? 'opacity-100 translate-y-0 h-[100px] mb-8' : 'opacity-0 -translate-y-full h-0'
         }`}>
@@ -260,14 +254,11 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Main content */}
         {cards && cards.length > 0 ? (
           <div className={`transition-all duration-500 ease-in-out transform ${!showWelcome ? '-translate-y-16' : ''} mt-16 pt-8 space-y-8`}>
             <CardCarousel cards={cards} />
 
-            {/* Quick Actions */}
             <div className="space-y-6">
-              {/* Exchange Dialog */}
               {hasCryptoWallet ? (
                 <Dialog>
                   <DialogTrigger asChild>
@@ -292,7 +283,6 @@ export default function HomePage() {
                           e.currentTarget.reset();
                           queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
                         } catch (error) {
-                          // Error is already handled in handleExchange
                         }
                       }}>
                         <select
@@ -356,7 +346,6 @@ export default function HomePage() {
                 </CardUI>
               )}
 
-              {/* Exchange Rates */}
               <CardUI className="p-4 backdrop-blur-sm bg-background/80">
                 <div className="space-y-4">
                   <h3 className="font-medium text-center">Текущие курсы валют</h3>
@@ -367,7 +356,6 @@ export default function HomePage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {/* Main Rates */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
                           <div className="flex items-center gap-2">
@@ -398,7 +386,6 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      {/* Calculated Cross Rates */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
                         <div className="p-2 rounded bg-accent/30">
                           <div className="text-muted-foreground">BTC/UAH</div>
@@ -437,6 +424,107 @@ export default function HomePage() {
                           </div>
                         </div>
                       </div>
+                    </div>
+                  )}
+                </div>
+              </CardUI>
+
+              <CardUI className="p-4 backdrop-blur-sm bg-background/80">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      История транзакций
+                    </h3>
+                  </div>
+
+                  {isLoadingTransactions ? (
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : transactions.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-4">
+                      У вас пока нет транзакций
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {transactions.map((transaction) => (
+                        <Dialog key={transaction.id}>
+                          <DialogTrigger asChild>
+                            <div className="p-3 rounded-lg bg-accent/50 hover:bg-accent cursor-pointer transition-colors">
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className="font-medium">{transaction.type === 'transfer' ? 'Перевод' : 'Комиссия'}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(transaction.createdAt).toLocaleString()}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className={`font-medium ${transaction.type === 'commission' ? 'text-destructive' : ''}`}>
+                                    {parseFloat(transaction.amount).toFixed(transaction.type === 'commission' ? 8 : 2)}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {transaction.fromCardNumber} → {transaction.toCardNumber}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Детали транзакции</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Тип</p>
+                                  <p className="font-medium">
+                                    {transaction.type === 'transfer' ? 'Перевод' : 'Комиссия'}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Статус</p>
+                                  <p className="font-medium">
+                                    {transaction.status === 'completed' ? 'Выполнено' : 'В обработке'}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Сумма</p>
+                                  <p className="font-medium">
+                                    {parseFloat(transaction.amount).toFixed(transaction.type === 'commission' ? 8 : 2)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Конвертированная сумма</p>
+                                  <p className="font-medium">
+                                    {parseFloat(transaction.convertedAmount).toFixed(8)}
+                                  </p>
+                                </div>
+                                <div className="col-span-2">
+                                  <p className="text-sm text-muted-foreground">Описание</p>
+                                  <p className="font-medium">{transaction.description}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Отправитель</p>
+                                  <p className="font-medium">{transaction.fromCardNumber}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Получатель</p>
+                                  <p className="font-medium">
+                                    {transaction.wallet || transaction.toCardNumber}
+                                  </p>
+                                </div>
+                                <div className="col-span-2">
+                                  <p className="text-sm text-muted-foreground">Дата</p>
+                                  <p className="font-medium">
+                                    {new Date(transaction.createdAt).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      ))}
                     </div>
                   )}
                 </div>
