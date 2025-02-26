@@ -32,7 +32,7 @@ export function validateUkrainianCard(cardNumber: string): boolean {
   // Common Ukrainian bank card prefixes
   const ukrPrefixes = [
     // PrivatBank
-    '4149', '5168', '5167', '4506', '4508', '4558',
+    '4149', '5168', '5167', '4506', '4508', '4558', '6090',
     // Monobank
     '5375', '4443',
     // Universal/Other Ukrainian banks
