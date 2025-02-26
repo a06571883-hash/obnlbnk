@@ -16,15 +16,83 @@ import CardCarousel from "@/components/card-carousel";
 import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// Ключ для отслеживания состояния приветственного сообщения
-const WELCOME_MESSAGE_KEY = 'welcomeMessageShown';
-
 interface ExchangeRateResponse {
   btcToUsd: string;
   ethToUsd: string;
   usdToUah: string;
   timestamp: number;
 }
+
+const handleExchange = async (formData: FormData, cards: Card[], toast: any) => {
+  try {
+    // Find crypto card from available cards
+    if (!cards || cards.length === 0) {
+      throw new Error('Карты не загружены. Пожалуйста, обновите страницу.');
+    }
+
+    console.log('Available cards:', cards); // Added logging for debugging
+
+    const cryptoCard = cards.find(card => card.type === 'crypto');
+    console.log('Looking for crypto card. Found:', cryptoCard); // Added logging
+
+    if (!cryptoCard) {
+      throw new Error('Криптовалютная карта не найдена. Пожалуйста, сгенерируйте карты заново.');
+    }
+
+    // Verify card has proper crypto balances and address
+    if (!cryptoCard.btcBalance || !cryptoCard.ethBalance || !cryptoCard.btcAddress) {
+      console.log('Invalid crypto card configuration:', cryptoCard); // Added logging
+      throw new Error('Криптовалютный кошелек настроен неправильно. Обратитесь в поддержку.');
+    }
+
+    const amount = formData.get("amount");
+    const fromCurrency = formData.get("fromCurrency");
+    const cardNumber = formData.get("cardNumber");
+
+    if (!amount || !fromCurrency || !cardNumber) {
+      throw new Error('Заполните все поля формы');
+    }
+
+    // Create exchange request
+    const response = await apiRequest("POST", "/api/exchange/create", {
+      fromCurrency: fromCurrency.toString(),
+      toCurrency: "uah",
+      fromAmount: amount.toString(),
+      address: cardNumber.toString(),
+      cryptoCard: {
+        btcBalance: cryptoCard.btcBalance,
+        ethBalance: cryptoCard.ethBalance,
+        btcAddress: cryptoCard.btcAddress
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Ошибка обмена");
+    }
+
+    const result = await response.json();
+    console.log('Exchange result:', result);
+
+    toast({
+      title: "Успех",
+      description: "Обмен инициирован успешно"
+    });
+
+    return result;
+  } catch (error: any) {
+    console.error("Exchange error:", error);
+    toast({
+      title: "Ошибка обмена",
+      description: error.message || "Произошла ошибка при обмене",
+      variant: "destructive"
+    });
+    throw error;
+  }
+};
+
+// Ключ для отслеживания состояния приветственного сообщения
+const WELCOME_MESSAGE_KEY = 'welcomeMessageShown';
 
 export default function HomePage() {
   const { toast } = useToast();
@@ -34,6 +102,34 @@ export default function HomePage() {
   const [rates, setRates] = useState<ExchangeRateResponse | null>(null);
   const [prevRates, setPrevRates] = useState<ExchangeRateResponse | null>(null);
   const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
+
+  // Show welcome message only on fresh login
+  useEffect(() => {
+    if (!user) return;
+    setShowWelcome(true);
+    const timer = setTimeout(() => setShowWelcome(false), 3000);
+    return () => clearTimeout(timer);
+  }, [user]);
+
+  const { data: cards = [], isLoading: isLoadingCards, error: cardsError } = useQuery<Card[]>({
+    queryKey: ["/api/cards"],
+    enabled: !!user, // Only fetch cards when user is logged in
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+    retry: 3,
+    staleTime: 0,
+  });
+
+  const getPriceChangeColor = (current: string | undefined, previous: string | undefined) => {
+    if (!current || !previous) return '';
+    const currentValue = parseFloat(current);
+    const previousValue = parseFloat(previous);
+    if (isNaN(currentValue) || isNaN(previousValue)) return '';
+    if (currentValue > previousValue) return 'text-emerald-500';
+    if (currentValue < previousValue) return 'text-red-500';
+    return '';
+  };
+
 
   // Инициализация WebSocket подключения
   useEffect(() => {
@@ -111,126 +207,6 @@ export default function HomePage() {
     };
   }, [toast]); // Добавляем toast в зависимости
 
-  // Show welcome message only on fresh login and track it in sessionStorage
-  useEffect(() => {
-    if (!user) return;
-
-    const hasShownWelcome = sessionStorage.getItem(WELCOME_MESSAGE_KEY);
-    if (!hasShownWelcome) {
-      setShowWelcome(true);
-      sessionStorage.setItem(WELCOME_MESSAGE_KEY, 'true');
-
-      // Hide after 3 seconds (changed from 4)
-      const timer = setTimeout(() => {
-        setShowWelcome(false);
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [user]);
-
-  const { data: cards = [], isLoading: isLoadingCards, error: cardsError } = useQuery<Card[]>({
-    queryKey: ["/api/cards"],
-    refetchInterval: 5000,
-    refetchOnWindowFocus: true,
-    retry: 3,
-    staleTime: 0,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
-
-  const getPriceChangeColor = (current: string | undefined, previous: string | undefined) => {
-    if (!current || !previous) return '';
-    const currentValue = parseFloat(current);
-    const previousValue = parseFloat(previous);
-    if (isNaN(currentValue) || isNaN(previousValue)) return '';
-    if (currentValue > previousValue) return 'text-emerald-500';
-    if (currentValue < previousValue) return 'text-red-500';
-    return '';
-  };
-
-  const handleExchange = async (formData: FormData) => {
-    const amount = formData.get("amount");
-    const fromCurrency = formData.get("fromCurrency");
-    const cardNumber = formData.get("cardNumber");
-
-    if (!amount || !fromCurrency || !cardNumber) {
-      toast({
-        title: "Ошибка",
-        description: "Заполните все поля формы",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      // Find crypto card from available cards
-      const cryptoCard = cards.find(card => card.type === 'crypto');
-      if (!cryptoCard) {
-        throw new Error('Криптовалютный кошелек не найден');
-      }
-
-      console.log('Found crypto card:', cryptoCard); // Added logging
-
-      // Verify card has proper crypto balances
-      if (!cryptoCard.btcBalance || !cryptoCard.ethBalance || !cryptoCard.btcAddress) {
-        throw new Error('Криптовалютный кошелек настроен неправильно');
-      }
-
-      const response = await apiRequest("POST", "/api/exchange/create", {
-        fromCurrency: fromCurrency.toString(),
-        toCurrency: "uah",
-        fromAmount: amount.toString(),
-        address: cardNumber.toString(),
-        cryptoCard: {
-          btcBalance: cryptoCard.btcBalance,
-          ethBalance: cryptoCard.ethBalance,
-          btcAddress: cryptoCard.btcAddress
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Ошибка обмена");
-      }
-
-      const result = await response.json();
-      console.log('Exchange result:', result);
-
-      toast({
-        title: "Успех",
-        description: "Обмен инициирован успешно"
-      });
-
-      return result;
-    } catch (error: any) {
-      console.error("Exchange error:", error);
-      toast({
-        title: "Ошибка обмена",
-        description: error.message || "Произошла ошибка при обмене",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
-  if (isLoadingCards) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (cardsError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background flex-col gap-4">
-        <p className="text-destructive">Ошибка загрузки данных</p>
-        <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/cards"] })}>
-          Попробовать снова
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -250,15 +226,10 @@ export default function HomePage() {
       </header>
 
       <main className="container mx-auto p-4 pt-8 max-w-4xl">
-        <div
-          className={`
-            transition-all duration-500 ease-in-out transform
-            ${showWelcome
-              ? 'opacity-100 translate-y-0 h-[100px] mb-8'
-              : 'opacity-0 -translate-y-full h-0 overflow-hidden mb-0'
-            }
-          `}
-        >
+        {/* Welcome message */}
+        <div className={`transition-all duration-500 ease-in-out transform ${
+          showWelcome ? 'opacity-100 translate-y-0 h-[100px] mb-8' : 'opacity-0 -translate-y-full h-0'
+        }`}>
           <h2 className="text-2xl font-medium mb-2 text-center">
             С возвращением, <span className="text-primary">{user?.username}</span>
           </h2>
@@ -267,12 +238,20 @@ export default function HomePage() {
           </p>
         </div>
 
-        {cards && cards.length > 0 ? (
-          <div className={`
-            transition-all duration-500 ease-in-out transform
-            ${!showWelcome ? '-translate-y-16' : ''}
-            mt-16 pt-8 space-y-8
-          `}>
+        {/* Main content */}
+        {isLoadingCards ? (
+          <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : cardsError ? (
+          <div className="flex items-center justify-center min-h-screen flex-col gap-4">
+            <p className="text-destructive">Ошибка загрузки данных</p>
+            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/cards"] })}>
+              Попробовать снова
+            </Button>
+          </div>
+        ) : cards && cards.length > 0 ? (
+          <div className={`transition-all duration-500 ease-in-out transform ${!showWelcome ? '-translate-y-16' : ''} mt-16 pt-8 space-y-8`}>
             <CardCarousel cards={cards} />
 
             {/* Quick Actions */}
@@ -296,7 +275,7 @@ export default function HomePage() {
                     <form onSubmit={async (e) => {
                       e.preventDefault();
                       try {
-                        await handleExchange(new FormData(e.currentTarget));
+                        await handleExchange(new FormData(e.currentTarget), cards, toast);
                         e.currentTarget.reset();
                         queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
                       } catch (error) {
@@ -433,30 +412,24 @@ export default function HomePage() {
               </p>
               <Button
                 size="lg"
-                className="bg-primary hover:bg-primary/90 w-full sm:w-auto relative"
+                className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
                 disabled={isGenerating}
                 onClick={async () => {
                   try {
                     setIsGenerating(true);
                     const response = await apiRequest("POST", "/api/cards/generate");
-
                     if (!response.ok) {
-                      const errorData = await response.json().catch(() => ({}));
-                      throw new Error(errorData.message || "Failed to generate cards");
+                      throw new Error("Failed to generate cards");
                     }
-
-                    // Invalidate cards query to trigger refresh
                     await queryClient.invalidateQueries({ queryKey: ["/api/cards"] });
-
                     toast({
-                      title: "Карты сгенерированы",
+                      title: "Успех",
                       description: "Ваши мультивалютные карты успешно созданы",
                     });
                   } catch (error: any) {
-                    console.error("Error generating cards:", error);
                     toast({
                       title: "Ошибка",
-                      description: error.message || "Не удалось сгенерировать карты. Попробуйте снова.",
+                      description: "Не удалось сгенерировать карты",
                       variant: "destructive",
                     });
                   } finally {

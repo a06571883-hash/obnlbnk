@@ -7,7 +7,11 @@ async function throwIfResNotOk(res: Response) {
       const errorData = await res.json();
       errorMessage = errorData.message || errorData.error?.message || errorMessage;
     } catch {
-      // If parsing JSON fails, use the status text
+      // If parsing JSON fails, check if it's an authentication error
+      if (res.status === 401) {
+        window.location.href = '/auth'; // Redirect to auth page on session expiry
+        throw new Error('Сессия истекла. Пожалуйста, войдите снова.');
+      }
     }
     throw new Error(errorMessage);
   }
@@ -25,8 +29,8 @@ export async function apiRequest(
       "Accept": "application/json",
     },
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-    cache: "no-cache", // Add this to prevent caching
+    credentials: "include", // Always include credentials
+    cache: "no-cache", // Prevent caching
   });
 
   await throwIfResNotOk(res);
@@ -41,8 +45,8 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     try {
       const res = await fetch(queryKey[0] as string, {
-        credentials: "include",
-        cache: "no-cache", // Add this to prevent caching
+        credentials: "include", // Always include credentials
+        cache: "no-cache", // Prevent caching
         headers: {
           "Accept": "application/json",
         },
@@ -66,7 +70,7 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: true,
-      staleTime: 0, // Set to 0 to always fetch fresh data
+      staleTime: 0, // Always fetch fresh data
       retry: 1, // Retry once on failure
       gcTime: 0, // Disable garbage collection
     },

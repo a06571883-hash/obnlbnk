@@ -34,6 +34,20 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   return false;
 }
 
+// Auth middleware to ensure session is valid
+function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
+  console.log('Auth check:', {
+    sessionID: req.sessionID,
+    isAuthenticated: req.isAuthenticated(),
+    path: req.path
+  });
+
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Необходима авторизация" });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
@@ -55,12 +69,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Получение карт пользователя
-  app.get("/api/cards", async (req, res) => {
+  app.get("/api/cards", ensureAuthenticated, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
+      console.log('GET /api/cards - User:', {
+        id: req.user.id,
+        username: req.user.username,
+        sessionID: req.sessionID
+      });
+
       const cards = await storage.getCardsByUserId(req.user.id);
+      const cryptoCard = cards.find(card => card.type === 'crypto');
+
+      console.log('Cards found:', {
+        userId: req.user.id,
+        totalCards: cards.length,
+        hasCryptoCard: !!cryptoCard,
+        cryptoCardId: cryptoCard?.id
+      });
+
       res.json(cards);
     } catch (error) {
       console.error("Cards fetch error:", error);
@@ -69,12 +95,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transfer funds
-  app.post("/api/transfer", async (req, res) => {
+  app.post("/api/transfer", ensureAuthenticated, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-
       const { fromCardId, recipientAddress, amount, transferType, cryptoType } = req.body;
 
       // Basic validation
@@ -135,12 +157,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Получение транзакций пользователя
-  app.get("/api/transactions", async (req, res) => {
+  app.get("/api/transactions", ensureAuthenticated, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-
       const userCards = await storage.getCardsByUserId(req.user.id);
       const allTransactions = [];
 
@@ -160,12 +178,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/database/backup', async (req, res) => {
+  app.post('/api/database/backup', ensureAuthenticated, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-
       // Проверяем, является ли пользователь регулятором
       const user = await storage.getUser(req.user.id);
       if (!user?.is_regulator) {
@@ -187,12 +201,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/database/restore', async (req, res) => {
+  app.post('/api/database/restore', ensureAuthenticated, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Необходима авторизация" });
-      }
-
       // Проверяем, является ли пользователь регулятором
       const user = await storage.getUser(req.user.id);
       if (!user?.is_regulator) {
@@ -226,12 +236,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Endpoint для создания заявки на вывод
-  app.post("/api/withdraw", async (req, res) => {
+  app.post("/api/withdraw", ensureAuthenticated, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
       const { cardId, amount, targetCurrency, recipientAddress } = req.body;
 
       // Валидация входных данных
@@ -287,8 +293,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rate = (parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah)).toString();
         estimatedAmount = (parseFloat(amount as string) * parseFloat(rate)).toString();
       } else {
-          // Handle other currency pairs or throw an error if unsupported
-          return res.status(400).json({message: "Unsupported currency pair"});
+        // Handle other currency pairs or throw an error if unsupported
+        return res.status(400).json({message: "Unsupported currency pair"});
       }
 
       res.json({
@@ -303,12 +309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create exchange transaction endpoint
-  app.post("/api/exchange/create", async (req, res) => {
+  app.post("/api/exchange/create", ensureAuthenticated, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
       const { fromCurrency, toCurrency, fromAmount, address } = req.body;
 
       if (!fromCurrency || !toCurrency || !fromAmount || !address) {
