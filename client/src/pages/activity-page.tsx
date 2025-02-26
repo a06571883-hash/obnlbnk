@@ -56,6 +56,7 @@ export default function ActivityPage() {
   const { data: transactions = [] } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
     enabled: !!user,
+    refetchInterval: 5000,
   });
 
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
