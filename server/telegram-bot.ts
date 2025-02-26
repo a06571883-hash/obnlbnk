@@ -8,10 +8,7 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '8096961454:AAEmX7kc1
 // Команда /start
 bot.command('start', (ctx) => {
   ctx.reply(
-    'Добро пожаловать в BNAL Bank!',
-    Markup.keyboard([
-      [Markup.button.webApp('Open App', 'https://2cb62bd7-0d31-4cbf-8273-4036756a20a5-00-3fwf6u41ptm73.spock.replit.dev')]
-    ]).resize()
+    'Добро пожаловать в BNAL Bank!'
   );
 });
 
