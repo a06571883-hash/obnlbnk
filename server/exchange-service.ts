@@ -28,21 +28,10 @@ function validateUkrainianCard(cardNumber: string): boolean {
     return false;
   }
 
-  // List of valid prefixes for Ukrainian banks
-  const validPrefixes = [
-    // PrivatBank
-    '4149', '5168', '5167', '4506', '4508', '4558', '6090',
-    // Monobank
-    '5375', '4443',
-    // Universal/Other Ukrainian banks
-    '4000', '4111', '4112', '4627', '5133', '5169', '5351', '5582'
-  ];
-
   const cardPrefix = cleanNumber.substring(0, 4);
-  const isValidPrefix = validPrefixes.includes(cardPrefix);
-  console.log('Card prefix:', cardPrefix, 'Valid prefix:', isValidPrefix);
+  console.log('Card prefix:', cardPrefix);
 
-  return isValidPrefix;
+  return true; // Accept any valid 16-digit number
 }
 
 export async function createExchangeTransaction(params: CreateTransaction) {
@@ -60,8 +49,35 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 
     // Get current rates and calculate exchange
     const rates = await fetch('http://localhost:5000/api/rates').then(res => res.json());
-    let exchangeRate = 0;
 
+    // Get user's cards and check balances
+    const cardsResponse = await fetch('http://localhost:5000/api/cards');
+    if (!cardsResponse.ok) {
+      throw new Error('Failed to get user cards');
+    }
+
+    const cards = await cardsResponse.json();
+    const cryptoCard = cards.find((card: any) => card.type === 'crypto');
+
+    if (!cryptoCard) {
+      throw new Error('Crypto card not found');
+    }
+
+    // Check if user has enough balance
+    const amount = parseFloat(params.fromAmount);
+    if (params.fromCurrency === 'btc') {
+      const btcBalance = parseFloat(cryptoCard.btcBalance);
+      if (amount > btcBalance) {
+        throw new Error(`Insufficient BTC balance. Available: ${btcBalance} BTC`);
+      }
+    } else if (params.fromCurrency === 'eth') {
+      const ethBalance = parseFloat(cryptoCard.ethBalance);
+      if (amount > ethBalance) {
+        throw new Error(`Insufficient ETH balance. Available: ${ethBalance} ETH`);
+      }
+    }
+
+    let exchangeRate = 0;
     if (params.fromCurrency === 'btc') {
       exchangeRate = parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah);
     } else if (params.fromCurrency === 'eth') {
@@ -70,7 +86,7 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 
     const exchangeAmount = parseFloat(params.fromAmount) * exchangeRate;
 
-    // Return mock transaction
+    // Return mock transaction for now
     return {
       id: `mock-${Date.now()}`,
       status: 'new',
