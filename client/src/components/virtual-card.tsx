@@ -799,6 +799,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         </div>
       </div>
     </div>
-    </div>
   );
 }
+
+export default VirtualCard;
