@@ -16,34 +16,11 @@ interface CreateTransaction {
   };
 }
 
-export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {
-  try {
-    const rates = await fetch('http://localhost:5000/api/rates').then(res => res.json());
-    let estimatedAmount = '0';
-    let rate = '0';
-
-    if (fromCurrency === 'btc' && toCurrency === 'uah') {
-      rate = (parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)).toString();
-      estimatedAmount = (parseFloat(amount) * parseFloat(rate)).toString();
-    } else if (fromCurrency === 'eth' && toCurrency === 'uah') {
-      rate = (parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah)).toString();
-      estimatedAmount = (parseFloat(amount) * parseFloat(rate)).toString();
-    }
-
-    return {
-      estimatedAmount,
-      rate,
-      transactionSpeedForecast: "15-30 minutes"
-    };
-  } catch (error) {
-    console.error('Exchange rate error:', error);
-    throw error;
-  }
-}
-
 function validateUkrainianCard(cardNumber: string): boolean {
   const cleanNumber = cardNumber.replace(/[\s-]/g, '');
   console.log('Validating card number:', cleanNumber);
+  console.log('Card number length:', cleanNumber.length);
+  console.log('Is numeric:', /^\d+$/.test(cleanNumber));
 
   // Basic validation - must be 16 digits
   if (!/^\d{16}$/.test(cleanNumber)) {
@@ -70,18 +47,18 @@ function validateUkrainianCard(cardNumber: string): boolean {
 
 export async function createExchangeTransaction(params: CreateTransaction) {
   try {
+    console.log('Received transaction params:', JSON.stringify(params, null, 2));
     const cleanCardNumber = params.bankDetails?.cardNumber?.replace(/\s+/g, '') || '';
-    console.log('Processing exchange with card:', cleanCardNumber);
+    console.log('Clean card number for API:', cleanCardNumber);
 
     if (!validateUkrainianCard(cleanCardNumber)) {
       throw new Error('Please enter a valid Ukrainian bank card number');
     }
 
-    // Get current rates
+    // Get current rates and calculate exchange
     const rates = await fetch('http://localhost:5000/api/rates').then(res => res.json());
-
-    // Calculate exchange amount
     let exchangeRate = 0;
+
     if (params.fromCurrency === 'btc') {
       exchangeRate = parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah);
     } else if (params.fromCurrency === 'eth') {
@@ -90,7 +67,7 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 
     const exchangeAmount = parseFloat(params.fromAmount) * exchangeRate;
 
-    // Return a mock successful transaction
+    // Return mock transaction
     return {
       id: `mock-${Date.now()}`,
       status: 'new',
@@ -108,11 +85,36 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 }
 
 export async function getTransactionStatus(id: string) {
-  // For now, always return success after a delay
+  // Mock successful transaction
   await new Promise(resolve => setTimeout(resolve, 1000));
   return {
     id,
     status: 'completed',
     updatedAt: new Date().toISOString()
   };
+}
+
+export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {
+  try {
+    const rates = await fetch('http://localhost:5000/api/rates').then(res => res.json());
+    let estimatedAmount = '0';
+    let rate = '0';
+
+    if (fromCurrency === 'btc' && toCurrency === 'uah') {
+      rate = (parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)).toString();
+      estimatedAmount = (parseFloat(amount) * parseFloat(rate)).toString();
+    } else if (fromCurrency === 'eth' && toCurrency === 'uah') {
+      rate = (parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah)).toString();
+      estimatedAmount = (parseFloat(amount) * parseFloat(rate)).toString();
+    }
+
+    return {
+      estimatedAmount,
+      rate,
+      transactionSpeedForecast: "15-30 minutes"
+    };
+  } catch (error) {
+    console.error('Exchange rate error:', error);
+    throw error;
+  }
 }
