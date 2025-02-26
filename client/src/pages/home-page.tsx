@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw, Clock } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw } from "lucide-react";
 
 interface ExchangeRateResponse {
   btcToUsd: string;
@@ -199,11 +199,6 @@ export default function HomePage() {
 
   const cryptoCard = cards.find(card => card.type === 'crypto');
   const hasCryptoWallet = cryptoCard && cryptoCard.btcBalance && cryptoCard.ethBalance && cryptoCard.btcAddress;
-
-  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
-    queryKey: ["/api/transactions"],
-    enabled: !!user && cards.length > 0,
-  });
 
 
   if (isLoadingCards) {
@@ -429,106 +424,6 @@ export default function HomePage() {
                 </div>
               </CardUI>
 
-              <CardUI className="p-4 backdrop-blur-sm bg-background/80">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium flex items-center gap-2">
-                      <Clock className="h-5 w-5" />
-                      История транзакций
-                    </h3>
-                  </div>
-
-                  {isLoadingTransactions ? (
-                    <div className="flex justify-center p-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  ) : transactions.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-4">
-                      У вас пока нет транзакций
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {transactions.map((transaction) => (
-                        <Dialog key={transaction.id}>
-                          <DialogTrigger asChild>
-                            <div className="p-3 rounded-lg bg-accent/50 hover:bg-accent cursor-pointer transition-colors">
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <p className="font-medium">{transaction.type === 'transfer' ? 'Перевод' : 'Комиссия'}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {new Date(transaction.createdAt).toLocaleString()}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className={`font-medium ${transaction.type === 'commission' ? 'text-destructive' : ''}`}>
-                                    {parseFloat(transaction.amount).toFixed(transaction.type === 'commission' ? 8 : 2)}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {transaction.fromCardNumber} → {transaction.toCardNumber}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Детали транзакции</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Тип</p>
-                                  <p className="font-medium">
-                                    {transaction.type === 'transfer' ? 'Перевод' : 'Комиссия'}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Статус</p>
-                                  <p className="font-medium">
-                                    {transaction.status === 'completed' ? 'Выполнено' : 'В обработке'}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Сумма</p>
-                                  <p className="font-medium">
-                                    {parseFloat(transaction.amount).toFixed(transaction.type === 'commission' ? 8 : 2)}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Конвертированная сумма</p>
-                                  <p className="font-medium">
-                                    {parseFloat(transaction.convertedAmount).toFixed(8)}
-                                  </p>
-                                </div>
-                                <div className="col-span-2">
-                                  <p className="text-sm text-muted-foreground">Описание</p>
-                                  <p className="font-medium">{transaction.description}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Отправитель</p>
-                                  <p className="font-medium">{transaction.fromCardNumber}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Получатель</p>
-                                  <p className="font-medium">
-                                    {transaction.wallet || transaction.toCardNumber}
-                                  </p>
-                                </div>
-                                <div className="col-span-2">
-                                  <p className="text-sm text-muted-foreground">Дата</p>
-                                  <p className="font-medium">
-                                    {new Date(transaction.createdAt).toLocaleString()}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardUI>
             </div>
           </div>
         ) : (
