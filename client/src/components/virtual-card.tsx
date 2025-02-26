@@ -1,24 +1,3 @@
-const calculateExchangeAmount = (amount: string, fromCurrency: string, toCurrency: string, rates: any) => {
-  const value = parseFloat(amount);
-  if (isNaN(value)) return '0.00';
-
-  // Basic conversion logic
-  if (toCurrency === 'btc') {
-    return (value / rates.btcToUsd).toFixed(8);
-  } else if (toCurrency === 'eth') {
-    return (value / rates.ethToUsd).toFixed(8);
-  } else if (toCurrency === 'usdt') {
-    return value.toFixed(2);
-  } else if (toCurrency === 'usd') {
-    return value.toFixed(2);
-  } else if (toCurrency === 'eur') {
-    return (value * 0.92).toFixed(2); // Approximate EUR/USD rate
-  } else if (toCurrency === 'uah') {
-    return (value * rates.usdToUah).toFixed(2);
-  }
-  return '0.00';
-};
-
 import { Card } from "@shared/schema";
 import {
   Card as UICard,
@@ -50,14 +29,23 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
+// Types and interfaces
 type RecipientType = 'usd_card' | 'crypto_wallet';
 
+interface ExchangeRate {
+  estimatedAmount: string;
+  rate: string;
+  transactionSpeedForecast: string;
+}
+
+// Constants
 const cardColors = {
   crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl",
   usd: "bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400",
   uah: "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400",
 } as const;
 
+// Utility functions
 function validateBtcAddress(address: string): boolean {
   const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
   const bech32Regex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
@@ -68,7 +56,6 @@ function validateEthAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/i.test(address);
 }
 
-// Add Ukrainian card validation
 function validateUkrainianCard(cardNumber: string): boolean {
   const cleanNumber = cardNumber.replace(/\s+/g, '');
   if (!/^\d{16}$/.test(cleanNumber)) {
@@ -87,12 +74,7 @@ function validateUkrainianCard(cardNumber: string): boolean {
   return ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
 }
 
-interface ExchangeRate {
-  estimatedAmount: string;
-  rate: string;
-  transactionSpeedForecast: string;
-}
-
+// Component
 export default function VirtualCard({ card }: { card: Card }) {
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -111,28 +93,10 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [rates, setRates] = useState<{ usdToUah: number; btcToUsd: number; ethToUsd: number } | null>(null);
   const [withdrawalMethod, setWithdrawalMethod] = useState<string | null>(null);
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
-  const [recipientAddress, setRecipientAddress] = useState('');
   const [exchangeRate, setExchangeRate] = useState<ExchangeRate | null>(null);
-  const [targetCard, setTargetCard] = useState<Card | null>(null);
-  const [isProcessingExchange, setIsProcessingExchange] = useState(false);
-  const [allCards, setAllCards] = useState<Card[]>([]);
   const [bankCardNumber, setBankCardNumber] = useState('');
   const [bankCardError, setBankCardError] = useState('');
   const [exchangeStatus, setExchangeStatus] = useState<string>('');
-
-
-  useEffect(() => {
-    const fetchCards = async () => {
-      try {
-        const response = await fetch('/api/cards');
-        const data = await response.json();
-        setAllCards(data);
-      } catch (error) {
-        console.error('Failed to fetch cards:', error);
-      }
-    };
-    fetchCards();
-  }, []);
 
   useEffect(() => {
     const fetchRates = async () => {
@@ -151,6 +115,96 @@ export default function VirtualCard({ card }: { card: Card }) {
     fetchRates();
   }, []);
 
+  useEffect(() => {
+    if (withdrawalAmount && withdrawalMethod && rates) {
+      const amount = parseFloat(withdrawalAmount);
+      if (isNaN(amount)) return;
+
+      let estimatedAmount = '0';
+      let rate = '0';
+
+      if (withdrawalMethod === 'btc') {
+        rate = (rates.btcToUsd * rates.usdToUah).toString();
+        estimatedAmount = (amount * parseFloat(rate)).toString();
+      } else if (withdrawalMethod === 'eth') {
+        rate = (rates.ethToUsd * rates.usdToUah).toString();
+        estimatedAmount = (amount * parseFloat(rate)).toString();
+      }
+
+      setExchangeRate({
+        estimatedAmount,
+        rate,
+        transactionSpeedForecast: "15-30 minutes"
+      });
+    }
+  }, [withdrawalAmount, withdrawalMethod, rates]);
+
+  useEffect(() => {
+    if (gyroscope && isMobile) {
+      const sensitivity = isIOS ? 0.5 : 0.7;
+      const targetX = -gyroscope.beta * sensitivity;
+      const targetY = gyroscope.gamma * sensitivity;
+
+      requestAnimationFrame(() => {
+        setRotation(prev => ({
+          x: prev.x + (targetX - prev.x) * (isIOS ? 0.05 : 0.1),
+          y: prev.y + (targetY - prev.y) * (isIOS ? 0.05 : 0.1)
+        }));
+      });
+    }
+  }, [gyroscope, isMobile, isIOS]);
+
+  const withdrawalMutation = useMutation({
+    mutationFn: async () => {
+      setIsProcessingExchange(true);
+      setBankCardError('');
+
+      if (!validateUkrainianCard(bankCardNumber)) {
+        throw new Error('Please enter a valid Ukrainian bank card number');
+      }
+
+      const response = await apiRequest("POST", "/api/exchange/create", {
+        fromCurrency: withdrawalMethod,
+        toCurrency: "uah",
+        fromAmount: withdrawalAmount,
+        address: bankCardNumber.replace(/\s+/g, ''),
+        bankDetails: {
+          cardNumber: bankCardNumber.replace(/\s+/g, ''),
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Exchange failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
+      setExchangeStatus('pending');
+      toast({
+        title: "Success",
+        description: "Exchange transaction created successfully. You will receive funds on your card soon.",
+      });
+      setWithdrawalMethod(null);
+      setWithdrawalAmount('');
+      setBankCardNumber('');
+      setExchangeRate(null);
+    },
+    onError: (error: Error) => {
+      setBankCardError(error.message);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    },
+    onSettled: () => {
+      setIsProcessingExchange(false);
+    }
+  });
+
   const transferMutation = useMutation({
     mutationFn: async () => {
       if (!transferAmount || isNaN(parseFloat(transferAmount)) || parseFloat(transferAmount) <= 0) {
@@ -161,21 +215,18 @@ export default function VirtualCard({ card }: { card: Card }) {
         throw new Error('Пожалуйста, введите номер карты/адрес получателя');
       }
 
-      // Проверяем баланс отправителя
+
       if (card.type === 'crypto') {
-        // Для крипто карты проверяем баланс в выбранной криптовалюте
         const cryptoBalance = selectedWallet === 'btc' ? parseFloat(card.btcBalance || '0') : parseFloat(card.ethBalance || '0');
         if (parseFloat(transferAmount) > cryptoBalance) {
           throw new Error(`Недостаточно ${selectedWallet.toUpperCase()}. Доступно: ${cryptoBalance.toFixed(8)} ${selectedWallet.toUpperCase()}`);
         }
       } else {
-        // Для фиатной карты проверяем баланс в USD/UAH
         if (parseFloat(transferAmount) > parseFloat(card.balance)) {
           throw new Error(`Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`);
         }
       }
 
-      // Валидация криптоадреса
       if (recipientType === 'crypto_wallet') {
         const address = recipientCardNumber.trim();
         if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
@@ -190,7 +241,6 @@ export default function VirtualCard({ card }: { card: Card }) {
         recipientAddress: recipientCardNumber.replace(/\s+/g, ''),
         amount: parseFloat(transferAmount),
         transferType: recipientType === 'crypto_wallet' ? 'crypto' : 'fiat',
-        // Для крипто карты всегда указываем её криптовалюту
         cryptoType: card.type === 'crypto' ? selectedWallet : (recipientType === 'crypto_wallet' ? selectedWallet : undefined)
       };
 
@@ -227,118 +277,18 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   });
 
-  const withdrawalMutation = useMutation({
-    mutationFn: async () => {
-      setIsProcessingExchange(true);
-      setBankCardError('');
-
-      // Validate Ukrainian bank card
-      if (!validateUkrainianCard(bankCardNumber)) {
-        throw new Error('Please enter a valid Ukrainian bank card number');
-      }
-
-      const response = await apiRequest("POST", "/api/exchange/create", {
-        fromCurrency: withdrawalMethod,
-        toCurrency: "uah", // Changed to UAH for Ukrainian cards
-        fromAmount: withdrawalAmount,
-        address: bankCardNumber.replace(/\s+/g, ''),
-        bankDetails: {
-          cardNumber: bankCardNumber.replace(/\s+/g, ''),
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Exchange failed');
-      }
-
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
-      setExchangeStatus('pending');
-      toast({
-        title: "Success",
-        description: "Exchange transaction created successfully. You will receive funds on your card soon.",
-      });
-      // Reset form
-      setWithdrawalMethod(null);
-      setWithdrawalAmount('');
-      setBankCardNumber('');
-      setExchangeRate(null);
-    },
-    onError: (error: Error) => {
-      setBankCardError(error.message);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    },
-    onSettled: () => {
-      setIsProcessingExchange(false);
-    }
-  });
-
-  const fetchExchangeRate = async (fromCurrency: string, amount: string) => {
-    try {
-      const response = await fetch(
-        `/api/exchange/rate?fromCurrency=${fromCurrency}&toCurrency=uah&amount=${amount}`
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch exchange rate');
-      }
-
-      const rate = await response.json();
-      setExchangeRate(rate);
-    } catch (error) {
-      console.error('Exchange rate error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to get exchange rate",
-        variant: "destructive"
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (withdrawalAmount && withdrawalMethod && rates) {
-      const amount = parseFloat(withdrawalAmount);
-      if (isNaN(amount)) return;
-
-      let estimatedAmount = '0';
-      let rate = '0';
-
-      if (withdrawalMethod === 'btc') {
-        rate = (rates.btcToUsd * rates.usdToUah).toString();
-        estimatedAmount = (amount * parseFloat(rate)).toString();
-      } else if (withdrawalMethod === 'eth') {
-        rate = (rates.ethToUsd * rates.usdToUah).toString();
-        estimatedAmount = (amount * parseFloat(rate)).toString();
-      }
-
-      setExchangeRate({
-        estimatedAmount,
-        rate,
-        transactionSpeedForecast: "15-30 minutes"
-      });
-    }
-  }, [withdrawalAmount, withdrawalMethod, rates]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsTransferring(true);
     transferMutation.mutate();
   };
 
-  // Function for converting and displaying the amount
   const getConvertedAmount = () => {
     if (!rates || !transferAmount) return null;
     const amount = parseFloat(transferAmount);
     if (isNaN(amount)) return null;
 
-    if (card.type === 'crypto') { //Always show conversion for crypto to fiat
+    if (card.type === 'crypto') { 
       const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
       return `≈ ${(amount * rate).toFixed(2)} USD`;
     }
@@ -364,20 +314,25 @@ export default function VirtualCard({ card }: { card: Card }) {
     setIsHovered(false);
   };
 
-  useEffect(() => {
-    if (gyroscope && isMobile) {
-      const sensitivity = isIOS ? 0.5 : 0.7;
-      const targetX = -gyroscope.beta * sensitivity;
-      const targetY = gyroscope.gamma * sensitivity;
+  const calculateExchangeAmount = (amount: string, fromCurrency: string, toCurrency: string, rates: any) => {
+    const value = parseFloat(amount);
+    if (isNaN(value)) return '0.00';
 
-      requestAnimationFrame(() => {
-        setRotation(prev => ({
-          x: prev.x + (targetX - prev.x) * (isIOS ? 0.05 : 0.1),
-          y: prev.y + (targetY - prev.y) * (isIOS ? 0.05 : 0.1)
-        }));
-      });
+    if (toCurrency === 'btc') {
+      return (value / rates.btcToUsd).toFixed(8);
+    } else if (toCurrency === 'eth') {
+      return (value / rates.ethToUsd).toFixed(8);
+    } else if (toCurrency === 'usdt') {
+      return value.toFixed(2);
+    } else if (toCurrency === 'usd') {
+      return value.toFixed(2);
+    } else if (toCurrency === 'eur') {
+      return (value * 0.92).toFixed(2); 
+    } else if (toCurrency === 'uah') {
+      return (value * rates.usdToUah).toFixed(2);
     }
-  }, [gyroscope, isMobile, isIOS]);
+    return '0.00';
+  };
 
   const calculateExchangeAmountUpdated = () => {
     if (!rates || !withdrawalAmount || !withdrawalMethod) return 0;
@@ -413,21 +368,9 @@ export default function VirtualCard({ card }: { card: Card }) {
           `
         }}
       >
-        {card.type === 'crypto' && (
-          <>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-            <div
-              className="absolute inset-0 opacity-30 pointer-events-none"
-              style={{
-                background: 'radial-gradient(circle at 0% 0%, rgba(255,255,255,0.3) 0%, transparent 50%)'
-              }}
-            />
-          </>
-        )}
-
-        <div className={`relative z-10 flex flex-col justify-between h-full`}>
+        <div className="relative z-10 flex flex-col justify-between h-full">
           <div className="space-y-1 sm:space-y-2">
-            <div className="text-[10px] sm:text-xs opacity-80">OOO BNAL BANK</div>
+            <div className="text-[10px] sm:text-xs opacity-80">BNAL BANK</div>
             <div className="text-sm sm:text-2xl font-bold tracking-wider">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
@@ -467,177 +410,33 @@ export default function VirtualCard({ card }: { card: Card }) {
             </div>
 
             <div className="flex space-x-1">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
-                    <ArrowUpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                    <span className="hidden sm:inline">Deposit</span>
-                    <span className="sm:hidden">Dep</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Deposit Funds</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    {card.type === 'crypto' ? (
-                      <>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-2">BTC Address</p>
-                          <p className="font-mono text-sm break-all">{card.btcAddress}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-2">ETH Address</p>
-                          <p className="font-mono text-sm break-all">{card.ethAddress}</p>
-                        </div>
-                      </>
-                    ) : (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Card Number</p>
-                        <p className="font-mono">{card.number}</p>
-                      </div>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
+                <ArrowUpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span className="hidden sm:inline">Deposit</span>
+                <span className="sm:hidden">Dep</span>
+              </Button>
 
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
+              <Button 
+                size="sm" 
+                variant="ghost"
+                className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7"
+                onClick={() => withdrawalMutation.mutate()}
+                disabled={!withdrawalAmount || !bankCardNumber || !withdrawalMethod}
+              >
+                {withdrawalMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 animate-spin" />
+                    <span className="hidden sm:inline">Processing...</span>
+                    <span className="sm:hidden">...</span>
+                  </>
+                ) : (
+                  <>
                     <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     <span className="hidden sm:inline">Withdraw</span>
                     <span className="sm:hidden">With</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Exchange & Withdraw</DialogTitle>
-                    <DialogDescription>
-                      Convert your crypto to fiat and withdraw to your card
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form className="space-y-4" onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!withdrawalMethod || !withdrawalAmount || !bankCardNumber) {
-                      toast({
-                        title: "Error",
-                        description: "Please fill in all fields",
-                        variant: "destructive"
-                      });
-                      return;
-                    }
-                    withdrawalMutation.mutate();
-                  }}>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Select source cryptocurrency</label>
-                      <Select
-                        value={withdrawalMethod || ""}
-                        onValueChange={setWithdrawalMethod}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select cryptocurrency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Available Cryptocurrencies</SelectLabel>
-                            {parseFloat(card.btcBalance) > 0 && (
-                              <SelectItem value="btc">
-                                Bitcoin (BTC) - Balance: {card.btcBalance}
-                              </SelectItem>
-                            )}
-                            {parseFloat(card.ethBalance) > 0 && (
-                              <SelectItem value="eth">
-                                Ethereum (ETH) - Balance: {card.ethBalance}
-                              </SelectItem>
-                            )}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Amount to exchange</label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          placeholder="0.00000000"
-                          className="pr-16"
-                          value={withdrawalAmount}
-                          onChange={(e) => {
-                            setWithdrawalAmount(e.target.value);
-                            setExchangeRate(null);
-                          }}
-                          step="0.00000001"
-                        />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                          {withdrawalMethod?.toUpperCase()}
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Available: {withdrawalMethod === 'btc' ? card.btcBalance : card.ethBalance} {withdrawalMethod?.toUpperCase()}
-                      </p>
-                    </div>
-
-                    {exchangeRate && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Exchange Rate Information</label>
-                        <div className="p-3 rounded-lg bg-muted">
-                          <p className="text-lg font-semibold">
-                            ≈ ${parseFloat(exchangeRate.estimatedAmount).toFixed(2)} UAH
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Rate: 1 {withdrawalMethod?.toUpperCase()} = {parseFloat(exchangeRate.rate).toFixed(2)} UAH
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Estimated processing time: {exchangeRate.transactionSpeedForecast}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Enter Ukrainian Bank Card Number</label>
-                      <Input
-                        type="text"
-                        placeholder="0000 0000 0000 0000"
-                        value={bankCardNumber}
-                        maxLength={19}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, '');
-                          const parts = value.match(/.{1,4}/g) || [];
-                          setBankCardNumber(parts.join(' '));
-                          setBankCardError('');
-                        }}
-                      />
-                      {bankCardError && (
-                        <p className="text-sm text-red-500">{bankCardError}</p>
-                      )}
-                      <p className="text-sm text-muted-foreground">
-                        Enter your Ukrainian bank card number where you want to receive the funds
-                      </p>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={isProcessingExchange || !exchangeRate}
-                    >
-                      {isProcessingExchange ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing Exchange...
-                        </>
-                      ) : (
-                        "Continue with Exchange"
-                      )}
-                    </Button>
-
-                    <p className="text-center text-sm text-muted-foreground">
-                      Support available 24/7 at @KA7777AA
-                    </p>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                  </>
+                )}
+              </Button>
 
               <Dialog>
                 <DialogTrigger asChild>
@@ -789,8 +588,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                         </>
                       ) : (
                         "Перевести"
-                      )}
-                    </Button>
+                      )}                    </Button>
                   </form>
                 </DialogContent>
               </Dialog>
@@ -801,5 +599,3 @@ export default function VirtualCard({ card }: { card: Card }) {
     </div>
   );
 }
-
-export default VirtualCard;
