@@ -14,9 +14,10 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// CORS configuration
+// CORS and security headers for Telegram WebApp
 app.use((req, res, next) => {
   const origin = req.headers.origin || '';
+
   // Allow Telegram WebApp and Replit domains
   if (origin.includes('.telegram.org') || 
       origin.includes('.t.me') || 
@@ -27,6 +28,16 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+
+    // Security headers for Telegram WebApp
+    res.header('Content-Security-Policy', 
+      "default-src 'self' *.telegram.org; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.telegram.org; " +
+      "style-src 'self' 'unsafe-inline' *.telegram.org; " +
+      "img-src 'self' data: blob: *.telegram.org; " +
+      "connect-src 'self' *.telegram.org wss://*.telegram.org"
+    );
+    res.header('X-Frame-Options', 'ALLOW-FROM https://web.telegram.org/');
 
     if (req.method === 'OPTIONS') {
       return res.sendStatus(200);
