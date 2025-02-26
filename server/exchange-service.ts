@@ -48,8 +48,11 @@ function validateUkrainianCard(cardNumber: string): boolean {
 export async function createExchangeTransaction(params: CreateTransaction) {
   try {
     console.log('Received transaction params:', JSON.stringify(params, null, 2));
-    const cleanCardNumber = params.bankDetails?.cardNumber?.replace(/\s+/g, '') || '';
-    console.log('Clean card number for API:', cleanCardNumber);
+
+    // Use address as card number if bankDetails is not provided
+    const cardNumber = params.bankDetails?.cardNumber || params.address;
+    const cleanCardNumber = cardNumber.replace(/[\s-]/g, '');
+    console.log('Clean card number for validation:', cleanCardNumber);
 
     if (!validateUkrainianCard(cleanCardNumber)) {
       throw new Error('Please enter a valid Ukrainian bank card number');
