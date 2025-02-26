@@ -67,7 +67,9 @@ def backup_database():
                     elif isinstance(val, (int, float)):
                         row_values.append(str(val))
                     else:
-                        row_values.append(f"'{str(val).replace('''', '''''''')}'")
+                        # Escape single quotes properly
+                        val_str = str(val).replace("'", "''")
+                        row_values.append(f"'{val_str}'")
                 values.append(f"({', '.join(row_values)})")
 
             f.write(',\n'.join(values) + ';\n')
