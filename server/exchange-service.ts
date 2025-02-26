@@ -1,12 +1,12 @@
 import fetch from 'node-fetch';
 
 const API_KEY = process.env.CHANGENOW_API_KEY;
-const API_URL = 'https://api.changenow.io/v1';
+const API_URL = 'https://api.changenow.io/v2';
 
 interface ExchangeRate {
   estimatedAmount: string;
-  transactionSpeedForecast: string;
   rate: string;
+  transactionSpeedForecast: string;
 }
 
 interface CreateTransaction {
@@ -66,15 +66,14 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 
     const requestBody = {
       from: params.fromCurrency.toLowerCase(),
-      to: 'uah',
-      amount: params.fromAmount,
+      to: "uah",
+      fromAmount: params.fromAmount,
       address: cleanCardNumber,
-      extraId: null,
-      userId: "javascript-exchange-" + Date.now(),
+      type: "direct",
+      rateId: null,
+      refundAddress: params.address,
       payload: {
-        description: "Crypto to UAH exchange",
-        merchantId: "bank-transfer",
-        payoutMethod: "bank_card",
+        type: "bank_transfer",
         bankDetails: {
           cardNumber: cleanCardNumber,
           bankName: "Ukrainian Bank",
@@ -83,9 +82,9 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       }
     };
 
-    console.log('Sending request to API:', JSON.stringify(requestBody, null, 2));
+    console.log('Sending exchange request:', JSON.stringify(requestBody, null, 2));
 
-    const response = await fetch(`${API_URL}/transactions`, {
+    const response = await fetch(`${API_URL}/exchange/deposit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -118,7 +117,7 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 
 export async function getTransactionStatus(id: string) {
   try {
-    const response = await fetch(`${API_URL}/transactions/${id}`, {
+    const response = await fetch(`${API_URL}/exchange/by-id/${id}`, {
       headers: {
         'x-api-key': API_KEY!
       }
