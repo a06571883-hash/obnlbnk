@@ -156,29 +156,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Получение транзакций пользователя
-  app.get("/api/transactions", ensureAuthenticated, async (req, res) => {
-    try {
-      const userCards = await storage.getCardsByUserId(req.user.id);
-      const allTransactions = [];
-
-      for (const card of userCards) {
-        const cardTransactions = await storage.getTransactionsByCardId(card.id);
-        allTransactions.push(...cardTransactions);
-      }
-
-      // Sort by date descending
-      allTransactions.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-
-      res.json(allTransactions);
-    } catch (error) {
-      console.error("Transactions fetch error:", error);
-      res.status(500).json({ message: "Ошибка при получении транзакций" });
-    }
-  });
-
   // Create exchange transaction endpoint
   app.post("/api/exchange/create", ensureAuthenticated, async (req, res) => {
     try {

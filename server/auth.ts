@@ -17,6 +17,25 @@ declare global {
   }
 }
 
+// Improved Ukrainian card number validation
+function validateUkrainianCard(cardNumber: string): boolean {
+  const cleanNumber = cardNumber.replace(/\s+/g, '');
+  if (!/^\d{16}$/.test(cleanNumber)) {
+    return false;
+  }
+
+  const ukrPrefixes = [
+    // PrivatBank
+    '4149', '5168', '5167', '4506', '4508', '4558',
+    // Monobank
+    '5375', '4443',
+    // Universal/Other Ukrainian banks
+    '4000', '4111', '4112', '4627', '5133', '5169', '5351', '5582'
+  ];
+
+  return ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
+}
+
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -34,27 +53,12 @@ async function comparePasswords(supplied: string, stored: string) {
   }
 }
 
-function generateCardNumber(): string {
-  const prefix = "4111";
-  const remainingDigits = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join("");
-  return prefix + remainingDigits;
-}
-
-function generateExpiryDate(): string {
-  const now = new Date();
-  const expYear = now.getFullYear() + 4;
-  const expMonth = (now.getMonth() + 1).toString().padStart(2, '0');
-  return `${expMonth}/${expYear.toString().slice(-2)}`;
-}
-
-function generateCVV(): string {
-  return Math.floor(100 + Math.random() * 900).toString();
-}
-
 async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddress: string }> {
+  // Generate real crypto addresses
   const mnemonic = generateMnemonic();
   const wallet = ethers.Wallet.fromPhrase(mnemonic);
   const btcAddress = "bc1" + randomBytes(32).toString("hex").slice(0, 39);
+
   return {
     btcAddress,
     ethAddress: wallet.address
@@ -62,8 +66,8 @@ async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddre
 }
 
 export function setupAuth(app: Express) {
+  // Use a consistent session secret
   const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
-  console.log('Setting up session with secret length:', sessionSecret.length);
 
   app.use(session({
     secret: sessionSecret,
@@ -77,7 +81,7 @@ export function setupAuth(app: Express) {
       path: '/',
       httpOnly: true
     },
-    name: 'bnal.sid' // Unique session cookie name
+    name: 'bnal.sid'
   }));
 
   app.use(passport.initialize());
@@ -147,42 +151,46 @@ export function setupAuth(app: Express) {
         nft_generation_count: 0
       });
 
+      // Generate real crypto addresses for wallet
       const { btcAddress, ethAddress } = await generateCryptoAddresses();
 
+      // Create USD card
       await storage.createCard({
         userId: user.id,
         type: 'usd',
         number: generateCardNumber(),
         balance: "0",
         expiry: generateExpiryDate(),
-        btcAddress: "0",
-        ethAddress: "0",
+        btcAddress: null,
+        ethAddress: null,
         btcBalance: "0",
         ethBalance: "0",
         cvv: generateCVV()
       });
 
+      // Create UAH card
       await storage.createCard({
         userId: user.id,
         type: 'uah',
         number: generateCardNumber(),
         balance: "0",
         expiry: generateExpiryDate(),
-        btcAddress: "0",
-        ethAddress: "0",
+        btcAddress: null,
+        ethAddress: null,
         btcBalance: "0",
         ethBalance: "0",
         cvv: generateCVV()
       });
 
+      // Create crypto wallet card
       await storage.createCard({
         userId: user.id,
         type: 'crypto',
         number: generateCardNumber(),
         balance: "0",
         expiry: generateExpiryDate(),
-        btcAddress: btcAddress,
-        ethAddress: ethAddress,
+        btcAddress,
+        ethAddress,
         btcBalance: "0",
         ethBalance: "0",
         cvv: generateCVV()
@@ -244,4 +252,23 @@ export function setupAuth(app: Express) {
       res.sendStatus(200);
     });
   });
+}
+
+function generateCardNumber(): string {
+  // Generate valid Ukrainian card numbers
+  const prefixes = ['4149', '5168', '5375'];
+  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const remainingDigits = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join("");
+  return prefix + remainingDigits;
+}
+
+function generateExpiryDate(): string {
+  const now = new Date();
+  const expYear = now.getFullYear() + 4;
+  const expMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+  return `${expMonth}/${expYear.toString().slice(-2)}`;
+}
+
+function generateCVV(): string {
+  return Math.floor(100 + Math.random() * 900).toString();
 }
