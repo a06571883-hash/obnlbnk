@@ -1,12 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  ArrowUpRight,
-  ArrowDownLeft,
-  RefreshCw,
-  Bitcoin,
-  DollarSign,
+import { 
+  ArrowUpRight, 
+  Bitcoin, 
+  DollarSign, 
   Coins,
+  RefreshCw,
   Banknote
 } from "lucide-react";
 import { useState } from "react";
