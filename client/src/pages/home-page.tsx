@@ -169,6 +169,13 @@ export default function HomePage() {
         throw new Error('Криптовалютный кошелек не найден');
       }
 
+      console.log('Found crypto card:', cryptoCard); // Added logging
+
+      // Verify card has proper crypto balances
+      if (!cryptoCard.btcBalance || !cryptoCard.ethBalance || !cryptoCard.btcAddress) {
+        throw new Error('Криптовалютный кошелек настроен неправильно');
+      }
+
       const response = await apiRequest("POST", "/api/exchange/create", {
         fromCurrency: fromCurrency.toString(),
         toCurrency: "uah",
