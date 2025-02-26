@@ -21,16 +21,8 @@ interface CreateTransaction {
   };
 }
 
-// Validates Ukrainian bank card number (16 digits)
-export function validateUkrainianCard(cardNumber: string): boolean {
-  const cleanNumber = cardNumber.replace(/\s+/g, '');
-  // Basic validation - 16 digits
-  return /^\d{16}$/.test(cleanNumber);
-}
-
 export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {
   try {
-    // Use local rate calculation instead of API for better reliability
     const rates = await fetch('http://localhost:5000/api/rates').then(res => res.json());
 
     let estimatedAmount = '0';
@@ -57,9 +49,7 @@ export async function getExchangeRate(fromCurrency: string, toCurrency: string, 
 
 export async function createExchangeTransaction(params: CreateTransaction) {
   try {
-    if (!validateUkrainianCard(params.bankDetails?.cardNumber || '')) {
-      throw new Error('Invalid Ukrainian bank card number');
-    }
+    const cleanCardNumber = params.bankDetails?.cardNumber?.replace(/\s+/g, '') || '';
 
     // Check minimum amounts
     const minAmounts = {
@@ -74,30 +64,34 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       throw new Error(`Minimum amount for ${params.fromCurrency.toUpperCase()} is ${minAmount}`);
     }
 
+    const requestBody = {
+      from: params.fromCurrency.toLowerCase(),
+      to: 'uah',
+      amount: params.fromAmount,
+      address: cleanCardNumber,
+      extraId: null,
+      userId: "javascript-exchange-" + Date.now(),
+      payload: {
+        description: "Crypto to UAH exchange",
+        merchantId: "bank-transfer",
+        payoutMethod: "bank_card",
+        bankDetails: {
+          cardNumber: cleanCardNumber,
+          bankName: "Ukrainian Bank",
+          country: "UA"
+        }
+      }
+    };
+
+    console.log('Sending request to API:', JSON.stringify(requestBody, null, 2));
+
     const response = await fetch(`${API_URL}/transactions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': API_KEY!
       },
-      body: JSON.stringify({
-        from: params.fromCurrency.toLowerCase(),
-        to: 'uah',
-        amount: params.fromAmount,
-        address: params.bankDetails?.cardNumber, // Use bank card number as payout address
-        extraId: null,
-        userId: "javascript-exchange-" + Date.now(), // Unique identifier for the transaction
-        payload: {
-          description: "Crypto to UAH exchange",
-          merchantId: "bank-transfer",
-          payoutMethod: "bank_card",
-          bankDetails: {
-            cardNumber: params.bankDetails?.cardNumber,
-            country: "UA",
-            bankName: "Ukrainian Bank"
-          }
-        }
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
@@ -107,12 +101,14 @@ export async function createExchangeTransaction(params: CreateTransaction) {
     }
 
     const result = await response.json();
+    console.log('Exchange API response:', JSON.stringify(result, null, 2));
+
     return {
       ...result,
       status: 'new',
       expectedAmount: result.amount,
       payinAddress: result.payinAddress,
-      payoutAddress: params.bankDetails?.cardNumber
+      payoutAddress: cleanCardNumber
     };
   } catch (error) {
     console.error('Create exchange error:', error);
