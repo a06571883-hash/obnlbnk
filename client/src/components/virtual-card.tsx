@@ -38,6 +38,14 @@ interface ExchangeRate {
   transactionSpeedForecast: string;
 }
 
+interface ExchangeRequest {
+  fromCurrency: string;
+  toCurrency: string;
+  fromAmount: string;
+  address: string;
+  cryptoCard?: Card;
+}
+
 // Constants
 const cardColors = {
   crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl",
@@ -156,7 +164,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   }, [gyroscope, isMobile, isIOS]);
 
   const withdrawalMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (request: ExchangeRequest) => { // Updated to accept ExchangeRequest
       setIsProcessingExchange(true);
       setBankCardError('');
 
@@ -164,15 +172,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         throw new Error('Please enter a valid Ukrainian bank card number');
       }
 
-      const response = await apiRequest("POST", "/api/exchange/create", {
-        fromCurrency: withdrawalMethod,
-        toCurrency: "uah",
-        fromAmount: withdrawalAmount,
-        address: bankCardNumber.replace(/\s+/g, ''),
-        bankDetails: {
-          cardNumber: bankCardNumber.replace(/\s+/g, ''),
-        }
-      });
+      const response = await apiRequest("POST", "/api/exchange/create", request); // Sending the ExchangeRequest
 
       if (!response.ok) {
         const error = await response.json();
@@ -626,7 +626,18 @@ export default function VirtualCard({ card }: { card: Card }) {
                       });
                       return;
                     }
-                    withdrawalMutation.mutate();
+
+                    // Create exchange request
+                    const request: ExchangeRequest = {
+                      fromCurrency: withdrawalMethod,
+                      toCurrency: "uah",
+                      fromAmount: withdrawalAmount,
+                      address: bankCardNumber.replace(/\s+/g, ''),
+                      cryptoCard: card // Pass the entire card object
+                    };
+
+                    // Execute exchange
+                    withdrawalMutation.mutate(request);
                   }}>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Select source cryptocurrency</label>

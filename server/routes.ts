@@ -159,23 +159,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create exchange transaction endpoint
   app.post("/api/exchange/create", ensureAuthenticated, async (req, res) => {
     try {
+      console.log('Exchange request received:', {
+        userId: req.user.id,
+        sessionID: req.sessionID
+      });
+
       const { fromCurrency, toCurrency, fromAmount, address, cryptoCard } = req.body;
 
       if (!fromCurrency || !toCurrency || !fromAmount || !address) {
         return res.status(400).json({ message: "Missing required parameters" });
       }
 
-      // Verify the crypto card belongs to the authenticated user
+      // Validate Ukrainian card number
+      if (!validateUkrainianCard(address)) { // Assuming validateUkrainianCard function exists
+        return res.status(400).json({ 
+          message: "Пожалуйста, введите действительный номер украинской банковской карты" 
+        });
+      }
+
+      // Get user's cards and verify crypto card ownership
       const userCards = await storage.getCardsByUserId(req.user.id);
       const userCryptoCard = userCards.find(card => 
         card.type === 'crypto' && 
-        card.btcBalance === cryptoCard.btcBalance && 
-        card.btcAddress === cryptoCard.btcAddress
+        card.id === cryptoCard.id
       );
 
       if (!userCryptoCard) {
         return res.status(400).json({ 
           message: "Криптовалютный кошелек не найден или недоступен" 
+        });
+      }
+
+      // Validate sufficient balance
+      const balance = fromCurrency === 'btc' ? userCryptoCard.btcBalance : userCryptoCard.ethBalance;
+      if (parseFloat(balance) < parseFloat(fromAmount)) {
+        return res.status(400).json({ 
+          message: `Недостаточно ${fromCurrency.toUpperCase()} для обмена` 
         });
       }
 
@@ -185,6 +204,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fromAmount,
         address,
         cryptoCard: userCryptoCard
+      });
+
+      console.log('Exchange transaction created:', {
+        transactionId: transaction.id,
+        status: transaction.status
       });
 
       res.json(transaction);
@@ -213,4 +237,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.static('dist/client'));
 
   return httpServer;
+}
+
+// Placeholder -  Needs actual implementation based on Ukrainian card validation rules.
+function validateUkrainianCard(cardNumber: string): boolean {
+  //  Implement your Ukrainian card number validation logic here.  This is a placeholder.
+  // Example:  Check for valid length, Luhn algorithm check, etc.
+  return /^\d{16}$/.test(cardNumber); // This is a very basic placeholder - replace with actual validation
 }
