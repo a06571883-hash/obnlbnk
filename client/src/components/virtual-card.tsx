@@ -13,6 +13,8 @@ const calculateExchangeAmount = (amount: string, fromCurrency: string, toCurrenc
     return value.toFixed(2);
   } else if (toCurrency === 'eur') {
     return (value * 0.92).toFixed(2); // Approximate EUR/USD rate
+  } else if (toCurrency === 'uah') {
+    return (value * rates.usdToUah).toFixed(2);
   }
   return '0.00';
 };
@@ -66,6 +68,13 @@ function validateEthAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/i.test(address);
 }
 
+// Add Ukrainian card validation
+function validateUkrainianCard(cardNumber: string): boolean {
+  const cleanNumber = cardNumber.replace(/\s+/g, '');
+  const ukrPrefixes = ['4149', '5168', '5167', '4506', '4508', '4558'];
+  return cleanNumber.length === 16 && ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
+}
+
 interface ExchangeRate {
   estimatedAmount: string;
   rate: string;
@@ -95,6 +104,9 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [targetCard, setTargetCard] = useState<Card | null>(null);
   const [isProcessingExchange, setIsProcessingExchange] = useState(false);
   const [allCards, setAllCards] = useState<Card[]>([]);
+  const [bankCardNumber, setBankCardNumber] = useState('');
+  const [bankCardError, setBankCardError] = useState('');
+  const [exchangeStatus, setExchangeStatus] = useState<string>('');
 
 
   useEffect(() => {
@@ -109,7 +121,6 @@ export default function VirtualCard({ card }: { card: Card }) {
     };
     fetchCards();
   }, []);
-
 
   useEffect(() => {
     const fetchRates = async () => {
@@ -207,12 +218,21 @@ export default function VirtualCard({ card }: { card: Card }) {
   const withdrawalMutation = useMutation({
     mutationFn: async () => {
       setIsProcessingExchange(true);
+      setBankCardError('');
+
+      // Validate Ukrainian bank card
+      if (!validateUkrainianCard(bankCardNumber)) {
+        throw new Error('Please enter a valid Ukrainian bank card number');
+      }
 
       const response = await apiRequest("POST", "/api/exchange/create", {
         fromCurrency: withdrawalMethod,
-        toCurrency: "usd",
+        toCurrency: "uah", // Changed to UAH for Ukrainian cards
         fromAmount: withdrawalAmount,
-        address: targetCard?.number // Using card number as the receiving address
+        address: bankCardNumber.replace(/\s+/g, ''),
+        bankDetails: {
+          cardNumber: bankCardNumber.replace(/\s+/g, ''),
+        }
       });
 
       if (!response.ok) {
@@ -222,19 +242,21 @@ export default function VirtualCard({ card }: { card: Card }) {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
+      setExchangeStatus('pending');
       toast({
         title: "Success",
-        description: "Exchange transaction created successfully",
+        description: "Exchange transaction created successfully. You will receive funds on your card soon.",
       });
       // Reset form
       setWithdrawalMethod(null);
       setWithdrawalAmount('');
-      setTargetCard(null);
+      setBankCardNumber('');
       setExchangeRate(null);
     },
     onError: (error: Error) => {
+      setBankCardError(error.message);
       toast({
         title: "Error",
         description: error.message,
@@ -466,7 +488,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                   </DialogHeader>
                   <form className="space-y-4" onSubmit={(e) => {
                     e.preventDefault();
-                    if (!withdrawalMethod || !withdrawalAmount || !targetCard) {
+                    if (!withdrawalMethod || !withdrawalAmount || !bankCardNumber) {
                       toast({
                         title: "Error",
                         description: "Please fill in all fields",
@@ -544,28 +566,25 @@ export default function VirtualCard({ card }: { card: Card }) {
                     )}
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Select target card for withdrawal</label>
-                      <Select
-                        value={targetCard?.id.toString() || ""}
-                        onValueChange={(value) => {
-                          const selected = allCards?.find(c => c.id.toString() === value);
-                          setTargetCard(selected || null);
+                      <label className="text-sm font-medium">Enter Ukrainian Bank Card Number</label>
+                      <Input
+                        type="text"
+                        placeholder="0000 0000 0000 0000"
+                        value={bankCardNumber}
+                        maxLength={19}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '');
+                          const parts = value.match(/.{1,4}/g) || [];
+                          setBankCardNumber(parts.join(' '));
+                          setBankCardError('');
                         }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select card" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Your Cards</SelectLabel>
-                            {allCards?.filter(c => c.type === 'usd' || c.type === 'uah').map(card => (
-                              <SelectItem key={card.id} value={card.id.toString()}>
-                                {card.type.toUpperCase()} Card ending in {card.number.slice(-4)}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
+                      />
+                      {bankCardError && (
+                        <p className="text-sm text-red-500">{bankCardError}</p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        Enter your Ukrainian bank card number where you want to receive the funds
+                      </p>
                     </div>
 
                     <Button

@@ -15,6 +15,18 @@ interface CreateTransaction {
   fromAmount: string;
   address: string;
   extraId?: string;
+  bankDetails?: {
+    cardNumber: string;
+    bankName?: string;
+  };
+}
+
+// Validates Ukrainian bank card number (16 digits, starts with specific prefixes)
+export function validateUkrainianCard(cardNumber: string): boolean {
+  const cleanNumber = cardNumber.replace(/\s+/g, '');
+  // Ukrainian bank card prefixes
+  const ukrPrefixes = ['4149', '5168', '5167', '4506', '4508', '4558'];
+  return cleanNumber.length === 16 && ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
 }
 
 export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {
@@ -47,6 +59,7 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       amount: params.fromAmount,
       address: params.address,
       extraId: params.extraId,
+      bankDetails: params.bankDetails,
       refundAddress: params.address
     })
   });
