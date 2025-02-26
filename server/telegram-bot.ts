@@ -1,7 +1,4 @@
-import { Telegraf, Markup } from 'telegraf';
-import { storage } from './storage';
-import { Message } from 'telegraf/types';
-import { createExchangeTransaction, getExchangeRate } from './exchange-service';
+import { Telegraf } from 'telegraf';
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4');
 
