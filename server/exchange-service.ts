@@ -24,61 +24,89 @@ interface CreateTransaction {
 // Validates Ukrainian bank card number (16 digits, starts with specific prefixes)
 export function validateUkrainianCard(cardNumber: string): boolean {
   const cleanNumber = cardNumber.replace(/\s+/g, '');
-  // Ukrainian bank card prefixes
   const ukrPrefixes = ['4149', '5168', '5167', '4506', '4508', '4558'];
   return cleanNumber.length === 16 && ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
 }
 
 export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {
-  const response = await fetch(
-    `${API_URL}/exchange/estimated-amount?` + 
-    `fromCurrency=${fromCurrency}&` +
-    `toCurrency=${toCurrency}&` +
-    `fromAmount=${amount}&` +
-    `api_key=${API_KEY}`
-  );
+  try {
+    const response = await fetch(`${API_URL}/exchange/estimated-amount`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY!
+      },
+      body: JSON.stringify({
+        fromCurrency: fromCurrency.toLowerCase(),
+        toCurrency: toCurrency.toLowerCase(),
+        fromAmount: amount
+      })
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to get exchange rate');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to get exchange rate');
+    }
+
+    const data = await response.json();
+    return {
+      estimatedAmount: data.estimatedAmount.toString(),
+      rate: data.rate.toString(),
+      transactionSpeedForecast: data.transactionSpeedForecast || 'within 30 minutes'
+    };
+  } catch (error) {
+    console.error('Exchange rate error:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function createExchangeTransaction(params: CreateTransaction) {
-  const response = await fetch(`${API_URL}/exchange/fix-rate/transaction`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY!
-    },
-    body: JSON.stringify({
-      from: params.fromCurrency,
-      to: params.toCurrency,
-      amount: params.fromAmount,
-      address: params.address,
-      extraId: params.extraId,
-      bankDetails: params.bankDetails,
-      refundAddress: params.address
-    })
-  });
+  try {
+    const response = await fetch(`${API_URL}/exchange/transaction`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY!
+      },
+      body: JSON.stringify({
+        fromCurrency: params.fromCurrency.toLowerCase(),
+        toCurrency: params.toCurrency.toLowerCase(),
+        fromAmount: params.fromAmount,
+        address: params.address,
+        extraId: params.extraId,
+        bankDetails: params.bankDetails,
+        refundAddress: params.address // Using the same address for refund
+      })
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to create exchange transaction');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create exchange transaction');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Create exchange error:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function getTransactionStatus(id: string) {
-  const response = await fetch(`${API_URL}/exchange/by-id?id=${id}&api_key=${API_KEY}`);
+  try {
+    const response = await fetch(`${API_URL}/exchange/by-id/${id}`, {
+      headers: {
+        'x-api-key': API_KEY!
+      }
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to get transaction status');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to get transaction status');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Transaction status error:', error);
+    throw error;
   }
-
-  return response.json();
 }
