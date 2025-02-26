@@ -1,3 +1,22 @@
+const calculateExchangeAmount = (amount: string, fromCurrency: string, toCurrency: string, rates: any) => {
+  const value = parseFloat(amount);
+  if (isNaN(value)) return '0.00';
+
+  // Basic conversion logic
+  if (toCurrency === 'btc') {
+    return (value / rates.btcToUsd).toFixed(8);
+  } else if (toCurrency === 'eth') {
+    return (value / rates.ethToUsd).toFixed(8);
+  } else if (toCurrency === 'usdt') {
+    return value.toFixed(2);
+  } else if (toCurrency === 'usd') {
+    return value.toFixed(2);
+  } else if (toCurrency === 'eur') {
+    return (value * 0.92).toFixed(2); // Approximate EUR/USD rate
+  }
+  return '0.00';
+};
+
 import { Card } from "@shared/schema";
 import {
   Card as UICard,
@@ -18,6 +37,16 @@ import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 type RecipientType = 'usd_card' | 'crypto_wallet';
 
@@ -53,6 +82,10 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [selectedWallet, setSelectedWallet] = useState<'btc' | 'eth'>('btc');
   const [recipientType, setRecipientType] = useState<RecipientType>('usd_card');
   const [rates, setRates] = useState<{ usdToUah: number; btcToUsd: number; ethToUsd: number } | null>(null);
+  const [withdrawalMethod, setWithdrawalMethod] = useState<string | null>(null);
+  const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [recipientAddress, setRecipientAddress] = useState('');
+
 
   useEffect(() => {
     const fetchRates = async () => {
@@ -147,19 +180,55 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   });
 
+  const withdrawalMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/withdraw", {
+        cardId: card.id,
+        amount: parseFloat(withdrawalAmount),
+        targetCurrency: withdrawalMethod,
+        recipientAddress
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Withdrawal failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
+      toast({
+        title: "Success",
+        description: "Withdrawal request has been created",
+      });
+      // Reset form
+      setWithdrawalMethod(null);
+      setWithdrawalAmount('');
+      setRecipientAddress('');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsTransferring(true);
     transferMutation.mutate();
   };
 
-  // Функция для конвертации и отображения суммы
+  // Function for converting and displaying the amount
   const getConvertedAmount = () => {
     if (!rates || !transferAmount) return null;
     const amount = parseFloat(transferAmount);
     if (isNaN(amount)) return null;
 
-    if (card.type === 'crypto' ) { //Always show conversion for crypto to fiat
+    if (card.type === 'crypto') { //Always show conversion for crypto to fiat
       const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
       return `≈ ${(amount * rate).toFixed(2)} USD`;
     }
@@ -200,6 +269,14 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   }, [gyroscope, isMobile, isIOS]);
 
+  const calculateExchangeAmountUpdated = () => {
+    if (!rates || !withdrawalAmount || !withdrawalMethod) return 0;
+    const amount = parseFloat(withdrawalAmount);
+    if (isNaN(amount)) return 0;
+    return calculateExchangeAmount(withdrawalAmount, card.type, withdrawalMethod, rates);
+  }
+
+
   return (
     <div
       ref={cardRef}
@@ -229,7 +306,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         {card.type === 'crypto' && (
           <>
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-            <div 
+            <div
               className="absolute inset-0 opacity-30 pointer-events-none"
               style={{
                 background: 'radial-gradient(circle at 0% 0%, rgba(255,255,255,0.3) 0%, transparent 50%)'
@@ -326,14 +403,111 @@ export default function VirtualCard({ card }: { card: Card }) {
                   <DialogHeader>
                     <DialogTitle>Withdraw Funds</DialogTitle>
                     <DialogDescription>
-                      Process your withdrawal request
+                      Convert and withdraw your funds
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <p className="text-center text-muted-foreground">
-                      Contact support @KA7777AA to process your withdrawal
+                  <form className="space-y-4" onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!withdrawalMethod || !withdrawalAmount || !recipientAddress) {
+                      toast({
+                        title: "Error",
+                        description: "Please fill in all fields",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+                    withdrawalMutation.mutate();
+                  }}>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Select withdrawal method</label>
+                      <Select
+                        value={withdrawalMethod || ""}
+                        onValueChange={setWithdrawalMethod}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Crypto</SelectLabel>
+                            <SelectItem value="btc">Bitcoin (BTC)</SelectItem>
+                            <SelectItem value="eth">Ethereum (ETH)</SelectItem>
+                            <SelectItem value="usdt">USDT</SelectItem>
+                          </SelectGroup>
+                          <SelectGroup>
+                            <SelectLabel>Fiat</SelectLabel>
+                            <SelectItem value="usd">USD</SelectItem>
+                            <SelectItem value="eur">EUR</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Amount to withdraw</label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          placeholder="0.00"
+                          className="pr-16"
+                          value={withdrawalAmount}
+                          onChange={(e) => setWithdrawalAmount(e.target.value)}
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                          {card.type.toUpperCase()}
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Available: {card.balance} {card.type.toUpperCase()}
+                      </p>
+                    </div>
+
+                    {withdrawalMethod && rates && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">You will receive approximately</label>
+                        <div className="p-3 rounded-lg bg-muted">
+                          <p className="text-lg font-semibold">
+                            ≈ {calculateExchangeAmountUpdated()} {withdrawalMethod.toUpperCase()}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Rate: 1 {withdrawalMethod.toUpperCase()} = {
+                              withdrawalMethod === 'btc' ? rates.btcToUsd :
+                                withdrawalMethod === 'eth' ? rates.ethToUsd :
+                                  withdrawalMethod === 'usdt' ? '1' :
+                                    '1'
+                            } USD
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Recipient address</label>
+                      <Input
+                        placeholder={
+                          withdrawalMethod && withdrawalMethod !== 'usd' && withdrawalMethod !== 'eur'
+                            ? `Enter ${withdrawalMethod.toUpperCase()} address`
+                            : "Enter recipient details"
+                        }
+                        value={recipientAddress}
+                        onChange={(e) => setRecipientAddress(e.target.value)}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {withdrawalMethod && withdrawalMethod !== 'usd' && withdrawalMethod !== 'eur'
+                          ? "Please double-check the crypto address before proceeding"
+                          : "Enter the recipient's payment details"
+                        }
+                      </p>
+                    </div>
+
+                    <Button type="submit" className="w-full">
+                      Continue with Withdrawal
+                    </Button>
+
+                    <p className="text-center text-sm text-muted-foreground">
+                      Contact support @KA7777AA for assistance
                     </p>
-                  </div>
+                  </form>
                 </DialogContent>
               </Dialog>
 

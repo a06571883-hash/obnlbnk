@@ -9,6 +9,8 @@ import ECPairFactory from 'ecpair';
 import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
 import express from 'express';
+import fetch from 'node-fetch';
+
 
 const ECPair = ECPairFactory(ecc);
 
@@ -210,6 +212,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.use(express.static('dist/client'));
+
+  // Endpoint для получения курсов обмена
+  app.get("/api/exchange-rates", async (req, res) => {
+    try {
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether&vs_currencies=usd,eur');
+      const rates = await response.json();
+      res.json(rates);
+    } catch (error) {
+      console.error("Error fetching exchange rates:", error);
+      res.status(500).json({ message: "Failed to fetch exchange rates" });
+    }
+  });
+
+  // Endpoint для создания заявки на вывод
+  app.post("/api/withdraw", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const { cardId, amount, targetCurrency, recipientAddress } = req.body;
+
+      // Валидация входных данных
+      if (!cardId || !amount || !targetCurrency || !recipientAddress) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Создаем заявку на вывод
+      const withdrawal = {
+        userId: req.user.id,
+        cardId,
+        amount,
+        targetCurrency,
+        recipientAddress,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      };
+
+      // В реальном приложении здесь будет сохранение в базу данных
+      // и интеграция с сервисом обмена
+
+      // Отправляем подтверждение
+      res.json({
+        message: "Withdrawal request created",
+        id: Date.now(), // В реальном приложении будет ID из базы данных
+        status: 'pending'
+      });
+
+    } catch (error) {
+      console.error("Withdrawal request error:", error);
+      res.status(500).json({ message: "Failed to process withdrawal request" });
+    }
+  });
 
   return httpServer;
 }
