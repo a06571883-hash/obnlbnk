@@ -10,7 +10,7 @@ import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
 import express from 'express';
 import fetch from 'node-fetch';
-
+import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -263,6 +263,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Withdrawal request error:", error);
       res.status(500).json({ message: "Failed to process withdrawal request" });
+    }
+  });
+
+  // Get exchange rate endpoint
+  app.get("/api/exchange/rate", async (req, res) => {
+    try {
+      const { fromCurrency, toCurrency, amount } = req.query;
+
+      if (!fromCurrency || !toCurrency || !amount) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      const rate = await getExchangeRate(
+        fromCurrency as string,
+        toCurrency as string,
+        amount as string
+      );
+
+      res.json(rate);
+    } catch (error) {
+      console.error("Exchange rate error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to get exchange rate" });
+    }
+  });
+
+  // Create exchange transaction endpoint
+  app.post("/api/exchange/create", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const { fromCurrency, toCurrency, fromAmount, address } = req.body;
+
+      if (!fromCurrency || !toCurrency || !fromAmount || !address) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      const transaction = await createExchangeTransaction({
+        fromCurrency,
+        toCurrency,
+        fromAmount,
+        address
+      });
+
+      res.json(transaction);
+    } catch (error) {
+      console.error("Create exchange error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to create exchange" });
+    }
+  });
+
+  // Get transaction status endpoint
+  app.get("/api/exchange/status/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const status = await getTransactionStatus(id);
+      res.json(status);
+    } catch (error) {
+      console.error("Transaction status error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to get transaction status" });
     }
   });
 

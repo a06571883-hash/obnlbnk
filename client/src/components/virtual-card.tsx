@@ -66,6 +66,12 @@ function validateEthAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/i.test(address);
 }
 
+interface ExchangeRate {
+  estimatedAmount: string;
+  rate: string;
+  transactionSpeedForecast: string;
+}
+
 export default function VirtualCard({ card }: { card: Card }) {
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -85,6 +91,24 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [withdrawalMethod, setWithdrawalMethod] = useState<string | null>(null);
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [recipientAddress, setRecipientAddress] = useState('');
+  const [exchangeRate, setExchangeRate] = useState<ExchangeRate | null>(null);
+  const [targetCard, setTargetCard] = useState<Card | null>(null);
+  const [isProcessingExchange, setIsProcessingExchange] = useState(false);
+  const [allCards, setAllCards] = useState<Card[]>([]);
+
+
+  useEffect(() => {
+    const fetchCards = async () => {
+      try {
+        const response = await fetch('/api/cards');
+        const data = await response.json();
+        setAllCards(data);
+      } catch (error) {
+        console.error('Failed to fetch cards:', error);
+      }
+    };
+    fetchCards();
+  }, []);
 
 
   useEffect(() => {
@@ -182,16 +206,18 @@ export default function VirtualCard({ card }: { card: Card }) {
 
   const withdrawalMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/withdraw", {
-        cardId: card.id,
-        amount: parseFloat(withdrawalAmount),
-        targetCurrency: withdrawalMethod,
-        recipientAddress
+      setIsProcessingExchange(true);
+
+      const response = await apiRequest("POST", "/api/exchange/create", {
+        fromCurrency: withdrawalMethod,
+        toCurrency: "usd",
+        fromAmount: withdrawalAmount,
+        address: targetCard?.number // Using card number as the receiving address
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Withdrawal failed');
+        throw new Error(error.message || 'Exchange failed');
       }
 
       return response.json();
@@ -200,12 +226,13 @@ export default function VirtualCard({ card }: { card: Card }) {
       queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
       toast({
         title: "Success",
-        description: "Withdrawal request has been created",
+        description: "Exchange transaction created successfully",
       });
       // Reset form
       setWithdrawalMethod(null);
       setWithdrawalAmount('');
-      setRecipientAddress('');
+      setTargetCard(null);
+      setExchangeRate(null);
     },
     onError: (error: Error) => {
       toast({
@@ -213,8 +240,39 @@ export default function VirtualCard({ card }: { card: Card }) {
         description: error.message,
         variant: "destructive"
       });
+    },
+    onSettled: () => {
+      setIsProcessingExchange(false);
     }
   });
+
+  const fetchExchangeRate = async (fromCurrency: string, amount: string) => {
+    try {
+      const response = await fetch(
+        `/api/exchange/rate?fromCurrency=${fromCurrency}&toCurrency=usd&amount=${amount}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch exchange rate');
+      }
+
+      const rate = await response.json();
+      setExchangeRate(rate);
+    } catch (error) {
+      console.error('Exchange rate error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get exchange rate",
+        variant: "destructive"
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (withdrawalAmount && withdrawalMethod) {
+      fetchExchangeRate(withdrawalMethod, withdrawalAmount);
+    }
+  }, [withdrawalAmount, withdrawalMethod]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -401,14 +459,14 @@ export default function VirtualCard({ card }: { card: Card }) {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Withdraw Funds</DialogTitle>
+                    <DialogTitle>Exchange & Withdraw</DialogTitle>
                     <DialogDescription>
-                      Convert and withdraw your funds
+                      Convert your crypto to fiat and withdraw to your card
                     </DialogDescription>
                   </DialogHeader>
                   <form className="space-y-4" onSubmit={(e) => {
                     e.preventDefault();
-                    if (!withdrawalMethod || !withdrawalAmount || !recipientAddress) {
+                    if (!withdrawalMethod || !withdrawalAmount || !targetCard) {
                       toast({
                         title: "Error",
                         description: "Please fill in all fields",
@@ -419,93 +477,114 @@ export default function VirtualCard({ card }: { card: Card }) {
                     withdrawalMutation.mutate();
                   }}>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Select withdrawal method</label>
+                      <label className="text-sm font-medium">Select source cryptocurrency</label>
                       <Select
                         value={withdrawalMethod || ""}
                         onValueChange={setWithdrawalMethod}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select method" />
+                          <SelectValue placeholder="Select cryptocurrency" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            <SelectLabel>Crypto</SelectLabel>
-                            <SelectItem value="btc">Bitcoin (BTC)</SelectItem>
-                            <SelectItem value="eth">Ethereum (ETH)</SelectItem>
-                            <SelectItem value="usdt">USDT</SelectItem>
-                          </SelectGroup>
-                          <SelectGroup>
-                            <SelectLabel>Fiat</SelectLabel>
-                            <SelectItem value="usd">USD</SelectItem>
-                            <SelectItem value="eur">EUR</SelectItem>
+                            <SelectLabel>Available Cryptocurrencies</SelectLabel>
+                            {parseFloat(card.btcBalance) > 0 && (
+                              <SelectItem value="btc">
+                                Bitcoin (BTC) - Balance: {card.btcBalance}
+                              </SelectItem>
+                            )}
+                            {parseFloat(card.ethBalance) > 0 && (
+                              <SelectItem value="eth">
+                                Ethereum (ETH) - Balance: {card.ethBalance}
+                              </SelectItem>
+                            )}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Amount to withdraw</label>
+                      <label className="text-sm font-medium">Amount to exchange</label>
                       <div className="relative">
                         <Input
                           type="number"
-                          placeholder="0.00"
+                          placeholder="0.00000000"
                           className="pr-16"
                           value={withdrawalAmount}
-                          onChange={(e) => setWithdrawalAmount(e.target.value)}
+                          onChange={(e) => {
+                            setWithdrawalAmount(e.target.value);
+                            setExchangeRate(null);
+                          }}
+                          step="0.00000001"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                          {card.type.toUpperCase()}
+                          {withdrawalMethod?.toUpperCase()}
                         </div>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Available: {card.balance} {card.type.toUpperCase()}
+                        Available: {withdrawalMethod === 'btc' ? card.btcBalance : card.ethBalance} {withdrawalMethod?.toUpperCase()}
                       </p>
                     </div>
 
-                    {withdrawalMethod && rates && (
+                    {exchangeRate && (
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">You will receive approximately</label>
+                        <label className="text-sm font-medium">Exchange Rate Information</label>
                         <div className="p-3 rounded-lg bg-muted">
                           <p className="text-lg font-semibold">
-                            ≈ {calculateExchangeAmountUpdated()} {withdrawalMethod.toUpperCase()}
+                            ≈ ${parseFloat(exchangeRate.estimatedAmount).toFixed(2)} USD
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Rate: 1 {withdrawalMethod.toUpperCase()} = {
-                              withdrawalMethod === 'btc' ? rates.btcToUsd :
-                                withdrawalMethod === 'eth' ? rates.ethToUsd :
-                                  withdrawalMethod === 'usdt' ? '1' :
-                                    '1'
-                            } USD
+                            Rate: 1 {withdrawalMethod?.toUpperCase()} = ${parseFloat(exchangeRate.rate).toFixed(2)} USD
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Estimated processing time: {exchangeRate.transactionSpeedForecast}
                           </p>
                         </div>
                       </div>
                     )}
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Recipient address</label>
-                      <Input
-                        placeholder={
-                          withdrawalMethod && withdrawalMethod !== 'usd' && withdrawalMethod !== 'eur'
-                            ? `Enter ${withdrawalMethod.toUpperCase()} address`
-                            : "Enter recipient details"
-                        }
-                        value={recipientAddress}
-                        onChange={(e) => setRecipientAddress(e.target.value)}
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        {withdrawalMethod && withdrawalMethod !== 'usd' && withdrawalMethod !== 'eur'
-                          ? "Please double-check the crypto address before proceeding"
-                          : "Enter the recipient's payment details"
-                        }
-                      </p>
+                      <label className="text-sm font-medium">Select target card for withdrawal</label>
+                      <Select
+                        value={targetCard?.id.toString() || ""}
+                        onValueChange={(value) => {
+                          const selected = allCards?.find(c => c.id.toString() === value);
+                          setTargetCard(selected || null);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select card" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Your Cards</SelectLabel>
+                            {allCards?.filter(c => c.type === 'usd' || c.type === 'uah').map(card => (
+                              <SelectItem key={card.id} value={card.id.toString()}>
+                                {card.type.toUpperCase()} Card ending in {card.number.slice(-4)}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    <Button type="submit" className="w-full">
-                      Continue with Withdrawal
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isProcessingExchange || !exchangeRate}
+                    >
+                      {isProcessingExchange ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing Exchange...
+                        </>
+                      ) : (
+                        "Continue with Exchange"
+                      )}
                     </Button>
 
                     <p className="text-center text-sm text-muted-foreground">
-                      Contact support @KA7777AA for assistance
+                      Support available 24/7 at @KA7777AA
                     </p>
                   </form>
                 </DialogContent>
