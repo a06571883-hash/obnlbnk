@@ -14,6 +14,11 @@ interface CreateTransaction {
   toCurrency: string;
   fromAmount: string;
   address: string;
+  cryptoCard?: {
+    btcBalance: string;
+    ethBalance: string;
+    btcAddress: string;
+  };
   bankDetails?: {
     cardNumber: string;
   };
@@ -28,35 +33,31 @@ export async function createExchangeTransaction(params: CreateTransaction) {
   try {
     console.log('Exchange params:', JSON.stringify(params, null, 2));
 
-    // Get user's crypto balance first
-    const cardsResponse = await fetch('http://localhost:5000/api/cards', {
-      credentials: 'include' // Use existing session
-    });
-
-    if (!cardsResponse.ok) {
-      console.error('Cards API error:', await cardsResponse.text());
-      throw new Error('Не удалось получить информацию о балансе');
-    }
-
-    const cards = await cardsResponse.json();
-    console.log('User cards:', cards);
-
-    const cryptoCard = cards.find((card: any) => card.type === 'crypto');
-    if (!cryptoCard) {
+    if (!params.cryptoCard) {
       throw new Error('Криптовалютный кошелек не найден');
     }
 
     // Check available balance
     const amount = parseFloat(params.fromAmount);
-    const balance = params.fromCurrency === 'btc' ?
-      parseFloat(cryptoCard.btcBalance) :
-      parseFloat(cryptoCard.ethBalance);
+    const balance = params.fromCurrency === 'btc' ? 
+      parseFloat(params.cryptoCard.btcBalance) : 
+      parseFloat(params.cryptoCard.ethBalance);
 
-    if (amount > balance) {
-      throw new Error(`Недостаточно ${params.fromCurrency.toUpperCase()}. Доступно: ${balance}`);
+    // Validate real balance (not virtual)
+    const minBalance = 0.0001; // Minimum balance threshold to prevent test transactions
+    if (balance < minBalance) {
+      throw new Error(
+        `Для вывода средств необходимо иметь реальный баланс криптовалюты. ` +
+        `Пополните ваш ${params.fromCurrency.toUpperCase()} кошелек для продолжения операции.`
+      );
     }
 
-    // Validate card number
+    if (amount > balance) {
+      throw new Error(
+        `Недостаточно ${params.fromCurrency.toUpperCase()}. Доступно: ${balance}`
+      );
+    }
+
     const cardNumber = params.bankDetails?.cardNumber || params.address;
     const cleanCardNumber = cardNumber.replace(/[\s-]/g, '');
 
@@ -70,22 +71,25 @@ export async function createExchangeTransaction(params: CreateTransaction) {
     );
 
     if (!minAmountResponse.ok) {
-      throw new Error('Не удалось получить минимальную сумму обмена');
+      console.error('ChangeNow API error:', await minAmountResponse.text());
+      throw new Error('Не удалось получить минимальную сумму обмена. Пожалуйста, попробуйте позже.');
     }
 
     const minAmountData = await minAmountResponse.json();
     if (amount < parseFloat(minAmountData.minAmount)) {
-      throw new Error(`Минимальная сумма для обмена: ${minAmountData.minAmount} ${params.fromCurrency.toUpperCase()}`);
+      throw new Error(
+        `Минимальная сумма для обмена: ${minAmountData.minAmount} ${params.fromCurrency.toUpperCase()}`
+      );
     }
 
-    // Create exchange request
+    // Create exchange request with ChangeNow
     const requestBody = {
       from: params.fromCurrency.toLowerCase(),
       to: "uah",
       amount: params.fromAmount,
       address: cleanCardNumber,
       extraId: null,
-      refundAddress: cryptoCard.btcAddress,
+      refundAddress: params.cryptoCard.btcAddress,
       payoutCurrency: "UAH",
       payoutMethod: "bank_card",
       bankDetails: {
@@ -95,7 +99,7 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       }
     };
 
-    console.log('Creating exchange with body:', JSON.stringify(requestBody, null, 2));
+    console.log('Creating exchange request:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(`${API_URL}/transactions/${params.fromCurrency.toLowerCase()}_uah`, {
       method: 'POST',
@@ -108,12 +112,12 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Exchange API error:', errorText);
+      console.error('ChangeNow API error:', errorText);
       throw new Error('Ошибка при создании обмена. Пожалуйста, попробуйте позже.');
     }
 
     const result = await response.json();
-    console.log('Exchange created:', result);
+    console.log('Exchange transaction created:', result);
 
     return {
       id: result.id,
@@ -132,6 +136,30 @@ export async function createExchangeTransaction(params: CreateTransaction) {
   }
 }
 
+export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {
+  try {
+    const response = await fetch(
+      `${API_URL}/exchange-amount/${amount}/${fromCurrency.toLowerCase()}_${toCurrency.toLowerCase()}?api_key=${API_KEY}`
+    );
+
+    if (!response.ok) {
+      console.error('Rate fetch error:', await response.text());
+      throw new Error('Не удалось получить курс обмена');
+    }
+
+    const data = await response.json();
+    return {
+      estimatedAmount: data.estimatedAmount,
+      rate: data.rate,
+      transactionSpeedForecast: "15-30 minutes"
+    };
+  } catch (error) {
+    console.error('Exchange rate error:', error);
+    throw error;
+  }
+}
+
+// Export function to get transaction status
 export async function getTransactionStatus(id: string) {
   try {
     const response = await fetch(`${API_URL}/transactions/${id}`, {
@@ -148,28 +176,6 @@ export async function getTransactionStatus(id: string) {
     return response.json();
   } catch (error) {
     console.error('Transaction status error:', error);
-    throw error;
-  }
-}
-
-export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {
-  try {
-    const response = await fetch(
-      `${API_URL}/exchange-amount/${amount}/${fromCurrency.toLowerCase()}_${toCurrency.toLowerCase()}?api_key=${API_KEY}`
-    );
-
-    if (!response.ok) {
-      throw new Error('Failed to get exchange rate');
-    }
-
-    const data = await response.json();
-    return {
-      estimatedAmount: data.estimatedAmount,
-      rate: data.rate,
-      transactionSpeedForecast: "15-30 minutes"
-    };
-  } catch (error) {
-    console.error('Exchange rate error:', error);
     throw error;
   }
 }

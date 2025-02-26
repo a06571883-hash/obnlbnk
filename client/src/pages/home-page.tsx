@@ -163,13 +163,22 @@ export default function HomePage() {
     }
 
     try {
+      // Find crypto card from available cards
+      const cryptoCard = cards.find(card => card.type === 'crypto');
+      if (!cryptoCard) {
+        throw new Error('Криптовалютный кошелек не найден');
+      }
+
       const response = await apiRequest("POST", "/api/exchange/create", {
         fromCurrency: fromCurrency.toString(),
         toCurrency: "uah",
         fromAmount: amount.toString(),
         address: cardNumber.toString(),
-      }, {
-        credentials: 'include'
+        cryptoCard: {
+          btcBalance: cryptoCard.btcBalance,
+          ethBalance: cryptoCard.ethBalance,
+          btcAddress: cryptoCard.btcAddress
+        }
       });
 
       if (!response.ok) {
