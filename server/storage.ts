@@ -5,7 +5,7 @@ import { pool } from "./db";
 import { db } from "./db";
 import { cards, users, transactions, exchangeRates } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, inArray } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -35,6 +35,7 @@ export interface IStorage {
   getNFTCollectionsByUserId(userId: number): Promise<any[]>;
   canGenerateNFT(userId: number): Promise<boolean>;
   updateUserNFTGeneration(userId: number): Promise<void>;
+  getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -550,6 +551,17 @@ export class DatabaseStorage implements IStorage {
   }
   async updateUserNFTGeneration(userId: number): Promise<void> {
     throw new Error("Method not implemented.");
+  }
+  async getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]> {
+    return this.withRetry(async () => {
+      return await db.select()
+        .from(transactions)
+        .where(or(
+          inArray(transactions.fromCardId, cardIds),
+          inArray(transactions.toCardId, cardIds)
+        ))
+        .orderBy(desc(transactions.createdAt));
+    }, 'Get transactions by card IDs');
   }
 }
 

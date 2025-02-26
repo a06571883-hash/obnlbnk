@@ -168,29 +168,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Basic card number format validation
       const cleanCardNumber = address.replace(/\s+/g, '');
       if (!/^\d{16}$/.test(cleanCardNumber)) {
-        return res.status(400).json({ 
-          message: "Номер карты должен содержать 16 цифр" 
+        return res.status(400).json({
+          message: "Номер карты должен содержать 16 цифр"
         });
       }
 
       // Get user's cards and verify crypto card ownership
       const userCards = await storage.getCardsByUserId(req.user.id);
-      const userCryptoCard = userCards.find(card => 
-        card.type === 'crypto' && 
+      const userCryptoCard = userCards.find(card =>
+        card.type === 'crypto' &&
         card.id === cryptoCard.id
       );
 
       if (!userCryptoCard) {
-        return res.status(400).json({ 
-          message: "Криптовалютный кошелек не найден или недоступен" 
+        return res.status(400).json({
+          message: "Криптовалютный кошелек не найден или недоступен"
         });
       }
 
       // Validate sufficient balance
       const balance = fromCurrency === 'btc' ? userCryptoCard.btcBalance : userCryptoCard.ethBalance;
       if (parseFloat(balance) < parseFloat(fromAmount)) {
-        return res.status(400).json({ 
-          message: `Недостаточно ${fromCurrency.toUpperCase()} для обмена. Доступно: ${balance} ${fromCurrency.toUpperCase()}` 
+        return res.status(400).json({
+          message: `Недостаточно ${fromCurrency.toUpperCase()} для обмена. Доступно: ${balance} ${fromCurrency.toUpperCase()}`
         });
       }
 
@@ -205,8 +205,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(transaction);
     } catch (error) {
       console.error("Create exchange error:", error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Ошибка создания обмена" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Ошибка создания обмена"
       });
     }
   });
@@ -219,9 +219,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(status);
     } catch (error) {
       console.error("Transaction status error:", error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Ошибка получения статуса" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Ошибка получения статуса"
       });
+    }
+  });
+
+  app.get("/api/transactions", ensureAuthenticated, async (req, res) => {
+    try {
+      console.log('GET /api/transactions - User:', {
+        id: req.user.id,
+        username: req.user.username,
+        sessionID: req.sessionID
+      });
+
+      // Get all user's cards
+      const userCards = await storage.getCardsByUserId(req.user.id);
+      const cardIds = userCards.map(card => card.id);
+
+      // Get all transactions related to user's cards
+      const transactions = await storage.getTransactionsByCardIds(cardIds);
+
+      console.log('Transactions found:', {
+        userId: req.user.id,
+        cardIds,
+        transactionCount: transactions.length
+      });
+
+      res.json(transactions);
+    } catch (error) {
+      console.error("Transactions fetch error:", error);
+      res.status(500).json({ message: "Ошибка при получении транзакций" });
     }
   });
 
