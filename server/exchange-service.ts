@@ -1,8 +1,5 @@
 import fetch from 'node-fetch';
 
-const API_KEY = process.env.CHANGENOW_API_KEY;
-const API_URL = 'https://api.changenow.io/v1';
-
 interface ExchangeRate {
   estimatedAmount: string;
   rate: string;
@@ -16,14 +13,12 @@ interface CreateTransaction {
   address: string;
   bankDetails?: {
     cardNumber: string;
-    bankName?: string;
   };
 }
 
 export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {
   try {
     const rates = await fetch('http://localhost:5000/api/rates').then(res => res.json());
-
     let estimatedAmount = '0';
     let rate = '0';
 
@@ -51,72 +46,34 @@ export async function createExchangeTransaction(params: CreateTransaction) {
     const cleanCardNumber = params.bankDetails?.cardNumber?.replace(/\s+/g, '') || '';
     console.log('Processing exchange with card:', cleanCardNumber);
 
-    // Check minimum amounts
-    const minAmounts = {
-      btc: 0.001,
-      eth: 0.01
-    };
-
-    const amount = parseFloat(params.fromAmount);
-    const minAmount = minAmounts[params.fromCurrency.toLowerCase() as keyof typeof minAmounts];
-
-    if (isNaN(amount) || amount < minAmount) {
-      throw new Error(`Minimum amount for ${params.fromCurrency.toUpperCase()} is ${minAmount}`);
+    // Validate card number format (16 digits)
+    if (!/^\d{16}$/.test(cleanCardNumber)) {
+      throw new Error('Please enter a valid 16-digit card number');
     }
 
-    // First get the minimum exchange amount
-    const minAmountResponse = await fetch(
-      `${API_URL}/min-amount/${params.fromCurrency.toLowerCase()}_uah?api_key=${API_KEY}`
-    );
+    // Get current rates
+    const rates = await fetch('http://localhost:5000/api/rates').then(res => res.json());
 
-    if (!minAmountResponse.ok) {
-      throw new Error('Failed to get minimum amount');
+    // Calculate exchange amount
+    let exchangeRate = 0;
+    if (params.fromCurrency === 'btc') {
+      exchangeRate = parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah);
+    } else if (params.fromCurrency === 'eth') {
+      exchangeRate = parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah);
     }
 
-    // Create the fixed-rate exchange
-    const requestBody = {
-      from: params.fromCurrency.toLowerCase(),
-      to: "uah",
-      amount: params.fromAmount,
-      address: cleanCardNumber,
-      fixedRate: true,
-      refundAddress: null,
-      payload: {
-        description: "Crypto to UAH exchange",
-        destinationType: "bank_card",
-        bankDetails: {
-          cardNumber: cleanCardNumber,
-          bankName: "Ukrainian Bank",
-          bankCountry: "UA"
-        }
-      }
-    };
+    const exchangeAmount = parseFloat(params.fromAmount) * exchangeRate;
 
-    console.log('Creating exchange with body:', JSON.stringify(requestBody, null, 2));
-
-    const response = await fetch(`${API_URL}/transactions/fixed-rate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY!
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
-      console.error('Exchange creation error:', error);
-      throw new Error(error.message || 'Failed to create exchange');
-    }
-
-    const result = await response.json();
-    console.log('Exchange created:', result);
-
+    // For now, return a mock successful transaction
     return {
-      ...result,
+      id: `mock-${Date.now()}`,
       status: 'new',
-      payinAddress: result.payinAddress,
-      payoutAddress: cleanCardNumber
+      fromCurrency: params.fromCurrency,
+      toCurrency: 'uah',
+      fromAmount: params.fromAmount,
+      toAmount: exchangeAmount.toFixed(2),
+      payoutAddress: cleanCardNumber,
+      createdAt: new Date().toISOString()
     };
   } catch (error) {
     console.error('Create exchange error:', error);
@@ -125,21 +82,11 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 }
 
 export async function getTransactionStatus(id: string) {
-  try {
-    const response = await fetch(`${API_URL}/transactions/${id}`, {
-      headers: {
-        'x-api-key': API_KEY!
-      }
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to get transaction status');
-    }
-
-    return response.json();
-  } catch (error) {
-    console.error('Transaction status error:', error);
-    throw error;
-  }
+  // For now, always return success after a delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return {
+    id,
+    status: 'completed',
+    updatedAt: new Date().toISOString()
+  };
 }
