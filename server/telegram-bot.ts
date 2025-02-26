@@ -3,7 +3,7 @@ import { storage } from './storage';
 import { Message } from 'telegraf/types';
 import { createExchangeTransaction, getExchangeRate } from './exchange-service';
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '8096961454:AAEmX7kc1Tus12F7uDA06SkJs8pAVo2MmIs');
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4');
 
 // Команда /start
 bot.command('start', (ctx) => {
