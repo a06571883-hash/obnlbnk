@@ -21,11 +21,26 @@ interface CreateTransaction {
   };
 }
 
-// Validates Ukrainian bank card number (16 digits, starts with specific prefixes)
+// Validates Ukrainian bank card number (16 digits)
 export function validateUkrainianCard(cardNumber: string): boolean {
   const cleanNumber = cardNumber.replace(/\s+/g, '');
-  const ukrPrefixes = ['4149', '5168', '5167', '4506', '4508', '4558'];
-  return cleanNumber.length === 16 && ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
+  // Basic validation - 16 digits
+  if (!/^\d{16}$/.test(cleanNumber)) {
+    return false;
+  }
+
+  // Common Ukrainian bank card prefixes
+  const ukrPrefixes = [
+    // PrivatBank
+    '4149', '5168', '5167', '4506', '4508', '4558',
+    // Monobank
+    '5375', '4443',
+    // Universal/Other Ukrainian banks
+    '4000', '4111', '4112', '4627', '5133', '5169', '5351', '5582'
+  ];
+
+  // Check if the card starts with any known Ukrainian bank prefix
+  return ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
 }
 
 export async function getExchangeRate(fromCurrency: string, toCurrency: string, amount: string): Promise<ExchangeRate> {

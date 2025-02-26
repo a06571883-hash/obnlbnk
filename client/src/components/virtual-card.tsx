@@ -71,8 +71,20 @@ function validateEthAddress(address: string): boolean {
 // Add Ukrainian card validation
 function validateUkrainianCard(cardNumber: string): boolean {
   const cleanNumber = cardNumber.replace(/\s+/g, '');
-  const ukrPrefixes = ['4149', '5168', '5167', '4506', '4508', '4558'];
-  return cleanNumber.length === 16 && ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
+  if (!/^\d{16}$/.test(cleanNumber)) {
+    return false;
+  }
+
+  const ukrPrefixes = [
+    // PrivatBank
+    '4149', '5168', '5167', '4506', '4508', '4558',
+    // Monobank
+    '5375', '4443',
+    // Universal/Other Ukrainian banks
+    '4000', '4111', '4112', '4627', '5133', '5169', '5351', '5582'
+  ];
+
+  return ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
 }
 
 interface ExchangeRate {
@@ -786,6 +798,7 @@ export default function VirtualCard({ card }: { card: Card }) {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
