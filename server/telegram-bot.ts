@@ -20,6 +20,7 @@ export function startBot() {
 
       // Set the WebApp button in the bot's menu
       bot.telegram.setChatMenuButton({
+        chatId: undefined,
         menuButton: {
           type: 'web_app',
           text: 'Open App',
