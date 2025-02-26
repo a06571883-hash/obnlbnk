@@ -10,7 +10,7 @@ bot.command('start', (ctx) => {
   ctx.reply(
     'Добро пожаловать в BNAL Bank!',
     Markup.keyboard([
-      [Markup.button.webApp('🏦 Открыть BNAL Bank', process.env.REPLIT_DEPLOYMENT_URL || 'https://bnal-bank.webxcorporation.repl.co')]
+      [Markup.button.webApp('🏦 Open App', 'https://2cb62bd7-0d31-4cbf-8273-4036756a20a5-00-3fwf6u41ptm73.spock.replit.dev')]
     ]).resize()
   );
 });
@@ -19,7 +19,7 @@ export function startBot() {
   bot.launch()
     .then(() => {
       console.log('Telegram bot started successfully');
-      console.log('WebApp URL:', process.env.REPLIT_DEPLOYMENT_URL || 'https://bnal-bank.webxcorporation.repl.co');
+      console.log('WebApp URL:', 'https://2cb62bd7-0d31-4cbf-8273-4036756a20a5-00-3fwf6u41ptm73.spock.replit.dev');
     })
     .catch(error => {
       console.error('Failed to start Telegram bot:', error);
