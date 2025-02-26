@@ -113,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Validate crypto address format
         if (!validateCryptoAddress(recipientAddress, cryptoType)) {
           return res.status(400).json({
-            message: `Неверный формат ${cryptoType.toUpperCase()} адреса. Введите корректный ${cryptoType.toUpperCase()} адрес`
+            message: `Неверный формат ${cryptoType.toUpperCase()} адреса`
           });
         }
 
@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For fiat transfers, validate card number
         const cleanCardNumber = recipientAddress.replace(/\s+/g, '');
         if (!/^\d{16}$/.test(cleanCardNumber)) {
-          return res.status(400).json({ message: "Неверный формат номера карты. Введите 16 цифр" });
+          return res.status(400).json({ message: "Неверный формат номера карты" });
         }
 
         result = await storage.transferMoney(
@@ -151,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Transfer error:", error);
       res.status(500).json({
         success: false,
-        message: error instanceof Error ? error.message : "Произошла ошибка при выполнении перевода"
+        message: error instanceof Error ? error.message : "Ошибка перевода"
       });
     }
   });
@@ -167,7 +167,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         allTransactions.push(...cardTransactions);
       }
 
-      allTransactions.sort((a, b) =>
+      // Sort by date descending
+      allTransactions.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
@@ -178,170 +179,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/database/backup', ensureAuthenticated, async (req, res) => {
-    try {
-      // Проверяем, является ли пользователь регулятором
-      const user = await storage.getUser(req.user.id);
-      if (!user?.is_regulator) {
-        return res.status(403).json({ message: "Недостаточно прав для выполнения операции" });
-      }
-
-      const result = await exportDatabase();
-      if (result.success) {
-        res.json({ 
-          message: 'Резервная копия создана успешно',
-          files: result.files
-        });
-      } else {
-        res.status(500).json({ error: 'Ошибка при создании резервной копии' });
-      }
-    } catch (error) {
-      console.error('Backup error:', error);
-      res.status(500).json({ error: 'Внутренняя ошибка сервера' });
-    }
-  });
-
-  app.post('/api/database/restore', ensureAuthenticated, async (req, res) => {
-    try {
-      // Проверяем, является ли пользователь регулятором
-      const user = await storage.getUser(req.user.id);
-      if (!user?.is_regulator) {
-        return res.status(403).json({ message: "Недостаточно прав для выполнения операции" });
-      }
-
-      const success = await importDatabase();
-      if (success) {
-        res.json({ message: 'База данных успешно восстановлена из резервной копии' });
-      } else {
-        res.status(500).json({ error: 'Ошибка при восстановлении базы данных' });
-      }
-    } catch (error) {
-      console.error('Restore error:', error);
-      res.status(500).json({ error: 'Внутренняя ошибка сервера' });
-    }
-  });
-
-  app.use(express.static('dist/client'));
-
-  // Endpoint для получения курсов обмена
-  app.get("/api/exchange-rates", async (req, res) => {
-    try {
-      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether&vs_currencies=usd,eur');
-      const rates = await response.json();
-      res.json(rates);
-    } catch (error) {
-      console.error("Error fetching exchange rates:", error);
-      res.status(500).json({ message: "Failed to fetch exchange rates" });
-    }
-  });
-
-  // Endpoint для создания заявки на вывод
-  app.post("/api/withdraw", ensureAuthenticated, async (req, res) => {
-    try {
-      const { cardId, amount, targetCurrency, recipientAddress } = req.body;
-
-      // Валидация входных данных
-      if (!cardId || !amount || !targetCurrency || !recipientAddress) {
-        return res.status(400).json({ message: "Missing required fields" });
-      }
-
-      // Создаем заявку на вывод
-      const withdrawal = {
-        userId: req.user.id,
-        cardId,
-        amount,
-        targetCurrency,
-        recipientAddress,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      };
-
-      // В реальном приложении здесь будет сохранение в базу данных
-      // и интеграция с сервисом обмена
-
-      // Отправляем подтверждение
-      res.json({
-        message: "Withdrawal request created",
-        id: Date.now(), // В реальном приложении будет ID из базы данных
-        status: 'pending'
-      });
-
-    } catch (error) {
-      console.error("Withdrawal request error:", error);
-      res.status(500).json({ message: "Failed to process withdrawal request" });
-    }
-  });
-
-  // Get exchange rate endpoint
-  app.get("/api/exchange/rate", async (req, res) => {
-    try {
-      const { fromCurrency, toCurrency, amount } = req.query;
-
-      if (!fromCurrency || !toCurrency || !amount) {
-        return res.status(400).json({ message: "Missing required parameters" });
-      }
-
-      const rates = await storage.getLatestExchangeRates();
-      let estimatedAmount = '0';
-      let rate = '0';
-
-      // Calculate rate based on our existing rates
-      if (fromCurrency === 'btc' && toCurrency === 'uah') {
-        rate = (parseFloat(rates.btcToUsd) * parseFloat(rates.usdToUah)).toString();
-        estimatedAmount = (parseFloat(amount as string) * parseFloat(rate)).toString();
-      } else if (fromCurrency === 'eth' && toCurrency === 'uah') {
-        rate = (parseFloat(rates.ethToUsd) * parseFloat(rates.usdToUah)).toString();
-        estimatedAmount = (parseFloat(amount as string) * parseFloat(rate)).toString();
-      } else {
-        // Handle other currency pairs or throw an error if unsupported
-        return res.status(400).json({message: "Unsupported currency pair"});
-      }
-
-      res.json({
-        estimatedAmount,
-        rate,
-        transactionSpeedForecast: "15-30 minutes"
-      });
-    } catch (error) {
-      console.error("Exchange rate error:", error);
-      res.status(500).json({ message: "Failed to get exchange rate" });
-    }
-  });
-
   // Create exchange transaction endpoint
   app.post("/api/exchange/create", ensureAuthenticated, async (req, res) => {
     try {
-      const { fromCurrency, toCurrency, fromAmount, address } = req.body;
+      const { fromCurrency, toCurrency, fromAmount, address, cryptoCard } = req.body;
 
       if (!fromCurrency || !toCurrency || !fromAmount || !address) {
         return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      // Verify the crypto card belongs to the authenticated user
+      const userCards = await storage.getCardsByUserId(req.user.id);
+      const userCryptoCard = userCards.find(card => 
+        card.type === 'crypto' && 
+        card.btcBalance === cryptoCard.btcBalance && 
+        card.btcAddress === cryptoCard.btcAddress
+      );
+
+      if (!userCryptoCard) {
+        return res.status(400).json({ 
+          message: "Криптовалютный кошелек не найден или недоступен" 
+        });
       }
 
       const transaction = await createExchangeTransaction({
         fromCurrency,
         toCurrency,
         fromAmount,
-        address
+        address,
+        cryptoCard: userCryptoCard
       });
 
       res.json(transaction);
     } catch (error) {
       console.error("Create exchange error:", error);
-      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to create exchange" });
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Ошибка создания обмена" 
+      });
     }
   });
 
   // Get transaction status endpoint
-  app.get("/api/exchange/status/:id", async (req, res) => {
+  app.get("/api/exchange/status/:id", ensureAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const status = await getTransactionStatus(id);
       res.json(status);
     } catch (error) {
       console.error("Transaction status error:", error);
-      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to get transaction status" });
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Ошибка получения статуса" 
+      });
     }
   });
+
+  app.use(express.static('dist/client'));
 
   return httpServer;
 }

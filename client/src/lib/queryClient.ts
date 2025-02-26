@@ -7,9 +7,10 @@ async function throwIfResNotOk(res: Response) {
       const errorData = await res.json();
       errorMessage = errorData.message || errorData.error?.message || errorMessage;
     } catch {
-      // If parsing JSON fails, check if it's an authentication error
+      // Handle authentication errors
       if (res.status === 401) {
-        window.location.href = '/auth'; // Redirect to auth page on session expiry
+        // Redirect to auth page on session expiry
+        window.location.href = '/auth';
         throw new Error('Сессия истекла. Пожалуйста, войдите снова.');
       }
     }
