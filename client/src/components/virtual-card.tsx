@@ -97,6 +97,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [bankCardNumber, setBankCardNumber] = useState('');
   const [bankCardError, setBankCardError] = useState('');
   const [exchangeStatus, setExchangeStatus] = useState<string>('');
+  const [isProcessingExchange, setIsProcessingExchange] = useState(false);
 
   useEffect(() => {
     const fetchRates = async () => {
@@ -288,7 +289,7 @@ export default function VirtualCard({ card }: { card: Card }) {
     const amount = parseFloat(transferAmount);
     if (isNaN(amount)) return null;
 
-    if (card.type === 'crypto') { 
+    if (card.type === 'crypto') {
       const rate = selectedWallet === 'btc' ? rates.btcToUsd : rates.ethToUsd;
       return `≈ ${(amount * rate).toFixed(2)} USD`;
     }
@@ -327,7 +328,7 @@ export default function VirtualCard({ card }: { card: Card }) {
     } else if (toCurrency === 'usd') {
       return value.toFixed(2);
     } else if (toCurrency === 'eur') {
-      return (value * 0.92).toFixed(2); 
+      return (value * 0.92).toFixed(2);
     } else if (toCurrency === 'uah') {
       return (value * rates.usdToUah).toFixed(2);
     }
@@ -416,14 +417,24 @@ export default function VirtualCard({ card }: { card: Card }) {
                 <span className="sm:hidden">Dep</span>
               </Button>
 
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="ghost"
                 className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7"
-                onClick={() => withdrawalMutation.mutate()}
-                disabled={!withdrawalAmount || !bankCardNumber || !withdrawalMethod}
+                onClick={() => {
+                  if (!withdrawalAmount || !bankCardNumber) {
+                    toast({
+                      title: "Error",
+                      description: "Please enter amount and bank card number",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  withdrawalMutation.mutate();
+                }}
+                disabled={isProcessingExchange}
               >
-                {withdrawalMutation.isPending ? (
+                {isProcessingExchange ? (
                   <>
                     <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 animate-spin" />
                     <span className="hidden sm:inline">Processing...</span>
