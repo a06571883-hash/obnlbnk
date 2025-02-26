@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, Bitcoin, DollarSign, Coins } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // Ключ для отслеживания состояния приветственного сообщения
@@ -217,69 +217,83 @@ export default function HomePage() {
                   <CardUI className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
                     <div className="p-2 flex flex-col items-center">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                        <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
+                        <RefreshCw className="h-6 w-6 text-primary" />
                       </div>
-                      <h3 className="font-medium">Быстрый перевод</h3>
+                      <h3 className="font-medium">Обмен валюты</h3>
                     </div>
                   </CardUI>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Быстрый перевод</DialogTitle>
+                    <DialogTitle>Обмен валюты</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <form onSubmit={async (e) => {
                       e.preventDefault();
                       const formData = new FormData(e.currentTarget);
                       const amount = formData.get("amount");
+                      const fromCurrency = formData.get("fromCurrency");
                       const cardNumber = formData.get("cardNumber");
 
-                      if (!amount || !cardNumber || parseFloat(amount.toString()) <= 0) {
+                      if (!amount || !fromCurrency || !cardNumber) {
                         toast({
                           title: "Ошибка",
-                          description: "Введите корректную сумму и номер карты",
+                          description: "Заполните все поля формы",
                           variant: "destructive"
                         });
                         return;
                       }
 
                       try {
-                        const response = await apiRequest("POST", "/api/transfer", {
-                          fromCardId: cards[0].id,
-                          toCardNumber: cardNumber,
-                          amount: parseFloat(amount.toString())
+                        // Get current session cookie
+                        const cookies = document.cookie;
+
+                        const response = await apiRequest("POST", "/api/exchange/create", {
+                          fromCurrency: fromCurrency.toString(),
+                          toCurrency: "uah",
+                          fromAmount: amount.toString(),
+                          address: cardNumber.toString(),
+                          cookie: cookies // Pass session cookie to backend
                         });
 
                         if (!response.ok) {
                           const error = await response.json();
-                          throw new Error(error.message || "Ошибка перевода");
+                          throw new Error(error.message || "Ошибка обмена");
                         }
+
+                        const result = await response.json();
 
                         toast({
                           title: "Успех",
-                          description: "Перевод выполнен успешно"
+                          description: "Обмен инициирован успешно"
                         });
 
                         e.currentTarget.reset();
                         queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
                       } catch (error: any) {
-                        console.error("Transfer error:", error);
+                        console.error("Exchange error:", error);
                         toast({
-                          title: "Ошибка перевода",
-                          description: error.message || "Произошла ошибка при переводе",
+                          title: "Ошибка обмена",
+                          description: error.message || "Произошла ошибка при обмене",
                           variant: "destructive"
                         });
                       }
                     }}>
+                      <select
+                        name="fromCurrency"
+                        className="w-full p-2 border rounded mb-4"
+                        required
+                      >
+                        <option value="btc">BTC → UAH</option>
+                        <option value="eth">ETH → UAH</option>
+                      </select>
                       <input
                         type="number"
                         name="amount"
                         placeholder="Сумма"
                         className="w-full p-2 border rounded mb-4"
-                        step="0.01"
-                        min="0.01"
+                        step="0.00000001"
+                        min="0.00000001"
                         required
                       />
                       <input
@@ -292,7 +306,7 @@ export default function HomePage() {
                         required
                       />
                       <Button type="submit" className="w-full">
-                        Перевести
+                        Обменять
                       </Button>
                     </form>
                   </div>
