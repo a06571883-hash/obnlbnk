@@ -11,7 +11,7 @@ import { useLocation } from "wouter";
 import { Loader2, Shield, Globe, Wallet } from "lucide-react";
 import { LogoFull } from "@/components/logo";
 import AnimatedBackground from "@/components/animated-background";
-import { useEffect } from 'react'; 
+import { useEffect } from 'react';
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -165,13 +165,23 @@ function RegisterForm() {
       username: "",
       password: "",
       is_regulator: false,
-      regulator_balance: "0"
+      regulator_balance: "0",
+      nft_generation_count: 0
     },
   });
 
+  const onSubmit = (data: any) => {
+    registerMutation.mutate(data, {
+      onSuccess: () => {
+        // Устанавливаем флаг новой регистрации
+        sessionStorage.setItem('isNewRegistration', 'true');
+      }
+    });
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((data) => registerMutation.mutate(data))} className="space-y-4 mt-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
         <FormField
           control={form.control}
           name="username"

@@ -100,12 +100,17 @@ export default function HomePage() {
   const [prevRates, setPrevRates] = useState<ExchangeRateResponse | null>(null);
   const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
 
-  // Show welcome message only on fresh login
+  // Показываем приветственное сообщение только если это новая регистрация
   useEffect(() => {
-    if (!user) return;
-    setShowWelcome(true);
-    const timer = setTimeout(() => setShowWelcome(false), 3000);
-    return () => clearTimeout(timer);
+    const isNewRegistration = sessionStorage.getItem('isNewRegistration');
+    if (isNewRegistration === 'true' && user) {
+      setShowWelcome(true);
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+        sessionStorage.removeItem('isNewRegistration');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
   }, [user]);
 
   // Initialize WebSocket connection for rates
