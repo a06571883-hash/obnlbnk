@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Validate crypto address format
         if (!validateCryptoAddress(recipientAddress, cryptoType)) {
-          return res.status(400).json({ 
+          return res.status(400).json({
             message: `Неверный формат ${cryptoType.toUpperCase()} адреса. Введите корректный ${cryptoType.toUpperCase()} адрес`
           });
         }
@@ -159,20 +159,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/database/backup', async (req, res) => {
-    const success = await exportDatabase();
-    if (success) {
-      res.json({ message: 'Backup completed successfully' });
-    } else {
-      res.status(500).json({ error: 'Backup failed' });
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+
+      // Проверяем, является ли пользователь регулятором
+      const user = await storage.getUser(req.user.id);
+      if (!user?.is_regulator) {
+        return res.status(403).json({ message: "Недостаточно прав для выполнения операции" });
+      }
+
+      const result = await exportDatabase();
+      if (result.success) {
+        res.json({ 
+          message: 'Резервная копия создана успешно',
+          files: result.files
+        });
+      } else {
+        res.status(500).json({ error: 'Ошибка при создании резервной копии' });
+      }
+    } catch (error) {
+      console.error('Backup error:', error);
+      res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
   });
 
   app.post('/api/database/restore', async (req, res) => {
-    const success = await importDatabase();
-    if (success) {
-      res.json({ message: 'Restore completed successfully' });
-    } else {
-      res.status(500).json({ error: 'Restore failed' });
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+
+      // Проверяем, является ли пользователь регулятором
+      const user = await storage.getUser(req.user.id);
+      if (!user?.is_regulator) {
+        return res.status(403).json({ message: "Недостаточно прав для выполнения операции" });
+      }
+
+      const success = await importDatabase();
+      if (success) {
+        res.json({ message: 'База данных успешно восстановлена из резервной копии' });
+      } else {
+        res.status(500).json({ error: 'Ошибка при восстановлении базы данных' });
+      }
+    } catch (error) {
+      console.error('Restore error:', error);
+      res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
   });
 

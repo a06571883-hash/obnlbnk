@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./database/connection";
+import { scheduleBackups } from "./database/backup";
 
 // Set development mode
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
@@ -60,6 +61,10 @@ app.use((req, res, next) => {
     console.log('Database initialized successfully');
 
     const server = await registerRoutes(app);
+
+    // Initialize scheduled backups
+    scheduleBackups();
+    console.log('Scheduled database backups initialized');
 
     // Error handling
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -1,23 +1,44 @@
-
 import fs from 'fs/promises';
 import path from 'path';
 import { db } from '../db';
 import { users, cards, transactions, exchangeRates } from '@shared/schema';
+import { Pool } from 'pg';
+import JSZip from 'jszip';
 
 const BACKUP_DIR = path.join(process.cwd(), 'backup');
+const ZIP_DIR = path.join(process.cwd(), 'backup/zip');
+const SQL_DIR = path.join(process.cwd(), 'backup/sql');
+
+// Создаем все необходимые директории
+async function ensureDirectories() {
+  await fs.mkdir(BACKUP_DIR, { recursive: true });
+  await fs.mkdir(ZIP_DIR, { recursive: true });
+  await fs.mkdir(SQL_DIR, { recursive: true });
+}
 
 export async function exportDatabase() {
   try {
-    // Создаем директорию для бэкапа если её нет
-    await fs.mkdir(BACKUP_DIR, { recursive: true });
-    
-    // Экспортируем данные из каждой таблицы
+    await ensureDirectories();
+
+    // Получаем данные из всех таблиц
     const usersData = await db.select().from(users);
     const cardsData = await db.select().from(cards);
     const transactionsData = await db.select().from(transactions);
     const ratesData = await db.select().from(exchangeRates);
-    
-    // Сохраняем данные в JSON файлы
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+    // Сохраняем в JSON
+    const jsonData = {
+      users: usersData,
+      cards: cardsData,
+      transactions: transactionsData,
+      rates: ratesData,
+      backupDate: timestamp,
+      version: '1.0'
+    };
+
+    // Сохраняем в отдельные JSON файлы
     await fs.writeFile(
       path.join(BACKUP_DIR, 'users.json'),
       JSON.stringify(usersData, null, 2)
@@ -34,12 +55,70 @@ export async function exportDatabase() {
       path.join(BACKUP_DIR, 'rates.json'),
       JSON.stringify(ratesData, null, 2)
     );
-    
+
+    // Создаем ZIP архив
+    const zip = new JSZip();
+    zip.file('backup.json', JSON.stringify(jsonData, null, 2));
+
+    // Добавляем отдельные файлы в zip
+    zip.file('users.json', JSON.stringify(usersData, null, 2));
+    zip.file('cards.json', JSON.stringify(cardsData, null, 2));
+    zip.file('transactions.json', JSON.stringify(transactionsData, null, 2));
+    zip.file('rates.json', JSON.stringify(ratesData, null, 2));
+
+    // Генерируем SQL дамп
+    let sqlDump = '';
+
+    // SQL для users
+    sqlDump += 'INSERT INTO users (id, username, password, is_regulator, regulator_balance, last_nft_generation, nft_generation_count) VALUES\n';
+    sqlDump += usersData.map(user => 
+      `(${user.id}, '${user.username}', '${user.password}', ${user.is_regulator}, ${user.regulator_balance}, ${user.last_nft_generation ? `'${user.last_nft_generation}'` : 'NULL'}, ${user.nft_generation_count})`
+    ).join(',\n') + ';\n\n';
+
+    // SQL для cards
+    sqlDump += 'INSERT INTO cards (id, user_id, type, number, expiry, cvv, balance, btc_balance, eth_balance, btc_address, eth_address) VALUES\n';
+    sqlDump += cardsData.map(card => 
+      `(${card.id}, ${card.userId}, '${card.type}', '${card.number}', '${card.expiry}', '${card.cvv}', ${card.balance}, ${card.btcBalance}, ${card.ethBalance}, ${card.btcAddress ? `'${card.btcAddress}'` : 'NULL'}, ${card.ethAddress ? `'${card.ethAddress}'` : 'NULL'})`
+    ).join(',\n') + ';\n\n';
+
+    // SQL для transactions
+    sqlDump += 'INSERT INTO transactions (id, from_card_id, to_card_id, amount, converted_amount, type, wallet, status, created_at, description, from_card_number, to_card_number) VALUES\n';
+    sqlDump += transactionsData.map(tx => 
+      `(${tx.id}, ${tx.fromCardId}, ${tx.toCardId || 'NULL'}, ${tx.amount}, ${tx.convertedAmount}, '${tx.type}', ${tx.wallet ? `'${tx.wallet}'` : 'NULL'}, '${tx.status}', '${tx.createdAt.toISOString()}', '${tx.description.replace(/'/g, "''")}', '${tx.fromCardNumber}', '${tx.toCardNumber}')`
+    ).join(',\n') + ';\n\n';
+
+    // SQL для exchange_rates
+    sqlDump += 'INSERT INTO exchange_rates (id, usd_to_uah, btc_to_usd, eth_to_usd, updated_at) VALUES\n';
+    sqlDump += ratesData.map(rate => 
+      `(${rate.id}, ${rate.usdToUah}, ${rate.btcToUsd}, ${rate.ethToUsd}, '${rate.updatedAt.toISOString()}')`
+    ).join(',\n') + ';\n';
+
+    // Сохраняем SQL дамп
+    const sqlFileName = `backup_${timestamp}.sql`;
+    await fs.writeFile(path.join(SQL_DIR, sqlFileName), sqlDump);
+
+    // Сохраняем ZIP архив
+    const zipFileName = `backup_${timestamp}.zip`;
+    const zipContent = await zip.generateAsync({ type: "nodebuffer" });
+    await fs.writeFile(path.join(ZIP_DIR, zipFileName), zipContent);
+
     console.log('Database backup completed successfully');
-    return true;
+    console.log('Backup files created:');
+    console.log(`- JSON files in ${BACKUP_DIR}`);
+    console.log(`- ZIP archive: ${path.join(ZIP_DIR, zipFileName)}`);
+    console.log(`- SQL dump: ${path.join(SQL_DIR, sqlFileName)}`);
+
+    return {
+      success: true,
+      files: {
+        json: path.join(BACKUP_DIR, 'backup.json'),
+        zip: path.join(ZIP_DIR, zipFileName),
+        sql: path.join(SQL_DIR, sqlFileName)
+      }
+    };
   } catch (error) {
     console.error('Error during database backup:', error);
-    return false;
+    return { success: false, error };
   }
 }
 
@@ -71,4 +150,19 @@ export async function importDatabase() {
     console.error('Error during database restore:', error);
     return false;
   }
+}
+
+// Автоматическое создание бэкапа каждые 24 часа
+export function scheduleBackups() {
+  const BACKUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 часа
+
+  setInterval(async () => {
+    console.log('Starting scheduled backup...');
+    const result = await exportDatabase();
+    if (result.success) {
+      console.log('Scheduled backup completed successfully');
+    } else {
+      console.error('Scheduled backup failed:', result.error);
+    }
+  }, BACKUP_INTERVAL);
 }
