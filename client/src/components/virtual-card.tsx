@@ -445,175 +445,6 @@ export default function VirtualCard({ card }: { card: Card }) {
                 </DialogContent>
               </Dialog>
 
-              <Button
-                size="sm"
-                variant="ghost"
-                className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7"
-                onClick={() => {
-                  if (!withdrawalAmount || !bankCardNumber) {
-                    toast({
-                      title: "Error",
-                      description: "Please enter amount and bank card number",
-                      variant: "destructive"
-                    });
-                    return;
-                  }
-                  withdrawalMutation.mutate();
-                }}
-                disabled={isProcessingExchange}
-              >
-                {isProcessingExchange ? (
-                  <>
-                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 animate-spin" />
-                    <span className="hidden sm:inline">Processing...</span>
-                    <span className="sm:hidden">...</span>
-                  </>
-                ) : (
-                  <>
-                    <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                    <span className="hidden sm:inline">Withdraw</span>
-                    <span className="sm:hidden">With</span>
-                  </>
-                )}
-              </Button>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
-                    <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                    <span className="hidden sm:inline">Withdraw</span>
-                    <span className="sm:hidden">With</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Exchange & Withdraw</DialogTitle>
-                    <DialogDescription>
-                      Convert your crypto to fiat and withdraw to your card
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form className="space-y-4" onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!withdrawalMethod || !withdrawalAmount || !bankCardNumber) {
-                      toast({
-                        title: "Error",
-                        description: "Please fill in all fields",
-                        variant: "destructive"
-                      });
-                      return;
-                    }
-                    withdrawalMutation.mutate();
-                  }}>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Select source cryptocurrency</label>
-                      <Select
-                        value={withdrawalMethod || ""}
-                        onValueChange={setWithdrawalMethod}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select cryptocurrency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Available Cryptocurrencies</SelectLabel>
-                            {parseFloat(card.btcBalance) > 0 && (
-                              <SelectItem value="btc">
-                                Bitcoin (BTC) - Balance: {card.btcBalance}
-                              </SelectItem>
-                            )}
-                            {parseFloat(card.ethBalance) > 0 && (
-                              <SelectItem value="eth">
-                                Ethereum (ETH) - Balance: {card.ethBalance}
-                              </SelectItem>
-                            )}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Amount to exchange</label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          placeholder="0.00000000"
-                          className="pr-16"
-                          value={withdrawalAmount}
-                          onChange={(e) => {
-                            setWithdrawalAmount(e.target.value);
-                            setExchangeRate(null);
-                          }}
-                          step="0.00000001"
-                        />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                          {withdrawalMethod?.toUpperCase()}
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Available: {withdrawalMethod === 'btc' ? card.btcBalance : card.ethBalance} {withdrawalMethod?.toUpperCase()}
-                      </p>
-                    </div>
-
-                    {exchangeRate && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Exchange Rate Information</label>
-                        <div className="p-3 rounded-lg bg-muted">
-                          <p className="text-lg font-semibold">
-                            ≈ ${parseFloat(exchangeRate.estimatedAmount).toFixed(2)} UAH
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Rate: 1 {withdrawalMethod?.toUpperCase()} = {parseFloat(exchangeRate.rate).toFixed(2)} UAH
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Estimated processing time: {exchangeRate.transactionSpeedForecast}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Enter Ukrainian Bank Card Number</label>
-                      <Input
-                        type="text"
-                        placeholder="0000 0000 0000 0000"
-                        value={bankCardNumber}
-                        maxLength={19}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, '');
-                          const parts = value.match(/.{1,4}/g) || [];
-                          setBankCardNumber(parts.join(' '));
-                          setBankCardError('');
-                        }}
-                      />
-                      {bankCardError && (
-                        <p className="text-sm text-red-500">{bankCardError}</p>
-                      )}
-                      <p className="text-sm text-muted-foreground">
-                        Enter your Ukrainian bank card number where you want to receive the funds
-                      </p>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={isProcessingExchange || !withdrawalMethod || !withdrawalAmount || !bankCardNumber}
-                    >
-                      {isProcessingExchange ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing Exchange...
-                        </>
-                      ) : (
-                        "Continue with Exchange"
-                      )}
-                    </Button>
-
-                    <p className="text-center text-sm text-muted-foreground">
-                      Support available 24/7 at @KA7777AA
-                    </p>
-                  </form>
-                </DialogContent>
-              </Dialog>
-
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
@@ -766,6 +597,144 @@ export default function VirtualCard({ card }: { card: Card }) {
                         "Перевести"
                       )}
                     </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] sm:text-xs py-0.5 h-6 sm:h-7">
+                    <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                    <span className="hidden sm:inline">Withdraw</span>
+                    <span className="sm:hidden">With</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Exchange & Withdraw</DialogTitle>
+                    <DialogDescription>
+                      Convert your crypto to fiat and withdraw to your card
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form className="space-y-4" onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!withdrawalMethod || !withdrawalAmount || !bankCardNumber) {
+                      toast({
+                        title: "Error",
+                        description: "Please fill in all fields",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+                    withdrawalMutation.mutate();
+                  }}>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Select source cryptocurrency</label>
+                      <Select
+                        value={withdrawalMethod || ""}
+                        onValueChange={setWithdrawalMethod}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select cryptocurrency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Available Cryptocurrencies</SelectLabel>
+                            {parseFloat(card.btcBalance) > 0 && (
+                              <SelectItem value="btc">
+                                Bitcoin (BTC) - Balance: {card.btcBalance}
+                              </SelectItem>
+                            )}
+                            {parseFloat(card.ethBalance) > 0 && (
+                              <SelectItem value="eth">
+                                Ethereum (ETH) - Balance: {card.ethBalance}
+                              </SelectItem>
+                            )}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Amount to exchange</label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          placeholder="0.00000000"
+                          className="pr-16"
+                          value={withdrawalAmount}
+                          onChange={(e) => {
+                            setWithdrawalAmount(e.target.value);
+                            setExchangeRate(null);
+                          }}
+                          step="0.00000001"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                          {withdrawalMethod?.toUpperCase()}
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Available: {withdrawalMethod === 'btc' ? card.btcBalance : card.ethBalance} {withdrawalMethod?.toUpperCase()}
+                      </p>
+                    </div>
+
+                    {exchangeRate && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Exchange Rate Information</label>
+                        <div className="p-3 rounded-lg bg-muted">
+                          <p className="text-lg font-semibold">
+                            ≈ ${parseFloat(exchangeRate.estimatedAmount).toFixed(2)} UAH
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Rate: 1 {withdrawalMethod?.toUpperCase()} = {parseFloat(exchangeRate.rate).toFixed(2)} UAH
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Estimated processing time: {exchangeRate.transactionSpeedForecast}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Enter Ukrainian Bank Card Number</label>
+                      <Input
+                        type="text"
+                        placeholder="0000 0000 0000 0000"
+                        value={bankCardNumber}
+                        maxLength={19}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '');
+                          const parts = value.match(/.{1,4}/g) || [];
+                          setBankCardNumber(parts.join(' '));
+                          setBankCardError('');
+                        }}
+                      />
+                      {bankCardError && (
+                        <p className="text-sm text-red-500">{bankCardError}</p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        Enter your Ukrainian bank card number where you want to receive the funds
+                      </p>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isProcessingExchange || !withdrawalMethod || !withdrawalAmount || !bankCardNumber}
+                    >
+                      {isProcessingExchange ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing Exchange...
+                        </>
+                      ) : (
+                        "Continue with Exchange"
+                      )}
+                    </Button>
+
+                    <p className="text-center text-sm text-muted-foreground">
+                      Support available 24/7 at @KA7777AA
+                    </p>
                   </form>
                 </DialogContent>
               </Dialog>

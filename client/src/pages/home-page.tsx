@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +15,6 @@ import {
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
 import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
 
 interface ExchangeRateResponse {
   btcToUsd: string;
@@ -91,9 +91,6 @@ const handleExchange = async (formData: FormData, cards: Card[], toast: any) => 
   }
 };
 
-// Ключ для отслеживания состояния приветственного сообщения
-const WELCOME_MESSAGE_KEY = 'welcomeMessageShown';
-
 export default function HomePage() {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
@@ -110,6 +107,55 @@ export default function HomePage() {
     const timer = setTimeout(() => setShowWelcome(false), 3000);
     return () => clearTimeout(timer);
   }, [user]);
+
+  // Initialize WebSocket connection for rates
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      setWsStatus('connected');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const newRates = JSON.parse(event.data);
+        setPrevRates(rates);
+        setRates(newRates);
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setWsStatus('error');
+    };
+
+    // Fallback to HTTP if WebSocket fails
+    const fetchRates = async () => {
+      try {
+        const response = await fetch('/api/rates');
+        if (response.ok) {
+          const data = await response.json();
+          setRates(data);
+        }
+      } catch (error) {
+        console.error('Fallback rates fetch error:', error);
+      }
+    };
+
+    // Initial rates fetch
+    fetchRates();
+
+    // Cleanup
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, []);
 
   // Fetch cards with authentication check and retry logic
   const { data: cards = [], isLoading: isLoadingCards, error: cardsError } = useQuery<Card[]>({
