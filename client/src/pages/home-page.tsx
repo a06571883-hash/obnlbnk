@@ -111,6 +111,7 @@ export default function HomePage() {
     return () => clearTimeout(timer);
   }, [user]);
 
+  // Fetch cards with authentication check and retry logic
   const { data: cards = [], isLoading: isLoadingCards, error: cardsError } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
     enabled: !!user, // Only fetch cards when user is logged in
@@ -118,6 +119,7 @@ export default function HomePage() {
     refetchOnWindowFocus: true,
     retry: 3,
     staleTime: 0,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 
   const getPriceChangeColor = (current: string | undefined, previous: string | undefined) => {
@@ -130,83 +132,52 @@ export default function HomePage() {
     return '';
   };
 
-
-  // Инициализация WebSocket подключения
-  useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
-
-    let reconnectTimer: NodeJS.Timeout;
-    let reconnectAttempts = 0;
-    const MAX_RECONNECT_ATTEMPTS = 5;
-
-    const connect = () => {
-      ws.onopen = () => {
-        console.log('WebSocket подключение установлено');
-        setWsStatus('connected');
-        reconnectAttempts = 0; // Сбрасываем счетчик попыток при успешном подключении
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const newRates = JSON.parse(event.data);
-          setPrevRates(rates);
-          setRates(newRates);
-        } catch (error) {
-          console.error('Ошибка обработки данных WebSocket:', error);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket ошибка:', error);
-        setWsStatus('error');
-      };
-
-      ws.onclose = () => {
-        console.log('WebSocket соединение закрыто');
-        setWsStatus('error');
-
-        // Пытаемся переподключиться, если не превышен лимит попыток
-        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-          reconnectTimer = setTimeout(() => {
-            reconnectAttempts++;
-            connect();
-          }, 2000 * Math.pow(2, reconnectAttempts)); // Экспоненциальная задержка
-        } else {
-          toast({
-            title: "Ошибка соединения",
-            description: "Не удалось восстановить соединение для обновления курсов",
-            variant: "destructive"
-          });
-        }
-      };
-    };
-
-    connect(); // Инициируем первое подключение
-
-    // Получаем начальные курсы через HTTP
-    fetch('/api/rates')
-      .then(res => res.json())
-      .then(initialRates => {
-        setRates(initialRates);
-      })
-      .catch(error => {
-        console.error('Ошибка получения начальных курсов:', error);
-        toast({
-          title: "Ошибка загрузки курсов",
-          description: "Не удалось получить текущие курсы валют",
-          variant: "destructive"
-        });
-      });
-
-    return () => {
-      clearTimeout(reconnectTimer);
-      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-        ws.close();
+  // Handle card generation
+  const handleGenerateCards = async () => {
+    try {
+      setIsGenerating(true);
+      const response = await apiRequest("POST", "/api/cards/generate");
+      if (!response.ok) {
+        throw new Error("Failed to generate cards");
       }
-    };
-  }, [toast]); // Добавляем toast в зависимости
+      await queryClient.invalidateQueries({ queryKey: ["/api/cards"] });
+      toast({
+        title: "Успех",
+        description: "Ваши мультивалютные карты успешно созданы",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сгенерировать карты",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
+  // Check if we have a valid crypto card
+  const cryptoCard = cards.find(card => card.type === 'crypto');
+  const hasCryptoWallet = cryptoCard && cryptoCard.btcBalance && cryptoCard.ethBalance && cryptoCard.btcAddress;
+
+  if (isLoadingCards) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (cardsError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen flex-col gap-4">
+        <p className="text-destructive">Ошибка загрузки данных</p>
+        <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/cards"] })}>
+          Попробовать снова
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -239,82 +210,100 @@ export default function HomePage() {
         </div>
 
         {/* Main content */}
-        {isLoadingCards ? (
-          <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : cardsError ? (
-          <div className="flex items-center justify-center min-h-screen flex-col gap-4">
-            <p className="text-destructive">Ошибка загрузки данных</p>
-            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/cards"] })}>
-              Попробовать снова
-            </Button>
-          </div>
-        ) : cards && cards.length > 0 ? (
+        {cards && cards.length > 0 ? (
           <div className={`transition-all duration-500 ease-in-out transform ${!showWelcome ? '-translate-y-16' : ''} mt-16 pt-8 space-y-8`}>
             <CardCarousel cards={cards} />
 
             {/* Quick Actions */}
             <div className="space-y-6">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <CardUI className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
-                    <div className="p-2 flex flex-col items-center">
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                        <RefreshCw className="h-6 w-6 text-primary" />
+              {/* Exchange Dialog */}
+              {hasCryptoWallet ? (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <CardUI className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
+                      <div className="p-2 flex flex-col items-center">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                          <RefreshCw className="h-6 w-6 text-primary" />
+                        </div>
+                        <h3 className="font-medium">Обмен валюты</h3>
                       </div>
-                      <h3 className="font-medium">Обмен валюты</h3>
+                    </CardUI>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Обмен валюты</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <form onSubmit={async (e) => {
+                        e.preventDefault();
+                        try {
+                          await handleExchange(new FormData(e.currentTarget), cards, toast);
+                          e.currentTarget.reset();
+                          queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
+                        } catch (error) {
+                          // Error is already handled in handleExchange
+                        }
+                      }}>
+                        <select
+                          name="fromCurrency"
+                          className="w-full p-2 border rounded mb-4"
+                          required
+                        >
+                          <option value="btc">BTC → UAH</option>
+                          <option value="eth">ETH → UAH</option>
+                        </select>
+                        <input
+                          type="number"
+                          name="amount"
+                          placeholder="Сумма"
+                          className="w-full p-2 border rounded mb-4"
+                          step="0.00000001"
+                          min="0.00000001"
+                          required
+                        />
+                        <input
+                          type="text"
+                          name="cardNumber"
+                          placeholder="Номер карты получателя"
+                          className="w-full p-2 border rounded mb-4"
+                          pattern="\d{16}"
+                          title="Номер карты должен состоять из 16 цифр"
+                          required
+                        />
+                        <Button type="submit" className="w-full">
+                          Обменять
+                        </Button>
+                      </form>
                     </div>
-                  </CardUI>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Обмен валюты</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <form onSubmit={async (e) => {
-                      e.preventDefault();
-                      try {
-                        await handleExchange(new FormData(e.currentTarget), cards, toast);
-                        e.currentTarget.reset();
-                        queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
-                      } catch (error) {
-                        // Error is already handled in handleExchange
-                      }
-                    }}>
-                      <select
-                        name="fromCurrency"
-                        className="w-full p-2 border rounded mb-4"
-                        required
-                      >
-                        <option value="btc">BTC → UAH</option>
-                        <option value="eth">ETH → UAH</option>
-                      </select>
-                      <input
-                        type="number"
-                        name="amount"
-                        placeholder="Сумма"
-                        className="w-full p-2 border rounded mb-4"
-                        step="0.00000001"
-                        min="0.00000001"
-                        required
-                      />
-                      <input
-                        type="text"
-                        name="cardNumber"
-                        placeholder="Номер карты получателя"
-                        className="w-full p-2 border rounded mb-4"
-                        pattern="\d{16}"
-                        title="Номер карты должен состоять из 16 цифр"
-                        required
-                      />
-                      <Button type="submit" className="w-full">
-                        Обменять
-                      </Button>
-                    </form>
+                  </DialogContent>
+                </Dialog>
+              ) : (
+                <CardUI className="p-4 backdrop-blur-sm bg-background/80">
+                  <div className="p-2 flex flex-col items-center">
+                    <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+                      <RefreshCw className="h-6 w-6 text-destructive" />
+                    </div>
+                    <h3 className="font-medium text-destructive">Криптовалютный кошелек не настроен</h3>
+                    <p className="text-sm text-muted-foreground mt-2 text-center">
+                      Для обмена валют необходимо сгенерировать карты заново
+                    </p>
+                    <Button
+                      onClick={handleGenerateCards}
+                      className="mt-4"
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Генерация...
+                        </>
+                      ) : (
+                        'Сгенерировать карты'
+                      )}
+                    </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
+                </CardUI>
+              )}
 
               {/* Exchange Rates */}
               <CardUI className="p-4 backdrop-blur-sm bg-background/80">
@@ -414,28 +403,7 @@ export default function HomePage() {
                 size="lg"
                 className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
                 disabled={isGenerating}
-                onClick={async () => {
-                  try {
-                    setIsGenerating(true);
-                    const response = await apiRequest("POST", "/api/cards/generate");
-                    if (!response.ok) {
-                      throw new Error("Failed to generate cards");
-                    }
-                    await queryClient.invalidateQueries({ queryKey: ["/api/cards"] });
-                    toast({
-                      title: "Успех",
-                      description: "Ваши мультивалютные карты успешно созданы",
-                    });
-                  } catch (error: any) {
-                    toast({
-                      title: "Ошибка",
-                      description: "Не удалось сгенерировать карты",
-                      variant: "destructive",
-                    });
-                  } finally {
-                    setIsGenerating(false);
-                  }
-                }}
+                onClick={handleGenerateCards}
               >
                 {isGenerating ? (
                   <>
