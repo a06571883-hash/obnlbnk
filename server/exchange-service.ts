@@ -17,7 +17,6 @@ interface CreateTransaction {
   bankDetails?: {
     cardNumber: string;
   };
-  cookie?: string; // Added cookie property
 }
 
 function validateUkrainianCard(cardNumber: string): boolean {
@@ -31,9 +30,7 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 
     // Get user's crypto balance first
     const cardsResponse = await fetch('http://localhost:5000/api/cards', {
-      headers: {
-        'Cookie': params.cookie || '', // Pass session cookie from frontend
-      }
+      credentials: 'include' // Use existing session
     });
 
     if (!cardsResponse.ok) {
@@ -51,8 +48,8 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 
     // Check available balance
     const amount = parseFloat(params.fromAmount);
-    const balance = params.fromCurrency === 'btc' ? 
-      parseFloat(cryptoCard.btcBalance) : 
+    const balance = params.fromCurrency === 'btc' ?
+      parseFloat(cryptoCard.btcBalance) :
       parseFloat(cryptoCard.ethBalance);
 
     if (amount > balance) {

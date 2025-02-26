@@ -148,6 +148,55 @@ export default function HomePage() {
     return '';
   };
 
+  const handleExchange = async (formData: FormData) => {
+    const amount = formData.get("amount");
+    const fromCurrency = formData.get("fromCurrency");
+    const cardNumber = formData.get("cardNumber");
+
+    if (!amount || !fromCurrency || !cardNumber) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните все поля формы",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await apiRequest("POST", "/api/exchange/create", {
+        fromCurrency: fromCurrency.toString(),
+        toCurrency: "uah",
+        fromAmount: amount.toString(),
+        address: cardNumber.toString(),
+      }, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Ошибка обмена");
+      }
+
+      const result = await response.json();
+      console.log('Exchange result:', result);
+
+      toast({
+        title: "Успех",
+        description: "Обмен инициирован успешно"
+      });
+
+      return result;
+    } catch (error: any) {
+      console.error("Exchange error:", error);
+      toast({
+        title: "Ошибка обмена",
+        description: error.message || "Произошла ошибка при обмене",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   if (isLoadingCards) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -230,53 +279,12 @@ export default function HomePage() {
                   <div className="space-y-4">
                     <form onSubmit={async (e) => {
                       e.preventDefault();
-                      const formData = new FormData(e.currentTarget);
-                      const amount = formData.get("amount");
-                      const fromCurrency = formData.get("fromCurrency");
-                      const cardNumber = formData.get("cardNumber");
-
-                      if (!amount || !fromCurrency || !cardNumber) {
-                        toast({
-                          title: "Ошибка",
-                          description: "Заполните все поля формы",
-                          variant: "destructive"
-                        });
-                        return;
-                      }
-
                       try {
-                        // Get current session cookie
-                        const cookies = document.cookie;
-
-                        const response = await apiRequest("POST", "/api/exchange/create", {
-                          fromCurrency: fromCurrency.toString(),
-                          toCurrency: "uah",
-                          fromAmount: amount.toString(),
-                          address: cardNumber.toString(),
-                          cookie: cookies // Pass session cookie to backend
-                        });
-
-                        if (!response.ok) {
-                          const error = await response.json();
-                          throw new Error(error.message || "Ошибка обмена");
-                        }
-
-                        const result = await response.json();
-
-                        toast({
-                          title: "Успех",
-                          description: "Обмен инициирован успешно"
-                        });
-
+                        await handleExchange(new FormData(e.currentTarget));
                         e.currentTarget.reset();
                         queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
-                      } catch (error: any) {
-                        console.error("Exchange error:", error);
-                        toast({
-                          title: "Ошибка обмена",
-                          description: error.message || "Произошла ошибка при обмене",
-                          variant: "destructive"
-                        });
+                      } catch (error) {
+                        // Error is already handled in handleExchange
                       }
                     }}>
                       <select
