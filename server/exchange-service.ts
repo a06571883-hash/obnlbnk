@@ -63,7 +63,8 @@ export async function getExchangeRate(fromCurrency: string, toCurrency: string, 
 
 export async function createExchangeTransaction(params: CreateTransaction) {
   try {
-    const response = await fetch(`${API_URL}/exchange/standard-flow/transaction`, {
+    // Using fiat flow endpoint for bank card payouts
+    const response = await fetch(`${API_URL}/fiat-flow/transaction`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -73,14 +74,16 @@ export async function createExchangeTransaction(params: CreateTransaction) {
         fromCurrency: params.fromCurrency.toLowerCase(),
         toCurrency: params.toCurrency.toLowerCase(),
         fromAmount: params.fromAmount,
-        toAmount: '1', // Required for standard flow
+        toAmount: '1', // Required parameter
         fromNetwork: 'default',
         toNetwork: 'default',
-        payoutAddress: params.address,
-        payoutExtraId: params.extraId,
-        refundAddress: params.address, // Using the same address for refund
-        refundExtraId: params.extraId,
-        bankCard: params.bankDetails?.cardNumber
+        payinAddress: params.address, // Address where user will send crypto
+        payoutAddress: params.bankDetails?.cardNumber, // Bank card number
+        payoutCurrency: 'UAH',
+        payoutNetwork: 'UAH_RETAIL',
+        payoutBankName: 'Ukrainian Bank',
+        refundAddress: params.address,
+        type: 'direct'
       })
     });
 
