@@ -64,22 +64,37 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       throw new Error(`Minimum amount for ${params.fromCurrency.toUpperCase()} is ${minAmount}`);
     }
 
-    // Create exchange using v1 API
+    // First get the minimum exchange amount
+    const minAmountResponse = await fetch(
+      `${API_URL}/min-amount/${params.fromCurrency.toLowerCase()}_uah?api_key=${API_KEY}`
+    );
+
+    if (!minAmountResponse.ok) {
+      throw new Error('Failed to get minimum amount');
+    }
+
+    // Create the fixed-rate exchange
     const requestBody = {
       from: params.fromCurrency.toLowerCase(),
       to: "uah",
       amount: params.fromAmount,
       address: cleanCardNumber,
-      extraId: null,
+      fixedRate: true,
       refundAddress: null,
-      payoutBankCard: cleanCardNumber,
-      payoutBankName: "Ukrainian Bank",
-      payoutBankCountry: "UA"
+      payload: {
+        description: "Crypto to UAH exchange",
+        destinationType: "bank_card",
+        bankDetails: {
+          cardNumber: cleanCardNumber,
+          bankName: "Ukrainian Bank",
+          bankCountry: "UA"
+        }
+      }
     };
 
     console.log('Creating exchange with body:', JSON.stringify(requestBody, null, 2));
 
-    const response = await fetch(`${API_URL}/transactions/bank-card/fixed-rate`, {
+    const response = await fetch(`${API_URL}/transactions/fixed-rate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -89,7 +104,7 @@ export async function createExchangeTransaction(params: CreateTransaction) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ message: response.statusText }));
       console.error('Exchange creation error:', error);
       throw new Error(error.message || 'Failed to create exchange');
     }
