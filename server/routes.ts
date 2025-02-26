@@ -167,11 +167,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { fromCurrency, toCurrency, fromAmount, address, cryptoCard } = req.body;
 
       if (!fromCurrency || !toCurrency || !fromAmount || !address) {
-        return res.status(400).json({ message: "Missing required parameters" });
+        return res.status(400).json({ message: "Пожалуйста, заполните все обязательные поля" });
       }
 
       // Validate Ukrainian card number
-      if (!validateUkrainianCard(address)) { // Assuming validateUkrainianCard function exists
+      if (!validateUkrainianCard(address)) {
         return res.status(400).json({ 
           message: "Пожалуйста, введите действительный номер украинской банковской карты" 
         });
@@ -194,9 +194,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const balance = fromCurrency === 'btc' ? userCryptoCard.btcBalance : userCryptoCard.ethBalance;
       if (parseFloat(balance) < parseFloat(fromAmount)) {
         return res.status(400).json({ 
-          message: `Недостаточно ${fromCurrency.toUpperCase()} для обмена` 
+          message: `Недостаточно ${fromCurrency.toUpperCase()} для обмена. Доступно: ${balance} ${fromCurrency.toUpperCase()}` 
         });
       }
+
+      console.log('Exchange params:', {
+        fromCurrency,
+        toCurrency,
+        fromAmount,
+        address,
+        cryptoCard: {
+          id: cryptoCard.id,
+          userId: cryptoCard.userId,
+          type: cryptoCard.type,
+          btcBalance: cryptoCard.btcBalance,
+          ethBalance: cryptoCard.ethBalance
+        }
+      });
 
       const transaction = await createExchangeTransaction({
         fromCurrency,

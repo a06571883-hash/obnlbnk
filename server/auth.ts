@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-// Improved Ukrainian card number validation
+// Improved Ukrainian card number validation with more bank prefixes
 function validateUkrainianCard(cardNumber: string): boolean {
   const cleanNumber = cardNumber.replace(/\s+/g, '');
   if (!/^\d{16}$/.test(cleanNumber)) {
@@ -28,9 +28,13 @@ function validateUkrainianCard(cardNumber: string): boolean {
     // PrivatBank
     '4149', '5168', '5167', '4506', '4508', '4558',
     // Monobank
-    '5375', '4443',
+    '5375', '4443', '4441', '4444',
     // Universal/Other Ukrainian banks
-    '4000', '4111', '4112', '4627', '5133', '5169', '5351', '5582'
+    '4000', '4111', '4112', '4627', '5133', '5169', '5351', '5582',
+    // Additional Ukrainian bank prefixes
+    '4242', '4245', '4246', '4728', '4910', '4911', '4913', '4921',
+    '4936', '4937', '4970', '4971', '5104', '5355', '5491', '5492',
+    '5493', '5494', '5495', '5496', '5497', '5498', '5499'
   ];
 
   return ukrPrefixes.some(prefix => cleanNumber.startsWith(prefix));
