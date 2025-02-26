@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./database/connection";
 import { scheduleBackups } from "./database/backup";
+import { startBot } from "./telegram-bot"; // Import telegram bot
 
 // Set development mode
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
@@ -65,6 +66,10 @@ app.use((req, res, next) => {
     // Initialize scheduled backups
     scheduleBackups();
     console.log('Scheduled database backups initialized');
+
+    // Start Telegram bot
+    startBot();
+    console.log('Telegram bot started successfully');
 
     // Error handling
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
