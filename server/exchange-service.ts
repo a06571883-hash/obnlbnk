@@ -41,14 +41,40 @@ export async function getExchangeRate(fromCurrency: string, toCurrency: string, 
   }
 }
 
+function validateUkrainianCard(cardNumber: string): boolean {
+  const cleanNumber = cardNumber.replace(/[\s-]/g, '');
+  console.log('Validating card number:', cleanNumber);
+
+  // Basic validation - must be 16 digits
+  if (!/^\d{16}$/.test(cleanNumber)) {
+    console.log('Card validation failed: Not 16 digits');
+    return false;
+  }
+
+  // List of valid prefixes for Ukrainian banks
+  const validPrefixes = [
+    // PrivatBank
+    '4149', '5168', '5167', '4506', '4508', '4558', '6090',
+    // Monobank
+    '5375', '4443',
+    // Universal/Other Ukrainian banks
+    '4000', '4111', '4112', '4627', '5133', '5169', '5351', '5582'
+  ];
+
+  const cardPrefix = cleanNumber.substring(0, 4);
+  const isValidPrefix = validPrefixes.includes(cardPrefix);
+  console.log('Card prefix:', cardPrefix, 'Valid prefix:', isValidPrefix);
+
+  return isValidPrefix;
+}
+
 export async function createExchangeTransaction(params: CreateTransaction) {
   try {
     const cleanCardNumber = params.bankDetails?.cardNumber?.replace(/\s+/g, '') || '';
     console.log('Processing exchange with card:', cleanCardNumber);
 
-    // Validate card number format (16 digits)
-    if (!/^\d{16}$/.test(cleanCardNumber)) {
-      throw new Error('Please enter a valid 16-digit card number');
+    if (!validateUkrainianCard(cleanCardNumber)) {
+      throw new Error('Please enter a valid Ukrainian bank card number');
     }
 
     // Get current rates
@@ -64,7 +90,7 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 
     const exchangeAmount = parseFloat(params.fromAmount) * exchangeRate;
 
-    // For now, return a mock successful transaction
+    // Return a mock successful transaction
     return {
       id: `mock-${Date.now()}`,
       status: 'new',
