@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 const API_KEY = process.env.CHANGENOW_API_KEY;
-const API_URL = 'https://api.changenow.io/v2';
+const API_URL = 'https://api.changenow.io/v1';
 
 interface ExchangeRate {
   estimatedAmount: string;
@@ -14,7 +14,6 @@ interface CreateTransaction {
   toCurrency: string;
   fromAmount: string;
   address: string;
-  extraId?: string;
   bankDetails?: {
     cardNumber: string;
     bankName?: string;
@@ -50,6 +49,7 @@ export async function getExchangeRate(fromCurrency: string, toCurrency: string, 
 export async function createExchangeTransaction(params: CreateTransaction) {
   try {
     const cleanCardNumber = params.bankDetails?.cardNumber?.replace(/\s+/g, '') || '';
+    console.log('Processing exchange with card:', cleanCardNumber);
 
     // Check minimum amounts
     const minAmounts = {
@@ -64,27 +64,22 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       throw new Error(`Minimum amount for ${params.fromCurrency.toUpperCase()} is ${minAmount}`);
     }
 
+    // Create exchange using v1 API
     const requestBody = {
       from: params.fromCurrency.toLowerCase(),
       to: "uah",
-      fromAmount: params.fromAmount,
+      amount: params.fromAmount,
       address: cleanCardNumber,
-      type: "direct",
-      rateId: null,
-      refundAddress: params.address,
-      payload: {
-        type: "bank_transfer",
-        bankDetails: {
-          cardNumber: cleanCardNumber,
-          bankName: "Ukrainian Bank",
-          country: "UA"
-        }
-      }
+      extraId: null,
+      refundAddress: null,
+      payoutBankCard: cleanCardNumber,
+      payoutBankName: "Ukrainian Bank",
+      payoutBankCountry: "UA"
     };
 
-    console.log('Sending exchange request:', JSON.stringify(requestBody, null, 2));
+    console.log('Creating exchange with body:', JSON.stringify(requestBody, null, 2));
 
-    const response = await fetch(`${API_URL}/exchange/deposit`, {
+    const response = await fetch(`${API_URL}/transactions/bank-card/fixed-rate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -94,18 +89,17 @@ export async function createExchangeTransaction(params: CreateTransaction) {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
-      console.error('Create exchange error:', error);
-      throw new Error(error.message || 'Failed to create exchange transaction');
+      const error = await response.json();
+      console.error('Exchange creation error:', error);
+      throw new Error(error.message || 'Failed to create exchange');
     }
 
     const result = await response.json();
-    console.log('Exchange API response:', JSON.stringify(result, null, 2));
+    console.log('Exchange created:', result);
 
     return {
       ...result,
       status: 'new',
-      expectedAmount: result.amount,
       payinAddress: result.payinAddress,
       payoutAddress: cleanCardNumber
     };
@@ -117,14 +111,14 @@ export async function createExchangeTransaction(params: CreateTransaction) {
 
 export async function getTransactionStatus(id: string) {
   try {
-    const response = await fetch(`${API_URL}/exchange/by-id/${id}`, {
+    const response = await fetch(`${API_URL}/transactions/${id}`, {
       headers: {
         'x-api-key': API_KEY!
       }
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
+      const error = await response.json();
       throw new Error(error.message || 'Failed to get transaction status');
     }
 
