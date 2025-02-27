@@ -355,7 +355,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         <div className="relative z-10 flex flex-col justify-between h-full">
           <div className="space-y-2">
             <div className="text-xs opacity-80">BNAL BANK</div>
-            <div className="text-xl font-bold tracking-wider">
+            <div className="text-2xl font-bold tracking-wider">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
           </div>
