@@ -105,16 +105,18 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   }, [withdrawalAmount, withdrawalMethod, rates]);
 
+  const sensitivity = isIOS ? 0.3 : 0.5; // Уменьшаем чувствительность для более плавного поворота
+  const springFactor = 0.08; // Добавляем пружинный эффект для более естественного движения
+
   useEffect(() => {
     if (gyroscope && isMobile) {
-      const sensitivity = isIOS ? 0.5 : 0.7;
       const targetX = -gyroscope.beta * sensitivity;
       const targetY = gyroscope.gamma * sensitivity;
 
       requestAnimationFrame(() => {
         setRotation(prev => ({
-          x: prev.x + (targetX - prev.x) * (isIOS ? 0.05 : 0.1),
-          y: prev.y + (targetY - prev.y) * (isIOS ? 0.05 : 0.1)
+          x: prev.x + (targetX - prev.x) * springFactor,
+          y: prev.y + (targetY - prev.y) * springFactor
         }));
       });
     }
@@ -261,8 +263,8 @@ export default function VirtualCard({ card }: { card: Card }) {
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
 
-    const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 15;
-    const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 15;
+    const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 12; // Уменьшаем угол поворота
+    const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 12;
 
     setRotation({ x: rotateX, y: rotateY });
     setIsHovered(true);
@@ -335,6 +337,7 @@ export default function VirtualCard({ card }: { card: Card }) {
           perspective(1000px) 
           rotateX(${rotation.x}deg) 
           rotateY(${rotation.y}deg)
+          scale3d(${isHovered ? 0.98 : 0.95}, ${isHovered ? 0.98 : 0.95}, 1)
         `,
         transition: isHovered ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out',
         transformStyle: 'preserve-3d'
@@ -346,13 +349,21 @@ export default function VirtualCard({ card }: { card: Card }) {
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
             0 6px 6px rgba(0,0,0,0.23),
-            ${Math.abs(rotation.y)}px ${Math.abs(rotation.x)}px 20px rgba(0,0,0,0.1)
-          `
+            ${Math.abs(rotation.y)}px ${Math.abs(rotation.x)}px ${20 + Math.abs(rotation.x + rotation.y) / 2}px rgba(0,0,0,${0.1 + Math.abs(rotation.x + rotation.y) / 100})
+          `,
+          transform: `translateZ(${isHovered ? '10px' : '0px'})`,
+          transition: 'transform 0.3s ease-out, box-shadow 0.3s ease-out'
         }}
       >
-        <div className="relative z-10 flex flex-col justify-between h-full p-1">
+        <div 
+          className="relative z-10 flex flex-col justify-between h-full p-1"
+          style={{
+            transform: `translateZ(${isHovered ? '5px' : '0px'})`,
+            transition: 'transform 0.3s ease-out'
+          }}
+        >
           <div className="space-y-0.5">
-            <div className="opacity-80 text-[11px]">BNAL BANK</div>
+            <div className="opacity-80 text-[11px]">OOO BNAL BANK</div>
             <div className="font-bold tracking-wider text-[11px]">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
