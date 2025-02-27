@@ -330,7 +330,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         <div className="relative z-10 flex flex-col justify-between h-full">
           <div className="space-y-0.5">
             <div className="text-[10px] opacity-80">BNAL BANK</div>
-            <div className="text-sm font-bold tracking-wider">
+            <div className="text-[10px] font-bold tracking-wider">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
           </div>
@@ -343,28 +343,28 @@ export default function VirtualCard({ card }: { card: Card }) {
                     <Bitcoin className="h-3 w-3 mr-1" />
                     <div className="text-[10px] opacity-80">BTC Balance</div>
                   </div>
-                  <div className="text-[11px] font-semibold">
+                  <div className="text-[10px] font-semibold">
                     {card.btcBalance} BTC
                   </div>
                   <div className="flex items-center mt-0.5">
                     <Coins className="h-3 w-3 mr-1" />
                     <div className="text-[10px] opacity-80">ETH Balance</div>
                   </div>
-                  <div className="text-[11px] font-semibold">
+                  <div className="text-[10px] font-semibold">
                     {card.ethBalance} ETH
                   </div>
                 </div>
               ) : (
                 <div>
                   <div className="text-[10px] opacity-80">Balance</div>
-                  <div className="text-xs font-semibold">
+                  <div className="text-[10px] font-semibold">
                     {card.balance} {card.type.toUpperCase()}
                   </div>
                 </div>
               )}
               <div>
                 <div className="text-[10px] opacity-80">Expires</div>
-                <div className="text-xs font-semibold">{card.expiry}</div>
+                <div className="text-[10px] font-semibold">{card.expiry}</div>
               </div>
             </div>
 

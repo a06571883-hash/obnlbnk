@@ -32,7 +32,7 @@ export default function CardsPage() {
       <TelegramBackground />
       <div className="p-4">
         <h1 className="text-lg font-semibold mb-4">Мои карты</h1>
-        <div className="w-full max-w-[280px] mx-auto space-y-2">
+        <div className="w-full max-w-[250px] mx-auto space-y-2">
           {cards && cards.length > 0 ? (
             cards.map((card) => (
               <div key={card.id}>
