@@ -350,44 +350,44 @@ export default function VirtualCard({ card }: { card: Card }) {
           `
         }}
       >
-        <div className="relative z-10 flex flex-col justify-between h-full p-2">
-          <div className="space-y-1">
-            <div className="opacity-80 text-[11px]">BNAL BANK</div>
-            <div className="font-bold tracking-wider text-[11px]">
+        <div className="relative z-10 flex flex-col justify-between h-full p-1">
+          <div className="space-y-0.5">
+            <div className="opacity-80 text-[10px]">BNAL BANK</div>
+            <div className="font-bold tracking-wider text-[10px]">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <div className="flex justify-between">
               {card.type === 'crypto' ? (
                 <div className="space-y-0.5">
                   <div className="flex items-center">
                     <Bitcoin className="h-3 w-3 mr-1" />
-                    <div className="opacity-80 text-[10px]">BTC Balance</div>
+                    <div className="opacity-80 text-[9px]">BTC Balance</div>
                   </div>
-                  <div className="font-semibold text-[10px]">
+                  <div className="font-semibold text-[9px]">
                     {card.btcBalance} BTC
                   </div>
                   <div className="flex items-center mt-0.5">
                     <Coins className="h-3 w-3 mr-1" />
-                    <div className="opacity-80 text-[10px]">ETH Balance</div>
+                    <div className="opacity-80 text-[9px]">ETH Balance</div>
                   </div>
-                  <div className="font-semibold text-[10px]">
+                  <div className="font-semibold text-[9px]">
                     {card.ethBalance} ETH
                   </div>
                 </div>
               ) : (
                 <div>
-                  <div className="opacity-80 text-[11px]">Balance</div>
-                  <div className="font-semibold text-[11px]">
+                  <div className="opacity-80 text-[10px]">Balance</div>
+                  <div className="font-semibold text-[10px]">
                     {card.balance} {card.type.toUpperCase()}
                   </div>
                 </div>
               )}
               <div>
-                <div className="opacity-80 text-[11px]">Expires</div>
-                <div className="font-semibold text-[11px]">{card.expiry}</div>
+                <div className="opacity-80 text-[10px]">Expires</div>
+                <div className="font-semibold text-[10px]">{card.expiry}</div>
               </div>
             </div>
 
