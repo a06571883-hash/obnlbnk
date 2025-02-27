@@ -327,7 +327,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   return (
     <div
       ref={cardRef}
-      className="w-[250px] mx-auto"
+      className="w-[250px] h-[250px] mx-auto flex items-center justify-center"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
