@@ -327,7 +327,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   return (
     <div
       ref={cardRef}
-      className="w-[250px] h-[250px] mx-auto flex items-center justify-center"
+      className="w-[280px] h-[280px] mx-auto flex items-center justify-center"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -341,7 +341,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-[140px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
+        className={`relative h-[160px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
@@ -352,8 +352,8 @@ export default function VirtualCard({ card }: { card: Card }) {
       >
         <div className="relative z-10 flex flex-col justify-between h-full p-1">
           <div className="space-y-0.5">
-            <div className="opacity-80 text-[10px]">BNAL BANK</div>
-            <div className="font-bold tracking-wider text-[10px]">
+            <div className="opacity-80 text-[11px]">BNAL BANK</div>
+            <div className="font-bold tracking-wider text-[11px]">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
           </div>
@@ -363,39 +363,39 @@ export default function VirtualCard({ card }: { card: Card }) {
               {card.type === 'crypto' ? (
                 <div className="space-y-0.5">
                   <div className="flex items-center">
-                    <Bitcoin className="h-3 w-3 mr-1" />
-                    <div className="opacity-80 text-[9px]">BTC Balance</div>
+                    <Bitcoin className="h-3.5 w-3.5 mr-1" />
+                    <div className="opacity-80 text-[10px]">BTC Balance</div>
                   </div>
-                  <div className="font-semibold text-[9px]">
+                  <div className="font-semibold text-[10px]">
                     {card.btcBalance} BTC
                   </div>
                   <div className="flex items-center mt-0.5">
-                    <Coins className="h-3 w-3 mr-1" />
-                    <div className="opacity-80 text-[9px]">ETH Balance</div>
+                    <Coins className="h-3.5 w-3.5 mr-1" />
+                    <div className="opacity-80 text-[10px]">ETH Balance</div>
                   </div>
-                  <div className="font-semibold text-[9px]">
+                  <div className="font-semibold text-[10px]">
                     {card.ethBalance} ETH
                   </div>
                 </div>
               ) : (
                 <div>
-                  <div className="opacity-80 text-[10px]">Balance</div>
-                  <div className="font-semibold text-[10px]">
+                  <div className="opacity-80 text-[11px]">Balance</div>
+                  <div className="font-semibold text-[11px]">
                     {card.balance} {card.type.toUpperCase()}
                   </div>
                 </div>
               )}
               <div>
-                <div className="opacity-80 text-[10px]">Expires</div>
-                <div className="font-semibold text-[10px]">{card.expiry}</div>
+                <div className="opacity-80 text-[11px]">Expires</div>
+                <div className="font-semibold text-[11px]">{card.expiry}</div>
               </div>
             </div>
 
             <div className="flex space-x-1">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-5 px-2">
-                    <ArrowUpCircle className="h-3 w-3 mr-1" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-6 px-2">
+                    <ArrowUpCircle className="h-3.5 w-3.5 mr-1" />
                     <span className="hidden sm:inline">Deposit</span>
                     <span className="sm:hidden text-[10px]">Dep</span>
                   </Button>
@@ -428,8 +428,8 @@ export default function VirtualCard({ card }: { card: Card }) {
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-5 px-2">
-                    <RefreshCw className="h-3 w-3 mr-1" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-6 px-2">
+                    <RefreshCw className="h-3.5 w-3.5 mr-1" />
                     <span className="hidden sm:inline">Transfer</span>
                     <span className="sm:hidden text-[10px]">Trans</span>
                   </Button>
@@ -584,8 +584,8 @@ export default function VirtualCard({ card }: { card: Card }) {
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-5 px-2">
-                    <ArrowDownCircle className="h-3 w-3 mr-1" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-6 px-2">
+                    <ArrowDownCircle className="h-3.5 w-3.5 mr-1" />
                     <span className="hidden sm:inline">Withdraw</span>
                     <span className="sm:hidden text-[10px]">With</span>
                   </Button>
