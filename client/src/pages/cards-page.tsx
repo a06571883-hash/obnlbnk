@@ -41,7 +41,7 @@ export default function CardsPage() {
         <div className="w-full max-w-[400px] mx-auto space-y-4">
           {cards && cards.length > 0 ? (
             cards.map((card) => (
-              <div key={card.id} className="px-4 py-2 w-280"> {/* Added padding and increased width */}
+              <div key={card.id} className="px-8 py-4">
                 <VirtualCard card={card} />
               </div>
             ))
