@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Home, ArrowLeftRight, Activity, User } from "lucide-react";
+import { Home, Activity, User, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -10,7 +10,7 @@ export default function BottomNav() {
 
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
-    { icon: ArrowLeftRight, label: "Exchange", path: "/exchange" },
+    { icon: Newspaper, label: "News", path: "/news" },
     { icon: Activity, label: "Activity", path: "/activity" },
     { icon: User, label: "Profile", path: "/profile" },
   ];

@@ -1,16 +1,18 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Loader2, TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Bitcoin, Coins } from "lucide-react";
 import { useState, useEffect } from "react";
 import TelegramBackground from "@/components/telegram-background";
 import { motion, AnimatePresence } from "framer-motion";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useToast } from "@/hooks/use-toast";
 import { Card as CardType } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowRight } from "lucide-react";
+
 
 interface RateHistory {
   timestamp: number;
@@ -21,19 +23,53 @@ interface Rates {
   usdToUah: number;
   btcToUsd: number;
   ethToUsd: number;
-  history?: {
-    btc: RateHistory[];
-    eth: RateHistory[];
-  };
 }
 
-export default function ExchangePage() {
+interface NewsItem {
+  id: number;
+  title: string;
+  content: string;
+  date: string;
+  category: 'crypto' | 'fiat';
+  source: string;
+}
+
+// Демо-данные для новостей
+const demoNews: NewsItem[] = [
+  {
+    id: 1,
+    title: "Bitcoin достиг нового максимума в 2024 году",
+    content: "Ведущая криптовалюта преодолела отметку в $85,000, установив новый рекорд этого года. Аналитики связывают рост с увеличением институционального интереса.",
+    date: "27 февраля 2024",
+    category: 'crypto',
+    source: 'CryptoNews'
+  },
+  {
+    id: 2,
+    title: "Курс гривны стабилизировался на межбанке",
+    content: "НБУ сообщает о стабилизации курса национальной валюты. Эксперты прогнозируют сохранение текущих позиций в ближайшие недели.",
+    date: "27 февраля 2024",
+    category: 'fiat',
+    source: 'FinanceUA'
+  },
+  {
+    id: 3,
+    title: "Ethereum готовится к крупному обновлению",
+    content: "Разработчики Ethereum анонсировали новый апгрейд сети, который должен улучшить масштабируемость и снизить комиссии за транзакции.",
+    date: "27 февраля 2024",
+    category: 'crypto',
+    source: 'ETHNews'
+  },
+];
+
+export default function NewsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedCurrency, setSelectedCurrency] = useState<'btc' | 'eth' | 'uah'>('btc');
+  const [rateHistory, setRateHistory] = useState<RateHistory[]>([]);
   const [fromCurrency, setFromCurrency] = useState("btc");
   const [toCurrency, setToCurrency] = useState("usdt");
   const [amount, setAmount] = useState("");
-  const [rateHistory, setRateHistory] = useState<RateHistory[]>([]);
   const [selectedFromCard, setSelectedFromCard] = useState<string>("");
   const [selectedToCard, setSelectedToCard] = useState<string>("");
 
@@ -45,23 +81,6 @@ export default function ExchangePage() {
   const { data: cards, isLoading: cardsLoading } = useQuery<CardType[]>({
     queryKey: ["/api/cards"]
   });
-
-  // Генерируем историю курсов с более плавными изменениями
-  useEffect(() => {
-    if (rates) {
-      const now = Date.now();
-      const baseRate = fromCurrency === 'btc' ? rates.btcToUsd : rates.ethToUsd;
-      const newHistory = Array.from({ length: 24 }, (_, i) => {
-        const hourOffset = 23 - i;
-        const volatility = Math.sin(hourOffset / 4) * 0.05; // Создаем более плавные колебания
-        return {
-          timestamp: now - hourOffset * 3600000,
-          rate: baseRate * (1 + volatility + (Math.random() - 0.5) * 0.02) // Добавляем небольшой случайный шум
-        };
-      });
-      setRateHistory(newHistory);
-    }
-  }, [rates, fromCurrency]);
 
   const exchangeMutation = useMutation({
     mutationFn: async () => {
@@ -103,6 +122,26 @@ export default function ExchangePage() {
     }
   });
 
+
+  // Генерируем историю курсов с более плавными изменениями
+  useEffect(() => {
+    if (rates) {
+      const now = Date.now();
+      const baseRate = selectedCurrency === 'btc' ? rates.btcToUsd : 
+                      selectedCurrency === 'eth' ? rates.ethToUsd :
+                      rates.usdToUah;
+      const newHistory = Array.from({ length: 24 }, (_, i) => {
+        const hourOffset = 23 - i;
+        const volatility = Math.sin(hourOffset / 4) * 0.05;
+        return {
+          timestamp: now - hourOffset * 3600000,
+          rate: baseRate * (1 + volatility + (Math.random() - 0.5) * 0.02)
+        };
+      });
+      setRateHistory(newHistory);
+    }
+  }, [rates, selectedCurrency]);
+
   if (ratesLoading || cardsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -133,12 +172,15 @@ export default function ExchangePage() {
     <div className="min-h-screen bg-background">
       <TelegramBackground />
       <div className="flex flex-col h-[calc(100vh-48px)]">
-        <h1 className="text-lg font-semibold px-4 pt-2">Обмен валют</h1>
+        <h1 className="text-lg font-semibold px-4 pt-2">Новости и котировки</h1>
         <div className="flex-1 flex flex-col items-start justify-start -mt-8 pb-20 px-4">
           <div className="w-full max-w-[800px] mx-auto space-y-4">
             {/* Карточки с курсами */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="p-4 relative overflow-hidden bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10">
+              <Card 
+                className={`p-4 relative overflow-hidden bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 cursor-pointer transition-all ${selectedCurrency === 'btc' ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setSelectedCurrency('btc')}
+              >
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -153,7 +195,10 @@ export default function ExchangePage() {
                 </motion.div>
               </Card>
 
-              <Card className="p-4 relative overflow-hidden bg-gradient-to-br from-blue-500/10 to-cyan-500/10">
+              <Card 
+                className={`p-4 relative overflow-hidden bg-gradient-to-br from-blue-500/10 to-cyan-500/10 cursor-pointer transition-all ${selectedCurrency === 'eth' ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setSelectedCurrency('eth')}
+              >
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -169,7 +214,10 @@ export default function ExchangePage() {
                 </motion.div>
               </Card>
 
-              <Card className="p-4 relative overflow-hidden bg-gradient-to-br from-emerald-500/10 to-teal-500/10">
+              <Card 
+                className={`p-4 relative overflow-hidden bg-gradient-to-br from-emerald-500/10 to-teal-500/10 cursor-pointer transition-all ${selectedCurrency === 'uah' ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setSelectedCurrency('uah')}
+              >
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -187,45 +235,58 @@ export default function ExchangePage() {
             </div>
 
             {/* График курсов */}
-            <Card className="p-4">
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={rateHistory}>
-                    <defs>
-                      <linearGradient id="rateColor" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#666" opacity={0.1} />
-                    <XAxis 
-                      dataKey="timestamp"
-                      tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
-                      stroke="#666"
-                    />
-                    <YAxis stroke="#666" />
-                    <Tooltip 
-                      labelFormatter={(timestamp) => new Date(timestamp).toLocaleString()}
-                      formatter={(value: number) => [`$${formatRate(value)}`, 'Rate']}
-                      contentStyle={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                      }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="rate" 
-                      stroke="#8884d8"
-                      fillOpacity={1}
-                      fill="url(#rateColor)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedCurrency}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="p-4">
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={rateHistory}>
+                        <defs>
+                          <linearGradient id="rateColor" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#666" opacity={0.1} />
+                        <XAxis 
+                          dataKey="timestamp"
+                          tickFormatter={(timestamp) => new Date(timestamp).toLocaleTimeString()}
+                          stroke="#666"
+                        />
+                        <YAxis stroke="#666" />
+                        <Tooltip 
+                          labelFormatter={(timestamp) => new Date(timestamp).toLocaleString()}
+                          formatter={(value: number) => [
+                            `${selectedCurrency === 'uah' ? '₴' : '$'}${formatRate(value)}`,
+                            selectedCurrency.toUpperCase()
+                          ]}
+                          contentStyle={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                          }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="rate" 
+                          stroke="#8884d8"
+                          fillOpacity={1}
+                          fill="url(#rateColor)"
+                          strokeWidth={2}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </motion.div>
+            </AnimatePresence>
 
             {/* Форма обмена */}
             <Card className="p-4">
@@ -312,6 +373,30 @@ export default function ExchangePage() {
                 </Button>
               </div>
             </Card>
+
+            {/* Новостная лента */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Последние новости</h2>
+              {demoNews.map((news) => (
+                <Card key={news.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <h3 className="text-base font-medium">{news.title}</h3>
+                    <span className="text-xs text-muted-foreground">{news.date}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{news.content}</p>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-primary">{news.source}</span>
+                    <span className={`px-2 py-1 rounded-full ${
+                      news.category === 'crypto' 
+                        ? 'bg-violet-500/10 text-violet-500'
+                        : 'bg-emerald-500/10 text-emerald-500'
+                    }`}>
+                      {news.category === 'crypto' ? 'Крипто' : 'Фиат'}
+                    </span>
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </div>
