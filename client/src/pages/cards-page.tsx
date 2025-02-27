@@ -42,7 +42,7 @@ export default function CardsPage() {
           <div className="w-full max-w-[400px] space-y-4">
             {cards && cards.length > 0 ? (
               cards.map((card) => (
-                <div key={card.id} className="px-8 h-[300px] flex items-center">
+                <div key={card.id} className="px-8 h-[400px] flex items-center">
                   <VirtualCard card={card} />
                 </div>
               ))
