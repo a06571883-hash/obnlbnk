@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import TransactionReceipt from "@/components/transaction-receipt";
 import AnimatedBackground from "@/components/animated-background";
+import TelegramBackground from "@/components/telegram-background";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -145,6 +146,7 @@ export default function ActivityPage() {
   return (
     <div className="min-h-screen bg-background">
       <AnimatedBackground />
+      <TelegramBackground />
 
       <div className="bg-primary text-primary-foreground p-4 relative">
         <h1 className="text-xl font-bold mb-1">Activity</h1>
