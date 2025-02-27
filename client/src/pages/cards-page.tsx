@@ -36,9 +36,9 @@ export default function CardsPage() {
   return (
     <div className="min-h-screen bg-background">
       <TelegramBackground />
-      <div className="flex flex-col h-[calc(100vh-48px)] pt-4">
-        <h1 className="text-lg font-semibold mb-4 px-4">Мои карты</h1>
-        <div className="flex-1 flex items-center justify-center">
+      <div className="flex flex-col h-[calc(100vh-48px)]">
+        <h1 className="text-lg font-semibold px-4 pt-2">Мои карты</h1>
+        <div className="flex-1 flex items-start justify-center -mt-8 pb-20">
           <div className="w-full max-w-[400px] space-y-4">
             {cards && cards.length > 0 ? (
               cards.map((card) => (
