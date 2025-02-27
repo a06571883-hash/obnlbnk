@@ -26,7 +26,7 @@ export default function CardsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
-          <h2 className="text-xl text-red-500">Ошибка загрузки карт</h2>
+          <h2 className="text-xl text-destructive">Ошибка загрузки карт</h2>
           <p className="text-muted-foreground">Попробуйте обновить страницу</p>
         </div>
       </div>
@@ -38,10 +38,10 @@ export default function CardsPage() {
       <TelegramBackground />
       <div className="p-4">
         <h1 className="text-lg font-semibold mb-4">Мои карты</h1>
-        <div className="flex flex-col gap-4">
+        <div className="space-y-4">
           {cards && cards.length > 0 ? (
             cards.map((card) => (
-              <div key={card.id} className="w-full max-w-md mx-auto">
+              <div key={card.id} className="w-full max-w-sm mx-auto">
                 <VirtualCard card={card} />
               </div>
             ))

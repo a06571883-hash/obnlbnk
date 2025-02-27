@@ -48,7 +48,7 @@ interface ExchangeRequest {
 
 // Constants
 const cardColors = {
-  crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500 before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:rounded-xl",
+  crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500",
   usd: "bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400",
   uah: "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400",
 } as const;
@@ -329,7 +329,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   return (
     <div
       ref={cardRef}
-      className="w-full max-w-[350px] mx-auto"
+      className="w-full"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -343,7 +343,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-[160px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-4 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
+        className={`relative h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-6 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
@@ -353,51 +353,51 @@ export default function VirtualCard({ card }: { card: Card }) {
         }}
       >
         <div className="relative z-10 flex flex-col justify-between h-full">
-          <div className="space-y-1">
-            <div className="text-[10px] opacity-80">BNAL BANK</div>
-            <div className="text-sm font-bold tracking-wider">
+          <div className="space-y-2">
+            <div className="text-xs opacity-80">BNAL BANK</div>
+            <div className="text-xl font-bold tracking-wider">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between">
               {card.type === 'crypto' ? (
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   <div className="flex items-center">
-                    <Bitcoin className="h-3 w-3 mr-1" />
-                    <div className="text-[9px] opacity-80">BTC Balance</div>
+                    <Bitcoin className="h-4 w-4 mr-1" />
+                    <div className="text-sm opacity-80">BTC Balance</div>
                   </div>
-                  <div className="text-[11px] font-semibold">
+                  <div className="text-sm font-semibold">
                     {card.btcBalance} BTC
                   </div>
-                  <div className="flex items-center mt-0.5">
-                    <Coins className="h-3 w-3 mr-1" />
-                    <div className="text-[9px] opacity-80">ETH Balance</div>
+                  <div className="flex items-center mt-1">
+                    <Coins className="h-4 w-4 mr-1" />
+                    <div className="text-sm opacity-80">ETH Balance</div>
                   </div>
-                  <div className="text-[11px] font-semibold">
+                  <div className="text-sm font-semibold">
                     {card.ethBalance} ETH
                   </div>
                 </div>
               ) : (
                 <div>
-                  <div className="text-[10px] opacity-80">Balance</div>
-                  <div className="text-xs font-semibold">
+                  <div className="text-xs opacity-80">Balance</div>
+                  <div className="text-base font-semibold">
                     {card.balance} {card.type.toUpperCase()}
                   </div>
                 </div>
               )}
               <div>
-                <div className="text-[10px] opacity-80">Expires</div>
-                <div className="text-xs font-semibold">{card.expiry}</div>
+                <div className="text-xs opacity-80">Expires</div>
+                <div className="text-base font-semibold">{card.expiry}</div>
               </div>
             </div>
 
             <div className="flex space-x-1">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] py-0.5 h-6">
-                    <ArrowUpCircle className="h-3 w-3 mr-1" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm">
+                    <ArrowUpCircle className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">Deposit</span>
                     <span className="sm:hidden">Dep</span>
                   </Button>
@@ -430,8 +430,8 @@ export default function VirtualCard({ card }: { card: Card }) {
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] py-0.5 h-6">
-                    <RefreshCw className="h-3 w-3 mr-1" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm">
+                    <RefreshCw className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">Transfer</span>
                     <span className="sm:hidden">Trans</span>
                   </Button>
@@ -586,8 +586,8 @@ export default function VirtualCard({ card }: { card: Card }) {
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm text-[10px] py-0.5 h-6">
-                    <ArrowDownCircle className="h-3 w-3 mr-1" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm">
+                    <ArrowDownCircle className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">Withdraw</span>
                     <span className="sm:hidden">With</span>
                   </Button>
