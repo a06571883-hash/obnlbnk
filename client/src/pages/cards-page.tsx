@@ -16,7 +16,7 @@ export default function CardsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -24,7 +24,7 @@ export default function CardsPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-xl text-destructive">Ошибка загрузки карт</h2>
           <p className="text-muted-foreground">Попробуйте обновить страницу</p>

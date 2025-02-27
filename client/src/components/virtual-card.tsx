@@ -39,7 +39,6 @@ function validateEthAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/i.test(address);
 }
 
-
 // Component
 export default function VirtualCard({ card }: { card: Card }) {
   const { toast } = useToast();
