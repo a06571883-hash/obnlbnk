@@ -28,54 +28,72 @@ interface NewsItem {
   source: string;
 }
 
-// Обновленные демо-данные для новостей с актуальными датами
-const demoNews: NewsItem[] = [
-  {
-    id: 1,
-    title: "Bitcoin приближается к историческому максимуму перед халвингом",
-    content: "За последние 24 часа курс Bitcoin достиг отметки в $85,000. Аналитики связывают рост с приближающимся халвингом в апреле 2025 года и растущим институциональным интересом к первой криптовалюте.",
-    date: "27 февраля 2025",
-    category: 'crypto',
-    source: 'CryptoNews'
-  },
-  {
-    id: 2,
-    title: "Межбанк: Курс гривны укрепился на фоне роста экспорта",
-    content: "Национальный банк Украины зафиксировал укрепление гривны на межбанковском рынке. Позитивная динамика связана с увеличением валютной выручки от экспорта и стабильным притоком инвестиций.",
-    date: "27 февраля 2025",
-    category: 'fiat',
-    source: 'FinanceUA'
-  },
-  {
-    id: 3,
-    title: "Ethereum запускает новый слой масштабирования",
-    content: "Разработчики Ethereum объявили о запуске нового решения для масштабирования сети, которое позволит увеличить пропускную способность до 100,000 транзакций в секунду при снижении комиссий.",
-    date: "27 февраля 2025",
-    category: 'crypto',
-    source: 'ETHNews'
-  },
-  {
-    id: 4,
-    title: "МВФ призывает к глобальному регулированию криптовалют",
-    content: "Международный валютный фонд опубликовал новый отчет о необходимости создания единой системы регулирования криптовалют. Документ предлагает конкретные шаги по внедрению стандартов к концу 2025 года.",
-    date: "27 февраля 2025",
-    category: 'crypto',
-    source: 'CryptoRegulation'
-  },
-  {
-    id: 5,
-    title: "Крупнейшие банки Украины начинают работу с криптовалютами",
-    content: "Ведущие украинские банки анонсировали запуск сервисов по работе с цифровыми активами. Нововведения позволят клиентам покупать и продавать криптовалюты через привычные банковские приложения.",
-    date: "27 февраля 2025",
-    category: 'fiat',
-    source: 'BankNews'
-  }
-];
+// Функция для генерации новостей на основе текущей даты и трендов
+function generateDailyNews(rates?: Rates): NewsItem[] {
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('ru-RU', { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric'
+  });
+
+  const btcTrend = rates?.btcToUsd ? rates.btcToUsd > 85000 ? 'рост' : 'снижение' : 'волатильность';
+  const ethTrend = rates?.ethToUsd ? rates.ethToUsd > 3000 ? 'рост' : 'снижение' : 'волатильность';
+  const uahTrend = rates?.usdToUah ? rates.usdToUah > 40 ? 'ослабление' : 'укрепление' : 'стабильность';
+
+  return [
+    {
+      id: 1,
+      title: `Bitcoin демонстрирует ${btcTrend} перед халвингом`,
+      content: `За последние 24 часа курс Bitcoin показывает ${btcTrend}. ${
+        btcTrend === 'рост' 
+          ? 'Аналитики связывают позитивную динамику с приближающимся халвингом и институциональным интересом.' 
+          : 'Эксперты рекомендуют следить за техническими индикаторами.'
+      }`,
+      date: dateStr,
+      category: 'crypto',
+      source: 'CryptoNews'
+    },
+    {
+      id: 2,
+      title: `Межбанк: гривна показывает ${uahTrend}`,
+      content: `На межбанковском рынке наблюдается ${uahTrend} национальной валюты. НБУ продолжает политику гибкого курсообразования с учетом рыночных факторов.`,
+      date: dateStr,
+      category: 'fiat',
+      source: 'FinanceUA'
+    },
+    {
+      id: 3,
+      title: `Ethereum: ${ethTrend} на фоне обновлений сети`,
+      content: `Курс Ethereum показывает ${ethTrend} после недавних обновлений сети. Разработчики продолжают работу над улучшением масштабируемости и снижением комиссий.`,
+      date: dateStr,
+      category: 'crypto',
+      source: 'ETHNews'
+    },
+    {
+      id: 4,
+      title: "Регуляторы обсуждают новые правила для криптовалют",
+      content: "Международные финансовые регуляторы работают над унификацией правил работы с цифровыми активами. Ожидается принятие новых стандартов до конца года.",
+      date: dateStr,
+      category: 'crypto',
+      source: 'CryptoRegulation'
+    },
+    {
+      id: 5,
+      title: "Украинские банки расширяют крипто-сервисы",
+      content: "Ведущие банки страны продолжают интеграцию криптовалютных сервисов в свои приложения. Новые функции станут доступны клиентам в ближайшие недели.",
+      date: dateStr,
+      category: 'fiat',
+      source: 'BankNews'
+    }
+  ];
+}
 
 export default function NewsPage() {
   const { toast } = useToast();
   const [selectedCurrency, setSelectedCurrency] = useState<'btc' | 'eth' | 'uah'>('btc');
   const [rateHistory, setRateHistory] = useState<RateHistory[]>([]);
+  const [news, setNews] = useState<NewsItem[]>([]);
 
   const { data: rates, isLoading: ratesLoading } = useQuery<Rates>({
     queryKey: ["/api/rates"],
@@ -100,6 +118,13 @@ export default function NewsPage() {
       setRateHistory(newHistory);
     }
   }, [rates, selectedCurrency]);
+
+  // Обновляем новости при изменении курсов
+  useEffect(() => {
+    if (rates) {
+      setNews(generateDailyNews(rates));
+    }
+  }, [rates]);
 
   if (ratesLoading) {
     return (
@@ -237,7 +262,7 @@ export default function NewsPage() {
             {/* Новостная лента */}
             <div className="space-y-4">
               <h2 className="text-lg font-semibold">Последние новости</h2>
-              {demoNews.map((news) => (
+              {news.map((news) => (
                 <Card key={news.id} className="p-4 space-y-2">
                   <div className="flex items-start justify-between">
                     <h3 className="text-base font-medium">{news.title}</h3>
