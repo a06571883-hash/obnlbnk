@@ -12,15 +12,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -326,7 +318,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-[140px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
+        className={`relative h-[125px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-2.5 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
@@ -336,7 +328,7 @@ export default function VirtualCard({ card }: { card: Card }) {
         }}
       >
         <div className="relative z-10 flex flex-col justify-between h-full">
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <div className="text-[10px] opacity-80">BNAL BANK</div>
             <div className="text-sm font-bold tracking-wider">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
