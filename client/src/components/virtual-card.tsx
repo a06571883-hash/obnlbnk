@@ -12,6 +12,16 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
