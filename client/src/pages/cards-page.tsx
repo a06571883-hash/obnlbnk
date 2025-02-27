@@ -38,10 +38,10 @@ export default function CardsPage() {
       <TelegramBackground />
       <div className="p-4">
         <h1 className="text-lg font-semibold mb-4">Мои карты</h1>
-        <div className="grid grid-cols-1 gap-4">
+        <div className="flex flex-col gap-4">
           {cards && cards.length > 0 ? (
             cards.map((card) => (
-              <div key={card.id}>
+              <div key={card.id} className="w-full max-w-md mx-auto">
                 <VirtualCard card={card} />
               </div>
             ))
