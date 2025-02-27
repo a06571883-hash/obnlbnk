@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
 
+// Declare global Telegram object for TypeScript
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: any;
+    };
+  }
+}
+
 export default function TelegramBackground() {
   const [isTelegram, setIsTelegram] = useState(false);
 
