@@ -17,11 +17,11 @@ export default function TelegramBackground() {
       style={{
         background: `
           linear-gradient(
-            217deg,
-            #419FD9 0%,
-            #0088CC 40%,
-            #32A9E1 80%,
-            #419FD9 100%
+            135deg,
+            #0088cc 0%,
+            #00a1e4 40%,
+            #00c2ff 80%,
+            #0088cc 100%
           )
         `,
         backgroundSize: '400% 400%',
@@ -48,23 +48,23 @@ export default function TelegramBackground() {
           background: `
             repeating-linear-gradient(
               45deg,
-              rgba(255,255,255,0.1),
-              rgba(255,255,255,0.1) 10px,
-              rgba(255,255,255,0.2) 10px,
-              rgba(255,255,255,0.2) 20px
+              rgba(255,255,255,0.05),
+              rgba(255,255,255,0.05) 15px,
+              rgba(255,255,255,0.1) 15px,
+              rgba(255,255,255,0.1) 30px
             )
           `,
-          animation: 'wave 10s linear infinite',
-          opacity: '0.5',
+          animation: 'wave 12s linear infinite',
+          opacity: '0.4',
         }}
       />
       <style>{`
         @keyframes wave {
           0% {
-            transform: translateX(0) translateY(0);
+            transform: translate(0px, 0px);
           }
           100% {
-            transform: translateX(20px) translateY(-20px);
+            transform: translate(30px, -30px);
           }
         }
       `}</style>
