@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import type { Card } from "@shared/schema";
 import { Card as CardUI } from "@/components/ui/card";
+import TelegramBackground from "@/components/telegram-background";
 import {
   Dialog,
   DialogContent,
@@ -156,12 +157,12 @@ export default function HomePage() {
 
   const { data: cards = [], isLoading: isLoadingCards, error: cardsError } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
-    enabled: !!user, 
+    enabled: !!user,
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
     retry: 3,
     staleTime: 0,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), 
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const getPriceChangeColor = (current: string | undefined, previous: string | undefined) => {
@@ -200,7 +201,6 @@ export default function HomePage() {
   const cryptoCard = cards.find(card => card.type === 'crypto');
   const hasCryptoWallet = cryptoCard && cryptoCard.btcBalance && cryptoCard.ethBalance && cryptoCard.btcAddress;
 
-
   if (isLoadingCards) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -222,6 +222,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <TelegramBackground />
       <header className="p-4 flex justify-between items-center border-b backdrop-blur-sm bg-background/50 sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground">
