@@ -34,19 +34,19 @@ export default function CardsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background/50 relative">
+    <div className="min-h-screen bg-background">
       <TelegramBackground />
-      <div className="px-2 py-4 sm:container sm:mx-auto sm:px-4 sm:py-8">
-        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-8 text-foreground px-2">Мои карты</h1>
-        <div className="space-y-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:space-y-0">
+      <div className="p-4">
+        <h1 className="text-lg font-semibold mb-4">Мои карты</h1>
+        <div className="grid grid-cols-1 gap-4">
           {cards && cards.length > 0 ? (
             cards.map((card) => (
-              <div key={card.id} className="px-2 sm:px-0">
+              <div key={card.id}>
                 <VirtualCard card={card} />
               </div>
             ))
           ) : (
-            <div className="col-span-full text-center text-muted-foreground">
+            <div className="text-center text-muted-foreground">
               У вас пока нет карт
             </div>
           )}
