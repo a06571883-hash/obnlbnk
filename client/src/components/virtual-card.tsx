@@ -301,6 +301,30 @@ export default function VirtualCard({ card }: { card: Card }) {
     return calculateExchangeAmount(withdrawalAmount, card.type, withdrawalMethod, rates);
   }
 
+  const handleWithdrawal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!withdrawalMethod || !withdrawalAmount || !bankCardNumber) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create exchange request
+    const request: ExchangeRequest = {
+      fromCurrency: withdrawalMethod,
+      toCurrency: "uah",
+      fromAmount: withdrawalAmount,
+      address: bankCardNumber.replace(/\s+/g, ''),
+      cryptoCard: card // Pass the entire card object
+    };
+
+    // Execute exchange
+    withdrawalMutation.mutate(request);
+  };
+
   return (
     <div
       ref={cardRef}
@@ -318,7 +342,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-[125px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-2.5 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
+        className={`relative h-[180px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-6 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
@@ -328,53 +352,53 @@ export default function VirtualCard({ card }: { card: Card }) {
         }}
       >
         <div className="relative z-10 flex flex-col justify-between h-full">
-          <div className="space-y-0.5">
-            <div className="text-[10px] opacity-80">BNAL BANK</div>
-            <div className="text-[10px] font-bold tracking-wider">
+          <div className="space-y-2">
+            <div className="text-xs opacity-80">BNAL BANK</div>
+            <div className="text-xl font-bold tracking-wider">
               {card.number.replace(/(\d{4})/g, "$1 ").trim()}
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div className="flex justify-between">
               {card.type === 'crypto' ? (
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   <div className="flex items-center">
-                    <Bitcoin className="h-3 w-3 mr-1" />
-                    <div className="text-[10px] opacity-80">BTC Balance</div>
+                    <Bitcoin className="h-4 w-4 mr-1" />
+                    <div className="text-sm opacity-80">BTC Balance</div>
                   </div>
-                  <div className="text-[10px] font-semibold">
+                  <div className="text-sm font-semibold">
                     {card.btcBalance} BTC
                   </div>
-                  <div className="flex items-center mt-0.5">
-                    <Coins className="h-3 w-3 mr-1" />
-                    <div className="text-[10px] opacity-80">ETH Balance</div>
+                  <div className="flex items-center mt-1">
+                    <Coins className="h-4 w-4 mr-1" />
+                    <div className="text-sm opacity-80">ETH Balance</div>
                   </div>
-                  <div className="text-[10px] font-semibold">
+                  <div className="text-sm font-semibold">
                     {card.ethBalance} ETH
                   </div>
                 </div>
               ) : (
                 <div>
-                  <div className="text-[10px] opacity-80">Balance</div>
-                  <div className="text-[10px] font-semibold">
+                  <div className="text-xs opacity-80">Balance</div>
+                  <div className="text-sm font-semibold">
                     {card.balance} {card.type.toUpperCase()}
                   </div>
                 </div>
               )}
               <div>
-                <div className="text-[10px] opacity-80">Expires</div>
-                <div className="text-[10px] font-semibold">{card.expiry}</div>
+                <div className="text-xs opacity-80">Expires</div>
+                <div className="text-sm font-semibold">{card.expiry}</div>
               </div>
             </div>
 
             <div className="flex space-x-1">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-5 px-2">
-                    <ArrowUpCircle className="h-3 w-3 mr-1" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-8">
+                    <ArrowUpCircle className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">Deposit</span>
-                    <span className="sm:hidden text-[10px]">Dep</span>
+                    <span className="sm:hidden">Dep</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -405,10 +429,10 @@ export default function VirtualCard({ card }: { card: Card }) {
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-5 px-2">
-                    <RefreshCw className="h-3 w-3 mr-1" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-8">
+                    <RefreshCw className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">Transfer</span>
-                    <span className="sm:hidden text-[10px]">Trans</span>
+                    <span className="sm:hidden">Trans</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-md mx-auto max-h-[calc(100vh-4rem)] overflow-y-auto p-3 sm:p-6 rounded-lg">
@@ -426,20 +450,20 @@ export default function VirtualCard({ card }: { card: Card }) {
                           type="button"
                           size="sm"
                           variant={recipientType === 'usd_card' ? 'default' : 'outline'}
-                          className="h-6 text-xs sm:text-sm"
+                          className="h-8 text-xs sm:text-sm"
                           onClick={() => setRecipientType('usd_card')}
                         >
-                          <CreditCard className="h-3 w-3 mr-1" />
+                          <CreditCard className="h-4 w-4 mr-1" />
                           Фиат карта
                         </Button>
                         <Button
                           type="button"
                           size="sm"
                           variant={recipientType === 'crypto_wallet' ? 'default' : 'outline'}
-                          className="h-6 text-xs sm:text-sm"
+                          className="h-8 text-xs sm:text-sm"
                           onClick={() => setRecipientType('crypto_wallet')}
                         >
-                          <Wallet className="h-3 w-3 mr-1" />
+                          <Wallet className="h-4 w-4 mr-1" />
                           Крипто адрес
                         </Button>
                       </div>
@@ -455,20 +479,20 @@ export default function VirtualCard({ card }: { card: Card }) {
                             type="button"
                             size="sm"
                             variant={selectedWallet === 'btc' ? 'default' : 'outline'}
-                            className="h-6 text-xs sm:text-sm"
+                            className="h-8 text-xs sm:text-sm"
                             onClick={() => setSelectedWallet('btc')}
                           >
-                            <Bitcoin className="h-3 w-3 mr-1" />
+                            <Bitcoin className="h-4 w-4 mr-1" />
                             BTC
                           </Button>
                           <Button
                             type="button"
                             size="sm"
                             variant={selectedWallet === 'eth' ? 'default' : 'outline'}
-                            className="h-6 text-xs sm:text-sm"
+                            className="h-8 text-xs sm:text-sm"
                             onClick={() => setSelectedWallet('eth')}
                           >
-                            <Coins className="h-3 w-3 mr-1" />
+                            <Coins className="h-4 w-4 mr-1" />
                             ETH
                           </Button>
                         </div>
@@ -561,10 +585,10 @@ export default function VirtualCard({ card }: { card: Card }) {
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-5 px-2">
-                    <ArrowDownCircle className="h-3 w-3 mr-1" />
+                  <Button size="sm" variant="ghost" className="flex-1 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm h-8">
+                    <ArrowDownCircle className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">Withdraw</span>
-                    <span className="sm:hidden text-[10px]">With</span>
+                    <span className="sm:hidden">With</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
@@ -574,29 +598,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                       Convert your crypto to fiat and withdraw to your card
                     </DialogDescription>
                   </DialogHeader>
-                  <form className="space-y-4" onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!withdrawalMethod || !withdrawalAmount || !bankCardNumber) {
-                      toast({
-                        title: "Error",
-                        description: "Please fill in all fields",
-                        variant: "destructive"
-                      });
-                      return;
-                    }
-
-                    // Create exchange request
-                    const request: ExchangeRequest = {
-                      fromCurrency: withdrawalMethod,
-                      toCurrency: "uah",
-                      fromAmount: withdrawalAmount,
-                      address: bankCardNumber.replace(/\s+/g, ''),
-                      cryptoCard: card // Pass the entire card object
-                    };
-
-                    // Execute exchange
-                    withdrawalMutation.mutate(request);
-                  }}>
+                  <form className="space-y-4" onSubmit={handleWithdrawal}>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Select source cryptocurrency</label>
                       <Select

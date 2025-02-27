@@ -1,3 +1,9 @@
+import { useQuery } from "@tanstack/react-query";
+import { Card } from "@shared/schema";
+import VirtualCard from "@/components/virtual-card";
+import { Loader2 } from "lucide-react";
+import TelegramBackground from "@/components/telegram-background";
+
 export default function CardsPage() {
   const { data: cards, isLoading, error } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
@@ -32,7 +38,7 @@ export default function CardsPage() {
       <TelegramBackground />
       <div className="p-4">
         <h1 className="text-lg font-semibold mb-4">Мои карты</h1>
-        <div className="w-full max-w-[250px] mx-auto space-y-2">
+        <div className="w-full max-w-[400px] mx-auto space-y-4">
           {cards && cards.length > 0 ? (
             cards.map((card) => (
               <div key={card.id}>
