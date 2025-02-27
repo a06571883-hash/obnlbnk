@@ -36,20 +36,22 @@ export default function CardsPage() {
   return (
     <div className="min-h-screen bg-background">
       <TelegramBackground />
-      <div className="p-4">
-        <h1 className="text-lg font-semibold mb-4">Мои карты</h1>
-        <div className="w-full max-w-[400px] mx-auto space-y-4">
-          {cards && cards.length > 0 ? (
-            cards.map((card) => (
-              <div key={card.id} className="px-8 py-4">
-                <VirtualCard card={card} />
+      <div className="flex flex-col h-[calc(100vh-48px)] pt-4">
+        <h1 className="text-lg font-semibold mb-4 px-4">Мои карты</h1>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-full max-w-[400px] space-y-4">
+            {cards && cards.length > 0 ? (
+              cards.map((card) => (
+                <div key={card.id} className="px-8">
+                  <VirtualCard card={card} />
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-muted-foreground">
+                У вас пока нет карт
               </div>
-            ))
-          ) : (
-            <div className="text-center text-muted-foreground">
-              У вас пока нет карт
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
