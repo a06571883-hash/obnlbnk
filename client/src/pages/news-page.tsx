@@ -7,12 +7,6 @@ import TelegramBackground from "@/components/telegram-background";
 import { motion, AnimatePresence } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useToast } from "@/hooks/use-toast";
-import { Card as CardType } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight } from "lucide-react";
-
 
 interface RateHistory {
   timestamp: number;
@@ -64,64 +58,13 @@ const demoNews: NewsItem[] = [
 
 export default function NewsPage() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [selectedCurrency, setSelectedCurrency] = useState<'btc' | 'eth' | 'uah'>('btc');
   const [rateHistory, setRateHistory] = useState<RateHistory[]>([]);
-  const [fromCurrency, setFromCurrency] = useState("btc");
-  const [toCurrency, setToCurrency] = useState("usdt");
-  const [amount, setAmount] = useState("");
-  const [selectedFromCard, setSelectedFromCard] = useState<string>("");
-  const [selectedToCard, setSelectedToCard] = useState<string>("");
 
   const { data: rates, isLoading: ratesLoading } = useQuery<Rates>({
     queryKey: ["/api/rates"],
     refetchInterval: 30000
   });
-
-  const { data: cards, isLoading: cardsLoading } = useQuery<CardType[]>({
-    queryKey: ["/api/cards"]
-  });
-
-  const exchangeMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedFromCard || !selectedToCard || !amount) {
-        throw new Error("Пожалуйста, заполните все поля");
-      }
-
-      const exchangeRequest = {
-        fromCardId: selectedFromCard,
-        toCardId: selectedToCard,
-        amount: parseFloat(amount),
-        fromCurrency,
-        toCurrency
-      };
-
-      const response = await apiRequest("POST", "/api/exchange", exchangeRequest);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Ошибка при обмене");
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cards"] });
-      toast({
-        title: "Успешно!",
-        description: "Обмен выполнен успешно",
-      });
-      setAmount("");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
-
 
   // Генерируем историю курсов с более плавными изменениями
   useEffect(() => {
@@ -142,7 +85,7 @@ export default function NewsPage() {
     }
   }, [rates, selectedCurrency]);
 
-  if (ratesLoading || cardsLoading) {
+  if (ratesLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -154,19 +97,6 @@ export default function NewsPage() {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2 
   });
-
-  const calculateExchangeAmount = () => {
-    if (!rates || !amount) return '0.00';
-    const value = parseFloat(amount);
-    if (isNaN(value)) return '0.00';
-
-    if (fromCurrency === 'btc') {
-      return formatRate(value * rates.btcToUsd);
-    } else if (fromCurrency === 'eth') {
-      return formatRate(value * rates.ethToUsd);
-    }
-    return formatRate(value);
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -287,92 +217,6 @@ export default function NewsPage() {
                 </Card>
               </motion.div>
             </AnimatePresence>
-
-            {/* Форма обмена */}
-            <Card className="p-4">
-              <div className="space-y-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Карта списания</label>
-                    <Select value={selectedFromCard} onValueChange={setSelectedFromCard}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Выберите карту" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {cards?.map(card => (
-                            <SelectItem key={card.id} value={card.id.toString()}>
-                              {card.type === 'crypto' 
-                                ? `Crypto Card (BTC: ${card.btcBalance}, ETH: ${card.ethBalance})`
-                                : `${card.type.toUpperCase()} Card (${card.balance})`}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center justify-center">
-                    <ArrowRight className="w-6 h-6 text-muted-foreground" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Карта зачисления</label>
-                    <Select value={selectedToCard} onValueChange={setSelectedToCard}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Выберите карту" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {cards?.map(card => (
-                            <SelectItem key={card.id} value={card.id.toString()}>
-                              {card.type === 'crypto' 
-                                ? `Crypto Card (BTC: ${card.btcBalance}, ETH: ${card.ethBalance})`
-                                : `${card.type.toUpperCase()} Card (${card.balance})`}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Сумма</label>
-                  <Input 
-                    type="number" 
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
-                </div>
-
-                <div className="p-3 rounded-lg bg-muted">
-                  <p className="text-sm text-muted-foreground">
-                    Курс обмена: 1 {fromCurrency.toUpperCase()} = ${formatRate(fromCurrency === 'btc' ? rates?.btcToUsd || 0 : rates?.ethToUsd || 0)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Вы получите: ${calculateExchangeAmount()} {toCurrency.toUpperCase()}
-                  </p>
-                </div>
-
-                <Button 
-                  className="w-full" 
-                  size="lg"
-                  onClick={() => exchangeMutation.mutate()}
-                  disabled={exchangeMutation.isPending || !selectedFromCard || !selectedToCard || !amount}
-                >
-                  {exchangeMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Обмен выполняется...
-                    </>
-                  ) : (
-                    "Обменять"
-                  )}
-                </Button>
-              </div>
-            </Card>
 
             {/* Новостная лента */}
             <div className="space-y-4">
