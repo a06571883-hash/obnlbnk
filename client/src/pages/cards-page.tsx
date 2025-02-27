@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "../../shared/schema";
 import VirtualCard from "@/components/virtual-card";
 import { Loader2 } from "lucide-react";
+import TelegramBackground from "@/components/telegram-background";
 
 export default function CardsPage() {
   const { data: cards, isLoading, error } = useQuery<Card[]>({
@@ -10,7 +11,7 @@ export default function CardsPage() {
     refetchOnWindowFocus: true,
     retry: 3,
     staleTime: 0,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   if (isLoading) {
@@ -33,13 +34,16 @@ export default function CardsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background/50 relative z-10">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-8 text-foreground">Мои карты</h1>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="min-h-screen bg-background/50 relative">
+      <TelegramBackground />
+      <div className="px-2 py-4 sm:container sm:mx-auto sm:px-4 sm:py-8">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-8 text-foreground px-2">Мои карты</h1>
+        <div className="space-y-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:space-y-0">
           {cards && cards.length > 0 ? (
             cards.map((card) => (
-              <VirtualCard key={card.id} card={card} />
+              <div key={card.id} className="px-2 sm:px-0">
+                <VirtualCard card={card} />
+              </div>
             ))
           ) : (
             <div className="col-span-full text-center text-muted-foreground">

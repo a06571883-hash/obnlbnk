@@ -64,7 +64,6 @@ function validateEthAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/i.test(address);
 }
 
-//function validateUkrainianCard(cardNumber: string): boolean { ... }  Removed
 
 // Component
 export default function VirtualCard({ card }: { card: Card }) {
@@ -331,7 +330,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   return (
     <div
       ref={cardRef}
-      className="perspective-[1000px] w-full max-w-[400px] mx-auto px-4 py-2 sm:px-0"
+      className="w-full max-w-[400px] mx-auto sm:px-0"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -345,7 +344,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-44 sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-4 sm:p-6 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
+        className={`relative h-[180px] sm:h-48 w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 sm:p-6 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
