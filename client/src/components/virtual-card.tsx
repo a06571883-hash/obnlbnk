@@ -341,7 +341,7 @@ export default function VirtualCard({ card }: { card: Card }) {
       }}
     >
       <div
-        className={`relative h-[140px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
+        className={`relative h-[140px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 text-[12px] text-white shadow-xl overflow-hidden backdrop-blur-sm`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
@@ -400,6 +400,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                     <span className="sm:hidden text-[12px]">Dep</span>
                   </Button>
                 </DialogTrigger>
+
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Deposit Funds</DialogTitle>
