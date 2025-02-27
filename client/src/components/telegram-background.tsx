@@ -16,6 +16,10 @@ export default function TelegramBackground() {
     // Проверяем, открыто ли приложение в Telegram WebApp
     const isTelegramWebApp = window.Telegram?.WebApp != null;
     setIsTelegram(isTelegramWebApp);
+
+    if (isTelegramWebApp) {
+      console.log("Running in Telegram WebApp");
+    }
   }, []);
 
   if (!isTelegram) return null;
