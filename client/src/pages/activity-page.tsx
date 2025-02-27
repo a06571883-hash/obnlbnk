@@ -1,9 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { 
-  ArrowUpRight, 
-  Bitcoin, 
-  DollarSign, 
+import {
+  ArrowUpRight,
+  Bitcoin,
+  DollarSign,
   Coins,
   RefreshCw,
   Banknote
@@ -145,8 +145,8 @@ export default function ActivityPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AnimatedBackground />
       <TelegramBackground />
+      <AnimatedBackground />
 
       <div className="bg-primary text-primary-foreground p-4 relative">
         <h1 className="text-xl font-bold mb-1">Activity</h1>

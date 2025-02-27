@@ -21,9 +21,9 @@ export default function TelegramBackground() {
 
   return (
     <div 
-      className="fixed inset-0 z-[-1]"
+      className="fixed inset-0 z-0"
       style={{
-        backgroundColor: '#4FA9E7',
+        backgroundColor: '#0088CC',
         opacity: 1
       }}
     />
