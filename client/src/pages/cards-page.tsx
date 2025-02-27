@@ -38,7 +38,7 @@ export default function CardsPage() {
       <TelegramBackground />
       <div className="flex flex-col h-[calc(100vh-48px)]">
         <h1 className="text-lg font-semibold px-4 pt-2">Мои карты</h1>
-        <div className="flex-1 flex items-start justify-center -mt-16 pb-20">
+        <div className="flex-1 flex items-start justify-center -mt-24 pb-20">
           <div className="w-full max-w-[400px] space-y-4">
             {cards && cards.length > 0 ? (
               cards.map((card) => (
