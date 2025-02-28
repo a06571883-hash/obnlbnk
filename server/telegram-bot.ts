@@ -4,24 +4,8 @@ import { Telegraf } from 'telegraf';
 // Используем токен из переменных окружения
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-// Получаем URL из переменной окружения или используем закодированное значение
-function getWebAppUrl() {
-  // Используем URL из среды, если он существует
-  if (process.env.REPLIT_DEPLOYMENT_URL) {
-    return process.env.REPLIT_DEPLOYMENT_URL;
-  }
-  
-  // Альтернативный вариант с slug и owner
-  if (process.env.REPLIT_SLUG && process.env.REPLIT_OWNER) {
-    return `https://${process.env.REPLIT_SLUG}.${process.env.REPLIT_OWNER}.repl.co`;
-  }
-  
-  // Закодированный URL в случае, если другие варианты не работают
-  return 'https://5424a4c9-a9c3-4301-9bc5-90b750200100.id.repl.co';
-}
-
-// Определяем URL веб-приложения
-const WEBAPP_URL = getWebAppUrl();
+// Использовать прямую ссылку, которая точно работает
+const WEBAPP_URL = 'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/';
 
 if (!BOT_TOKEN) {
   console.error('КРИТИЧЕСКАЯ ОШИБКА: TELEGRAM_BOT_TOKEN не найден в переменных окружения');
@@ -39,18 +23,16 @@ bot.command('start', (ctx) => {
     console.log(`Пользователь ${ctx.from.id} (${ctx.from.username || 'без имени'}) запустил бота`);
     console.log('Отправка WebApp URL напрямую:', WEBAPP_URL);
     
-    // Напрямую открываем WebApp без дополнительных кнопок
+    // Используем inline_keyboard для более надежного открытия WebApp
     return ctx.reply('Добро пожаловать в BNAL Bank!', {
       parse_mode: 'HTML',
       reply_markup: {
-        keyboard: [[
+        inline_keyboard: [[
           {
-            text: 'BNAL Bank',
+            text: 'Открыть BNAL Bank',
             web_app: { url: WEBAPP_URL }
           }
-        ]],
-        resize_keyboard: true,
-        one_time_keyboard: false
+        ]]
       }
     });
   } catch (error) {
