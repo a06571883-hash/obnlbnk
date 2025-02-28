@@ -26,20 +26,43 @@ export default function TelegramBackground() {
       // Пытаемся получить объект Telegram.WebApp
       const tg = window.Telegram?.WebApp;
 
-      if (!tg) {
-        console.log('Приложение открыто не через Telegram или WebApp объект не найден');
-        return;
+      // Проверяем, открыто ли приложение через Telegram
+      const urlParams = new URLSearchParams(window.location.search);
+      const telegramQueryParam = urlParams.get('tgWebAppStartParam') || 
+                               urlParams.get('tgWebAppData') || 
+                               urlParams.get('web_app_data');
+      
+      // Или проверяем через referrer
+      const isTelegramReferrer = document.referrer.includes('t.me') || 
+                                document.referrer.includes('telegram.org') ||
+                                window.location.hostname.includes('t.me');
+
+      if (!tg && !telegramQueryParam && !isTelegramReferrer) {
+        console.log('Приложение открыто не через Telegram');
+        // Эмулируем объект WebApp для локального тестирования
+        window.Telegram = window.Telegram || {};
+        window.Telegram.WebApp = window.Telegram.WebApp || {
+          ready: () => console.log('WebApp ready emulated'),
+          expand: () => console.log('WebApp expand emulated'),
+          initData: 'emulated',
+          initDataUnsafe: {}
+        };
       }
 
-      console.log('Telegram WebApp найден, инициализация...');
-      console.log('initData присутствует:', !!tg.initData);
+      // Повторно получаем объект Telegram.WebApp после эмуляции
+      const webApp = window.Telegram?.WebApp;
 
-      // Инициализируем WebApp
-      tg.ready();
-      tg.expand();
+      if (webApp) {
+        console.log('Telegram WebApp найден, инициализация...');
+        console.log('initData присутствует:', !!webApp.initData);
 
-      setIsTelegram(true);
-      console.log('Telegram WebApp успешно инициализирован');
+        // Инициализируем WebApp
+        webApp.ready();
+        webApp.expand();
+
+        setIsTelegram(true);
+        console.log('Telegram WebApp успешно инициализирован');
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
       console.error('Ошибка инициализации Telegram WebApp:', errorMessage);

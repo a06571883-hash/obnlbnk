@@ -25,6 +25,10 @@ bot.command('start', (ctx) => {
     console.log(`Пользователь ${ctx.from.id} (${ctx.from.username || 'без имени'}) запустил бота`);
     console.log('Отправка WebApp URL напрямую:', WEBAPP_URL);
     
+    // Добавляем стартовый параметр для надежного определения Telegram
+    const webAppUrl = `${WEBAPP_URL}?tgWebAppStartParam=true&source=telegram&userId=${ctx.from.id}`;
+    console.log('Отправка URL с параметрами:', webAppUrl);
+    
     // Используем inline_keyboard для более надежного открытия WebApp
     return ctx.reply('Добро пожаловать в BNAL Bank!', {
       parse_mode: 'HTML',
@@ -32,7 +36,7 @@ bot.command('start', (ctx) => {
         inline_keyboard: [[
           {
             text: 'Открыть BNAL Bank',
-            web_app: { url: WEBAPP_URL }
+            web_app: { url: webAppUrl }
           }
         ]]
       }
