@@ -13,7 +13,7 @@ export function startBot() {
   bot.launch()
     .then(() => {
       console.log('Telegram bot started successfully');
-      console.log('WebApp URL:', 'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/');
+      console.log('WebApp URL:', 'https://bnal-bank.webxcorporation.repl.co');
 
       // Set the WebApp button in the bot's menu
       bot.telegram.setChatMenuButton({
@@ -22,7 +22,7 @@ export function startBot() {
           type: 'web_app',
           text: 'Open App',
           web_app: {
-            url: 'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/'
+            url: 'https://bnal-bank.webxcorporation.repl.co'
           }
         }
       });
