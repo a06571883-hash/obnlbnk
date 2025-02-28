@@ -2,20 +2,14 @@ import { Telegraf } from 'telegraf';
 
 // Better error handling and token management
 const BOT_TOKEN = '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4';
-const WEBAPP_URL = 'https://bnal-bank.webxcorporation.repl.co';
+const WEBAPP_URL = 'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/';
 
 const bot = new Telegraf(BOT_TOKEN);
 
 // Command handlers
 bot.command('start', (ctx) => {
   try {
-    return ctx.reply('Добро пожаловать в BNAL Bank!', {
-      reply_markup: {
-        inline_keyboard: [[
-          { text: 'Открыть приложение', web_app: { url: WEBAPP_URL } }
-        ]]
-      }
-    });
+    return ctx.reply('Добро пожаловать в BNAL Bank!');
   } catch (error) {
     console.error('Error in start command:', error);
     return ctx.reply('Извините, произошла ошибка. Попробуйте позже.');
