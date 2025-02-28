@@ -1,3 +1,4 @@
+
 import { Telegraf } from 'telegraf';
 
 // Используем токен из переменных окружения
@@ -23,12 +24,7 @@ bot.command('start', (ctx) => {
   try {
     console.log(`Пользователь ${ctx.from.id} (${ctx.from.username || 'без имени'}) запустил бота`);
     console.log('Отправка WebApp URL напрямую:', WEBAPP_URL);
-
-    // Добавляем стартовый параметр для надежного определения Telegram
-    // Используем tgWebAppStartParam вместо обычного параметра для корректной передачи в WebApp
-    const webAppUrl = `${WEBAPP_URL}?source=telegram&userId=${ctx.from.id}`;
-    console.log('Отправка URL с параметрами:', webAppUrl);
-
+    
     // Используем inline_keyboard для более надежного открытия WebApp
     return ctx.reply('Добро пожаловать в BNAL Bank!', {
       parse_mode: 'HTML',
@@ -36,7 +32,7 @@ bot.command('start', (ctx) => {
         inline_keyboard: [[
           {
             text: 'Открыть BNAL Bank',
-            web_app: { url: webAppUrl }
+            web_app: { url: WEBAPP_URL }
           }
         ]]
       }
