@@ -4,8 +4,24 @@ import { Telegraf } from 'telegraf';
 // Используем токен из переменных окружения
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-// Фиксированный URL веб-приложения с принудительным https
-const WEBAPP_URL = 'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/';
+// Получаем URL из переменной окружения или используем закодированное значение
+function getWebAppUrl() {
+  // Используем URL из среды, если он существует
+  if (process.env.REPLIT_DEPLOYMENT_URL) {
+    return process.env.REPLIT_DEPLOYMENT_URL;
+  }
+  
+  // Альтернативный вариант с slug и owner
+  if (process.env.REPLIT_SLUG && process.env.REPLIT_OWNER) {
+    return `https://${process.env.REPLIT_SLUG}.${process.env.REPLIT_OWNER}.repl.co`;
+  }
+  
+  // Закодированный URL в случае, если другие варианты не работают
+  return 'https://5424a4c9-a9c3-4301-9bc5-90b750200100.id.repl.co';
+}
+
+// Определяем URL веб-приложения
+const WEBAPP_URL = getWebAppUrl();
 
 if (!BOT_TOKEN) {
   console.error('КРИТИЧЕСКАЯ ОШИБКА: TELEGRAM_BOT_TOKEN не найден в переменных окружения');
@@ -56,7 +72,6 @@ export function startBot() {
       console.log('Telegram бот успешно запущен');
       console.log('Имя бота:', bot.botInfo?.username);
       console.log('WebApp URL:', WEBAPP_URL);
-      console.log('Полная ссылка на WebApp:', `https://t.me/${bot.botInfo?.username}/app`);
     })
     .catch(error => {
       console.error('Не удалось запустить Telegram бот:', error);
