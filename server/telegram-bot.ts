@@ -15,15 +15,21 @@ const getWebAppUrl = () => {
     return process.env.REPLIT_DEPLOYMENT_URL;
   }
   
-  if (process.env.REPLIT_SLUG) {
-    return `https://${process.env.REPLIT_SLUG}.replit.dev`;
+  if (process.env.REPLIT_SLUG && process.env.REPLIT_OWNER) {
+    return `https://${process.env.REPLIT_SLUG}.${process.env.REPLIT_OWNER}.repl.co`;
   }
   
-  // Получаем URL для разработки, используя домен Replit
-  return `https://${process.env.REPLIT_OWNER}-${process.env.REPLIT_SLUG}.replit.dev`;
+  // Резервный вариант - вы должны указать свой URL вручную, если автоматическое определение не работает
+  return 'https://your-app-url.repl.co'; // Замените на ваш URL после деплоя
 };
 
 const WEBAPP_URL = getWebAppUrl();
+
+console.log('Переменные окружения:', {
+  REPLIT_DEPLOYMENT_URL: process.env.REPLIT_DEPLOYMENT_URL,
+  REPLIT_SLUG: process.env.REPLIT_SLUG,
+  REPLIT_OWNER: process.env.REPLIT_OWNER
+});
 
 const bot = new Telegraf(BOT_TOKEN || '');
 
