@@ -33,32 +33,47 @@ async function fetchCryptoNews(): Promise<NewsItem[]> {
 async function fetchFinanceNews(): Promise<NewsItem[]> {
   try {
     const response = await axios.get(
-      `https://newsapi.org/v2/top-headlines?country=ru&category=business&apiKey=${NEWS_API_KEY}`
+      `https://newsapi.org/v2/everything?q=finance OR banking OR economy&language=ru&sortBy=publishedAt&apiKey=${NEWS_API_KEY}`
     );
-    return response.data.articles.slice(0, 2).map((item: any, index: number) => ({
-      id: index + 4,
+
+    if (!response.data.articles || !Array.isArray(response.data.articles)) {
+      console.error('Invalid response from NewsAPI:', response.data);
+      return [];
+    }
+
+    return response.data.articles.slice(0, 3).map((item: any, index: number) => ({
+      id: index + 4, 
       title: item.title,
-      content: item.description || item.content,
+      content: item.description || item.content || 'Подробности недоступны',
       date: new Date(item.publishedAt).toLocaleDateString('ru-RU'),
       category: 'fiat',
       source: item.source.name
     }));
   } catch (error) {
     console.error('Error fetching finance news:', error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('NewsAPI error details:', error.response.data);
+    }
     return [];
   }
 }
 
 export async function getNews(): Promise<NewsItem[]> {
   try {
+    console.log('Fetching news...');
     const [cryptoNews, financeNews] = await Promise.all([
       fetchCryptoNews(),
       fetchFinanceNews()
     ]);
 
-    return [...cryptoNews, ...financeNews].sort((a, b) => 
+    console.log(`Retrieved ${cryptoNews.length} crypto news and ${financeNews.length} finance news`);
+
+    
+    const allNews = [...cryptoNews, ...financeNews].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
+
+    return allNews;
   } catch (error) {
     console.error('Error aggregating news:', error);
     return [];
