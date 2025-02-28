@@ -9,21 +9,11 @@ if (!BOT_TOKEN) {
   // Продолжаем работу, но бот не запустится
 }
 
-// Более надежное определение URL
-const getWebAppUrl = () => {
-  if (process.env.REPLIT_DEPLOYMENT_URL) {
-    return process.env.REPLIT_DEPLOYMENT_URL;
-  }
-  
-  if (process.env.REPLIT_SLUG && process.env.REPLIT_OWNER) {
-    return `https://${process.env.REPLIT_SLUG}.${process.env.REPLIT_OWNER}.repl.co`;
-  }
-  
-  // Резервный вариант - вы должны указать свой URL вручную, если автоматическое определение не работает
-  return 'https://your-app-url.repl.co'; // Замените на ваш URL после деплоя
-};
+// Используем конкретный URL для веб-приложения
+const WEBAPP_URL = 'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/';
 
-const WEBAPP_URL = getWebAppUrl();
+// Выводим информацию об используемом URL
+console.log('Используется фиксированный WebApp URL:', WEBAPP_URL);
 
 console.log('Переменные окружения:', {
   REPLIT_DEPLOYMENT_URL: process.env.REPLIT_DEPLOYMENT_URL,
