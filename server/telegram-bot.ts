@@ -37,16 +37,20 @@ const bot = new Telegraf(BOT_TOKEN || '');
 bot.command('start', (ctx) => {
   try {
     console.log(`Пользователь ${ctx.from.id} (${ctx.from.username || 'без имени'}) запустил бота`);
-    console.log('Отправка стартового сообщения с WebApp URL:', WEBAPP_URL);
+    console.log('Отправка WebApp URL напрямую:', WEBAPP_URL);
     
+    // Напрямую открываем WebApp без дополнительных кнопок
     return ctx.reply('Добро пожаловать в BNAL Bank!', {
+      parse_mode: 'HTML',
       reply_markup: {
-        inline_keyboard: [[
+        keyboard: [[
           {
-            text: 'Открыть BNAL Bank',
+            text: 'BNAL Bank',
             web_app: { url: WEBAPP_URL }
           }
-        ]]
+        ]],
+        resize_keyboard: true,
+        one_time_keyboard: false
       }
     });
   } catch (error) {
