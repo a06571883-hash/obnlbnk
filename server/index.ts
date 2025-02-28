@@ -8,6 +8,13 @@ import { startBot } from "./telegram-bot";
 // Set development mode
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Логируем важные переменные окружения при запуске
+console.log('Environment variables:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('REPLIT_SLUG:', process.env.REPLIT_SLUG);
+console.log('REPLIT_ID:', process.env.REPLIT_ID);
+console.log('REPLIT_DEPLOYMENT_URL:', process.env.REPLIT_DEPLOYMENT_URL);
+
 const app = express();
 
 // Basic middleware
@@ -120,8 +127,10 @@ app.use((req, res, next) => {
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`Server started at http://0.0.0.0:${PORT}`);
       log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-      // Log the deployment URL for Telegram WebApp
-      console.log('Deployment URL:', process.env.REPLIT_DEPLOYMENT_URL || 'https://bnal-bank.webxcorporation.repl.co');
+
+      // Get the deployment URL
+      const deploymentUrl = process.env.REPLIT_DEPLOYMENT_URL || `https://${process.env.REPLIT_SLUG}.replit.dev`;
+      console.log('Full Deployment URL:', deploymentUrl);
     });
   } catch (error) {
     console.error('Initialization error:', error);
