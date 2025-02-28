@@ -1,21 +1,36 @@
+
 import { Telegraf } from 'telegraf';
 
-// Better error handling and token management
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4';
+// Используем токен из переменных окружения
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-// Используем URL из окружения или конструируем из REPLIT_SLUG
-const WEBAPP_URL = process.env.REPLIT_DEPLOYMENT_URL 
-  ? process.env.REPLIT_DEPLOYMENT_URL 
-  : process.env.REPLIT_SLUG 
-    ? `https://${process.env.REPLIT_SLUG}.replit.dev`
-    : 'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/';
+if (!BOT_TOKEN) {
+  console.error('TELEGRAM_BOT_TOKEN не найден в переменных окружения');
+  // Продолжаем работу, но бот не запустится
+}
 
-const bot = new Telegraf(BOT_TOKEN);
+// Более надежное определение URL
+const getWebAppUrl = () => {
+  if (process.env.REPLIT_DEPLOYMENT_URL) {
+    return process.env.REPLIT_DEPLOYMENT_URL;
+  }
+  
+  if (process.env.REPLIT_SLUG) {
+    return `https://${process.env.REPLIT_SLUG}.replit.dev`;
+  }
+  
+  // Получаем URL для разработки, используя домен Replit
+  return `https://${process.env.REPLIT_OWNER}-${process.env.REPLIT_SLUG}.replit.dev`;
+};
+
+const WEBAPP_URL = getWebAppUrl();
+
+const bot = new Telegraf(BOT_TOKEN || '');
 
 // Command handlers
 bot.command('start', (ctx) => {
   try {
-    console.log('Sending start message with WebApp URL:', WEBAPP_URL);
+    console.log('Отправка стартового сообщения с WebApp URL:', WEBAPP_URL);
     return ctx.reply('Добро пожаловать в BNAL Bank!', {
       reply_markup: {
         inline_keyboard: [[
@@ -27,25 +42,30 @@ bot.command('start', (ctx) => {
       }
     });
   } catch (error) {
-    console.error('Error in start command:', error);
+    console.error('Ошибка в команде start:', error);
     return ctx.reply('Извините, произошла ошибка. Попробуйте позже.');
   }
 });
 
 export function startBot() {
-  console.log('Starting Telegram bot...');
+  if (!BOT_TOKEN) {
+    console.error('Невозможно запустить Telegram бот: отсутствует TELEGRAM_BOT_TOKEN');
+    console.log('Пожалуйста, добавьте токен бота в переменные окружения');
+    return;
+  }
+
+  console.log('Запуск Telegram бота...');
   console.log('WebApp URL:', WEBAPP_URL);
 
   // Запускаем бота в режиме polling
   bot.launch()
     .then(() => {
-      console.log('Telegram bot started successfully');
-      console.log('Bot username:', bot.botInfo?.username);
-      console.log('Full WebApp URL being used:', WEBAPP_URL);
+      console.log('Telegram бот успешно запущен');
+      console.log('Имя бота:', bot.botInfo?.username);
+      console.log('Полный WebApp URL:', WEBAPP_URL);
     })
     .catch(error => {
-      console.error('Failed to start Telegram bot:', error);
-      throw error;
+      console.error('Не удалось запустить Telegram бот:', error);
     });
 
   // Enable graceful stop
