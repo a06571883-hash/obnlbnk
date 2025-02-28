@@ -1,24 +1,48 @@
 import { Telegraf } from 'telegraf';
 
 // Better error handling and token management
-const BOT_TOKEN = '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4';
-const WEBAPP_URL = 'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4';
+
+// Use environment variable for WebApp URL with fallback
+const WEBAPP_URL = process.env.REPLIT_DEPLOYMENT_URL || 'https://bnal-bank.webxcorporation.repl.co';
 
 const bot = new Telegraf(BOT_TOKEN);
 
 // Command handlers
 bot.command('start', (ctx) => {
   try {
-    return ctx.reply('Добро пожаловать в BNAL Bank!');
+    ctx.reply('Добро пожаловать в BNAL Bank!', {
+      reply_markup: {
+        keyboard: [
+          [{
+            text: 'Открыть приложение',
+            web_app: { url: WEBAPP_URL }
+          }]
+        ],
+        resize_keyboard: true
+      }
+    });
   } catch (error) {
     console.error('Error in start command:', error);
-    return ctx.reply('Извините, произошла ошибка. Попробуйте позже.');
+    ctx.reply('Извините, произошла ошибка. Попробуйте позже.');
   }
 });
 
 export function startBot() {
   console.log('Starting Telegram bot...');
   console.log('WebApp URL:', WEBAPP_URL);
+
+  // Check if the WebApp URL is accessible
+  fetch(WEBAPP_URL)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`WebApp URL not accessible: ${response.status}`);
+      }
+      console.log('WebApp URL is accessible');
+    })
+    .catch(error => {
+      console.error('Error checking WebApp URL:', error);
+    });
 
   // Launch bot in polling mode instead of webhook to avoid port conflict
   bot.launch()
