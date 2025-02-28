@@ -1,6 +1,6 @@
 import { Telegraf } from 'telegraf';
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4');
+const bot = new Telegraf('7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4');
 
 // Команда /start
 bot.command('start', (ctx) => {
