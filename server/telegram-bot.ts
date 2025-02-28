@@ -4,8 +4,12 @@ import { Telegraf } from 'telegraf';
 // Используем токен из переменных окружения
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-// Использовать прямую ссылку, которая точно работает
-const WEBAPP_URL = 'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/';
+// Использовать динамическую ссылку, определяемую из переменных окружения
+const WEBAPP_URL = process.env.REPLIT_DEPLOYMENT_URL || 
+                   process.env.REPLIT_SLUG && `https://${process.env.REPLIT_SLUG}.replit.dev/` || 
+                   'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/';
+
+console.log('Используется WEBAPP_URL:', WEBAPP_URL);
 
 if (!BOT_TOKEN) {
   console.error('КРИТИЧЕСКАЯ ОШИБКА: TELEGRAM_BOT_TOKEN не найден в переменных окружения');
@@ -51,6 +55,9 @@ export function startBot() {
 
   console.log('Запуск Telegram бота...');
   console.log('WebApp URL:', WEBAPP_URL);
+  console.log('Переменные окружения:');
+  console.log('- REPLIT_DEPLOYMENT_URL:', process.env.REPLIT_DEPLOYMENT_URL);
+  console.log('- REPLIT_SLUG:', process.env.REPLIT_SLUG);
 
   // Запускаем бота в режиме polling с проверкой ошибок
   bot.launch()
