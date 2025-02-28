@@ -11,6 +11,7 @@ import { startRateUpdates } from './rates';
 import express from 'express';
 import fetch from 'node-fetch';
 import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
+import { getNews } from './news-service';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -250,6 +251,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Transactions fetch error:", error);
       res.status(500).json({ message: "Ошибка при получении транзакций" });
+    }
+  });
+
+  // Добавляем эндпоинт для получения новостей
+  app.get("/api/news", async (req, res) => {
+    try {
+      const news = await getNews();
+      res.json(news);
+    } catch (error) {
+      console.error("Error fetching news:", error);
+      res.status(500).json({ message: "Ошибка при получении новостей" });
     }
   });
 

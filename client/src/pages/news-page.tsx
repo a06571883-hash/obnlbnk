@@ -28,72 +28,16 @@ interface NewsItem {
   source: string;
 }
 
-// Функция для генерации новостей на основе текущей даты и трендов
-function generateDailyNews(rates?: Rates): NewsItem[] {
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('ru-RU', { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric'
-  });
-
-  const btcTrend = rates?.btcToUsd ? rates.btcToUsd > 85000 ? 'рост' : 'снижение' : 'волатильность';
-  const ethTrend = rates?.ethToUsd ? rates.ethToUsd > 3000 ? 'рост' : 'снижение' : 'волатильность';
-  const uahTrend = rates?.usdToUah ? rates.usdToUah > 40 ? 'ослабление' : 'укрепление' : 'стабильность';
-
-  return [
-    {
-      id: 1,
-      title: `Bitcoin демонстрирует ${btcTrend} перед халвингом`,
-      content: `За последние 24 часа курс Bitcoin показывает ${btcTrend}. ${
-        btcTrend === 'рост' 
-          ? 'Аналитики связывают позитивную динамику с приближающимся халвингом и институциональным интересом.' 
-          : 'Эксперты рекомендуют следить за техническими индикаторами.'
-      }`,
-      date: dateStr,
-      category: 'crypto',
-      source: 'CryptoNews'
-    },
-    {
-      id: 2,
-      title: `Межбанк: гривна показывает ${uahTrend}`,
-      content: `На межбанковском рынке наблюдается ${uahTrend} национальной валюты. НБУ продолжает политику гибкого курсообразования с учетом рыночных факторов.`,
-      date: dateStr,
-      category: 'fiat',
-      source: 'FinanceUA'
-    },
-    {
-      id: 3,
-      title: `Ethereum: ${ethTrend} на фоне обновлений сети`,
-      content: `Курс Ethereum показывает ${ethTrend} после недавних обновлений сети. Разработчики продолжают работу над улучшением масштабируемости и снижением комиссий.`,
-      date: dateStr,
-      category: 'crypto',
-      source: 'ETHNews'
-    },
-    {
-      id: 4,
-      title: "Регуляторы обсуждают новые правила для криптовалют",
-      content: "Международные финансовые регуляторы работают над унификацией правил работы с цифровыми активами. Ожидается принятие новых стандартов до конца года.",
-      date: dateStr,
-      category: 'crypto',
-      source: 'CryptoRegulation'
-    },
-    {
-      id: 5,
-      title: "Украинские банки расширяют крипто-сервисы",
-      content: "Ведущие банки страны продолжают интеграцию криптовалютных сервисов в свои приложения. Новые функции станут доступны клиентам в ближайшие недели.",
-      date: dateStr,
-      category: 'fiat',
-      source: 'BankNews'
-    }
-  ];
-}
-
 export default function NewsPage() {
   const { toast } = useToast();
   const [selectedCurrency, setSelectedCurrency] = useState<'btc' | 'eth' | 'uah'>('btc');
   const [rateHistory, setRateHistory] = useState<RateHistory[]>([]);
-  const [news, setNews] = useState<NewsItem[]>([]);
+
+  // Получаем новости с сервера
+  const { data: news = [], isLoading: isLoadingNews } = useQuery<NewsItem[]>({
+    queryKey: ["/api/news"],
+    refetchInterval: 300000, // Обновляем каждые 5 минут
+  });
 
   const { data: rates, isLoading: ratesLoading } = useQuery<Rates>({
     queryKey: ["/api/rates"],
@@ -105,8 +49,8 @@ export default function NewsPage() {
     if (rates) {
       const now = Date.now();
       const baseRate = selectedCurrency === 'btc' ? rates.btcToUsd : 
-                      selectedCurrency === 'eth' ? rates.ethToUsd :
-                      rates.usdToUah;
+                    selectedCurrency === 'eth' ? rates.ethToUsd :
+                    rates.usdToUah;
       const newHistory = Array.from({ length: 24 }, (_, i) => {
         const hourOffset = 23 - i;
         const volatility = Math.sin(hourOffset / 4) * 0.05;
@@ -119,14 +63,7 @@ export default function NewsPage() {
     }
   }, [rates, selectedCurrency]);
 
-  // Обновляем новости при изменении курсов
-  useEffect(() => {
-    if (rates) {
-      setNews(generateDailyNews(rates));
-    }
-  }, [rates]);
-
-  if (ratesLoading) {
+  if (ratesLoading || isLoadingNews) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -262,25 +199,33 @@ export default function NewsPage() {
             {/* Новостная лента */}
             <div className="space-y-4">
               <h2 className="text-lg font-semibold">Последние новости</h2>
-              {news.map((news) => (
-                <Card key={news.id} className="p-4 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <h3 className="text-base font-medium">{news.title}</h3>
-                    <span className="text-xs text-muted-foreground">{news.date}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{news.content}</p>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-primary">{news.source}</span>
-                    <span className={`px-2 py-1 rounded-full ${
-                      news.category === 'crypto' 
-                        ? 'bg-violet-500/10 text-violet-500'
-                        : 'bg-emerald-500/10 text-emerald-500'
-                    }`}>
-                      {news.category === 'crypto' ? 'Крипто' : 'Фиат'}
-                    </span>
-                  </div>
+              {news.length === 0 ? (
+                <Card className="p-4">
+                  <p className="text-center text-muted-foreground">
+                    Загрузка новостей...
+                  </p>
                 </Card>
-              ))}
+              ) : (
+                news.map((newsItem) => (
+                  <Card key={newsItem.id} className="p-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <h3 className="text-base font-medium">{newsItem.title}</h3>
+                      <span className="text-xs text-muted-foreground">{newsItem.date}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{newsItem.content}</p>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-primary">{newsItem.source}</span>
+                      <span className={`px-2 py-1 rounded-full ${
+                        newsItem.category === 'crypto' 
+                          ? 'bg-violet-500/10 text-violet-500'
+                          : 'bg-emerald-500/10 text-emerald-500'
+                      }`}>
+                        {newsItem.category === 'crypto' ? 'Крипто' : 'Фиат'}
+                      </span>
+                    </div>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
         </div>
