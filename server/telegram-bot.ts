@@ -8,7 +8,7 @@ const WEBAPP_URL = process.env.REPLIT_DEPLOYMENT_URL
   ? process.env.REPLIT_DEPLOYMENT_URL 
   : process.env.REPLIT_SLUG 
     ? `https://${process.env.REPLIT_SLUG}.replit.dev`
-    : 'https://bnal-bank.webxcorporation.repl.co';
+    : 'https://5424a4c9-a9c3-4301-9bc5-90b750200100-00-1p7r8su6wsdmo.kirk.replit.dev/';
 
 const bot = new Telegraf(BOT_TOKEN);
 
