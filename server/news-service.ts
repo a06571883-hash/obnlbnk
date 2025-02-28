@@ -13,17 +13,60 @@ interface NewsItem {
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 const CRYPTO_COMPARE_KEY = process.env.CRYPTO_COMPARE_KEY;
 
+async function translateToRussian(text: string): Promise<string> {
+  try {
+    // Используем простые правила перевода для базовых крипто-терминов
+    const translations: { [key: string]: string } = {
+      'Bitcoin': 'Биткоин',
+      'Ethereum': 'Эфириум',
+      'cryptocurrency': 'криптовалюта',
+      'blockchain': 'блокчейн',
+      'mining': 'майнинг',
+      'token': 'токен',
+      'exchange': 'биржа',
+      'wallet': 'кошелек',
+      'trading': 'торговля',
+      'market': 'рынок',
+      'price': 'цена',
+      'increase': 'рост',
+      'decrease': 'падение',
+      'investment': 'инвестиции'
+    };
+
+    let translatedText = text;
+    for (const [eng, rus] of Object.entries(translations)) {
+      translatedText = translatedText.replace(new RegExp(eng, 'gi'), rus);
+    }
+
+    return translatedText;
+  } catch (error) {
+    console.error('Translation error:', error);
+    return text;
+  }
+}
+
 async function fetchCryptoNews(): Promise<NewsItem[]> {
   try {
     const response = await axios.get(`https://min-api.cryptocompare.com/data/v2/news/?lang=EN&api_key=${CRYPTO_COMPARE_KEY}`);
-    return response.data.Data.slice(0, 3).map((item: any, index: number) => ({
-      id: index + 1,
-      title: item.title,
-      content: item.body.substring(0, 200) + '...',
-      date: new Date(item.published_on * 1000).toLocaleDateString('ru-RU'),
-      category: 'crypto',
-      source: item.source
-    }));
+
+    const newsItems = await Promise.all(
+      response.data.Data.slice(0, 3).map(async (item: any, index: number) => {
+        // Переводим заголовок и содержание на русский
+        const translatedTitle = await translateToRussian(item.title);
+        const translatedContent = await translateToRussian(item.body.substring(0, 200) + '...');
+
+        return {
+          id: index + 1,
+          title: translatedTitle,
+          content: translatedContent,
+          date: new Date(item.published_on * 1000).toLocaleDateString('ru-RU'),
+          category: 'crypto',
+          source: 'CryptoCompare'
+        };
+      })
+    );
+
+    return newsItems;
   } catch (error) {
     console.error('Error fetching crypto news:', error);
     return [];
@@ -33,7 +76,12 @@ async function fetchCryptoNews(): Promise<NewsItem[]> {
 async function fetchFinanceNews(): Promise<NewsItem[]> {
   try {
     const response = await axios.get(
-      `https://newsapi.org/v2/everything?q=finance OR banking OR economy&language=ru&sortBy=publishedAt&apiKey=${NEWS_API_KEY}`
+      `https://newsapi.org/v2/everything?` + 
+      `q=finance OR banking OR economy OR cryptocurrency&` +
+      `language=ru&` +
+      `excludeDomains=rt.com,sputniknews.com,ria.ru,tass.ru&` +
+      `sortBy=publishedAt&` +
+      `apiKey=${NEWS_API_KEY}`
     );
 
     if (!response.data.articles || !Array.isArray(response.data.articles)) {
@@ -41,7 +89,16 @@ async function fetchFinanceNews(): Promise<NewsItem[]> {
       return [];
     }
 
-    return response.data.articles.slice(0, 3).map((item: any, index: number) => ({
+    // Фильтруем новости, исключая нежелательные источники
+    const filteredArticles = response.data.articles.filter((article: any) => {
+      const source = article.source.name.toLowerCase();
+      return !source.includes('rt') && 
+             !source.includes('sputnik') && 
+             !source.includes('ria') && 
+             !source.includes('tass');
+    });
+
+    return filteredArticles.slice(0, 3).map((item: any, index: number) => ({
       id: index + 4, 
       title: item.title,
       content: item.description || item.content || 'Подробности недоступны',
@@ -68,7 +125,6 @@ export async function getNews(): Promise<NewsItem[]> {
 
     console.log(`Retrieved ${cryptoNews.length} crypto news and ${financeNews.length} finance news`);
 
-    
     const allNews = [...cryptoNews, ...financeNews].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
