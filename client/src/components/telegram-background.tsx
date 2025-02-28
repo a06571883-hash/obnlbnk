@@ -19,19 +19,39 @@ export default function TelegramBackground() {
 
   useEffect(() => {
     try {
-      const tg = window.Telegram?.WebApp;
+      // Задержка для гарантии полной загрузки Telegram API
+      setTimeout(() => {
+        const tg = window.Telegram?.WebApp;
 
-      if (!tg) {
-        console.log('Приложение открыто не через Telegram');
-        return;
-      }
+        if (!tg) {
+          console.log('Приложение открыто не через Telegram или скрипт Telegram WebApp не загрузился');
+          // Проверка URL на наличие параметров Telegram
+          if (window.location.search.includes('tgWebAppData') || 
+              window.location.search.includes('tgWebAppStartParam')) {
+            console.log('Обнаружены параметры Telegram в URL, повторная попытка инициализации...');
+            // Повторная попытка через 1 секунду
+            setTimeout(() => {
+              const tgRetry = window.Telegram?.WebApp;
+              if (tgRetry) {
+                tgRetry.ready();
+                tgRetry.expand();
+                setIsTelegram(true);
+                console.log('Telegram WebApp успешно инициализирован после повторной попытки');
+              } else {
+                setError('Не удалось инициализировать Telegram WebApp после повторной попытки');
+              }
+            }, 1000);
+          }
+          return;
+        }
 
-      // Инициализируем WebApp
-      tg.ready();
-      tg.expand();
+        // Инициализируем WebApp
+        tg.ready();
+        tg.expand();
 
-      setIsTelegram(true);
-      console.log('Telegram WebApp успешно инициализирован');
+        setIsTelegram(true);
+        console.log('Telegram WebApp успешно инициализирован');
+      }, 500);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
       console.error('Ошибка инициализации Telegram WebApp:', errorMessage);
