@@ -179,13 +179,14 @@ export class DatabaseStorage implements IStorage {
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withTransaction(async () => {
       try {
-        const fromCard = await this.getCardById(fromCardId);
+        // Блокируем карты для предотвращения race conditions
+        const fromCard = await db.select().from(cards).where(eq(cards.id, fromCardId)).forUpdate().execute().then(rows => rows[0]);
         if (!fromCard) {
           throw new Error("Карта отправителя не найдена");
         }
 
         const cleanCardNumber = toCardNumber.replace(/\s+/g, '');
-        const toCard = await this.getCardByNumber(cleanCardNumber);
+        const toCard = await db.select().from(cards).where(eq(cards.number, cleanCardNumber)).forUpdate().execute().then(rows => rows[0]);
         if (!toCard) {
           throw new Error("Карта получателя не найдена");
         }
@@ -195,36 +196,32 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Не удалось получить актуальные курсы валют");
         }
 
+        // Рассчитываем сумму перевода с учетом конвертации
         let convertedAmount = amount;
-
-        // Calculate conversion based on card types
         if (fromCard.type !== toCard.type) {
           if (fromCard.type === 'usd' && toCard.type === 'uah') {
             convertedAmount = amount * parseFloat(rates.usdToUah);
           } else if (fromCard.type === 'uah' && toCard.type === 'usd') {
             convertedAmount = amount / parseFloat(rates.usdToUah);
           } else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
-            // Convert BTC to USD
             convertedAmount = amount * parseFloat(rates.btcToUsd);
           } else if (fromCard.type === 'usd' && toCard.type === 'crypto') {
-            // Convert USD to BTC
             convertedAmount = amount / parseFloat(rates.btcToUsd);
           }
         }
 
-        // Get regulator for commission
-        const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
+        // Получаем регулятора для комиссии
+        const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true)).forUpdate().execute();
         if (!regulator) {
           throw new Error("Регулятор не найден в системе");
         }
 
-        // Calculate commission
+        // Рассчитываем комиссию
         const commission = amount * 0.01;
         const btcCommission = commission / parseFloat(rates.btcToUsd);
 
-        // Check and update balances based on card types
+        // Проверяем и обновляем балансы с учетом типов карт
         if (fromCard.type === 'crypto') {
-          // Check crypto balance
           const cryptoBalance = parseFloat(fromCard.btcBalance || '0');
           if (cryptoBalance < (amount + commission)) {
             throw new Error(
@@ -233,21 +230,26 @@ export class DatabaseStorage implements IStorage {
             );
           }
 
-          // Update crypto balances
-          await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - amount - commission).toFixed(8));
+          // Обновляем криптобалансы
+          await db.update(cards)
+            .set({ btcBalance: (cryptoBalance - amount - commission).toFixed(8) })
+            .where(eq(cards.id, fromCard.id))
+            .execute();
 
           if (toCard.type === 'crypto') {
-            // Crypto to crypto transfer
             const toCryptoBalance = parseFloat(toCard.btcBalance || '0');
-            await this.updateCardBtcBalance(toCard.id, (toCryptoBalance + amount).toFixed(8));
+            await db.update(cards)
+              .set({ btcBalance: (toCryptoBalance + amount).toFixed(8) })
+              .where(eq(cards.id, toCard.id))
+              .execute();
           } else {
-            // Crypto to fiat transfer
             const toBalance = parseFloat(toCard.balance);
-            await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
+            await db.update(cards)
+              .set({ balance: (toBalance + convertedAmount).toFixed(2) })
+              .where(eq(cards.id, toCard.id))
+              .execute();
           }
-
         } else if (toCard.type === 'crypto') {
-          // Check fiat balance
           const fiatBalance = parseFloat(fromCard.balance);
           if (fiatBalance < (amount + commission)) {
             throw new Error(
@@ -256,13 +258,17 @@ export class DatabaseStorage implements IStorage {
             );
           }
 
-          // Update balances for fiat to crypto
-          await this.updateCardBalance(fromCard.id, (fiatBalance - amount - commission).toFixed(2));
-          const toCryptoBalance = parseFloat(toCard.btcBalance || '0');
-          await this.updateCardBtcBalance(toCard.id, (toCryptoBalance + convertedAmount).toFixed(8));
+          await db.update(cards)
+            .set({ balance: (fiatBalance - amount - commission).toFixed(2) })
+            .where(eq(cards.id, fromCard.id))
+            .execute();
 
+          const toCryptoBalance = parseFloat(toCard.btcBalance || '0');
+          await db.update(cards)
+            .set({ btcBalance: (toCryptoBalance + convertedAmount).toFixed(8) })
+            .where(eq(cards.id, toCard.id))
+            .execute();
         } else {
-          // Standard fiat transfer
           const fromBalance = parseFloat(fromCard.balance);
           if (fromBalance < (amount + commission)) {
             throw new Error(
@@ -271,16 +277,26 @@ export class DatabaseStorage implements IStorage {
             );
           }
 
-          await this.updateCardBalance(fromCard.id, (fromBalance - amount - commission).toFixed(2));
+          await db.update(cards)
+            .set({ balance: (fromBalance - amount - commission).toFixed(2) })
+            .where(eq(cards.id, fromCard.id))
+            .execute();
+
           const toBalance = parseFloat(toCard.balance);
-          await this.updateCardBalance(toCard.id, (toBalance + convertedAmount).toFixed(2));
+          await db.update(cards)
+            .set({ balance: (toBalance + convertedAmount).toFixed(2) })
+            .where(eq(cards.id, toCard.id))
+            .execute();
         }
 
-        // Update regulator's BTC balance with commission
+        // Обновляем баланс регулятора
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
-        await this.updateRegulatorBalance(regulator.id, (regulatorBtcBalance + btcCommission).toFixed(8));
+        await db.update(users)
+          .set({ regulator_balance: (regulatorBtcBalance + btcCommission).toFixed(8) })
+          .where(eq(users.id, regulator.id))
+          .execute();
 
-        // Create main transaction
+        // Создаем транзакцию перевода
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard.id,
@@ -297,7 +313,7 @@ export class DatabaseStorage implements IStorage {
           createdAt: new Date()
         });
 
-        // Create commission transaction
+        // Создаем транзакцию комиссии
         await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: regulator.id,
