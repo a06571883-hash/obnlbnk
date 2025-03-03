@@ -94,6 +94,17 @@ app.use((req, res, next) => {
     startBot();
     console.log('Telegram bot started successfully');
 
+    // Обработка необработанных исключений и отказов Promise
+    process.on('uncaughtException', (error) => {
+      console.error('Необработанное исключение:', error);
+      // Не завершаем процесс, просто логируем ошибку
+    });
+
+    process.on('unhandledRejection', (reason, promise) => {
+      console.error('Необработанное отклонение Promise:', reason);
+      // Не завершаем процесс, просто логируем ошибку
+    });
+
     // Error handling
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;

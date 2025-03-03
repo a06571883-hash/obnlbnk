@@ -1,4 +1,3 @@
-
 import { Telegraf } from 'telegraf';
 
 // Используем токен из переменных окружения или задаем новый
@@ -26,18 +25,10 @@ bot.command('start', (ctx) => {
   try {
     console.log(`Пользователь ${ctx.from.id} (${ctx.from.username || 'без имени'}) запустил бота`);
     console.log('Отправка WebApp URL напрямую:', WEBAPP_URL);
-    
-    // Используем inline_keyboard для более надежного открытия WebApp
-    return ctx.reply('Добро пожаловать в BNAL Bank!', {
-      parse_mode: 'HTML',
-      reply_markup: {
-        inline_keyboard: [[
-          {
-            text: 'Открыть BNAL Bank',
-            web_app: { url: WEBAPP_URL }
-          }
-        ]]
-      }
+
+    // Используем menu_button для открытия WebApp через голубую кнопку
+    return ctx.reply('Добро пожаловать в BNAL Bank! Нажмите на голубую кнопку внизу экрана, чтобы открыть приложение.', {
+      parse_mode: 'HTML'
     });
   } catch (error) {
     console.error('Ошибка в команде start:', error);
