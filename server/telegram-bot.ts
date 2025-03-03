@@ -1,11 +1,13 @@
 
 import { Telegraf } from 'telegraf';
 
-// Используем токен из переменных окружения
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+// Используем токен из переменных окружения или задаем новый
+// ИЗМЕНИТЬ ЗДЕСЬ, если нужно поменять токен бота
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4';
 
+// ИЗМЕНИТЬ ЗДЕСЬ, если нужно поменять URL приложения
 // Использовать фиксированный URL для стабильной работы
-const WEBAPP_URL = 'https://bnal-bank-app.danyapov.repl.co/';
+const WEBAPP_URL = 'https://e3aa7355-a2d0-4e43-957e-11898b297172-00-72khzffrs1qv.spock.replit.dev:3000/';
 
 console.log('Используется WEBAPP_URL:', WEBAPP_URL);
 
@@ -17,7 +19,7 @@ if (!BOT_TOKEN) {
 }
 
 // Создаем экземпляр бота
-const bot = new Telegraf(BOT_TOKEN || '');
+const bot = new Telegraf(BOT_TOKEN);
 
 // Команда /start
 bot.command('start', (ctx) => {
