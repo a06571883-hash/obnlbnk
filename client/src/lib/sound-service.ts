@@ -1,5 +1,5 @@
 // Типы звуков, используемых в приложении
-export type SoundType = 'click' | 'success' | 'error' | 'transfer' | 'notification';
+export type SoundType = 'click' | 'success' | 'error' | 'transfer' | 'notification' | 'silent';
 
 // Пути к звуковым файлам
 const soundFiles: Record<SoundType, string> = {
@@ -7,17 +7,62 @@ const soundFiles: Record<SoundType, string> = {
   success: '/sounds/success.mp3',
   error: '/sounds/error.mp3',
   transfer: '/sounds/transfer.mp3',
-  notification: '/sounds/notification.mp3'
+  notification: '/sounds/notification.mp3',
+  silent: '/sounds/silent.mp3'
 };
 
-// Кэш для предзагруженных аудио файлов
-const audioCache: Record<SoundType, HTMLAudioElement> = {} as Record<SoundType, HTMLAudioElement>;
+// Сервис для работы со звуками
+const sounds: Record<SoundType, HTMLAudioElement> = {};
+
+// Предварительная загрузка звуков
+export const preloadSounds = async () => {
+  try {
+    // Загружаем звуки
+    for (const [type, path] of Object.entries(soundFiles)) {
+      sounds[type as SoundType] = new Audio(path);
+    }
+
+    // Для iOS требуется взаимодействие пользователя перед воспроизведением звука
+    const playPromise = sounds.silent.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.log('Аудио требует взаимодействия пользователя:', error);
+      });
+    }
+
+    console.log('Звуки успешно загружены');
+  } catch (error) {
+    console.error('Ошибка при загрузке звуков:', error);
+  }
+};
+
+// Воспроизвести звук
+export const playSound = (soundName: SoundType) => {
+  try {
+    const sound = sounds[soundName];
+    if (sound) {
+      // Сбрасываем позицию воспроизведения на начало
+      sound.currentTime = 0;
+      // Начинаем воспроизведение
+      const playPromise = sound.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error(`Ошибка воспроизведения звука ${soundName}:`, error);
+        });
+      }
+    } else {
+      console.warn(`Звук ${soundName} не найден`);
+    }
+  } catch (error) {
+    console.error(`Ошибка при воспроизведении звука ${soundName}:`, error);
+  }
+};
 
 /**
  * Инициализирует звуковой сервис
  * Предзагружает все звуки для быстрого воспроизведения
  */
-export const initSoundService = (): void => {
+export const initSoundService = async (): Promise<void> => {
   console.log('Initializing sound service...');
 
   // Проверяем поддержку Web Audio API
@@ -27,26 +72,12 @@ export const initSoundService = (): void => {
   }
 
   try {
-    // Предзагружаем все звуки
-    Object.entries(soundFiles).forEach(([type, path]) => {
-      loadSound(type as SoundType);
-    });
+    await preloadSounds();
   } catch (e) {
     console.error('Ошибка инициализации аудио:', e);
   }
 };
 
-/**
- * Load a sound file and cache it
- */
-const loadSound = (type: SoundType): HTMLAudioElement => {
-  if (!audioCache[type]) {
-    const audio = new Audio(soundFiles[type]);
-    audio.volume = 0.5; // Default volume
-    audioCache[type] = audio;
-  }
-  return audioCache[type];
-};
 
 /**
  * Play a sound if enabled in user settings
@@ -58,15 +89,7 @@ export const playSoundIfEnabled = (type: SoundType): void => {
 
     if (soundEnabled) {
       console.log(`Playing sound: ${type}`);
-      const sound = loadSound(type);
-
-      // Reset sound to beginning if it's already playing
-      sound.currentTime = 0;
-
-      // Play the sound
-      sound.play().catch(e => {
-        console.error(`Error playing sound ${type}:`, e);
-      });
+      playSound(type);
     }
   } catch (error) {
     console.error('Error playing sound:', error);
