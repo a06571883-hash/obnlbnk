@@ -15,27 +15,87 @@ const CRYPTO_COMPARE_KEY = process.env.CRYPTO_COMPARE_KEY;
 
 async function translateToRussian(text: string): Promise<string> {
   try {
-    // Используем простые правила перевода для базовых крипто-терминов
     const translations: { [key: string]: string } = {
       'Bitcoin': 'Биткоин',
       'Ethereum': 'Эфириум',
       'cryptocurrency': 'криптовалюта',
+      'cryptocurrencies': 'криптовалюты',
       'blockchain': 'блокчейн',
       'mining': 'майнинг',
       'token': 'токен',
+      'tokens': 'токены',
       'exchange': 'биржа',
+      'exchanges': 'биржи',
       'wallet': 'кошелек',
+      'wallets': 'кошельки',
       'trading': 'торговля',
       'market': 'рынок',
+      'markets': 'рынки',
       'price': 'цена',
+      'prices': 'цены',
       'increase': 'рост',
       'decrease': 'падение',
-      'investment': 'инвестиции'
+      'investment': 'инвестиции',
+      'investors': 'инвесторы',
+      'transaction': 'транзакция',
+      'transactions': 'транзакции',
+      'network': 'сеть',
+      'networks': 'сети',
+      'protocol': 'протокол',
+      'protocols': 'протоколы',
+      'decentralized': 'децентрализованный',
+      'centralized': 'централизованный',
+      'financial': 'финансовый',
+      'finance': 'финансы',
+      'technology': 'технология',
+      'technologies': 'технологии',
+      'platform': 'платформа',
+      'platforms': 'платформы',
+      'digital': 'цифровой',
+      'currency': 'валюта',
+      'currencies': 'валюты',
+      'analysis': 'анализ',
+      'analytics': 'аналитика',
+      'trend': 'тренд',
+      'trends': 'тренды',
+      'growth': 'рост',
+      'decline': 'снижение',
+      'regulation': 'регулирование',
+      'regulatory': 'регуляторный',
+      'adoption': 'принятие',
+      'development': 'развитие',
+      'update': 'обновление',
+      'updates': 'обновления',
+      'security': 'безопасность',
+      'secure': 'безопасный',
+      'hack': 'взлом',
+      'hacks': 'взломы',
+      'innovation': 'инновация',
+      'innovative': 'инновационный',
+      'payment': 'платеж',
+      'payments': 'платежи',
+      'asset': 'актив',
+      'assets': 'активы',
+      'volume': 'объем',
+      'volumes': 'объемы',
+      'liquidity': 'ликвидность',
+      'volatile': 'волатильный',
+      'volatility': 'волатильность'
     };
 
     let translatedText = text;
+    // Переводим с учетом регистра
     for (const [eng, rus] of Object.entries(translations)) {
-      translatedText = translatedText.replace(new RegExp(eng, 'gi'), rus);
+      // Перевод слова с большой буквы
+      translatedText = translatedText.replace(
+        new RegExp(`\\b${eng.charAt(0).toUpperCase() + eng.slice(1)}\\b`, 'g'),
+        rus.charAt(0).toUpperCase() + rus.slice(1)
+      );
+      // Перевод слова в нижнем регистре
+      translatedText = translatedText.replace(
+        new RegExp(`\\b${eng.toLowerCase()}\\b`, 'g'),
+        rus.toLowerCase()
+      );
     }
 
     return translatedText;
@@ -61,7 +121,7 @@ async function fetchCryptoNews(): Promise<NewsItem[]> {
           content: translatedContent,
           date: new Date(item.published_on * 1000).toLocaleDateString('ru-RU'),
           category: 'crypto',
-          source: 'CryptoCompare'
+          source: await translateToRussian(item.source)
         };
       })
     );
@@ -100,7 +160,7 @@ async function fetchFinanceNews(): Promise<NewsItem[]> {
     });
 
     return filteredArticles.slice(0, 10).map((item: any, index: number) => ({
-      id: index + 4, // Начинаем с 4, так как первые 3 ID заняты крипто-новостями
+      id: index + 11, // Начинаем с 11, так как первые 10 ID заняты крипто-новостями
       title: item.title,
       content: item.description || item.content || 'Подробности недоступны',
       date: new Date(item.publishedAt).toLocaleDateString('ru-RU'),
@@ -118,13 +178,13 @@ async function fetchFinanceNews(): Promise<NewsItem[]> {
 
 export async function getNews(): Promise<NewsItem[]> {
   try {
-    console.log('Fetching news...');
+    console.log('Загрузка новостей...');
     const [cryptoNews, financeNews] = await Promise.all([
       fetchCryptoNews(),
       fetchFinanceNews()
     ]);
 
-    console.log(`Retrieved ${cryptoNews.length} crypto news and ${financeNews.length} finance news`);
+    console.log(`Получено ${cryptoNews.length} крипто-новостей и ${financeNews.length} финансовых новостей`);
 
     const allNews = [...cryptoNews, ...financeNews].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -132,7 +192,7 @@ export async function getNews(): Promise<NewsItem[]> {
 
     return allNews;
   } catch (error) {
-    console.error('Error aggregating news:', error);
+    console.error('Ошибка агрегации новостей:', error);
     return [];
   }
 }
