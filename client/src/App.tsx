@@ -39,7 +39,25 @@ function Router() {
 
 function App() {
   useEffect(() => {
-    preloadSounds(); // Preload sounds on component mount
+    // Preload sounds on component mount
+    console.log('Preloading sound effects...');
+    preloadSounds();
+    
+    // Attempt to play a silent sound to initialize audio context (helps with mobile browsers)
+    const initAudio = () => {
+      const silentSound = new Audio();
+      silentSound.play().catch(e => {
+        console.log('Audio context initialization might require user interaction', e);
+      });
+      document.removeEventListener('click', initAudio);
+    };
+    
+    // Initialize audio on first user interaction
+    document.addEventListener('click', initAudio);
+    
+    return () => {
+      document.removeEventListener('click', initAudio);
+    };
   }, []);
 
   return (

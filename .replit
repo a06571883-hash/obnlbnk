@@ -8,6 +8,7 @@ channel = "stable-24_05"
 [deployment]
 deploymentTarget = "cloudrun"
 build = ["npm", "run", "build"]
+audio = true
 run = ["sh", "-c", "npm run dev"]
 
 [[ports]]
