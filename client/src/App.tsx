@@ -13,6 +13,10 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./components/auth-provider";
 import BottomNav from "@/components/bottom-nav";
 import { useLocation } from "wouter";
+import React, { useEffect } from 'react';
+import './App.css';
+import { preloadSounds } from './lib/sound-service'; // Added import for sound service
+
 
 function Router() {
   const [location] = useLocation();
@@ -34,6 +38,10 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    preloadSounds(); // Preload sounds on component mount
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
