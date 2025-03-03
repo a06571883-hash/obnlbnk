@@ -225,18 +225,28 @@ export class DatabaseStorage implements IStorage {
         if (fromCard.type !== toCard.type) {
           if (fromCard.type === 'usd' && toCard.type === 'uah') {
             convertedAmount = amount * parseFloat(rates.usdToUah);
+            console.log(`Конвертация USD → UAH: ${amount} USD → ${convertedAmount.toFixed(2)} UAH (курс: 1 USD = ${rates.usdToUah} UAH)`);
           } else if (fromCard.type === 'uah' && toCard.type === 'usd') {
             convertedAmount = amount / parseFloat(rates.usdToUah);
-          } else if (fromCard.type === 'crypto' && toCard.type === 'usd') {
+            console.log(`Конвертация UAH → USD: ${amount} UAH → ${convertedAmount.toFixed(2)} USD (курс: 1 USD = ${rates.usdToUah} UAH)`);
+          } else if ((fromCard.type === 'crypto' || fromCard.type === 'btc') && toCard.type === 'usd') {
             convertedAmount = amount * parseFloat(rates.btcToUsd);
-          } else if (fromCard.type === 'usd' && toCard.type === 'crypto') {
+            console.log(`Конвертация CRYPTO/BTC → USD: ${amount} BTC → ${convertedAmount.toFixed(2)} USD (курс: 1 BTC = $${rates.btcToUsd})`);
+          } else if (fromCard.type === 'usd' && (toCard.type === 'crypto' || toCard.type === 'btc')) {
             convertedAmount = amount / parseFloat(rates.btcToUsd);
+            console.log(`Конвертация USD → CRYPTO/BTC: ${amount} USD → ${convertedAmount.toFixed(8)} BTC (курс: 1 BTC = $${rates.btcToUsd})`);
           } else if (fromCard.type === 'btc' && toCard.type === 'uah') {
             const btcToUsd = amount * parseFloat(rates.btcToUsd);
             convertedAmount = btcToUsd * parseFloat(rates.usdToUah);
+            console.log(`Конвертация BTC → UAH: ${amount} BTC → $${btcToUsd.toFixed(2)} USD → ${convertedAmount.toFixed(2)} UAH (курсы: 1 BTC = $${rates.btcToUsd}, 1 USD = ${rates.usdToUah} UAH)`);
           } else if (fromCard.type === 'eth' && toCard.type === 'uah') {
             const ethToUsd = amount * parseFloat(rates.ethToUsd);
             convertedAmount = ethToUsd * parseFloat(rates.usdToUah);
+            console.log(`Конвертация ETH → UAH: ${amount} ETH → $${ethToUsd.toFixed(2)} USD → ${convertedAmount.toFixed(2)} UAH (курсы: 1 ETH = $${rates.ethToUsd}, 1 USD = ${rates.usdToUah} UAH)`);
+          } else if (fromCard.type === 'crypto' && toCard.type === 'uah') {
+            const btcToUsd = amount * parseFloat(rates.btcToUsd);
+            convertedAmount = btcToUsd * parseFloat(rates.usdToUah);
+            console.log(`Конвертация CRYPTO → UAH: ${amount} BTC → $${btcToUsd.toFixed(2)} USD → ${convertedAmount.toFixed(2)} UAH (курсы: 1 BTC = $${rates.btcToUsd}, 1 USD = ${rates.usdToUah} UAH)`);
           }
         }
 
@@ -247,22 +257,26 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Выполняем перевод атомарно
-        if (fromCard.type === 'crypto') {
+        if (fromCard.type === 'crypto' || fromCard.type === 'btc') {
           const fromCryptoBalance = parseFloat(fromCard.btcBalance || '0');
           await db.update(cards)
             .set({ btcBalance: (fromCryptoBalance - totalDebit).toFixed(8) })
             .where(eq(cards.id, fromCard.id));
+            
+          console.log(`Списано с ${fromCard.type} карты: ${totalDebit.toFixed(8)} BTC, новый баланс: ${(fromCryptoBalance - totalDebit).toFixed(8)} BTC`);
 
-          if (toCard.type === 'crypto') {
+          if (toCard.type === 'crypto' || toCard.type === 'btc') {
             const toCryptoBalance = parseFloat(toCard.btcBalance || '0');
             await db.update(cards)
               .set({ btcBalance: (toCryptoBalance + amount).toFixed(8) })
               .where(eq(cards.id, toCard.id));
+            console.log(`Зачислено на ${toCard.type} карту: ${amount.toFixed(8)} BTC, новый баланс: ${(toCryptoBalance + amount).toFixed(8)} BTC`);
           } else {
             const toFiatBalance = parseFloat(toCard.balance);
             await db.update(cards)
               .set({ balance: (toFiatBalance + convertedAmount).toFixed(2) })
               .where(eq(cards.id, toCard.id));
+            console.log(`Зачислено на ${toCard.type} карту: ${convertedAmount.toFixed(2)} ${toCard.type.toUpperCase()}, новый баланс: ${(toFiatBalance + convertedAmount).toFixed(2)} ${toCard.type.toUpperCase()}`);
           }
         } else {
           const fromFiatBalance = parseFloat(fromCard.balance);
@@ -299,8 +313,8 @@ export class DatabaseStorage implements IStorage {
           type: 'transfer',
           status: 'completed',
           description: fromCard.type === toCard.type ?
-            `Перевод ${amount.toFixed(fromCard.type === 'crypto' ? 8 : 2)} ${fromCard.type.toUpperCase()}` :
-            `Перевод ${amount.toFixed(fromCard.type === 'crypto' ? 8 : 2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(toCard.type === 'crypto' ? 8 : 2)} ${toCard.type.toUpperCase()}`,
+            `Перевод ${amount.toFixed(fromCard.type === 'crypto' || fromCard.type === 'btc' ? 8 : 2)} ${fromCard.type.toUpperCase()}` :
+            `Перевод ${amount.toFixed(fromCard.type === 'crypto' || fromCard.type === 'btc' ? 8 : 2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(toCard.type === 'crypto' || toCard.type === 'btc' ? 8 : 2)} ${toCard.type.toUpperCase()} (курс: ${(convertedAmount/amount).toFixed(2)})`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
           wallet: null,

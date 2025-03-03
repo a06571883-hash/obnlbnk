@@ -126,6 +126,11 @@ async function fetchRates() {
       btcToUsd: cryptoData.bitcoin.usd,
       ethToUsd: cryptoData.ethereum.usd
     });
+    
+    console.log(`Текущие курсы для конвертации:
+      1 USD = ${usdData.rates.UAH} UAH
+      1 BTC = ${cryptoData.bitcoin.usd} USD = ${cryptoData.bitcoin.usd * usdData.rates.UAH} UAH
+      1 ETH = ${cryptoData.ethereum.usd} USD = ${cryptoData.ethereum.usd * usdData.rates.UAH} UAH`);
   } catch (error) {
     console.error("Ошибка обновления курсов:", error);
 
