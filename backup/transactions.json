@@ -1650,5 +1650,33 @@
     "description": "Комиссия за перевод (0.00000011 BTC)",
     "fromCardNumber": "4686080646631828",
     "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 169,
+    "fromCardId": 1,
+    "toCardId": 3,
+    "amount": "1.00000000",
+    "convertedAmount": "3703089.25000000",
+    "type": "transfer",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-03T18:16:26.952Z",
+    "description": "Перевод 1.00000000 CRYPTO → 3703089.25 UAH (курс: 3703089.25)",
+    "fromCardNumber": "4686080646631828",
+    "toCardNumber": "4763950103360695"
+  },
+  {
+    "id": 170,
+    "fromCardId": 1,
+    "toCardId": 1,
+    "amount": "0.01000000",
+    "convertedAmount": "0.00000011",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-03T18:16:27.069Z",
+    "description": "Комиссия за перевод (0.00000011 BTC)",
+    "fromCardNumber": "4686080646631828",
+    "toCardNumber": "REGULATOR"
   }
 ]
