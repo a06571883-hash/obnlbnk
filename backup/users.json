@@ -54,15 +54,6 @@
     "nft_generation_count": 0
   },
   {
-    "id": 1,
-    "username": "admin",
-    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
-    "is_regulator": true,
-    "regulator_balance": "6641.15971509",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
     "id": 10,
     "username": "1 g",
     "password": "a3a57271d41d1591da6c1c1bf889033a812bc225bc67397e5b1ce6c20cc29484ef2e4a84d0ee9122b9f287a1dddc6a55f3c7a386fb7fa88941d9285d94ae07c5.276f3bc1e701cad1cebd9ad03cc291a1",
@@ -167,6 +158,15 @@
     "password": "f91cb2bcc0b018390e5db17417c4478d9063e5dd9f04a5e556e1278431afb8102477552f0bfd873c68df54d2725cfc5a0bd292bee28b49ab0cf9152426872898.f357ce6220ac6a3b2325c877cef2931a",
     "is_regulator": false,
     "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 1,
+    "username": "admin",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": true,
+    "regulator_balance": "6641.18370001",
     "last_nft_generation": null,
     "nft_generation_count": 0
   }

@@ -168,6 +168,8 @@ export default function VirtualCard({ card }: { card: Card }) {
 
   const transferMutation = useMutation({
     mutationFn: async () => {
+      setTransferError('');
+
       if (!transferAmount || isNaN(parseFloat(transferAmount)) || parseFloat(transferAmount) <= 0) {
         throw new Error('Пожалуйста, введите корректную сумму');
       }
@@ -175,7 +177,6 @@ export default function VirtualCard({ card }: { card: Card }) {
       if (!recipientCardNumber.trim()) {
         throw new Error('Пожалуйста, введите номер карты/адрес получателя');
       }
-
 
       if (card.type === 'crypto') {
         const cryptoBalance = selectedWallet === 'btc' ? parseFloat(card.btcBalance || '0') : parseFloat(card.ethBalance || '0');
@@ -214,6 +215,9 @@ export default function VirtualCard({ card }: { card: Card }) {
 
       return response.json();
     },
+    onMutate: () => {
+      setIsTransferring(true);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
       setIsTransferring(false);
@@ -235,12 +239,17 @@ export default function VirtualCard({ card }: { card: Card }) {
         description: error.message,
         variant: "destructive"
       });
+    },
+    onSettled: () => {
+      setIsTransferring(false);
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsTransferring(true);
+    if (isTransferring || transferMutation.isPending) {
+      return;
+    }
     transferMutation.mutate();
   };
 
@@ -577,10 +586,10 @@ export default function VirtualCard({ card }: { card: Card }) {
 
                     <Button
                       type="submit"
-                      disabled={isTransferring}
+                      disabled={isTransferring || transferMutation.isPending}
                       className="w-full h-9 text-sm"
                     >
-                      {isTransferring ? (
+                      {(isTransferring || transferMutation.isPending) ? (
                         <>
                           <Loader2 className="animate-spin h-3 w-3 mr-1" />
                           Выполняется перевод...
