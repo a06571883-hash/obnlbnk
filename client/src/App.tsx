@@ -42,7 +42,7 @@ function App() {
     // Preload sounds on component mount
     console.log('Preloading sound effects...');
     preloadSounds();
-    
+
     // Attempt to play a silent sound to initialize audio context (helps with mobile browsers)
     const initAudio = () => {
       console.log('Initializing audio context...');
@@ -59,30 +59,19 @@ function App() {
         .catch(e => {
           console.log('Audio context initialization might require user interaction', e);
         });
-      
+
       // Remove this event listener after first click
       document.removeEventListener('click', initAudio);
       document.removeEventListener('touchstart', initAudio);
     };
-    
+
     // Initialize audio on first user interaction
     document.addEventListener('click', initAudio);
     document.addEventListener('touchstart', initAudio);
-    
+
     return () => {
       document.removeEventListener('click', initAudio);
       document.removeEventListener('touchstart', initAudio);
-    };
-  }, []);xt initialization might require user interaction', e);
-      });
-      document.removeEventListener('click', initAudio);
-    };
-    
-    // Initialize audio on first user interaction
-    document.addEventListener('click', initAudio);
-    
-    return () => {
-      document.removeEventListener('click', initAudio);
     };
   }, []);
 
