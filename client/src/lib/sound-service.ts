@@ -27,6 +27,43 @@ export const preloadSounds = (): void => {
 };
 
 /**
+ * Load a sound file and cache it
+ */
+const loadSound = (type: SoundType): HTMLAudioElement => {
+  if (!audioCache[type]) {
+    const audio = new Audio(soundFiles[type]);
+    audio.volume = 0.5; // Default volume
+    audioCache[type] = audio;
+  }
+  return audioCache[type];
+};
+
+/**
+ * Play a sound if enabled in user settings
+ */
+export const playSoundIfEnabled = (type: SoundType): void => {
+  try {
+    // Get sound settings from localStorage
+    const soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+    
+    if (soundEnabled) {
+      console.log(`Playing sound: ${type}`);
+      const sound = loadSound(type);
+      
+      // Reset sound to beginning if it's already playing
+      sound.currentTime = 0;
+      
+      // Play the sound
+      sound.play().catch(e => {
+        console.error(`Error playing sound ${type}:`, e);
+      });
+    }
+  } catch (error) {
+    console.error('Error playing sound:', error);
+  }
+};
+
+/**
  * Load a sound file into cache
  */
 const loadSound = (type: SoundType): HTMLAudioElement => {
