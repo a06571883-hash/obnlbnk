@@ -1,29 +1,39 @@
+// Типы звуков, используемых в приложении
+export type SoundType = 'click' | 'success' | 'error' | 'transfer' | 'notification';
 
-/**
- * Сервис для воспроизведения звуковых эффектов
- */
-
-// Predefined sound types
-export type SoundType = 'click' | 'transfer' | 'error' | 'success';
-
-// Sound file mapping
+// Пути к звуковым файлам
 const soundFiles: Record<SoundType, string> = {
   click: '/sounds/click.mp3',
-  transfer: '/sounds/transfer.mp3',
+  success: '/sounds/success.mp3',
   error: '/sounds/error.mp3',
-  success: '/sounds/success.mp3'
+  transfer: '/sounds/transfer.mp3',
+  notification: '/sounds/notification.mp3'
 };
 
-// Audio instances cache
-const audioCache: Record<string, HTMLAudioElement> = {};
+// Кэш для предзагруженных аудио файлов
+const audioCache: Record<SoundType, HTMLAudioElement> = {} as Record<SoundType, HTMLAudioElement>;
 
 /**
- * Preload all sounds to avoid delay on first play
+ * Инициализирует звуковой сервис
+ * Предзагружает все звуки для быстрого воспроизведения
  */
-export const preloadSounds = (): void => {
-  Object.entries(soundFiles).forEach(([type, path]) => {
-    loadSound(type as SoundType);
-  });
+export const initSoundService = (): void => {
+  console.log('Initializing sound service...');
+
+  // Проверяем поддержку Web Audio API
+  if (typeof Audio === 'undefined') {
+    console.warn('Audio не поддерживается в этом браузере');
+    return;
+  }
+
+  try {
+    // Предзагружаем все звуки
+    Object.entries(soundFiles).forEach(([type, path]) => {
+      loadSound(type as SoundType);
+    });
+  } catch (e) {
+    console.error('Ошибка инициализации аудио:', e);
+  }
 };
 
 /**
@@ -45,14 +55,14 @@ export const playSoundIfEnabled = (type: SoundType): void => {
   try {
     // Get sound settings from localStorage
     const soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
-    
+
     if (soundEnabled) {
       console.log(`Playing sound: ${type}`);
       const sound = loadSound(type);
-      
+
       // Reset sound to beginning if it's already playing
       sound.currentTime = 0;
-      
+
       // Play the sound
       sound.play().catch(e => {
         console.error(`Error playing sound ${type}:`, e);
@@ -64,86 +74,25 @@ export const playSoundIfEnabled = (type: SoundType): void => {
 };
 
 /**
- * Load a sound file into cache
+ * Проверяет, включены ли звуки в настройках
  */
-const loadSound = (type: SoundType): HTMLAudioElement => {
-  if (!audioCache[type]) {
-    try {
-      const audio = new Audio(soundFiles[type]);
-      audio.preload = 'auto';
-      
-      // Log when sound is loaded successfully
-      audio.addEventListener('canplaythrough', () => {
-        console.log(`Sound '${type}' loaded successfully`);
-      });
-      
-      // Log errors in loading
-      audio.addEventListener('error', (e) => {
-        console.error(`Failed to load sound '${type}'`, e);
-      });
-      
-      audioCache[type] = audio;
-    } catch (error) {
-      console.error(`Error creating audio for '${type}':`, error);
-      // Create dummy audio to prevent errors
-      audioCache[type] = new Audio();
-    }
-  }
-  return audioCache[type];
-};
-
-/**
- * Play a sound effect
- */
-export const playSound = (type: SoundType): void => {
-  try {
-    const audio = loadSound(type);
-    
-    // Reset the audio to beginning to allow rapid replay
-    audio.currentTime = 0;
-    
-    // Start playback
-    const playPromise = audio.play();
-    
-    // Handle play promise to avoid uncaught errors in console
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          console.log(`Playing sound: ${type}`);
-        })
-        .catch(error => {
-          console.error(`Sound playback failed for '${type}':`, error);
-        });
-    }
-  } catch (error) {
-    console.error(`Error playing sound '${type}':`, error);
-  }
-};
-
-/**
- * Enable/disable sound effects
- */
-let soundEnabled = true;
-
-export const toggleSound = (): boolean => {
-  soundEnabled = !soundEnabled;
-  return soundEnabled;
-};
-
 export const isSoundEnabled = (): boolean => {
-  return soundEnabled;
-};
-
-export const setSoundEnabled = (enabled: boolean): void => {
-  soundEnabled = enabled;
-};
-
-// Export a wrapped version that checks if sound is enabled
-export const playSoundIfEnabled = (type: SoundType): void => {
-  if (soundEnabled) {
-    playSound(type);
+  try {
+    return localStorage.getItem('soundEnabled') !== 'false';
+  } catch (e) {
+    console.error('Ошибка при проверке настроек звука:', e);
+    return true; // По умолчанию включено
   }
-};ndEnabled) {
-    playSound(type);
+};
+
+/**
+ * Включает или выключает звуки
+ */
+export const toggleSound = (enabled: boolean): void => {
+  try {
+    localStorage.setItem('soundEnabled', String(enabled));
+    console.log(`Звуки ${enabled ? 'включены' : 'выключены'}`);
+  } catch (e) {
+    console.error('Ошибка при изменении настроек звука:', e);
   }
 };
