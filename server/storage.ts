@@ -293,6 +293,7 @@ export class DatabaseStorage implements IStorage {
             `Перевод ${amount.toFixed(fromCard.type === 'crypto' ? 8 : 2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(toCard.type === 'crypto' ? 8 : 2)} ${toCard.type.toUpperCase()}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
+          wallet: null,
           createdAt: new Date()
         });
 
@@ -307,6 +308,7 @@ export class DatabaseStorage implements IStorage {
           description: `Комиссия за перевод (${btcCommission.toFixed(8)} BTC)`,
           fromCardNumber: fromCard.number,
           toCardNumber: "REGULATOR",
+          wallet: null,
           createdAt: new Date()
         });
 
@@ -318,7 +320,7 @@ export class DatabaseStorage implements IStorage {
           error: error instanceof Error ? error.message : "Ошибка при выполнении перевода"
         };
       }
-    });
+    }, "Transfer Money Operation");
   }
 
   async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
@@ -450,7 +452,7 @@ export class DatabaseStorage implements IStorage {
           error: error instanceof Error ? error.message : "Ошибка при переводе криптовалюты"
         };
       }
-    });
+    }, "Crypto Transfer Operation");
   }
 
   private async createCommissionTransaction(

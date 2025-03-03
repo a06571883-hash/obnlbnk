@@ -29,10 +29,20 @@ def backup_database():
 
     backup_data = {}
     for table, query in tables.items():
-        cur.execute(query)
-        columns = [desc[0] for desc in cur.description]
-        rows = cur.fetchall()
-        backup_data[table] = [dict(zip(columns, row)) for row in rows]
+        try:
+            cur.execute(query)
+
+            # Handle case where cursor description is None
+            if cur.description is None:
+                print(f"Warning: No columns found for table {table}")
+                continue
+
+            columns = [desc[0] for desc in cur.description]
+            rows = cur.fetchall()
+            backup_data[table] = [dict(zip(columns, row)) for row in rows]
+        except Exception as e:
+            print(f"Error backing up table {table}: {str(e)}")
+            continue
 
     # Create backup files
     backup_base = f'backup_{timestamp}'
