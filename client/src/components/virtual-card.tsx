@@ -429,11 +429,39 @@ export default function VirtualCard({ card }: { card: Card }) {
                       <>
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">BTC Address</p>
-                          <p className="font-mono text-sm break-all">{card.btcAddress}</p>
+                          <div 
+                            className="font-mono text-sm break-all p-2 border rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between"
+                            onClick={() => {
+                              navigator.clipboard.writeText(card.btcAddress || '');
+                              toast({
+                                title: "Скопировано!",
+                                description: "BTC адрес скопирован в буфер обмена"
+                              });
+                            }}
+                          >
+                            <span>{card.btcAddress}</span>
+                            <Button size="sm" variant="ghost" className="h-6 px-2 ml-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                            </Button>
+                          </div>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">ETH Address</p>
-                          <p className="font-mono text-sm break-all">{card.ethAddress}</p>
+                          <div 
+                            className="font-mono text-sm break-all p-2 border rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between"
+                            onClick={() => {
+                              navigator.clipboard.writeText(card.ethAddress || '');
+                              toast({
+                                title: "Скопировано!",
+                                description: "ETH адрес скопирован в буфер обмена"
+                              });
+                            }}
+                          >
+                            <span>{card.ethAddress}</span>
+                            <Button size="sm" variant="ghost" className="h-6 px-2 ml-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                            </Button>
+                          </div>
                         </div>
                       </>
                     ) : (
