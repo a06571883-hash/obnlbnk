@@ -31,9 +31,26 @@ export const preloadSounds = (): void => {
  */
 const loadSound = (type: SoundType): HTMLAudioElement => {
   if (!audioCache[type]) {
-    const audio = new Audio(soundFiles[type]);
-    audio.preload = 'auto';
-    audioCache[type] = audio;
+    try {
+      const audio = new Audio(soundFiles[type]);
+      audio.preload = 'auto';
+      
+      // Log when sound is loaded successfully
+      audio.addEventListener('canplaythrough', () => {
+        console.log(`Sound '${type}' loaded successfully`);
+      });
+      
+      // Log errors in loading
+      audio.addEventListener('error', (e) => {
+        console.error(`Failed to load sound '${type}'`, e);
+      });
+      
+      audioCache[type] = audio;
+    } catch (error) {
+      console.error(`Error creating audio for '${type}':`, error);
+      // Create dummy audio to prevent errors
+      audioCache[type] = new Audio();
+    }
   }
   return audioCache[type];
 };
@@ -53,12 +70,16 @@ export const playSound = (type: SoundType): void => {
     
     // Handle play promise to avoid uncaught errors in console
     if (playPromise !== undefined) {
-      playPromise.catch(error => {
-        console.error('Sound playback failed:', error);
-      });
+      playPromise
+        .then(() => {
+          console.log(`Playing sound: ${type}`);
+        })
+        .catch(error => {
+          console.error(`Sound playback failed for '${type}':`, error);
+        });
     }
   } catch (error) {
-    console.error('Error playing sound:', error);
+    console.error(`Error playing sound '${type}':`, error);
   }
 };
 
@@ -83,6 +104,9 @@ export const setSoundEnabled = (enabled: boolean): void => {
 // Export a wrapped version that checks if sound is enabled
 export const playSoundIfEnabled = (type: SoundType): void => {
   if (soundEnabled) {
+    playSound(type);
+  }
+};ndEnabled) {
     playSound(type);
   }
 };

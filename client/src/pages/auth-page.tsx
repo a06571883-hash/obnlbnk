@@ -12,6 +12,7 @@ import { Loader2, Shield, Globe, Wallet } from "lucide-react";
 import { LogoFull } from "@/components/logo";
 import AnimatedBackground from "@/components/animated-background";
 import { useEffect } from 'react';
+import { playSoundIfEnabled } from "@/lib/sound-service"; // Added import statement
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();

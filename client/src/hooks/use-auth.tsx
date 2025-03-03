@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      playSoundIfEnabled('success');
       toast({
         title: "Успешный вход",
         description: `Добро пожаловать, ${user.username}!`,
@@ -78,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLocation("/");
     },
     onError: (error: Error) => {
+      playSoundIfEnabled('error');
       toast({
         title: "Ошибка входа",
         description: error.message,
@@ -97,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      playSoundIfEnabled('success');
       toast({
         title: "Регистрация успешна",
         description: `Аккаунт ${user.username} создан!`,
@@ -104,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLocation("/");
     },
     onError: (error: Error) => {
+      playSoundIfEnabled('error');
       toast({
         title: "Ошибка регистрации",
         description: error.message,

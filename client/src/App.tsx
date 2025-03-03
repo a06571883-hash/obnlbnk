@@ -45,9 +45,35 @@ function App() {
     
     // Attempt to play a silent sound to initialize audio context (helps with mobile browsers)
     const initAudio = () => {
-      const silentSound = new Audio();
-      silentSound.play().catch(e => {
-        console.log('Audio context initialization might require user interaction', e);
+      console.log('Initializing audio context...');
+      const silentSound = new Audio('/sounds/silent.mp3');
+      silentSound.volume = 0.1;
+      silentSound.play()
+        .then(() => {
+          console.log('Audio context initialized successfully');
+          // Play a test sound after initialization
+          setTimeout(() => {
+            playSoundIfEnabled('click');
+          }, 500);
+        })
+        .catch(e => {
+          console.log('Audio context initialization might require user interaction', e);
+        });
+      
+      // Remove this event listener after first click
+      document.removeEventListener('click', initAudio);
+      document.removeEventListener('touchstart', initAudio);
+    };
+    
+    // Initialize audio on first user interaction
+    document.addEventListener('click', initAudio);
+    document.addEventListener('touchstart', initAudio);
+    
+    return () => {
+      document.removeEventListener('click', initAudio);
+      document.removeEventListener('touchstart', initAudio);
+    };
+  }, []);xt initialization might require user interaction', e);
       });
       document.removeEventListener('click', initAudio);
     };
