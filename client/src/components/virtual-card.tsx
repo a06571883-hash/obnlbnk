@@ -24,8 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 // Constants
 const cardColors = {
   crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500",
-  usd: "bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400",
-  uah: "bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400",
+  usd: "bg-gradient-to-tr from-green-600 via-emerald-400 to-green-600 backdrop-blur-md",
+  uah: "bg-gradient-to-tr from-blue-700 via-sky-400 to-blue-600 backdrop-blur-md",
 } as const;
 
 // Utility functions
