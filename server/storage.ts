@@ -169,7 +169,7 @@ export class DatabaseStorage implements IStorage {
       // Get the maximum existing ID to avoid conflicts
       const [maxIdResult] = await db.select({ maxId: sql`MAX(id)` }).from(transactions);
       const nextId = (maxIdResult?.maxId || 0) + 1;
-      
+
       const [result] = await db.insert(transactions).values({
         ...transaction,
         id: nextId,
@@ -231,6 +231,12 @@ export class DatabaseStorage implements IStorage {
             convertedAmount = amount * parseFloat(rates.btcToUsd);
           } else if (fromCard.type === 'usd' && toCard.type === 'crypto') {
             convertedAmount = amount / parseFloat(rates.btcToUsd);
+          } else if (fromCard.type === 'btc' && toCard.type === 'uah') {
+            const btcToUsd = amount * parseFloat(rates.btcToUsd);
+            convertedAmount = btcToUsd * parseFloat(rates.usdToUah);
+          } else if (fromCard.type === 'eth' && toCard.type === 'uah') {
+            const ethToUsd = amount * parseFloat(rates.ethToUsd);
+            convertedAmount = ethToUsd * parseFloat(rates.usdToUah);
           }
         }
 
