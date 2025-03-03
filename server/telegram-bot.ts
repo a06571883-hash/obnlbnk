@@ -6,7 +6,12 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH
 
 // ИЗМЕНИТЬ ЗДЕСЬ, если нужно поменять URL приложения
 // Использовать фиксированный URL для стабильной работы
-const WEBAPP_URL = 'https://e3aa7355-a2d0-4e43-957e-11898b297172-00-72khzffrs1qv.spock.replit.dev:3000/';
+// Добавляем ':3000' только если его нет в URL развертывания
+const BASE_URL = 'https://e3aa7355-a2d0-4e43-957e-11898b297172-00-72khzffrs1qv.spock.replit.dev';
+const WEBAPP_URL = BASE_URL + (BASE_URL.includes(':3000') ? '/' : ':3000/');
+
+// Сохраняем URL в переменных окружения
+process.env.WEBAPP_URL = WEBAPP_URL;
 
 console.log('Используется WEBAPP_URL:', WEBAPP_URL);
 
@@ -26,7 +31,13 @@ bot.command('start', (ctx) => {
     console.log(`Пользователь ${ctx.from.id} (${ctx.from.username || 'без имени'}) запустил бота`);
     console.log('Отправка WebApp URL напрямую:', WEBAPP_URL);
 
-    // Используем menu_button для открытия WebApp через голубую кнопку
+    // Настраиваем главную кнопку WebApp
+    ctx.setChatMenuButton({
+      text: 'Открыть BNAL Bank',
+      type: 'web_app',
+      web_app: { url: WEBAPP_URL }
+    }).catch(err => console.error('Ошибка при установке главной кнопки WebApp:', err));
+
     return ctx.reply('Добро пожаловать в BNAL Bank! Нажмите на голубую кнопку внизу экрана, чтобы открыть приложение.', {
       parse_mode: 'HTML'
     });

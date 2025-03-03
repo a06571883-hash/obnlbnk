@@ -135,6 +135,26 @@ app.use((req, res, next) => {
 
     // Start server
     const PORT = 3000;
+    server.on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Порт ${PORT} уже используется. Попробуем использовать другой порт.`);
+        // Используем альтернативный порт
+        const alternativePort = 3001;
+        server.listen(alternativePort, "0.0.0.0", () => {
+          console.log(`Server started at http://0.0.0.0:${alternativePort}`);
+          log(`Server running on port ${alternativePort} in ${process.env.NODE_ENV} mode`);
+
+          // Обновим URL для WebApp с новым портом
+          if (process.env.WEBAPP_URL) {
+            process.env.WEBAPP_URL = process.env.WEBAPP_URL.replace(':3000', `:${alternativePort}`);
+            console.log('Updated WebApp URL:', process.env.WEBAPP_URL);
+          }
+        });
+      } else {
+        console.error('Ошибка запуска сервера:', err);
+      }
+    });
+
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`Server started at http://0.0.0.0:${PORT}`);
       log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
