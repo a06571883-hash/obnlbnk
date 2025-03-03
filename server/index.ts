@@ -123,7 +123,7 @@ app.use((req, res, next) => {
     }
 
     // Start server
-    const PORT = 5000;
+    const PORT = 3000;
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`Server started at http://0.0.0.0:${PORT}`);
       log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
