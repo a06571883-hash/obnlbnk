@@ -84,7 +84,7 @@ export async function exportDatabase() {
     // SQL для transactions
     sqlDump += 'INSERT INTO transactions (id, from_card_id, to_card_id, amount, converted_amount, type, wallet, status, created_at, description, from_card_number, to_card_number) VALUES\n';
     sqlDump += transactionsData.map(tx => 
-      `(${tx.id}, ${tx.fromCardId}, ${tx.toCardId || 'NULL'}, ${tx.amount}, ${tx.convertedAmount}, '${tx.type}', ${tx.wallet ? `'${tx.wallet}'` : 'NULL'}, '${tx.status}', '${tx.createdAt.toISOString()}', '${tx.description.replace(/'/g, "''")}', '${tx.fromCardNumber}', '${tx.toCardNumber}')`
+      `(${tx.id}, ${tx.fromCardId}, ${tx.toCardId || 'NULL'}, ${tx.amount}, ${tx.convertedAmount || 'NULL'}, '${tx.type}', ${tx.wallet ? `'${tx.wallet}'` : 'NULL'}, '${tx.status}', '${tx.createdAt.toISOString()}', '${tx.description.replace(/'/g, "''")}', '${tx.fromCardNumber}', ${tx.toCardNumber ? `'${tx.toCardNumber}'` : 'NULL'})`
     ).join(',\n') + ';\n\n';
 
     // SQL для exchange_rates
@@ -138,11 +138,11 @@ export async function importDatabase() {
       await fs.readFile(path.join(BACKUP_DIR, 'rates.json'), 'utf-8')
     );
 
-    // Импортируем данные в таблицы
-    await db.insert(users).values(usersData);
-    await db.insert(cards).values(cardsData);
-    await db.insert(transactions).values(transactionsData);
-    await db.insert(exchangeRates).values(ratesData);
+    // Импортируем данные в таблицы с использованием onConflictDoNothing
+    await db.insert(users).values(usersData).onConflictDoNothing();
+    await db.insert(cards).values(cardsData).onConflictDoNothing();
+    await db.insert(transactions).values(transactionsData).onConflictDoNothing();
+    await db.insert(exchangeRates).values(ratesData).onConflictDoNothing();
 
     console.log('Database restore completed successfully');
     return true;
@@ -156,13 +156,37 @@ export async function importDatabase() {
 export function scheduleBackups() {
   const BACKUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 часа
 
+  // Создаем первый бэкап при запуске
+  exportDatabase().catch(console.error);
+
+  // Планируем регулярные бэкапы
   setInterval(async () => {
     console.log('Starting scheduled backup...');
-    const result = await exportDatabase();
-    if (result.success) {
-      console.log('Scheduled backup completed successfully');
-    } else {
-      console.error('Scheduled backup failed:', result.error);
+    try {
+      const result = await exportDatabase();
+      if (result.success) {
+        console.log('Scheduled backup completed successfully');
+
+        // Удаляем старые бэкапы (оставляем только последние 7)
+        const cleanupDirectories = async (dir: string, extension: string) => {
+          const files = await fs.readdir(dir);
+          const backupFiles = files
+            .filter(file => file.endsWith(extension))
+            .sort((a, b) => b.localeCompare(a)); // Сортируем по убыванию (новые первые)
+
+          // Удаляем все файлы, кроме последних 7
+          for (const file of backupFiles.slice(7)) {
+            await fs.unlink(path.join(dir, file));
+          }
+        };
+
+        await cleanupDirectories(SQL_DIR, '.sql');
+        await cleanupDirectories(ZIP_DIR, '.zip');
+      } else {
+        console.error('Scheduled backup failed:', result.error);
+      }
+    } catch (error) {
+      console.error('Error during scheduled backup:', error);
     }
   }, BACKUP_INTERVAL);
 }

@@ -50,10 +50,10 @@ async function fetchCryptoNews(): Promise<NewsItem[]> {
     const response = await axios.get(`https://min-api.cryptocompare.com/data/v2/news/?lang=EN&api_key=${CRYPTO_COMPARE_KEY}`);
 
     const newsItems = await Promise.all(
-      response.data.Data.slice(0, 3).map(async (item: any, index: number) => {
+      response.data.Data.slice(0, 10).map(async (item: any, index: number) => {
         // Переводим заголовок и содержание на русский
         const translatedTitle = await translateToRussian(item.title);
-        const translatedContent = await translateToRussian(item.body.substring(0, 200) + '...');
+        const translatedContent = await translateToRussian(item.body.substring(0, 300) + '...');
 
         return {
           id: index + 1,
@@ -81,6 +81,7 @@ async function fetchFinanceNews(): Promise<NewsItem[]> {
       `language=ru&` +
       `excludeDomains=rt.com,sputniknews.com,ria.ru,tass.ru&` +
       `sortBy=publishedAt&` +
+      `pageSize=10&` +
       `apiKey=${NEWS_API_KEY}`
     );
 
@@ -98,8 +99,8 @@ async function fetchFinanceNews(): Promise<NewsItem[]> {
              !source.includes('tass');
     });
 
-    return filteredArticles.slice(0, 3).map((item: any, index: number) => ({
-      id: index + 4, 
+    return filteredArticles.slice(0, 10).map((item: any, index: number) => ({
+      id: index + 4, // Начинаем с 4, так как первые 3 ID заняты крипто-новостями
       title: item.title,
       content: item.description || item.content || 'Подробности недоступны',
       date: new Date(item.publishedAt).toLocaleDateString('ru-RU'),

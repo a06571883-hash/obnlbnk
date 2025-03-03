@@ -38,9 +38,8 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   description: text("description").notNull().default(""),
   fromCardNumber: text("from_card_number").notNull(),
-  toCardNumber: text("to_card_number").notNull(),
+  toCardNumber: text("to_card_number"), // Разрешаем NULL для переводов на внешние адреса
 });
-
 
 export const exchangeRates = pgTable("exchange_rates", {
   id: serial("id").primaryKey(),
@@ -68,7 +67,6 @@ export const insertCardSchema = createInsertSchema(cards, {
   ethAddress: z.string().nullable(),
 });
 
-
 export const insertTransactionSchema = z.object({
   fromCardId: z.number(),
   toCardId: z.number().nullable(),
@@ -79,7 +77,7 @@ export const insertTransactionSchema = z.object({
   status: z.string(),
   description: z.string().default(""),
   fromCardNumber: z.string(),
-  toCardNumber: z.string(),
+  toCardNumber: z.string().nullable(), // Разрешаем NULL
   createdAt: z.date().optional(),
 });
 
