@@ -37,12 +37,6 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
 
 // Auth middleware to ensure session is valid
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
-  console.log('Auth check:', {
-    sessionID: req.sessionID,
-    isAuthenticated: req.isAuthenticated(),
-    path: req.path
-  });
-
   if (req.isAuthenticated()) {
     return next();
   }
