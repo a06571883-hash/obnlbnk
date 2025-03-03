@@ -166,8 +166,13 @@ export class DatabaseStorage implements IStorage {
 
   async createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction> {
     return this.withRetry(async () => {
+      // Get the maximum existing ID to avoid conflicts
+      const [maxIdResult] = await db.select({ maxId: sql`MAX(id)` }).from(transactions);
+      const nextId = (maxIdResult?.maxId || 0) + 1;
+      
       const [result] = await db.insert(transactions).values({
         ...transaction,
+        id: nextId,
         wallet: transaction.wallet || null,
         description: transaction.description || "",
         createdAt: new Date()
