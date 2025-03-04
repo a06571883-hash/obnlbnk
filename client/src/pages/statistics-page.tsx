@@ -2,7 +2,8 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "../components/ui/card";
-import { AnimatedBackground, TelegramBackground } from "../components/animated-bg";
+import TelegramBackground from "../components/telegram-background";
+import AnimatedBackground from "../components/animated-background";
 import { useAuth } from "../hooks/use-auth";
 import { Transaction } from "../../../shared/schema";
 import { LineChart, BarChart, PieChart } from 'lucide-react';
