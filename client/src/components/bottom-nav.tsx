@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Home, Activity, User, Newspaper } from "lucide-react";
+import { Home, Activity, User, Newspaper, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { playSoundIfEnabled } from "@/lib/sound-service"; // Added import

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw, BarChart3 } from "lucide-react";
 
 interface ExchangeRateResponse {
   btcToUsd: string;
@@ -456,3 +456,17 @@ export default function HomePage() {
     </div>
   );
 }
+
+
+// Added components for the stats page.  Replace with your actual implementation.
+function StatsPage() {
+  return (
+    <div>
+      <h1>Account Statistics</h1>
+      {/* Add your statistics display here */}
+      <p>This is a placeholder for account statistics.  Implement your desired UI here.</p>
+    </div>
+  );
+}
+
+export {StatsPage};
