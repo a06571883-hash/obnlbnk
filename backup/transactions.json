@@ -1398,5 +1398,33 @@
     "description": "Перевод user15 → Tod Kolinsk 1.38652725 BTC",
     "fromCardNumber": "4532015112830012",
     "toCardNumber": "4532015112830004"
+  },
+  {
+    "id": 701,
+    "fromCardId": 366,
+    "toCardId": 386,
+    "amount": "2.00000000",
+    "convertedAmount": "7504000.52000000",
+    "type": "transfer",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-05T22:16:06.285Z",
+    "description": "Перевод 2.00000000 CRYPTO → 7504000.52 UAH (курс: 3752000.26)",
+    "fromCardNumber": "4532015112830005",
+    "toCardNumber": "4532015112836005"
+  },
+  {
+    "id": 702,
+    "fromCardId": 366,
+    "toCardId": 141,
+    "amount": "0.02000000",
+    "convertedAmount": "0.00000022",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-05T22:16:06.362Z",
+    "description": "Комиссия за перевод (0.00000022 BTC)",
+    "fromCardNumber": "4532015112830005",
+    "toCardNumber": "REGULATOR"
   }
 ]
