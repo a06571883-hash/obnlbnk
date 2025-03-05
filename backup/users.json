@@ -1,132 +1,6 @@
 [
   {
-    "id": 47,
-    "username": "CryptoTrader2025",
-    "password": "hash1.salt1",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 48,
-    "username": "FiatExchanger",
-    "password": "hash2.salt2",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 49,
-    "username": "UAHTrader",
-    "password": "hash3.salt3",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 50,
-    "username": "BTCMaster",
-    "password": "hash4.salt4",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 51,
-    "username": "CryptoKing2025",
-    "password": "hash5.salt5",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 52,
-    "username": "USDTrader",
-    "password": "hash6.salt6",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 53,
-    "username": "UAHMaster",
-    "password": "hash7.salt7",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 54,
-    "username": "CryptoQueen",
-    "password": "hash8.salt8",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 55,
-    "username": "BTCTrader",
-    "password": "hash9.salt9",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 56,
-    "username": "GlobalTrader",
-    "password": "hash10.salt10",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 57,
-    "username": "MarketMaker2025",
-    "password": "hash11.salt11",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 58,
-    "username": "ExchangePro",
-    "password": "hash12.salt12",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 59,
-    "username": "CryptoExpert",
-    "password": "hash13.salt13",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 60,
-    "username": "FinanceGuru",
-    "password": "hash14.salt14",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 41,
+    "id": 141,
     "username": "admin",
     "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
     "is_regulator": true,
@@ -135,45 +9,171 @@
     "nft_generation_count": 0
   },
   {
-    "id": 42,
+    "id": 142,
     "username": "Kich32",
-    "password": "dda845d60595df05ca8c90a32c72f721eaa6f73bfa8a25a063f1981fe45b87910c31bc45a7724ab945b1a9e33a0a68b08e2296fb73b960877d85c57b42ac5ff7.e307a6994d6eb04c87392ce530309630",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
     "is_regulator": false,
     "regulator_balance": "0.00000000",
     "last_nft_generation": null,
     "nft_generation_count": 0
   },
   {
-    "id": 43,
+    "id": 143,
     "username": "Tod Kolinsk",
-    "password": "5ef77cb19fc9406965acb4e028683a124ca1ebb17b338208661127275f108424d8af6b26dea963f3570d1d8939d2ec7a4a8b32fc191a9551832e611a90b4ac4d.a877e8fe8f6f620a3a7589d048534602",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
     "is_regulator": false,
     "regulator_balance": "0.00000000",
     "last_nft_generation": null,
     "nft_generation_count": 0
   },
   {
-    "id": 44,
+    "id": 144,
     "username": "olektreyd@gmail.com",
-    "password": "9187c19246b7ef132ba5cff07bf1a528b8e19c112dbdaea27045df3e77408c479bac1a59225e4aef6409f1aa337cd490cebbdf50866d478477d01aac95184c6e.440d8cd7817ef5d331a7345b64eb6b41",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
     "is_regulator": false,
     "regulator_balance": "0.00000000",
     "last_nft_generation": null,
     "nft_generation_count": 0
   },
   {
-    "id": 45,
+    "id": 145,
     "username": "Nikita",
-    "password": "c6e6ad1df7ccd60cb6d2948ae04ac83da3e8608a37f544f7650c52c5271c027e6aa6aa8cf5618cfd951ee33fd6a2a83b0badfc2ad2992d8e3e54ad5f0e110553.345c80e97a319d2a0a275f7031c672b3",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
     "is_regulator": false,
     "regulator_balance": "0.00000000",
     "last_nft_generation": null,
     "nft_generation_count": 0
   },
   {
-    "id": 46,
+    "id": 146,
     "username": "Maksim4440432",
-    "password": "07f040ac39b3254bcbf515cab85c28458bb1c85f31533340fae085449eddc73095dd1d37f1d5c132fdcf2df6d116aef9af57f511208936af7745c0ff87330d9c.3bc39831b34601ec4b225bb10900ea4c",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 147,
+    "username": "user7",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 148,
+    "username": "user8",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 149,
+    "username": "user9",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 150,
+    "username": "user10",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 151,
+    "username": "user11",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 152,
+    "username": "user12",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 153,
+    "username": "user13",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 154,
+    "username": "user14",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 155,
+    "username": "user15",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 156,
+    "username": "user16",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 157,
+    "username": "user17",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 158,
+    "username": "user18",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 159,
+    "username": "user19",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 160,
+    "username": "user20",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
     "is_regulator": false,
     "regulator_balance": "0.00000000",
     "last_nft_generation": null,
