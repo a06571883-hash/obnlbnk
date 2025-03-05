@@ -11,9 +11,9 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 // Логируем важные переменные окружения при запуске
 console.log('Environment variables:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('REPLIT_SLUG:', process.env.REPLIT_SLUG);
-console.log('REPLIT_ID:', process.env.REPLIT_ID);
-console.log('REPLIT_DEPLOYMENT_URL:', process.env.REPLIT_DEPLOYMENT_URL);
+console.log('REPLIT_SLUG:', process.env.REPLIT_SLUG || 'local-development');
+console.log('REPLIT_ID:', process.env.REPLIT_ID || 'local');
+console.log('REPLIT_DEPLOYMENT_URL:', process.env.REPLIT_DEPLOYMENT_URL || 'http://localhost:5000');
 
 const app = express();
 
@@ -42,7 +42,8 @@ app.use((req, res, next) => {
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.telegram.org; " +
       "style-src 'self' 'unsafe-inline' *.telegram.org; " +
       "img-src 'self' data: blob: *.telegram.org; " +
-      "connect-src 'self' *.telegram.org wss://*.telegram.org"
+      "connect-src 'self' *.telegram.org wss://*.telegram.org ws://localhost:* http://localhost:* https://localhost:*; " +
+      "worker-src 'self' blob:;"
     );
     res.header('X-Frame-Options', 'ALLOW-FROM https://web.telegram.org/');
 
@@ -53,7 +54,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Request logging
+// Request logging with session info
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -65,7 +66,20 @@ app.use((req, res, next) => {
 
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} [${authStatus}] [${sessionStatus}] [sid:${req.sessionID}] in ${duration}ms`;
+      if (req.user) {
+        logLine += ` [user:${req.user.username}]`;
+      }
       log(logLine);
+
+      // Detailed session logging
+      if (path === '/api/user' || path === '/api/login') {
+        console.log('Session details:', {
+          id: req.sessionID,
+          cookie: req.session?.cookie,
+          user: req.user?.username,
+          isAuthenticated: req.isAuthenticated?.()
+        });
+      }
     }
   });
 
@@ -134,19 +148,19 @@ app.use((req, res, next) => {
     }
 
     // Start server
-    const PORT = 3000;
+    const PORT = 5000;
     server.on('error', (err: any) => {
       if (err.code === 'EADDRINUSE') {
         console.error(`Порт ${PORT} уже используется. Попробуем использовать другой порт.`);
         // Используем альтернативный порт
-        const alternativePort = 3001;
+        const alternativePort = 5001;
         server.listen(alternativePort, "0.0.0.0", () => {
           console.log(`Server started at http://0.0.0.0:${alternativePort}`);
           log(`Server running on port ${alternativePort} in ${process.env.NODE_ENV} mode`);
 
           // Обновим URL для WebApp с новым портом
           if (process.env.WEBAPP_URL) {
-            process.env.WEBAPP_URL = process.env.WEBAPP_URL.replace(':3000', `:${alternativePort}`);
+            process.env.WEBAPP_URL = process.env.WEBAPP_URL.replace(':5000', `:${alternativePort}`);
             console.log('Updated WebApp URL:', process.env.WEBAPP_URL);
           }
         });
@@ -160,7 +174,8 @@ app.use((req, res, next) => {
       log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 
       // Get the deployment URL
-      const deploymentUrl = process.env.REPLIT_DEPLOYMENT_URL || `https://${process.env.REPLIT_SLUG}.replit.dev`;
+      const deploymentUrl = process.env.REPLIT_DEPLOYMENT_URL || 
+        (process.env.REPLIT_SLUG ? `https://${process.env.REPLIT_SLUG}.replit.dev` : `http://localhost:${PORT}`);
       console.log('Full Deployment URL:', deploymentUrl);
     });
   } catch (error) {

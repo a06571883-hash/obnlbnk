@@ -9,15 +9,6 @@
     "nft_generation_count": 0
   },
   {
-    "id": 2,
-    "username": "Kich32",
-    "password": "password123",
-    "is_regulator": false,
-    "regulator_balance": "0.00000000",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
     "id": 5,
     "username": "Tod Kolinsk",
     "password": "dda845d60595df05ca8c90a32c72f721eaa6f73bfa8a25a063f1981fe45b87910c31bc45a7724ab945b1a9e33a0a68b08e2296fb73b960877d85c57b42ac5ff7.e307a6994d6eb04c87392ce530309630",
@@ -57,6 +48,15 @@
     "id": 9,
     "username": "Maksim4440432",
     "password": "07f040ac39b3254bcbf515cab85c28458bb1c85f31533340fae085449eddc73095dd1d37f1d5c132fdcf2df6d116aef9af57f511208936af7745c0ff87330d9c.3bc39831b34601ec4b225bb10900ea4c",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 2,
+    "username": "Kich32",
+    "password": "73992c62ca47be0e8d949ad8df64324bae8f542007c0f2ef886f1b39418963c8b4ccc9c63939340a0a0f9c96d170dd0705075c728a35c76e3c340650970417cc.32567ef87fc584ec22cea70d4dbd6f46",
     "is_regulator": false,
     "regulator_balance": "0.00000000",
     "last_nft_generation": null,

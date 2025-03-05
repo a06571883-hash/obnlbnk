@@ -167,8 +167,8 @@ export class DatabaseStorage implements IStorage {
   async createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction> {
     return this.withRetry(async () => {
       // Get the maximum existing ID to avoid conflicts
-      const [maxIdResult] = await db.select({ maxId: sql`MAX(id)` }).from(transactions);
-      const nextId = (maxIdResult?.maxId || 0) + 1;
+      const [maxIdResult] = await db.select({ maxId: sql`COALESCE(MAX(id), 0)` }).from(transactions);
+      const nextId = Number(maxIdResult?.maxId || 0) + 1;
 
       const [result] = await db.insert(transactions).values({
         ...transaction,
@@ -262,7 +262,7 @@ export class DatabaseStorage implements IStorage {
           await db.update(cards)
             .set({ btcBalance: (fromCryptoBalance - totalDebit).toFixed(8) })
             .where(eq(cards.id, fromCard.id));
-            
+
           console.log(`Списано с ${fromCard.type} карты: ${totalDebit.toFixed(8)} BTC, новый баланс: ${(fromCryptoBalance - totalDebit).toFixed(8)} BTC`);
 
           if (toCard.type === 'crypto' || toCard.type === 'btc') {

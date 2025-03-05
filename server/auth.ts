@@ -31,11 +31,20 @@ async function hashPassword(password: string) {
 
 async function comparePasswords(supplied: string, stored: string) {
   try {
+    if (!stored || !stored.includes('.')) {
+      console.log('Invalid stored password format');
+      return false;
+    }
     const [hashed, salt] = stored.split(".");
+    if (!hashed || !salt) {
+      console.log('Invalid password components');
+      return false;
+    }
     const hashedBuf = Buffer.from(hashed, "hex");
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
     return timingSafeEqual(hashedBuf, suppliedBuf);
-  } catch {
+  } catch (error) {
+    console.error("Password comparison error:", error);
     return false;
   }
 }
@@ -119,15 +128,19 @@ export function setupAuth(app: Express) {
       const { username, password } = req.body;
 
       if (!username || !password) {
+        console.log("Registration failed: Missing username or password");
         return res.status(400).json({ message: "Username and password are required" });
       }
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
+        console.log("Registration failed: Username already exists:", username);
         return res.status(400).json({ message: "Username already exists" });
       }
 
       const hashedPassword = await hashPassword(password);
+      console.log("Creating new user with username:", username);
+
       const user = await storage.createUser({
         username,
         password: hashedPassword,
@@ -136,53 +149,12 @@ export function setupAuth(app: Express) {
         nft_generation_count: 0
       });
 
-      const { btcAddress, ethAddress } = await generateCryptoAddresses();
-
-      await storage.createCard({
-        userId: user.id,
-        type: 'usd',
-        number: generateCardNumber(),
-        balance: "0",
-        expiry: generateExpiryDate(),
-        btcAddress: null,
-        ethAddress: null,
-        btcBalance: "0",
-        ethBalance: "0",
-        cvv: generateCVV()
-      });
-
-      await storage.createCard({
-        userId: user.id,
-        type: 'uah',
-        number: generateCardNumber(),
-        balance: "0",
-        expiry: generateExpiryDate(),
-        btcAddress: null,
-        ethAddress: null,
-        btcBalance: "0",
-        ethBalance: "0",
-        cvv: generateCVV()
-      });
-
-      await storage.createCard({
-        userId: user.id,
-        type: 'crypto',
-        number: generateCardNumber(),
-        balance: "0",
-        expiry: generateExpiryDate(),
-        btcAddress,
-        ethAddress,
-        btcBalance: "0",
-        ethBalance: "0",
-        cvv: generateCVV()
-      });
-
       req.login(user, (err) => {
         if (err) {
           console.error("Registration session error:", err);
           return res.status(500).json({ message: "Error creating session" });
         }
-        console.log("New user registered:", username);
+        console.log("New user registered successfully:", username);
         res.status(201).json(user);
       });
     } catch (error) {
@@ -192,14 +164,16 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
+    console.log("Login attempt for username:", req.body.username);
+
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
         console.error("Login error:", err);
         return next(err);
       }
       if (!user) {
-        console.log("Login failed:", info?.message);
-        return res.status(401).json({ message: info?.message || "Authentication failed" });
+        console.log("Login failed for user:", req.body.username);
+        return res.status(401).json({ message: "Неверное имя пользователя или пароль" });
       }
       req.logIn(user, (err) => {
         if (err) {
