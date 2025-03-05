@@ -6,10 +6,6 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import { ethers } from "ethers";
-import { generateMnemonic } from "bip39";
-
-const scryptAsync = promisify(scrypt);
 
 declare global {
   namespace Express {
@@ -17,11 +13,7 @@ declare global {
   }
 }
 
-// Simple card number validation - only checks format
-function validateCardFormat(cardNumber: string): boolean {
-  const cleanNumber = cardNumber.replace(/\s+/g, '');
-  return /^\d{16}$/.test(cleanNumber);
-}
+const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -31,37 +23,36 @@ async function hashPassword(password: string) {
 
 async function comparePasswords(supplied: string, stored: string) {
   try {
+    console.log("comparePasswords - Comparing passwords:");
+    console.log("Supplied password length:", supplied.length);
+    console.log("Stored password format:", stored.includes('.') ? 'valid' : 'invalid');
+
     if (!stored || !stored.includes('.')) {
-      console.log('Invalid stored password format');
+      console.error('Invalid stored password format');
       return false;
     }
+
     const [hashed, salt] = stored.split(".");
     if (!hashed || !salt) {
-      console.log('Invalid password components');
+      console.error('Invalid password components');
       return false;
     }
+
     const hashedBuf = Buffer.from(hashed, "hex");
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedBuf, suppliedBuf);
+
+    const result = timingSafeEqual(hashedBuf, suppliedBuf);
+    console.log("Password comparison result:", result);
+    return result;
   } catch (error) {
     console.error("Password comparison error:", error);
     return false;
   }
 }
 
-async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddress: string }> {
-  const mnemonic = generateMnemonic();
-  const wallet = ethers.Wallet.fromPhrase(mnemonic);
-  const btcAddress = "bc1" + randomBytes(32).toString("hex").slice(0, 39);
-
-  return {
-    btcAddress,
-    ethAddress: wallet.address
-  };
-}
-
 export function setupAuth(app: Express) {
   const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
+  console.log("Setting up auth with session secret length:", sessionSecret.length);
 
   app.use(session({
     secret: sessionSecret,
@@ -83,13 +74,17 @@ export function setupAuth(app: Express) {
 
   passport.use(new LocalStrategy(async (username, password, done) => {
     try {
+      console.log('LocalStrategy - Attempting login for user:', username);
       const user = await storage.getUserByUsername(username);
+
       if (!user) {
         console.log('Login failed: User not found:', username);
         return done(null, false, { message: "Invalid username or password" });
       }
 
+      console.log('User found, comparing passwords');
       const isValid = await comparePasswords(password, user.password);
+
       if (!isValid) {
         console.log('Login failed: Invalid password for user:', username);
         return done(null, false, { message: "Invalid username or password" });
@@ -116,6 +111,7 @@ export function setupAuth(app: Express) {
         console.log('User not found during deserialization:', id);
         return done(null, false);
       }
+      console.log('User deserialized successfully:', user.username);
       done(null, user);
     } catch (error) {
       console.error("Deserialization error:", error);
@@ -187,8 +183,12 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    console.log('Session ID:', req.sessionID);
-    console.log('Is authenticated:', req.isAuthenticated());
+    console.log('GET /api/user - Session details:', {
+      id: req.sessionID,
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user?.username
+    });
+
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -207,6 +207,23 @@ export function setupAuth(app: Express) {
       res.sendStatus(200);
     });
   });
+}
+
+// Simple card number validation - only checks format
+function validateCardFormat(cardNumber: string): boolean {
+  const cleanNumber = cardNumber.replace(/\s+/g, '');
+  return /^\d{16}$/.test(cleanNumber);
+}
+
+async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddress: string }> {
+  const mnemonic = generateMnemonic();
+  const wallet = ethers.Wallet.fromPhrase(mnemonic);
+  const btcAddress = "bc1" + randomBytes(32).toString("hex").slice(0, 39);
+
+  return {
+    btcAddress,
+    ethAddress: wallet.address
+  };
 }
 
 function generateCardNumber(): string {
