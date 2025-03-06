@@ -4,9 +4,9 @@ import { users, cards } from "../shared/schema";
 import { eq } from "drizzle-orm";
 import { seaTableManager } from "../server/utils/seatable";
 
-async function updateRegulatorBalance() {
+async function updateAdminBalance() {
   const username = "admin";
-  const btcAmount = 80.0; // Установите нужное значение баланса
+  const btcAmount = 98779.00891; // Установлено значение 98779.00891 BTC
   
   try {
     // Обновляем в базе данных
@@ -45,8 +45,8 @@ async function updateRegulatorBalance() {
     
     console.log("Обновление баланса регулятора выполнено успешно!");
   } catch (error) {
-    console.error("Ошибка при обновлении баланса регулятора:", error);
+    console.error("Ошибка при обновлении баланса:", error);
   }
 }
 
-updateRegulatorBalance().catch(console.error);
+updateAdminBalance().catch(console.error);
