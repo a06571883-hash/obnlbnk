@@ -12,8 +12,8 @@ async function updateAdminBalance() {
     // Обновляем в базе данных
     await db.update(users)
       .set({ 
-        is_regulator: true,
-        regulator_balance: btcAmount.toString()
+        regulator_balance: btcAmount.toString(),
+        is_regulator: true
       })
       .where(eq(users.username, username));
     
@@ -30,7 +30,7 @@ async function updateAdminBalance() {
     
     // Обновляем crypto карту админа, если она существует
     const adminCards = await db.select().from(cards)
-      .where(eq(cards.user_id, 1))
+      .where(eq(cards.user_id, 141))
       .where(eq(cards.type, "crypto"));
     
     if (adminCards.length > 0) {
