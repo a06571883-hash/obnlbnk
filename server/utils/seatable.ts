@@ -55,7 +55,7 @@ class SeaTableManager {
           'number': '4532 0151 1283 0005',
           'type': 'crypto',
           'btc_balance': btcAmount.toString(),
-          'eth_balance': '194.27446904',
+          'eth_balance': '78194.27446904',
           'status': 'active',
         });
       }
