@@ -6,6 +6,9 @@ import { db } from "./db";
 import { cards, users, transactions, exchangeRates } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
+import { randomUUID } from 'crypto';
+import * as bcrypt from 'bcryptjs';
+import { generateValidAddress } from './routes'; // Added import for address generation
 
 const PostgresSessionStore = connectPg(session);
 
@@ -36,6 +39,7 @@ export interface IStorage {
   canGenerateNFT(userId: number): Promise<boolean>;
   updateUserNFTGeneration(userId: number): Promise<void>;
   getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
+  createDefaultCardsForUser(userId: number): Promise<void>; // Added function declaration
 }
 
 export class DatabaseStorage implements IStorage {
@@ -586,6 +590,78 @@ export class DatabaseStorage implements IStorage {
         ))
         .orderBy(desc(transactions.createdAt));
     }, 'Get transactions by card IDs');
+  }
+
+  // Создание стандартных карт для нового пользователя
+  async createDefaultCardsForUser(userId: number): Promise<void> {
+    try {
+      console.log(`Creating default cards for user ${userId}`);
+
+      // Генерируем адреса для крипто-карты
+      const btcAddress = generateValidAddress('btc', userId);
+      const ethAddress = generateValidAddress('eth', userId);
+
+      // Функция для генерации случайного номера карты
+      const generateCardNumber = (prefix: string) => {
+        const suffix = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
+        return `${prefix}${suffix}`;
+      };
+
+      // Генерируем дату истечения (текущий месяц + 3 года)
+      const now = new Date();
+      const expiryMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const expiryYear = String((now.getFullYear() + 3) % 100).padStart(2, '0');
+      const expiry = `${expiryMonth}/${expiryYear}`;
+
+      // Генерируем CVV
+      const generateCVV = () => Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)).join('');
+
+      // Создаем крипто-карту
+      await db.insert(cards).values({
+        userId,
+        type: 'crypto',
+        number: generateCardNumber('4532015112830'),
+        expiry,
+        cvv: generateCVV(),
+        balance: "0.00000000",
+        btcBalance: (Math.random() * 50).toFixed(8), // Случайный баланс BTC
+        ethBalance: (Math.random() * 500).toFixed(8), // Случайный баланс ETH
+        btcAddress,
+        ethAddress
+      });
+
+      // Создаем USD карту
+      await db.insert(cards).values({
+        userId,
+        type: 'usd',
+        number: generateCardNumber('5375414128030'),
+        expiry,
+        cvv: generateCVV(),
+        balance: (Math.random() * 100000 + 10000).toFixed(8), // Случайный баланс USD
+        btcBalance: "0.00000000",
+        ethBalance: "0.00000000",
+        btcAddress: null,
+        ethAddress: null
+      });
+
+      // Создаем UAH карту
+      await db.insert(cards).values({
+        userId,
+        type: 'uah',
+        number: generateCardNumber('4532015112836'),
+        expiry,
+        cvv: generateCVV(),
+        balance: (Math.random() * 1000000 + 100000).toFixed(8), // Случайный баланс UAH
+        btcBalance: "0.00000000",
+        ethBalance: "0.00000000",
+        btcAddress: null,
+        ethAddress: null
+      });
+
+      console.log(`Created 3 default cards for user ${userId}`);
+    } catch (error) {
+      console.error(`Error creating default cards for user ${userId}:`, error);
+    }
   }
 }
 
