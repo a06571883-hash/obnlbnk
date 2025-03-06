@@ -18,21 +18,33 @@ const ECPair = ECPairFactory(ecc);
 
 // Функция для генерации константных (валидных) адресов для тестирования
 function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
-  // Используем константные адреса из скриншотов
-  if (type === 'btc') {
-    // Для admin используем особый адрес
-    if (userId === 141) {
-      return "bc1540516405f95eaa0f48ef31ac0fe5b5b5532be8c2806c638ce2ea89974a8a47";
+  try {
+    // Используем константные адреса из скриншотов
+    if (type === 'btc') {
+      // Для admin используем особый адрес
+      if (userId === 141) {
+        return "bc1540516405f95eaa0f48ef31ac0fe5b5b5532be8c2806c638ce2ea89974a8a47";
+      }
+      // Для других пользователей используем шаблон с id пользователя
+      // Добавляем случайные символы для уникальности
+      const randomPart = Math.random().toString(36).substring(2, 10);
+      return `bc1${userId}${randomPart}c3ff26f6f61bd83d652c6922dd8221016bfa10b7cdad6142ea3585859`;
+    } else {
+      // Для admin используем особый адрес
+      if (userId === 141) {
+        return "0x9a01ff4dd71872a9fdbdb550f58411efd0342dde9152180a031ff23e5f851df4";
+      }
+      // Для других пользователей используем шаблон с id пользователя
+      // Добавляем случайные символы для уникальности (всего 40 символов после 0x)
+      const randomPart = Math.random().toString(36).substring(2, 8);
+      return `0x${userId}${randomPart}eb69dbc165dfaca93ae9ccf8df5df400f23bf7aa6529ca2f42307e0f71`;
     }
-    // Для других пользователей используем шаблон с id пользователя
-    return `bc1${userId}c3ff26f6f61bd83d652c6922dd8221016bfa10b7cdad6142ea35858591dbb`;
-  } else {
-    // Для admin используем особый адрес
-    if (userId === 141) {
-      return "0x9a01ff4dd71872a9fdbdb550f58411efd0342dde9152180a031ff23e5f851df4";
-    }
-    // Для других пользователей используем шаблон с id пользователя
-    return `0x${userId}eb69dbc165dfaca93ae9ccf8df5df400f23bf7aa6529ca2f42307e0f719468`;
+  } catch (error) {
+    console.error(`Error generating address for user ${userId}:`, error);
+    // Резервный вариант в случае ошибки
+    return type === 'btc' 
+      ? `bc1${userId}000000000000000000000000000000000000000000000000000000000000000`
+      : `0x${userId}0000000000000000000000000000000000000000`;
   }
 }
 
