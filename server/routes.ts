@@ -25,7 +25,7 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
       // Проверка для legacy, SegWit и Bech32 адресов
       const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
       const segwitRegex = /^bc1[a-zA-HJ-NP-Z0-9]{8,42}$/;
-      
+
       console.log(`Validating BTC address: ${cleanAddress}, valid: ${legacyRegex.test(cleanAddress) || segwitRegex.test(cleanAddress)}`);
       return legacyRegex.test(cleanAddress) || segwitRegex.test(cleanAddress);
     } else if (type === 'eth') {
