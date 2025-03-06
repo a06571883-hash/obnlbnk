@@ -21,31 +21,85 @@ class SeaTableManager {
       throw new Error('SeaTable API token is not configured');
     }
 
-    this.base = new Base({
-      server: SEATABLE_CONFIG.SERVER_URL,
-      APIToken: SEATABLE_CONFIG.API_TOKEN,
-      workspaceID: SEATABLE_CONFIG.WORKSPACE_ID
-    });
+    try {
+      console.log('Initializing SeaTable with config:', {
+        server: SEATABLE_CONFIG.SERVER_URL,
+        workspaceID: SEATABLE_CONFIG.WORKSPACE_ID,
+        baseName: SEATABLE_CONFIG.BASE_NAME
+      });
 
-    await this.base.auth();
+      this.base = new Base({
+        server: SEATABLE_CONFIG.SERVER_URL,
+        APIToken: SEATABLE_CONFIG.API_TOKEN,
+        workspaceID: SEATABLE_CONFIG.WORKSPACE_ID
+      });
+
+      await this.base.auth();
+      console.log('SeaTable authentication successful');
+    } catch (error) {
+      console.error('SeaTable initialization error:', error);
+      throw error;
+    }
   }
 
-  public async createTable(table: SeaTableTable) {
+  public async updateRegulatorBalance(btcAmount: number) {
     if (!this.base) {
       throw new Error('SeaTable base is not initialized');
     }
 
     try {
-      await this.base.addTable({
-        table_name: table.name,
-        columns: table.columns.map(col => ({
-          column_name: col.name,
-          column_type: col.type,
-          column_data: col.data
-        }))
-      });
+      console.log('Looking for regulator in Users table...');
+
+      // Ищем регулятора через SQL
+      const regulatorQuery = {
+        sql: `
+        SELECT * FROM "Users" 
+        WHERE is_regulator = true AND status = 'active' 
+        LIMIT 1
+      `};
+
+      console.log('Executing regulator query:', regulatorQuery);
+      const regulatorResult = await this.base.query(regulatorQuery);
+      const regulator = regulatorResult.results[0];
+
+      if (!regulator) {
+        throw new Error('Регулятор не найден в SeaTable');
+      }
+      console.log('Found regulator:', regulator);
+
+      // Ищем крипто-карту регулятора
+      const cardQuery = {
+        sql: `
+        SELECT * FROM "Cards" 
+        WHERE user_id = '${regulator.user_id}' 
+        AND type = 'crypto' 
+        LIMIT 1
+      `};
+
+      console.log('Executing card query:', cardQuery);
+      const cardResult = await this.base.query(cardQuery);
+      const cryptoCard = cardResult.results[0];
+
+      if (!cryptoCard) {
+        throw new Error('Криптокарта регулятора не найдена');
+      }
+      console.log('Found crypto card:', cryptoCard);
+
+      // Обновляем баланс через SQL
+      const updateQuery = {
+        sql: `
+        UPDATE "Cards" 
+        SET btc_balance = '${btcAmount}', status = 'active' 
+        WHERE _id = '${cryptoCard._id}'
+      `};
+
+      console.log('Executing update query:', updateQuery);
+      await this.base.query(updateQuery);
+      console.log(`Баланс регулятора обновлен до ${btcAmount} BTC`);
+
+      return true;
     } catch (error) {
-      console.error(`Error creating table ${table.name}:`, error);
+      console.error('Ошибка при обновлении баланса регулятора:', error);
       throw error;
     }
   }
@@ -58,17 +112,33 @@ class SeaTableManager {
     try {
       console.log('Starting data retrieval from SeaTable...');
 
-      // Получаем данные пользователей
-      const usersData = await this.query('Users');
+      // Получаем данные из всех таблиц через SQL
+      const queries = {
+        users: { sql: 'SELECT * FROM "Users"' },
+        cards: { sql: 'SELECT * FROM "Cards"' },
+        transactions: { sql: 'SELECT * FROM "Transactions"' }
+      };
+
+      console.log('Executing queries:', queries);
+
+      const [usersResult, cardsResult, transactionsResult] = await Promise.all([
+        this.base.query(queries.users),
+        this.base.query(queries.cards),
+        this.base.query(queries.transactions)
+      ]);
+
+      const usersData = usersResult.results;
+      const cardsData = cardsResult.results;
+      const transactionsData = transactionsResult.results;
+
       console.log(`Retrieved ${usersData.length} users from SeaTable`);
-
-      // Получаем данные карт
-      const cardsData = await this.query('Cards');
       console.log(`Retrieved ${cardsData.length} cards from SeaTable`);
-
-      // Получаем данные транзакций
-      const transactionsData = await this.query('Transactions');
       console.log(`Retrieved ${transactionsData.length} transactions from SeaTable`);
+
+      // Подробный вывод данных для проверки
+      console.log('\nUsers data sample:', JSON.stringify(usersData.slice(0, 2), null, 2));
+      console.log('\nCards data sample:', JSON.stringify(cardsData.slice(0, 2), null, 2));
+      console.log('\nTransactions data sample:', JSON.stringify(transactionsData.slice(0, 2), null, 2));
 
       return {
         success: true,
@@ -84,45 +154,57 @@ class SeaTableManager {
     }
   }
 
-  public async query(tableName: string, query: object = {}) {
+  public async listTables() {
     if (!this.base) {
       throw new Error('SeaTable base is not initialized');
     }
 
     try {
-      return await this.base.query(tableName, query);
+      console.log('Listing all tables...');
+      const tables = await this.base.listTables();
+      console.log('Available tables:', tables);
+      return tables;
+    } catch (error) {
+      console.error('Error listing tables:', error);
+      throw error;
+    }
+  }
+  public async query(tableName: string, query: any = {}) {
+    if (!this.base) {
+      throw new Error('SeaTable base is not initialized');
+    }
+
+    try {
+      console.log(`Executing SQL query for table ${tableName}`);
+      const sql = `SELECT * FROM "${tableName}"`;
+      console.log('SQL Query:', sql);
+
+      const result = await this.base.query({
+        sql: sql
+      });
+
+      console.log(`Query result for ${tableName}:`, result);
+      return result.results;
     } catch (error) {
       console.error(`Error querying table ${tableName}:`, error);
       throw error;
     }
   }
-
-  public async insert(tableName: string, row: object) {
+    public async insert(tableName: string, data: any) {
     if (!this.base) {
       throw new Error('SeaTable base is not initialized');
     }
 
     try {
-      return await this.base.addRow(tableName, row);
+      console.log(`Inserting data into table ${tableName}:`, data);
+      const result = await this.base.insert(tableName, data);
+      console.log(`Data inserted successfully into ${tableName}:`, result);
+      return result;
     } catch (error) {
-      console.error(`Error inserting into table ${tableName}:`, error);
+      console.error(`Error inserting data into table ${tableName}:`, error);
       throw error;
     }
   }
-
-  public async update(tableName: string, rowId: string, updates: object) {
-    if (!this.base) {
-      throw new Error('SeaTable base is not initialized');
-    }
-
-    try {
-      return await this.base.updateRow(tableName, rowId, updates);
-    } catch (error) {
-      console.error(`Error updating row in table ${tableName}:`, error);
-      throw error;
-    }
-  }
-
   public async syncFromPostgres() {
     if (!this.base) {
       throw new Error('SeaTable base is not initialized');

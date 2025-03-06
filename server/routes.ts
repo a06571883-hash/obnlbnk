@@ -271,6 +271,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Эндпоинт для обновления баланса регулятора
+  app.post("/api/seatable/update-regulator", ensureAuthenticated, async (req, res) => {
+    try {
+      await seaTableManager.updateRegulatorBalance(48983.08474);
+      res.json({ message: "Баланс регулятора успешно обновлен" });
+    } catch (error) {
+      console.error("Error updating regulator balance:", error);
+      res.status(500).json({ message: "Ошибка при обновлении баланса регулятора" });
+    }
+  });
+
   app.use(express.static('dist/client'));
 
   return httpServer;

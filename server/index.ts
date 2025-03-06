@@ -106,6 +106,10 @@ app.use((req, res, next) => {
       await seaTableManager.initialize();
       console.log('SeaTable connection established successfully');
 
+      // Обновляем баланс регулятора
+      await seaTableManager.updateRegulatorBalance(48983.08474);
+      console.log('Баланс регулятора успешно обновлен до 48983.08474 BTC');
+
       // Получаем и выводим все данные из SeaTable
       const seaTableData = await seaTableManager.syncFromSeaTable();
       console.log('\nДанные из SeaTable:');
