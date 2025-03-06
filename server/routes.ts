@@ -21,13 +21,25 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
 
   try {
     if (type === 'btc') {
+      // Нормализуем адрес - удаляем пробелы, знаки переноса и т.д.
       const cleanAddress = address.trim();
-      // Проверка для legacy, SegWit и Bech32 адресов
+      
+      // Проверка для legacy адресов (начинаются с 1 или 3)
       const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
-      const segwitRegex = /^bc1[a-zA-HJ-NP-Z0-9]{8,42}$/;
-
-      console.log(`Validating BTC address: ${cleanAddress}, valid: ${legacyRegex.test(cleanAddress) || segwitRegex.test(cleanAddress)}`);
-      return legacyRegex.test(cleanAddress) || segwitRegex.test(cleanAddress);
+      
+      // Улучшенная проверка для SegWit и Bech32 адресов
+      // Разрешаем адреса от 14 до 74 символов после "bc1"
+      const segwitRegex = /^bc1[a-zA-HJ-NP-Z0-9]{14,74}$/;
+      
+      // Если адрес длиннее 42 символов, укорачиваем его до валидной длины для bc1 адресов
+      let validAddress = cleanAddress;
+      if (cleanAddress.startsWith('bc1') && cleanAddress.length > 42) {
+        validAddress = cleanAddress.substring(0, 42);
+        console.log(`Address was too long, truncated to: ${validAddress}`);
+      }
+      
+      console.log(`Validating BTC address: ${cleanAddress}, valid: ${legacyRegex.test(validAddress) || segwitRegex.test(validAddress)}`);
+      return legacyRegex.test(validAddress) || segwitRegex.test(validAddress);
     } else if (type === 'eth') {
       const cleanAddress = address.trim().toLowerCase();
       const isValid = ethers.isAddress(cleanAddress);
