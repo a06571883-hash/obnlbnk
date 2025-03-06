@@ -50,52 +50,38 @@ class SeaTableManager {
     try {
       console.log('Looking for regulator in Users table...');
 
-      // Ищем регулятора через SQL
-      const regulatorQuery = {
-        sql: `
-        SELECT * FROM "Users" 
-        WHERE is_regulator = true AND status = 'active' 
-        LIMIT 1
-      `};
+      // Получаем текущие данные
+      const currentData = await this.syncFromSeaTable();
+      console.log('Current SeaTable data:', currentData);
 
-      console.log('Executing regulator query:', regulatorQuery);
-      const regulatorResult = await this.base.query(regulatorQuery);
-      const regulator = regulatorResult.results[0];
-
+      // Находим регулятора
+      const regulator = currentData.data.users.find(user => user.is_regulator === true);
       if (!regulator) {
         throw new Error('Регулятор не найден в SeaTable');
       }
       console.log('Found regulator:', regulator);
 
-      // Ищем крипто-карту регулятора
-      const cardQuery = {
-        sql: `
-        SELECT * FROM "Cards" 
-        WHERE user_id = '${regulator.user_id}' 
-        AND type = 'crypto' 
-        LIMIT 1
-      `};
-
-      console.log('Executing card query:', cardQuery);
-      const cardResult = await this.base.query(cardQuery);
-      const cryptoCard = cardResult.results[0];
-
+      // Находим крипто-карту регулятора
+      const cryptoCard = currentData.data.cards.find(
+        card => card.user_id === regulator.user_id && card.type === 'crypto'
+      );
       if (!cryptoCard) {
         throw new Error('Криптокарта регулятора не найдена');
       }
       console.log('Found crypto card:', cryptoCard);
 
-      // Обновляем баланс через SQL
-      const updateQuery = {
-        sql: `
-        UPDATE "Cards" 
-        SET btc_balance = '${btcAmount}', status = 'active' 
-        WHERE _id = '${cryptoCard._id}'
-      `};
+      // Показываем текущий баланс
+      console.log('Current BTC balance:', cryptoCard.btc_balance);
 
-      console.log('Executing update query:', updateQuery);
-      await this.base.query(updateQuery);
-      console.log(`Баланс регулятора обновлен до ${btcAmount} BTC`);
+      // Обновляем данные напрямую через API
+      await this.base.updateRow('Cards', cryptoCard._id, {
+        btc_balance: btcAmount.toString()
+      });
+
+      // Проверяем обновление
+      const updatedData = await this.syncFromSeaTable();
+      const updatedCard = updatedData.data.cards.find(card => card._id === cryptoCard._id);
+      console.log('Updated BTC balance:', updatedCard?.btc_balance);
 
       return true;
     } catch (error) {
@@ -153,7 +139,6 @@ class SeaTableManager {
       throw error;
     }
   }
-
   public async listTables() {
     if (!this.base) {
       throw new Error('SeaTable base is not initialized');
@@ -190,7 +175,7 @@ class SeaTableManager {
       throw error;
     }
   }
-    public async insert(tableName: string, data: any) {
+  public async insert(tableName: string, data: any) {
     if (!this.base) {
       throw new Error('SeaTable base is not initialized');
     }
