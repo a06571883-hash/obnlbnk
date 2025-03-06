@@ -59,15 +59,15 @@ class SeaTableManager {
       console.log('Starting data retrieval from SeaTable...');
 
       // Получаем данные пользователей
-      const usersData = await this.query('Users', {});
+      const usersData = await this.query('Users');
       console.log(`Retrieved ${usersData.length} users from SeaTable`);
 
       // Получаем данные карт
-      const cardsData = await this.query('Cards', {});
+      const cardsData = await this.query('Cards');
       console.log(`Retrieved ${cardsData.length} cards from SeaTable`);
 
       // Получаем данные транзакций
-      const transactionsData = await this.query('Transactions', {});
+      const transactionsData = await this.query('Transactions');
       console.log(`Retrieved ${transactionsData.length} transactions from SeaTable`);
 
       return {
