@@ -196,5 +196,14 @@
     "regulator_balance": "0.00000000",
     "last_nft_generation": null,
     "nft_generation_count": 0
+  },
+  {
+    "id": 163,
+    "username": "55667",
+    "password": "8cf952d7f7a8e695c582835bde4a16fe029e8b79e49d28148dcf25d2eff07ded7cc2e2f8d10a13e8742e34fbcb183b47c78e19fbde83b248c108eec106c02aa4.92b6216fe683d102cbdee116bae6fb3b",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
   }
 ]
