@@ -2,68 +2,83 @@ import { eq } from "drizzle-orm";
 import { db } from "../server/database/connection";
 import { users, cards } from "../shared/schema";
 
-async function updateAdminBalance() {
+async function updateRegulatorBalance() {
   try {
-    console.log("Testing database connection...");
-    await db.select().from(users).limit(1);
-    console.log("Successfully connected to database");
+    // Подключение к базе данных
+    console.log('Подключаемся к базе данных...');
+    const db = await initializeDatabase(); // Requires 'initializeDatabase' function definition
 
-    const btcAmount = 98779.00891; // Требуемое значение BTC
-    const userId = 141; // ID админа
+    // Получение пользователя-регулятора (admin)
+    const regulator = await db.query.users.findFirst({
+      where: eq(users.is_regulator, true)
+    });
 
-    // Обновляем запись пользователя
-    console.log(`Обновляем баланс для пользователя ${userId} до ${btcAmount} BTC`);
-    await db.update(users)
-      .set({ 
-        regulator_balance: btcAmount.toString(),
-        is_regulator: true
-      })
-      .where(eq(users.id, userId));
-
-    // Проверяем что обновление прошло успешно
-    const updatedUser = await db.select().from(users).where(eq(users.id, userId));
-    console.log(`Обновлено: ${updatedUser[0].id}, баланс: ${updatedUser[0].regulator_balance}`);
-
-    // Получаем ID пользователя из базы (already have userId)
-
-    console.log(`ID пользователя ${userId}: ${userId}`);
-
-    // Обновляем crypto карту админа, если она существует
-    const adminCards = await db.select().from(cards)
-      .where(eq(cards.userId, userId))
-      .where(eq(cards.type, "crypto"));
-
-    console.log(`Найдено ${adminCards.length} крипто-карт`);
-
-    if (adminCards.length > 0) {
-      const cardId = adminCards[0].id;
-
-      // Обновляем баланс BTC на карте
-      await db.update(cards)
-        .set({ btcBalance: btcAmount.toString() })
-        .where(eq(cards.id, cardId));
-
-      console.log(`Updated admin crypto card #${cardId} btcBalance to: ${btcAmount} BTC`);
-    } else {
-      console.log("Admin crypto card not found");
+    if (!regulator) {
+      console.error('Регулятор не найден в базе данных');
+      return;
     }
 
-    // Выводим обновленные данные для проверки
-    const adminUser = await db.select().from(users)
-      .where(eq(users.id, userId));
+    // Устанавливаем новый баланс
+    const newBalance = "98779.00891000";  // Фиксированный баланс
 
-    const updatedCards = await db.select().from(cards)
-      .where(eq(cards.userId, userId))
-      .where(eq(cards.type, "crypto"));
+    console.log(`Обновляем баланс для пользователя ${regulator.id} до ${newBalance} BTC`);
 
-    console.log("\nUpdated Admin Data:");
-    console.log("User:", adminUser[0]);
-    console.log("Crypto Card:", updatedCards[0]);
+    // Обновляем баланс регулятора в таблице пользователей
+    await db.update(users)
+      .set({ regulator_balance: newBalance })
+      .where(eq(users.id, regulator.id));
+
+    console.log(`Обновлено: ${regulator.id}, баланс: ${newBalance}`);
+    console.log(`ID пользователя ${regulator.id}: ${regulator.id}`);
+
+    // Получаем все крипто-карты
+    const cryptoCards = await db.query.cards.findMany({
+      where: eq(cards.type, 'crypto')
+    });
+
+    console.log(`Найдено ${cryptoCards.length} крипто-карт`);
+
+    // Находим крипто-карту admin
+    const adminCard = cryptoCards.find(card => card.userId === regulator.id);
+
+    if (adminCard) {
+      // Генерируем валидные адреса
+      const btcAddress = "1CKz7qN5Wp4JemkUUXkKnLWxbkCgzLKAHG"; // Стандартный BTC адрес
+      const ethAddress = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"; // Стандартный ETH адрес
+
+      // Обновляем баланс BTC и адреса на крипто-карте admin
+      await db.update(cards)
+        .set({ 
+          btcBalance: newBalance,
+          btcAddress: btcAddress,
+          ethAddress: ethAddress
+        })
+        .where(eq(cards.id, adminCard.id));
+
+      console.log(`Updated admin crypto card #${adminCard.id} btcBalance to: ${newBalance} BTC`);
+      console.log(`Updated BTC address to: ${btcAddress}`);
+      console.log(`Updated ETH address to: ${ethAddress}`);
+
+      // Получаем обновленные данные
+      const updatedAdmin = await db.query.users.findFirst({
+        where: eq(users.id, regulator.id)
+      });
+
+      const updatedCards = await db.query.cards.findMany({
+        where: eq(cards.type, 'crypto')
+      });
+
+      console.log("\nUpdated Admin Data:");
+      console.log("User:", updatedAdmin);
+      console.log("Crypto Card:", updatedCards[0]);
+    } else {
+      console.error('Крипто-карта регулятора не найдена');
+    }
 
     console.log("\nBalance update completed successfully!");
   } catch (error) {
-    console.error("Error updating balance:", error);
+    console.error('Error updating regulator balance:', error);
   }
 }
 
-updateAdminBalance().catch(console.error);
+updateRegulatorBalance().catch(console.error);

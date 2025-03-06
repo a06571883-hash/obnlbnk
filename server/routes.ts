@@ -28,17 +28,19 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
       const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
       
       // Расширенная проверка для любых bc1-адресов (Bech32)
-      // Просто проверяем начало на "bc1" и минимальную длину
-      const anyBc1Regex = /^bc1[a-zA-HJ-NP-Z0-9]{14,100}$/;
+      // Проверяем начало на "bc1" и позволяем любую длину для совместимости
+      const anyBc1Regex = /^bc1[a-zA-HJ-NP-Z0-9]{14,}$/;
       
-      // Считаем любой адрес с bc1 в начале валидным, независимо от длины
-      // Это необходимо, так как в вашей системе генерируются длинные адреса bc1
+      // Проверка для более длинных, нестандартных bc1-адресов, которые используются в системе
+      // Поддерживаем адреса, начинающиеся с bc1 с произвольной длиной, но требуем валидные символы
+      const customBc1Regex = /^bc1[0-9a-fA-F]{50,100}$/;
+      
       const isBc1Valid = cleanAddress.startsWith('bc1') && cleanAddress.length >= 18;
-      
       const isLegacyValid = legacyRegex.test(cleanAddress);
-      const isValid = isLegacyValid || isBc1Valid || anyBc1Regex.test(cleanAddress);
+      const isCustomFormatValid = customBc1Regex.test(cleanAddress);
+      const isValid = isLegacyValid || isBc1Valid || anyBc1Regex.test(cleanAddress) || isCustomFormatValid;
       
-      console.log(`Validating BTC address: ${cleanAddress}, valid: ${isValid}, isBc1: ${isBc1Valid}`);
+      console.log(`Validating BTC address: ${cleanAddress}, valid: ${isValid}, isBc1: ${isBc1Valid}, customFormat: ${isCustomFormatValid}`);
       return isValid;
     } else if (type === 'eth') {
       const cleanAddress = address.trim().toLowerCase();
