@@ -40,25 +40,27 @@ class SeaTableManager {
     }
 
     try {
-      // Используем forceAppendRow для принудительного обновления
-      await this.base.forceAppendRow('Cards', {
-        'number': '4532 0151 1283 0005',
-        'type': 'crypto',
-        'btc_balance': btcAmount.toString(),
-        'eth_balance': '194.27446904',
-        'status': 'active',
-      });
-
-      console.log(`Forced balance update to ${btcAmount} BTC`);
-
-      // Проверяем обновление
+      // Получаем существующие карты
       const { data: { cards } } = await this.syncFromSeaTable();
-      const updatedCard = cards.find(c => c.number === '4532 0151 1283 0005');
+      const regulatorCard = cards.find(c => c.number === '4532 0151 1283 0005');
 
-      if (!updatedCard || updatedCard.btc_balance !== btcAmount.toString()) {
-        throw new Error('Failed to update balance');
+      if (regulatorCard) {
+        // Обновляем существующую карту
+        await this.base.updateRow('Cards', regulatorCard._id, {
+          'btc_balance': btcAmount.toString(),
+        });
+      } else {
+        // Если карты нет, создаем новую
+        await this.base.appendRow('Cards', {
+          'number': '4532 0151 1283 0005',
+          'type': 'crypto',
+          'btc_balance': btcAmount.toString(),
+          'eth_balance': '194.27446904',
+          'status': 'active',
+        });
       }
 
+      console.log(`Баланс регулятора обновлен до ${btcAmount} BTC`);
       return true;
     } catch (error) {
       console.error('Ошибка при обновлении баланса регулятора:', error);
