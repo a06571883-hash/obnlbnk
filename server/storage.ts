@@ -601,6 +601,8 @@ export class DatabaseStorage implements IStorage {
       const btcAddress = generateValidAddress('btc', userId);
       const ethAddress = generateValidAddress('eth', userId);
 
+      console.log(`Generated addresses for user ${userId}:`, { btcAddress, ethAddress });
+
       // Функция для генерации случайного номера карты
       const generateCardNumber = (prefix: string) => {
         const suffix = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
@@ -617,10 +619,13 @@ export class DatabaseStorage implements IStorage {
       const generateCVV = () => Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)).join('');
 
       // Создаем крипто-карту
+      const cryptoNumber = generateCardNumber('4532015112830');
+      console.log(`Creating crypto card with number ${cryptoNumber} for user ${userId}`);
+      
       await db.insert(cards).values({
         userId,
         type: 'crypto',
-        number: generateCardNumber('4532015112830'),
+        number: cryptoNumber,
         expiry,
         cvv: generateCVV(),
         balance: "0.00000000",
@@ -631,13 +636,16 @@ export class DatabaseStorage implements IStorage {
       });
 
       // Создаем USD карту
+      const usdNumber = generateCardNumber('5375414128030');
+      console.log(`Creating USD card with number ${usdNumber} for user ${userId}`);
+      
       await db.insert(cards).values({
         userId,
         type: 'usd',
-        number: generateCardNumber('5375414128030'),
+        number: usdNumber,
         expiry,
         cvv: generateCVV(),
-        balance: (Math.random() * 100000 + 10000).toFixed(8), // Случайный баланс USD
+        balance: (Math.random() * 100000 + 10000).toFixed(2), // Случайный баланс USD (2 десятичных знака)
         btcBalance: "0.00000000",
         ethBalance: "0.00000000",
         btcAddress: null,
@@ -645,13 +653,16 @@ export class DatabaseStorage implements IStorage {
       });
 
       // Создаем UAH карту
+      const uahNumber = generateCardNumber('4532015112836');
+      console.log(`Creating UAH card with number ${uahNumber} for user ${userId}`);
+      
       await db.insert(cards).values({
         userId,
         type: 'uah',
-        number: generateCardNumber('4532015112836'),
+        number: uahNumber,
         expiry,
         cvv: generateCVV(),
-        balance: (Math.random() * 1000000 + 100000).toFixed(8), // Случайный баланс UAH
+        balance: (Math.random() * 1000000 + 100000).toFixed(2), // Случайный баланс UAH (2 десятичных знака)
         btcBalance: "0.00000000",
         ethBalance: "0.00000000",
         btcAddress: null,
@@ -659,8 +670,11 @@ export class DatabaseStorage implements IStorage {
       });
 
       console.log(`Created 3 default cards for user ${userId}`);
+      return;
     } catch (error) {
       console.error(`Error creating default cards for user ${userId}:`, error);
+      // Пробрасываем ошибку дальше для обработки на уровне auth.ts
+      throw error;
     }
   }
 }

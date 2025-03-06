@@ -107,7 +107,7 @@ function ensureAuthenticated(req: express.Request, res: express.Response, next: 
 }
 
 // Экспортируем функцию для использования в других модулях
-export { generateValidAddress };
+export { generateValidAddress, validateCryptoAddress };
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);

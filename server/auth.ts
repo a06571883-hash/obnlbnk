@@ -145,9 +145,13 @@ export function setupAuth(app: Express) {
         nft_generation_count: 0
       });
 
-      // Создаем стандартные карты для нового пользователя
-      await storage.createDefaultCardsForUser(user.id);
-      console.log(`Created default cards for new user: ${username} (ID: ${user.id})`);
+      try {
+        // Создаем стандартные карты для нового пользователя
+        await storage.createDefaultCardsForUser(user.id);
+        console.log(`Created default cards for new user: ${username} (ID: ${user.id})`);
+      } catch (cardError) {
+        console.error(`Error creating cards for user ${user.id}:`, cardError);
+      }
 
       req.login(user, (err) => {
         if (err) {
