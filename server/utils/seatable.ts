@@ -22,12 +22,6 @@ class SeaTableManager {
     }
 
     try {
-      console.log('Initializing SeaTable with config:', {
-        server: SEATABLE_CONFIG.SERVER_URL,
-        workspaceID: SEATABLE_CONFIG.WORKSPACE_ID,
-        baseName: SEATABLE_CONFIG.BASE_NAME
-      });
-
       this.base = new Base({
         server: SEATABLE_CONFIG.SERVER_URL,
         APIToken: SEATABLE_CONFIG.API_TOKEN,
@@ -48,11 +42,9 @@ class SeaTableManager {
     }
 
     try {
-      console.log('Looking for regulator in Users table...');
-
-      // Получаем текущие данные
+      // Получаем данные всех таблиц
       const currentData = await this.syncFromSeaTable();
-      console.log('Current SeaTable data:', currentData);
+      console.log('Current data from SeaTable:', currentData);
 
       // Находим регулятора
       const regulator = currentData.data.users.find(user => user.is_regulator === true);
@@ -75,7 +67,7 @@ class SeaTableManager {
 
       // Обновляем данные напрямую через API
       await this.base.updateRow('Cards', cryptoCard._id, {
-        btc_balance: btcAmount.toString()
+        'btc_balance': btcAmount.toString()
       });
 
       // Проверяем обновление
@@ -100,9 +92,9 @@ class SeaTableManager {
 
       // Получаем данные из всех таблиц через SQL
       const queries = {
-        users: { sql: 'SELECT * FROM "Users"' },
-        cards: { sql: 'SELECT * FROM "Cards"' },
-        transactions: { sql: 'SELECT * FROM "Transactions"' }
+        users: { sql: 'SELECT * FROM Users' },
+        cards: { sql: 'SELECT * FROM Cards' },
+        transactions: { sql: 'SELECT * FROM Transactions' }
       };
 
       console.log('Executing queries:', queries);
@@ -120,11 +112,6 @@ class SeaTableManager {
       console.log(`Retrieved ${usersData.length} users from SeaTable`);
       console.log(`Retrieved ${cardsData.length} cards from SeaTable`);
       console.log(`Retrieved ${transactionsData.length} transactions from SeaTable`);
-
-      // Подробный вывод данных для проверки
-      console.log('\nUsers data sample:', JSON.stringify(usersData.slice(0, 2), null, 2));
-      console.log('\nCards data sample:', JSON.stringify(cardsData.slice(0, 2), null, 2));
-      console.log('\nTransactions data sample:', JSON.stringify(transactionsData.slice(0, 2), null, 2));
 
       return {
         success: true,
