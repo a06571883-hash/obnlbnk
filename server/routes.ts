@@ -24,13 +24,18 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
       const cleanAddress = address.trim();
       // Проверка для legacy и SegWit адресов
       const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
-      const segwitRegex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
+      const segwitRegex = /^bc1[a-zA-HJ-NP-Z0-9]{8,87}$/;
+      
+      console.log(`Validating BTC address: ${cleanAddress}, valid: ${legacyRegex.test(cleanAddress) || segwitRegex.test(cleanAddress)}`);
       return legacyRegex.test(cleanAddress) || segwitRegex.test(cleanAddress);
     } else if (type === 'eth') {
       const cleanAddress = address.trim().toLowerCase();
-      return ethers.isAddress(cleanAddress);
+      const isValid = ethers.isAddress(cleanAddress);
+      console.log(`Validating ETH address: ${cleanAddress}, valid: ${isValid}`);
+      return isValid;
     }
-  } catch {
+  } catch (error) {
+    console.error(`Error validating ${type} address:`, error);
     return false;
   }
   return false;
