@@ -4,6 +4,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./database/connection";
 import { scheduleBackups } from "./database/backup";
 import { startBot } from "./telegram-bot";
+import { seaTableManager } from './utils/seatable';
+import { DEFAULT_TABLES } from '@shared/seatable.config';
 
 // Set development mode
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
@@ -26,10 +28,10 @@ app.use((req, res, next) => {
   const origin = req.headers.origin || '';
 
   // Allow Telegram WebApp and Replit domains
-  if (origin.includes('.telegram.org') || 
-      origin.includes('.t.me') || 
-      origin.includes('.replit.dev') || 
-      origin.includes('replit.com') || 
+  if (origin.includes('.telegram.org') ||
+      origin.includes('.t.me') ||
+      origin.includes('.replit.dev') ||
+      origin.includes('replit.com') ||
       process.env.NODE_ENV !== 'production') {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
@@ -37,13 +39,13 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 
     // Security headers for Telegram WebApp
-    res.header('Content-Security-Policy', 
+    res.header('Content-Security-Policy',
       "default-src 'self' *.telegram.org; " +
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.telegram.org; " +
       "style-src 'self' 'unsafe-inline' *.telegram.org; " +
       "img-src 'self' data: blob: *.telegram.org; " +
       "connect-src 'self' *.telegram.org wss://*.telegram.org ws://localhost:* http://localhost:* https://localhost:*; " +
-      "worker-src 'self' blob:;"
+      "worker-src 'self' blob:; "
     );
     res.header('X-Frame-Options', 'ALLOW-FROM https://web.telegram.org/');
 
@@ -98,6 +100,30 @@ app.use((req, res, next) => {
     `);
     console.log('Database initialized successfully');
 
+    // Initialize SeaTable connection
+    console.log('Initializing SeaTable connection...');
+    try {
+      await seaTableManager.initialize();
+      console.log('SeaTable connection established successfully');
+
+      // Create default tables if they don't exist
+      for (const table of DEFAULT_TABLES) {
+        try {
+          await seaTableManager.createTable(table);
+          console.log(`SeaTable table "${table.name}" created successfully`);
+        } catch (error) {
+          if (error.message?.includes('already exists')) {
+            console.log(`SeaTable table "${table.name}" already exists`);
+          } else {
+            console.error(`Error creating SeaTable table "${table.name}":`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing SeaTable:', error);
+      // Continue execution even if SeaTable initialization fails
+    }
+
     const server = await registerRoutes(app);
 
     // Initialize scheduled backups
@@ -132,7 +158,7 @@ app.use((req, res, next) => {
         type: err.constructor.name
       });
 
-      res.status(status).json({ 
+      res.status(status).json({
         error: {
           message,
           ...(stack ? { stack } : {})
@@ -174,7 +200,7 @@ app.use((req, res, next) => {
       log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 
       // Get the deployment URL
-      const deploymentUrl = process.env.REPLIT_DEPLOYMENT_URL || 
+      const deploymentUrl = process.env.REPLIT_DEPLOYMENT_URL ||
         (process.env.REPLIT_SLUG ? `https://${process.env.REPLIT_SLUG}.replit.dev` : `http://localhost:${PORT}`);
       console.log('Full Deployment URL:', deploymentUrl);
     });
