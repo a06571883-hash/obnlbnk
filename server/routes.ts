@@ -12,6 +12,7 @@ import express from 'express';
 import fetch from 'node-fetch';
 import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
 import { getNews } from './news-service';
+import { seaTableManager } from './utils/seatable';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -256,6 +257,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching news:", error);
       res.status(500).json({ message: "Ошибка при получении новостей" });
+    }
+  });
+
+  // Эндпоинт для получения данных из SeaTable
+  app.get("/api/seatable/data", ensureAuthenticated, async (req, res) => {
+    try {
+      const seaTableData = await seaTableManager.syncFromSeaTable();
+      res.json(seaTableData);
+    } catch (error) {
+      console.error("Error fetching SeaTable data:", error);
+      res.status(500).json({ message: "Ошибка при получении данных из SeaTable" });
     }
   });
 
