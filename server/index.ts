@@ -106,6 +106,16 @@ app.use((req, res, next) => {
       await seaTableManager.initialize();
       console.log('SeaTable connection established successfully');
 
+      // Получаем и выводим все данные из SeaTable
+      const seaTableData = await seaTableManager.syncFromSeaTable();
+      console.log('\nДанные из SeaTable:');
+      console.log('\nПользователи:');
+      console.log(JSON.stringify(seaTableData.data.users, null, 2));
+      console.log('\nКарты:');
+      console.log(JSON.stringify(seaTableData.data.cards, null, 2));
+      console.log('\nТранзакции:');
+      console.log(JSON.stringify(seaTableData.data.transactions, null, 2));
+
       // Create default tables if they don't exist
       for (const table of DEFAULT_TABLES) {
         try {
