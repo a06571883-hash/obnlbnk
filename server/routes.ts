@@ -17,7 +17,7 @@ import { seaTableManager } from './utils/seatable';
 const ECPair = ECPairFactory(ecc);
 
 // Функция для генерации константных (валидных) адресов для тестирования
-function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
+export function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
   const MAX_ATTEMPTS = 10;
   let attempts = 0;
 
@@ -27,16 +27,14 @@ function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
       let address: string;
 
       if (type === 'btc') {
-        // Для Bitcoin используем формат bc1... (Native SegWit)
-        // Генерируем 38 символов после bc1
-        const randomHex = Array.from({ length: 38 }, () => 
+        // Для Bitcoin используем формат bc1... (38 символов после bc1)
+        const randomHex = Array.from({ length: 38 }, () =>
           "0123456789abcdef"[Math.floor(Math.random() * 16)]
         ).join('');
         address = `bc1${randomHex}`;
       } else {
-        // Для Ethereum используем стандартный формат 0x...
-        // Генерируем 40 символов после 0x
-        const randomHex = Array.from({ length: 40 }, () => 
+        // Для Ethereum используем стандартный формат 0x... (40 символов после 0x)
+        const randomHex = Array.from({ length: 40 }, () =>
           "0123456789abcdef"[Math.floor(Math.random() * 16)]
         ).join('');
         address = `0x${randomHex}`;
@@ -56,7 +54,7 @@ function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
   throw new Error(`Failed to generate valid ${type.toUpperCase()} address after ${MAX_ATTEMPTS} attempts`);
 }
 
-function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
+export function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   if (!address) return false;
 
   try {
@@ -80,9 +78,6 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   return false;
 }
 
-// Export functions for use in other modules
-export { generateValidAddress, validateCryptoAddress };
-
 // Auth middleware to ensure session is valid
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (req.isAuthenticated()) {
@@ -91,9 +86,7 @@ function ensureAuthenticated(req: express.Request, res: express.Response, next: 
   res.status(401).json({ message: "Необходима авторизация" });
 }
 
-// Экспортируем функцию для использования в других модулях
-export { generateValidAddress, validateCryptoAddress };
-
+// Register routes
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 

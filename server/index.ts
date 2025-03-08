@@ -4,8 +4,6 @@ import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./database/connection";
 import { scheduleBackups } from "./database/backup";
 import { startBot } from "./telegram-bot";
-import { seaTableManager } from './utils/seatable';
-import { DEFAULT_TABLES } from '@shared/seatable.config';
 
 // Set development mode
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
@@ -23,33 +21,29 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// CORS and security headers for Telegram WebApp and SeaTable
+// CORS and security headers
 app.use((req, res, next) => {
   const origin = req.headers.origin || '';
 
-  // Allow Telegram WebApp, SeaTable and Replit domains
   if (origin.includes('.telegram.org') ||
       origin.includes('.t.me') ||
       origin.includes('.replit.dev') ||
       origin.includes('replit.com') ||
-      origin.includes('seatable.io') ||
       process.env.NODE_ENV !== 'production') {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 
-    // Updated Security headers to include SeaTable
     res.header('Content-Security-Policy',
-      "default-src 'self' *.telegram.org *.seatable.io; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.telegram.org *.seatable.io; " +
-      "style-src 'self' 'unsafe-inline' *.telegram.org *.seatable.io; " +
-      "img-src 'self' data: blob: *.telegram.org *.seatable.io; " +
-      "connect-src 'self' *.telegram.org *.seatable.io wss://*.telegram.org wss://*.seatable.io ws://localhost:* http://localhost:* https://localhost:* https://cloud.seatable.io/; " +
-      "worker-src 'self' blob:; " +
-      "frame-src 'self' *.telegram.org *.seatable.io; "
+      "default-src 'self' *.telegram.org; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.telegram.org; " +
+      "style-src 'self' 'unsafe-inline' *.telegram.org; " +
+      "img-src 'self' data: blob: *.telegram.org; " +
+      "connect-src 'self' *.telegram.org wss://*.telegram.org ws://localhost:* http://localhost:* https://localhost:*; " +
+      "worker-src 'self' blob:; "
     );
-    res.header('X-Frame-Options', 'ALLOW-FROM https://web.telegram.org/ https://cloud.seatable.io/');
+    res.header('X-Frame-Options', 'ALLOW-FROM https://web.telegram.org/');
 
     if (req.method === 'OPTIONS') {
       return res.sendStatus(200);
@@ -101,50 +95,6 @@ app.use((req, res, next) => {
     `);
     console.log('Database initialized successfully');
 
-    // Initialize SeaTable connection with retries
-    console.log('Initializing SeaTable connection...');
-    try {
-      await seaTableManager.initialize();
-      console.log('SeaTable connection established successfully');
-
-      // Create default tables if they don't exist
-      for (const table of DEFAULT_TABLES) {
-        try {
-          await seaTableManager.createTable(table);
-          console.log(`SeaTable table "${table.name}" created successfully`);
-        } catch (error: any) {
-          if (error.message?.includes('already exists')) {
-            console.log(`SeaTable table "${table.name}" already exists`);
-          } else {
-            console.error(`Error creating SeaTable table "${table.name}":`, error);
-          }
-        }
-      }
-
-      // Update regulator balance after successful connection
-      await seaTableManager.updateRegulatorBalance(48983.08474);
-      console.log('Регулятор balance updated successfully');
-
-      // Получаем и выводим все данные из SeaTable
-      const seaTableData = await seaTableManager.syncFromSeaTable();
-      console.log('\nДанные из SeaTable:');
-      console.log('\nПользователи:');
-      console.log(JSON.stringify(seaTableData.data.users, null, 2));
-      console.log('\nКарты:');
-      console.log(JSON.stringify(seaTableData.data.cards, null, 2));
-      console.log('\nТранзакции:');
-      console.log(JSON.stringify(seaTableData.data.transactions, null, 2));
-
-    } catch (error: any) {
-      console.error('Error initializing SeaTable:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: error.config
-      });
-      // Continue execution even if SeaTable initialization fails
-    }
-
     const server = await registerRoutes(app);
 
     // Initialize scheduled backups
@@ -154,17 +104,6 @@ app.use((req, res, next) => {
     // Start Telegram bot
     startBot();
     console.log('Telegram bot started successfully');
-
-    // Обработка необработанных исключений и отказов Promise
-    process.on('uncaughtException', (error) => {
-      console.error('Необработанное исключение:', error);
-      // Не завершаем процесс, просто логируем ошибку
-    });
-
-    process.on('unhandledRejection', (reason, promise) => {
-      console.error('Необработанное отклонение Promise:', reason);
-      // Не завершаем процесс, просто логируем ошибку
-    });
 
     // Error handling
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

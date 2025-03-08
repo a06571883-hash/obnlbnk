@@ -8,7 +8,7 @@ import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
 import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcryptjs';
-import { generateValidAddress } from './routes';
+import { generateValidAddress, validateCryptoAddress } from './routes';
 
 const PostgresSessionStore = connectPg(session);
 
@@ -52,7 +52,7 @@ export class DatabaseStorage implements IStorage {
       tableName: 'session',
       createTableIfMissing: true,
       pruneSessionInterval: 60,
-      ttl: 30 * 24 * 60 * 60 // 30 days in seconds
+      ttl: 30 * 24 * 60 * 60
     });
 
     this.sessionStore.on('error', (error) => {
@@ -481,28 +481,6 @@ export class DatabaseStorage implements IStorage {
     }, "Crypto Transfer Operation");
   }
 
-  private async createCommissionTransaction(
-    fromCard: Card,
-    toCard: Card | null,
-    commission: number,
-    btcCommission: number,
-    regulator: User
-  ): Promise<Transaction> {
-    return await this.createTransaction({
-      fromCardId: fromCard.id,
-      toCardId: regulator.id,
-      amount: commission.toString(),
-      convertedAmount: btcCommission.toString(),
-      type: 'commission',
-      status: 'completed',
-      wallet: null,
-      description: `Комиссия 1% от перевода с карты ${fromCard.number} ${toCard ? `на карту ${toCard.number}` : ''} (${btcCommission.toFixed(8)} BTC)`,
-      fromCardNumber: fromCard.number,
-      toCardNumber: "REGULATOR",
-      createdAt: new Date()
-    });
-  }
-
   private async withTransaction<T>(operation: (client: any) => Promise<T>, context: string): Promise<T> {
     const client = await pool.connect();
     try {
@@ -562,7 +540,6 @@ export class DatabaseStorage implements IStorage {
   }
 
 
-
   async createNFTCollection(userId: number, name: string, description: string): Promise<any> {
     throw new Error("Method not implemented.");
   }
@@ -593,7 +570,6 @@ export class DatabaseStorage implements IStorage {
     }, 'Get transactions by card IDs');
   }
 
-  // Создание стандартных карт для нового пользователя
   async createDefaultCardsForUser(userId: number): Promise<void> {
     try {
       console.log(`Starting default cards creation for user ${userId}`);
@@ -616,7 +592,7 @@ export class DatabaseStorage implements IStorage {
       const expiry = `${expiryMonth}/${expiryYear}`;
 
       // Генерируем CVV
-      const generateCVV = () => Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)).join('');
+      const generateCVV = () => Math.floor(100 + Math.random() * 900).toString();
 
       try {
         console.log('Creating cards...');
@@ -624,10 +600,11 @@ export class DatabaseStorage implements IStorage {
         // Создаем крипто-карту
         await this.withRetry(async () => {
           console.log('Creating crypto card...');
+          const cryptoCardNumber = generateCardNumber('crypto');
           await db.insert(cards).values({
             userId,
             type: 'crypto',
-            number: generateCardNumber('4532015112830'),
+            number: cryptoCardNumber,
             expiry,
             cvv: generateCVV(),
             balance: "0.00",
@@ -636,16 +613,17 @@ export class DatabaseStorage implements IStorage {
             btcAddress,
             ethAddress
           });
-          console.log('Crypto card created successfully');
+          console.log('Crypto card created successfully:', cryptoCardNumber);
         }, 'Create crypto card');
 
         // Создаем USD карту
         await this.withRetry(async () => {
           console.log('Creating USD card...');
+          const usdCardNumber = generateCardNumber('usd');
           await db.insert(cards).values({
             userId,
             type: 'usd',
-            number: generateCardNumber('5375414128030'),
+            number: usdCardNumber,
             expiry,
             cvv: generateCVV(),
             balance: "0.00",
@@ -654,16 +632,17 @@ export class DatabaseStorage implements IStorage {
             btcAddress: null,
             ethAddress: null
           });
-          console.log('USD card created successfully');
+          console.log('USD card created successfully:', usdCardNumber);
         }, 'Create USD card');
 
         // Создаем UAH карту
         await this.withRetry(async () => {
           console.log('Creating UAH card...');
+          const uahCardNumber = generateCardNumber('uah');
           await db.insert(cards).values({
             userId,
             type: 'uah',
-            number: generateCardNumber('4532015112836'),
+            number: uahCardNumber,
             expiry,
             cvv: generateCVV(),
             balance: "0.00",
@@ -672,7 +651,7 @@ export class DatabaseStorage implements IStorage {
             btcAddress: null,
             ethAddress: null
           });
-          console.log('UAH card created successfully');
+          console.log('UAH card created successfully:', uahCardNumber);
         }, 'Create UAH card');
 
         console.log(`All cards created successfully for user ${userId}`);
@@ -707,28 +686,15 @@ export class DatabaseStorage implements IStorage {
 
 export const storage = new DatabaseStorage();
 
-// Add validation functions (replace with your actual validation logic)
-function validateBtcAddress(address: string): boolean {
-  // Implement BTC address validation here
-  return /^bc1[a-zA-HJ-NP-Z0-9]{39}$/.test(address) ||
-         /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address); // Legacy and SegWit
-}
+function generateCardNumber(type: 'crypto' | 'usd' | 'uah'): string {
+  // Префиксы для разных типов карт
+  const prefixes = {
+    crypto: '4111',
+    usd: '4112',
+    uah: '4113'
+  };
 
-function validateEthAddress(address: string): boolean{
-  // Implement ETH address validation here
-  return /^0x[a-fA-F0-9]{40}$/.test(address);}
-
-function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
-  if (type === 'btc') {
-    return validateBtcAddress(address);
-  } else if (type === 'eth') {
-    return validateEthAddress(address);
-  } else {
-    return false;
-  }
-}
-
-function generateCardNumber(prefix: string): string {
+  // Генерируем оставшиеся 12 цифр
   const suffix = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
-  return `${prefix}${suffix}`;
+  return `${prefixes[type]}${suffix}`;
 }
