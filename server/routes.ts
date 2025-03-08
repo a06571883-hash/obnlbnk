@@ -27,14 +27,14 @@ export function generateValidAddress(type: 'btc' | 'eth', userId: number): strin
       let address: string;
 
       if (type === 'btc') {
-        // Для Bitcoin используем формат bc1... (38 символов после bc1)
-        const randomHex = Array.from({ length: 38 }, () =>
+        // Для Bitcoin используем формат bc1 + 40 символов
+        const randomHex = Array.from({ length: 40 }, () => 
           "0123456789abcdef"[Math.floor(Math.random() * 16)]
         ).join('');
         address = `bc1${randomHex}`;
       } else {
-        // Для Ethereum используем стандартный формат 0x... (40 символов после 0x)
-        const randomHex = Array.from({ length: 40 }, () =>
+        // Для Ethereum используем стандартный формат 0x + 40 символов
+        const randomHex = Array.from({ length: 40 }, () => 
           "0123456789abcdef"[Math.floor(Math.random() * 16)]
         ).join('');
         address = `0x${randomHex}`;
@@ -61,12 +61,12 @@ export function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boo
     const cleanAddress = address.trim();
 
     if (type === 'btc') {
-      // Bitcoin address validation (bc1... format, всего 41 символ)
-      const isValid = /^bc1[a-f0-9]{38}$/.test(cleanAddress);
+      // Bitcoin address validation (bc1 + 40 символов)
+      const isValid = /^bc1[a-f0-9]{40}$/.test(cleanAddress);
       console.log(`Validating BTC address: ${cleanAddress}, valid: ${isValid}`);
       return isValid;
     } else if (type === 'eth') {
-      // Ethereum address validation (0x... format, всего 42 символа)
+      // Ethereum address validation (0x + 40 символов)
       const isValid = /^0x[a-f0-9]{40}$/.test(cleanAddress.toLowerCase());
       console.log(`Validating ETH address: ${cleanAddress}, valid: ${isValid}`);
       return isValid;

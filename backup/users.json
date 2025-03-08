@@ -277,5 +277,14 @@
     "regulator_balance": "0.00000000",
     "last_nft_generation": null,
     "nft_generation_count": 0
+  },
+  {
+    "id": 176,
+    "username": "fatima8978765",
+    "password": "900942bdb77ef564f81a21b2f943618f21ff313fec749db88a51518853f3adc48dde4e6fae632c6500a3049811ef057d6c0c1c5b30d837d580c78fa2452a8bce.ae4829da83365992fcca9ea5cda351ba",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
   }
 ]
