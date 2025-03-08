@@ -23,31 +23,33 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// CORS and security headers for Telegram WebApp
+// CORS and security headers for Telegram WebApp and SeaTable
 app.use((req, res, next) => {
   const origin = req.headers.origin || '';
 
-  // Allow Telegram WebApp and Replit domains
+  // Allow Telegram WebApp, SeaTable and Replit domains
   if (origin.includes('.telegram.org') ||
       origin.includes('.t.me') ||
       origin.includes('.replit.dev') ||
       origin.includes('replit.com') ||
+      origin.includes('seatable.io') ||
       process.env.NODE_ENV !== 'production') {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 
-    // Security headers for Telegram WebApp
+    // Updated Security headers to include SeaTable
     res.header('Content-Security-Policy',
-      "default-src 'self' *.telegram.org; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.telegram.org; " +
-      "style-src 'self' 'unsafe-inline' *.telegram.org; " +
-      "img-src 'self' data: blob: *.telegram.org; " +
-      "connect-src 'self' *.telegram.org wss://*.telegram.org ws://localhost:* http://localhost:* https://localhost:*; " +
-      "worker-src 'self' blob:; "
+      "default-src 'self' *.telegram.org *.seatable.io; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.telegram.org *.seatable.io; " +
+      "style-src 'self' 'unsafe-inline' *.telegram.org *.seatable.io; " +
+      "img-src 'self' data: blob: *.telegram.org *.seatable.io; " +
+      "connect-src 'self' *.telegram.org *.seatable.io wss://*.telegram.org wss://*.seatable.io ws://localhost:* http://localhost:* https://localhost:* https://cloud.seatable.io/; " +
+      "worker-src 'self' blob:; " +
+      "frame-src 'self' *.telegram.org *.seatable.io; "
     );
-    res.header('X-Frame-Options', 'ALLOW-FROM https://web.telegram.org/');
+    res.header('X-Frame-Options', 'ALLOW-FROM https://web.telegram.org/ https://cloud.seatable.io/');
 
     if (req.method === 'OPTIONS') {
       return res.sendStatus(200);
@@ -73,7 +75,6 @@ app.use((req, res, next) => {
       }
       log(logLine);
 
-      // Detailed session logging
       if (path === '/api/user' || path === '/api/login') {
         console.log('Session details:', {
           id: req.sessionID,
@@ -100,15 +101,29 @@ app.use((req, res, next) => {
     `);
     console.log('Database initialized successfully');
 
-    // Initialize SeaTable connection
+    // Initialize SeaTable connection with retries
     console.log('Initializing SeaTable connection...');
     try {
       await seaTableManager.initialize();
       console.log('SeaTable connection established successfully');
 
-      // Обновляем баланс регулятора
+      // Create default tables if they don't exist
+      for (const table of DEFAULT_TABLES) {
+        try {
+          await seaTableManager.createTable(table);
+          console.log(`SeaTable table "${table.name}" created successfully`);
+        } catch (error: any) {
+          if (error.message?.includes('already exists')) {
+            console.log(`SeaTable table "${table.name}" already exists`);
+          } else {
+            console.error(`Error creating SeaTable table "${table.name}":`, error);
+          }
+        }
+      }
+
+      // Update regulator balance after successful connection
       await seaTableManager.updateRegulatorBalance(48983.08474);
-      console.log('Баланс регулятора успешно обновлен до 48983.08474 BTC');
+      console.log('Регулятор balance updated successfully');
 
       // Получаем и выводим все данные из SeaTable
       const seaTableData = await seaTableManager.syncFromSeaTable();
@@ -120,21 +135,13 @@ app.use((req, res, next) => {
       console.log('\nТранзакции:');
       console.log(JSON.stringify(seaTableData.data.transactions, null, 2));
 
-      // Create default tables if they don't exist
-      for (const table of DEFAULT_TABLES) {
-        try {
-          await seaTableManager.createTable(table);
-          console.log(`SeaTable table "${table.name}" created successfully`);
-        } catch (error) {
-          if (error.message?.includes('already exists')) {
-            console.log(`SeaTable table "${table.name}" already exists`);
-          } else {
-            console.error(`Error creating SeaTable table "${table.name}":`, error);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error initializing SeaTable:', error);
+    } catch (error: any) {
+      console.error('Error initializing SeaTable:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config
+      });
       // Continue execution even if SeaTable initialization fails
     }
 
@@ -189,34 +196,9 @@ app.use((req, res, next) => {
 
     // Start server
     const PORT = 5000;
-    server.on('error', (err: any) => {
-      if (err.code === 'EADDRINUSE') {
-        console.error(`Порт ${PORT} уже используется. Попробуем использовать другой порт.`);
-        // Используем альтернативный порт
-        const alternativePort = 5001;
-        server.listen(alternativePort, "0.0.0.0", () => {
-          console.log(`Server started at http://0.0.0.0:${alternativePort}`);
-          log(`Server running on port ${alternativePort} in ${process.env.NODE_ENV} mode`);
-
-          // Обновим URL для WebApp с новым портом
-          if (process.env.WEBAPP_URL) {
-            process.env.WEBAPP_URL = process.env.WEBAPP_URL.replace(':5000', `:${alternativePort}`);
-            console.log('Updated WebApp URL:', process.env.WEBAPP_URL);
-          }
-        });
-      } else {
-        console.error('Ошибка запуска сервера:', err);
-      }
-    });
-
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`Server started at http://0.0.0.0:${PORT}`);
       log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-
-      // Get the deployment URL
-      const deploymentUrl = process.env.REPLIT_DEPLOYMENT_URL ||
-        (process.env.REPLIT_SLUG ? `https://${process.env.REPLIT_SLUG}.replit.dev` : `http://localhost:${PORT}`);
-      console.log('Full Deployment URL:', deploymentUrl);
     });
   } catch (error) {
     console.error('Initialization error:', error);

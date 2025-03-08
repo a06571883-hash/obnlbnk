@@ -3,7 +3,7 @@ import { z } from "zod";
 export const SEATABLE_CONFIG = {
   SERVER_URL: process.env.SEATABLE_SERVER_URL || 'https://cloud.seatable.io',
   API_TOKEN: process.env.SEATABLE_API_TOKEN,
-  WORKSPACE_ID: process.env.SEATABLE_WORKSPACE_ID,
+  WORKSPACE_ID: process.env.SEATABLE_WORKSPACE_ID || '55290',
   BASE_NAME: process.env.SEATABLE_BASE_NAME || 'FinancialPlatform'
 };
 

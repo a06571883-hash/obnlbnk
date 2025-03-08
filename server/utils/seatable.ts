@@ -41,7 +41,8 @@ class SeaTableManager {
         this.base = new Base({
           server: SEATABLE_CONFIG.SERVER_URL,
           APIToken: SEATABLE_CONFIG.API_TOKEN,
-          workspaceID: SEATABLE_CONFIG.WORKSPACE_ID
+          workspaceID: SEATABLE_CONFIG.WORKSPACE_ID,
+          name: SEATABLE_CONFIG.BASE_NAME
         });
 
         await this.base.auth();
@@ -55,7 +56,8 @@ class SeaTableManager {
           message: error.message,
           response: error.response?.data,
           status: error.response?.status,
-          config: error.config
+          config: error.config,
+          fullError: JSON.stringify(error, null, 2)
         });
 
         if (this.initializationAttempts >= this.MAX_ATTEMPTS) {
@@ -79,14 +81,14 @@ class SeaTableManager {
     if (!this.initialized) {
       await this.initialize();
     }
-  }
-
-  public async updateRegulatorBalance(btcAmount: number) {
-    await this.ensureInitialized();
 
     if (!this.base) {
       throw new Error('SeaTable base is not initialized');
     }
+  }
+
+  public async updateRegulatorBalance(btcAmount: number) {
+    await this.ensureInitialized();
 
     try {
       console.log('Updating regulator balance in SeaTable...');
@@ -94,12 +96,12 @@ class SeaTableManager {
       const regulatorCard = cards.find((c: any) => c.number === '4532 0151 1283 0005');
 
       if (regulatorCard) {
-        await this.base.updateRow('Cards', regulatorCard._id, {
+        await this.base!.updateRow('Cards', regulatorCard._id, {
           'btc_balance': btcAmount.toString(),
         });
         console.log('Regulator card updated successfully');
       } else {
-        await this.base.appendRow('Cards', {
+        await this.base!.appendRow('Cards', {
           'number': '4532 0151 1283 0005',
           'type': 'crypto',
           'btc_balance': btcAmount.toString(),
@@ -124,17 +126,13 @@ class SeaTableManager {
   public async syncFromSeaTable() {
     await this.ensureInitialized();
 
-    if (!this.base) {
-      throw new Error('SeaTable base is not initialized');
-    }
-
     try {
       console.log('Starting data retrieval from SeaTable...');
 
       const [usersResult, cardsResult, transactionsResult] = await Promise.all([
-        this.base.listRows('Users', { convertKey: true }),
-        this.base.listRows('Cards', { convertKey: true }),
-        this.base.listRows('Transactions', { convertKey: true })
+        this.base!.listRows('Users', { convertKey: true }),
+        this.base!.listRows('Cards', { convertKey: true }),
+        this.base!.listRows('Transactions', { convertKey: true })
       ]);
 
       console.log('SeaTable data retrieval successful', {
@@ -164,13 +162,9 @@ class SeaTableManager {
   public async createTable(table: { name: string; columns: Array<{ name: string; type: string; data?: any }> }) {
     await this.ensureInitialized();
 
-    if (!this.base) {
-      throw new Error('SeaTable base is not initialized');
-    }
-
     try {
       console.log(`Creating table ${table.name} in SeaTable...`);
-      await this.base.addTable(table.name, table.columns);
+      await this.base!.addTable(table.name, table.columns);
       console.log(`Table ${table.name} created successfully`);
     } catch (error: any) {
       if (error.message?.includes('already exists')) {
