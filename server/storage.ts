@@ -40,6 +40,7 @@ export interface IStorage {
   updateUserNFTGeneration(userId: number): Promise<void>;
   getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
   createDefaultCardsForUser(userId: number): Promise<void>;
+  deleteUser(userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -595,25 +596,18 @@ export class DatabaseStorage implements IStorage {
   // Создание стандартных карт для нового пользователя
   async createDefaultCardsForUser(userId: number): Promise<void> {
     try {
-      console.log(`Creating default cards for user ${userId}`);
+      console.log(`Starting default cards creation for user ${userId}`);
 
-      // Generate valid crypto addresses with proper format
-      let btcAddress, ethAddress;
-      do {
+      // Generate crypto addresses with retry limit
+      let btcAddress: string, ethAddress: string;
+      try {
         btcAddress = generateValidAddress('btc', userId);
-      } while (!validateBtcAddress(btcAddress));
-
-      do {
         ethAddress = generateValidAddress('eth', userId);
-      } while (!validateEthAddress(ethAddress));
-
-      console.log(`Generated addresses for user ${userId}:`, { btcAddress, ethAddress });
-
-      // Функция для генерации случайного номера карты
-      const generateCardNumber = (prefix: string) => {
-        const suffix = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
-        return `${prefix}${suffix}`;
-      };
+        console.log('Generated crypto addresses:', { btcAddress, ethAddress });
+      } catch (error) {
+        console.error('Failed to generate valid crypto addresses:', error);
+        throw new Error('Could not generate valid crypto addresses');
+      }
 
       // Генерируем дату истечения (текущий месяц + 3 года)
       const now = new Date();
@@ -624,63 +618,90 @@ export class DatabaseStorage implements IStorage {
       // Генерируем CVV
       const generateCVV = () => Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)).join('');
 
-      // Создаем крипто-карту
-      const cryptoNumber = generateCardNumber('4532015112830');
-      await this.withRetry(async () => {
-        await db.insert(cards).values({
-          userId,
-          type: 'crypto',
-          number: cryptoNumber,
-          expiry,
-          cvv: generateCVV(),
-          balance: "0.00",
-          btcBalance: "0.00000000",
-          ethBalance: "0.00000000",
-          btcAddress,
-          ethAddress
-        });
-      }, 'Create crypto card');
+      try {
+        console.log('Creating cards...');
 
-      // Создаем USD карту
-      const usdNumber = generateCardNumber('5375414128030');
-      await this.withRetry(async () => {
-        await db.insert(cards).values({
-          userId,
-          type: 'usd',
-          number: usdNumber,
-          expiry,
-          cvv: generateCVV(),
-          balance: "0.00",
-          btcBalance: "0.00000000",
-          ethBalance: "0.00000000",
-          btcAddress: null,
-          ethAddress: null
-        });
-      }, 'Create USD card');
+        // Создаем крипто-карту
+        await this.withRetry(async () => {
+          console.log('Creating crypto card...');
+          await db.insert(cards).values({
+            userId,
+            type: 'crypto',
+            number: generateCardNumber('4532015112830'),
+            expiry,
+            cvv: generateCVV(),
+            balance: "0.00",
+            btcBalance: "0.00000000",
+            ethBalance: "0.00000000",
+            btcAddress,
+            ethAddress
+          });
+          console.log('Crypto card created successfully');
+        }, 'Create crypto card');
 
-      // Создаем UAH карту
-      const uahNumber = generateCardNumber('4532015112836');
-      await this.withRetry(async () => {
-        await db.insert(cards).values({
-          userId,
-          type: 'uah',
-          number: uahNumber,
-          expiry,
-          cvv: generateCVV(),
-          balance: "0.00",
-          btcBalance: "0.00000000",
-          ethBalance: "0.00000000",
-          btcAddress: null,
-          ethAddress: null
-        });
-      }, 'Create UAH card');
+        // Создаем USD карту
+        await this.withRetry(async () => {
+          console.log('Creating USD card...');
+          await db.insert(cards).values({
+            userId,
+            type: 'usd',
+            number: generateCardNumber('5375414128030'),
+            expiry,
+            cvv: generateCVV(),
+            balance: "0.00",
+            btcBalance: null,
+            ethBalance: null,
+            btcAddress: null,
+            ethAddress: null
+          });
+          console.log('USD card created successfully');
+        }, 'Create USD card');
 
-      console.log(`Created 3 default cards for user ${userId}`);
-      return;
+        // Создаем UAH карту
+        await this.withRetry(async () => {
+          console.log('Creating UAH card...');
+          await db.insert(cards).values({
+            userId,
+            type: 'uah',
+            number: generateCardNumber('4532015112836'),
+            expiry,
+            cvv: generateCVV(),
+            balance: "0.00",
+            btcBalance: null,
+            ethBalance: null,
+            btcAddress: null,
+            ethAddress: null
+          });
+          console.log('UAH card created successfully');
+        }, 'Create UAH card');
+
+        console.log(`All cards created successfully for user ${userId}`);
+      } catch (error) {
+        console.error(`Error creating cards for user ${userId}:`, error);
+        throw error;
+      }
     } catch (error) {
-      console.error(`Error creating default cards for user ${userId}:`, error);
+      console.error(`Error in createDefaultCardsForUser for user ${userId}:`, error);
       throw error;
     }
+  }
+  async deleteUser(userId: number): Promise<void> {
+    return this.withTransaction(async () => {
+      try {
+        // First delete all cards associated with the user
+        await db.delete(cards)
+          .where(eq(cards.userId, userId));
+
+        // Then delete the user
+        await db.delete(users)
+          .where(eq(users.id, userId));
+
+        console.log(`User ${userId} and their cards deleted successfully`);
+      } catch (error) {
+        console.error(`Error deleting user ${userId}:`, error);
+        throw error;
+      }
+    }, 'Delete user');
   }
 }
 
@@ -689,11 +710,25 @@ export const storage = new DatabaseStorage();
 // Add validation functions (replace with your actual validation logic)
 function validateBtcAddress(address: string): boolean {
   // Implement BTC address validation here
-  return /^bc1[a-zA-HJ-NP-Z0-9]{39}$/.test(address) || // Native SegWit
+  return /^bc1[a-zA-HJ-NP-Z0-9]{39}$/.test(address) ||
          /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address); // Legacy and SegWit
 }
 
-function validateEthAddress(address: string): boolean {
+function validateEthAddress(address: string): boolean{
   // Implement ETH address validation here
-  return /^0x[a-fA-F0-9]{40}$/.test(address);
+  return /^0x[a-fA-F0-9]{40}$/.test(address);}
+
+function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
+  if (type === 'btc') {
+    return validateBtcAddress(address);
+  } else if (type === 'eth') {
+    return validateEthAddress(address);
+  } else {
+    return false;
+  }
+}
+
+function generateCardNumber(prefix: string): string {
+  const suffix = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
+  return `${prefix}${suffix}`;
 }

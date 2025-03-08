@@ -18,39 +18,60 @@ const ECPair = ECPairFactory(ecc);
 
 // Функция для генерации константных (валидных) адресов для тестирования
 function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
-  try {
-    // Используем стандартные форматы адресов
-    if (type === 'btc') {
-      // Для Bitcoin используем формат bc1... (Native SegWit)
-      const randomPart = Math.random().toString(36).substring(2, 10);
-      return `bc1${randomPart}${userId.toString().padStart(4, '0')}`;
-    } else {
-      // Для Ethereum используем стандартный формат 0x...
-      const randomPart = Math.random().toString(36).substring(2, 38);
-      return `0x${randomPart}${userId.toString().padStart(2, '0')}`;
+  const MAX_ATTEMPTS = 10;
+  let attempts = 0;
+
+  while (attempts < MAX_ATTEMPTS) {
+    try {
+      attempts++;
+      let address: string;
+
+      if (type === 'btc') {
+        // Для Bitcoin используем формат bc1... (Native SegWit)
+        // Генерируем 38 символов после bc1
+        const randomHex = Array.from({ length: 38 }, () => 
+          "0123456789abcdef"[Math.floor(Math.random() * 16)]
+        ).join('');
+        address = `bc1${randomHex}`;
+      } else {
+        // Для Ethereum используем стандартный формат 0x...
+        // Генерируем 40 символов после 0x
+        const randomHex = Array.from({ length: 40 }, () => 
+          "0123456789abcdef"[Math.floor(Math.random() * 16)]
+        ).join('');
+        address = `0x${randomHex}`;
+      }
+
+      // Проверяем валидность сгенерированного адреса
+      if (validateCryptoAddress(address, type)) {
+        console.log(`Valid ${type.toUpperCase()} address generated on attempt ${attempts}:`, address);
+        return address;
+      }
+      console.log(`Invalid ${type.toUpperCase()} address generated on attempt ${attempts}, retrying...`);
+    } catch (error) {
+      console.error(`Error on attempt ${attempts} generating ${type} address:`, error);
     }
-  } catch (error) {
-    console.error(`Error generating address for user ${userId}:`, error);
-    return type === 'btc' 
-      ? `bc1${userId.toString().padStart(20, '0')}`
-      : `0x${userId.toString().padStart(40, '0')}`;
   }
+
+  throw new Error(`Failed to generate valid ${type.toUpperCase()} address after ${MAX_ATTEMPTS} attempts`);
 }
 
 function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   if (!address) return false;
 
   try {
+    const cleanAddress = address.trim();
+
     if (type === 'btc') {
-      const cleanAddress = address.trim();
-      // Bitcoin address validation
-      const btcRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/;
-      return btcRegex.test(cleanAddress);
+      // Bitcoin address validation (bc1... format, всего 41 символ)
+      const isValid = /^bc1[a-f0-9]{38}$/.test(cleanAddress);
+      console.log(`Validating BTC address: ${cleanAddress}, valid: ${isValid}`);
+      return isValid;
     } else if (type === 'eth') {
-      const cleanAddress = address.trim().toLowerCase();
-      // Ethereum address validation
-      const ethRegex = /^0x[a-f0-9]{40}$/;
-      return ethRegex.test(cleanAddress);
+      // Ethereum address validation (0x... format, всего 42 символа)
+      const isValid = /^0x[a-f0-9]{40}$/.test(cleanAddress.toLowerCase());
+      console.log(`Validating ETH address: ${cleanAddress}, valid: ${isValid}`);
+      return isValid;
     }
   } catch (error) {
     console.error(`Error validating ${type} address:`, error);
@@ -58,6 +79,9 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
   }
   return false;
 }
+
+// Export functions for use in other modules
+export { generateValidAddress, validateCryptoAddress };
 
 // Auth middleware to ensure session is valid
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {

@@ -180,6 +180,24 @@
     "nft_generation_count": 0
   },
   {
+    "id": 170,
+    "username": "fatima",
+    "password": "b091e0906f6f9579852dc6715dd865ef7714c53e59068e3395d4441358921ea2595d92c3a1c993382a274cb6f33ce5aff180e0b7fe960efac350b362108ab37d.9a4edbe115f2aa19c4c3be896ee560bf",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 171,
+    "username": "8787",
+    "password": "56e0463dc8f613582ed6032ba056645881e4a50b19c5f85096be7e6d073124203f01d1547b596b2bb2e8bfe48f8568d36e0e54bfbb9b7964c3f8ec29743afbd3.9d77a123e5297be1c56560172b6818c9",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
     "id": 162,
     "username": "1",
     "password": "c0ff07cc7fbce7022d83d060e15d4a9031ef71fb155836400a1d61387b22bccafd50189e8d3c3e85de5679add10d1b7bea8d9d5db403041ce5193c5b05a08ee4.6c676f2fdb9632ae718acc68cee169dc",

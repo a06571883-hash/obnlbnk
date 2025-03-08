@@ -23,9 +23,7 @@ async function hashPassword(password: string) {
 
 async function comparePasswords(supplied: string, stored: string) {
   try {
-    console.log("comparePasswords - Comparing passwords:");
-    console.log("Supplied password length:", supplied.length);
-    console.log("Stored password format:", stored.includes('.') ? 'valid' : 'invalid');
+    console.log("Comparing passwords...");
 
     if (!stored || !stored.includes('.')) {
       console.error('Invalid stored password format');
@@ -120,50 +118,104 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res) => {
+    console.log("Starting registration process...");
+    let user = null;
+
     try {
       const { username, password } = req.body;
 
       if (!username || !password) {
-        console.log("Registration failed: Missing username or password");
-        return res.status(400).json({ message: "Username and password are required" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Username and password are required" 
+        });
+      }
+
+      if (username.length < 3 || username.length > 20) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Username must be between 3 and 20 characters" 
+        });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Password must be at least 6 characters long" 
+        });
       }
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
-        console.log("Registration failed: Username already exists:", username);
-        return res.status(400).json({ message: "Username already exists" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Username already exists" 
+        });
       }
 
       const hashedPassword = await hashPassword(password);
-      console.log("Creating new user with username:", username);
-
-      const user = await storage.createUser({
-        username,
-        password: hashedPassword,
-        is_regulator: false,
-        regulator_balance: "0",
-        nft_generation_count: 0
-      });
 
       try {
-        // Создаем стандартные карты для нового пользователя
-        await storage.createDefaultCardsForUser(user.id);
-        console.log(`Created default cards for new user: ${username} (ID: ${user.id})`);
-      } catch (cardError) {
-        console.error(`Error creating cards for user ${user.id}:`, cardError);
+        user = await storage.createUser({
+          username,
+          password: hashedPassword,
+          is_regulator: false,
+          regulator_balance: "0",
+          nft_generation_count: 0
+        });
+
+        console.log(`User created with ID: ${user.id}`);
+
+        try {
+          await storage.createDefaultCardsForUser(user.id);
+          console.log(`Default cards created for user ${user.id}`);
+        } catch (cardError) {
+          console.error(`Failed to create cards for user ${user.id}:`, cardError);
+          if (user) {
+            await storage.deleteUser(user.id);
+            console.log(`Cleaned up user ${user.id} after card creation failure`);
+          }
+          return res.status(500).json({ 
+            success: false,
+            message: "Failed to create user cards" 
+          });
+        }
+
+        req.login(user, (loginErr) => {
+          if (loginErr) {
+            console.error("Login after registration failed:", loginErr);
+            return res.status(500).json({ 
+              success: false,
+              message: "Registration successful but login failed" 
+            });
+          }
+          console.log(`User ${user.id} registered and logged in successfully`);
+          return res.status(201).json({ 
+            success: true,
+            user 
+          });
+        });
+
+      } catch (createError) {
+        console.error("User creation failed:", createError);
+        if (user) {
+          await storage.deleteUser(user.id);
+        }
+        return res.status(500).json({ 
+          success: false,
+          message: "Failed to create user" 
+        });
       }
 
-      req.login(user, (err) => {
-        if (err) {
-          console.error("Registration session error:", err);
-          return res.status(500).json({ message: "Error creating session" });
-        }
-        console.log("New user registered successfully:", username);
-        res.status(201).json(user);
-      });
     } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Registration error" });
+      console.error("Registration process failed:", error);
+      if (user) {
+        await storage.deleteUser(user.id);
+      }
+      return res.status(500).json({ 
+        success: false,
+        message: "Registration failed" 
+      });
     }
   });
 

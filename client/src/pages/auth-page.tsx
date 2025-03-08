@@ -171,18 +171,33 @@ function RegisterForm() {
     },
   });
 
-  const onSubmit = (data: any) => {
-    registerMutation.mutate(data, {
-      onSuccess: () => {
-        // Устанавливаем флаг новой регистрации
-        sessionStorage.setItem('isNewRegistration', 'true');
-      }
-    });
+  const onSubmit = async (data: any) => {
+    try {
+      await registerMutation.mutateAsync(data, {
+        onSuccess: () => {
+          // Set new registration flag
+          sessionStorage.setItem('isNewRegistration', 'true');
+        },
+        onError: (error: any) => {
+          // Handle specific error messages from the server
+          const errorMessage = error.response?.data?.message || "Registration failed";
+          form.setError('root', { message: errorMessage });
+        }
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+    }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+        {form.formState.errors.root && (
+          <div className="text-red-500 text-sm">
+            {form.formState.errors.root.message}
+          </div>
+        )}
+
         <FormField
           control={form.control}
           name="username"
@@ -211,8 +226,14 @@ function RegisterForm() {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
-          {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={registerMutation.isPending || form.formState.isSubmitting}
+        >
+          {(registerMutation.isPending || form.formState.isSubmitting) && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
           Зарегистрироваться
         </Button>
       </form>
