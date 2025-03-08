@@ -1,11 +1,11 @@
 import { ethers } from 'ethers';
 import * as bitcoin from 'bitcoinjs-lib';
 import type { Express } from "express";
-import { exportDatabase, importDatabase } from './database/backup';
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
+import { exportDatabase, importDatabase } from './database/backup';
 import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
 import express from 'express';
@@ -16,7 +16,7 @@ import { seaTableManager } from './utils/seatable';
 
 const ECPair = ECPairFactory(ecc);
 
-// Функция для генерации константных (валидных) адресов для тестирования
+// Функция для генерации реальных криптовалютных адресов
 export function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
   const MAX_ATTEMPTS = 10;
   let attempts = 0;
@@ -27,17 +27,22 @@ export function generateValidAddress(type: 'btc' | 'eth', userId: number): strin
       let address: string;
 
       if (type === 'btc') {
-        // Для Bitcoin используем формат bc1 + 40 символов
-        const randomHex = Array.from({ length: 40 }, () => 
-          "0123456789abcdef"[Math.floor(Math.random() * 16)]
-        ).join('');
-        address = `bc1${randomHex}`;
+        // Генерируем реальный BTC адрес используя BitcoinJS
+        const keyPair = ECPair.makeRandom();
+        const { address: btcAddress } = bitcoin.payments.p2wpkh({ 
+          pubkey: keyPair.publicKey,
+          network: bitcoin.networks.bitcoin 
+        });
+
+        if (!btcAddress) {
+          throw new Error('Failed to generate BTC address');
+        }
+        address = btcAddress;
+
       } else {
-        // Для Ethereum используем стандартный формат 0x + 40 символов
-        const randomHex = Array.from({ length: 40 }, () => 
-          "0123456789abcdef"[Math.floor(Math.random() * 16)]
-        ).join('');
-        address = `0x${randomHex}`;
+        // Генерируем реальный ETH адрес используя ethers.js
+        const wallet = ethers.Wallet.createRandom();
+        address = wallet.address;
       }
 
       // Проверяем валидность сгенерированного адреса
@@ -61,13 +66,18 @@ export function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boo
     const cleanAddress = address.trim();
 
     if (type === 'btc') {
-      // Bitcoin address validation (bc1 + 40 символов)
-      const isValid = /^bc1[a-f0-9]{40}$/.test(cleanAddress);
-      console.log(`Validating BTC address: ${cleanAddress}, valid: ${isValid}`);
-      return isValid;
+      try {
+        // Проверяем валидность BTC адреса через BitcoinJS
+        bitcoin.address.toOutputScript(cleanAddress, bitcoin.networks.bitcoin);
+        console.log(`Validating BTC address: ${cleanAddress}, valid: true`);
+        return true;
+      } catch (error) {
+        console.log(`Validating BTC address: ${cleanAddress}, valid: false`);
+        return false;
+      }
     } else if (type === 'eth') {
-      // Ethereum address validation (0x + 40 символов)
-      const isValid = /^0x[a-f0-9]{40}$/.test(cleanAddress.toLowerCase());
+      // Проверяем валидность ETH адреса через ethers.js
+      const isValid = ethers.isAddress(cleanAddress);
       console.log(`Validating ETH address: ${cleanAddress}, valid: ${isValid}`);
       return isValid;
     }
