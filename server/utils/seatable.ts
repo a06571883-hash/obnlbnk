@@ -4,6 +4,9 @@ import { SEATABLE_CONFIG } from '@shared/seatable.config';
 class SeaTableManager {
   private static instance: SeaTableManager;
   private base: Base | null = null;
+  private initialized = false;
+  private initializationAttempts = 0;
+  private readonly MAX_ATTEMPTS = 3;
 
   private constructor() {}
 
@@ -15,42 +18,87 @@ class SeaTableManager {
   }
 
   public async initialize() {
+    if (this.initialized) {
+      return;
+    }
+
     if (!SEATABLE_CONFIG.API_TOKEN) {
+      console.error('SeaTable configuration error: API token is missing');
       throw new Error('SeaTable API token is not configured');
     }
 
-    try {
-      this.base = new Base({
-        server: SEATABLE_CONFIG.SERVER_URL,
-        APIToken: SEATABLE_CONFIG.API_TOKEN,
-        workspaceID: SEATABLE_CONFIG.WORKSPACE_ID
-      });
+    console.log('SeaTable configuration:', {
+      serverUrl: SEATABLE_CONFIG.SERVER_URL,
+      workspaceId: SEATABLE_CONFIG.WORKSPACE_ID,
+      baseName: SEATABLE_CONFIG.BASE_NAME,
+      hasToken: !!SEATABLE_CONFIG.API_TOKEN
+    });
 
-      await this.base.auth();
-      console.log('SeaTable authentication successful');
-    } catch (error) {
-      console.error('SeaTable initialization error:', error);
-      throw error;
+    while (this.initializationAttempts < this.MAX_ATTEMPTS) {
+      try {
+        console.log(`SeaTable initialization attempt ${this.initializationAttempts + 1}/${this.MAX_ATTEMPTS}...`);
+
+        this.base = new Base({
+          server: SEATABLE_CONFIG.SERVER_URL,
+          APIToken: SEATABLE_CONFIG.API_TOKEN,
+          workspaceID: SEATABLE_CONFIG.WORKSPACE_ID
+        });
+
+        await this.base.auth();
+        this.initialized = true;
+        console.log('SeaTable authentication successful');
+        return;
+      } catch (error: any) {
+        this.initializationAttempts++;
+        console.error('SeaTable initialization error details:', {
+          attempt: this.initializationAttempts,
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          config: error.config
+        });
+
+        if (this.initializationAttempts >= this.MAX_ATTEMPTS) {
+          const errorMessage = `SeaTable initialization failed after ${this.MAX_ATTEMPTS} attempts: ${error.message}`;
+          console.error(errorMessage, {
+            lastError: error,
+            config: SEATABLE_CONFIG
+          });
+          throw new Error(errorMessage);
+        }
+
+        // Wait before retrying (exponential backoff)
+        const delay = 1000 * Math.pow(2, this.initializationAttempts);
+        console.log(`Waiting ${delay}ms before next attempt...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  private async ensureInitialized() {
+    if (!this.initialized) {
+      await this.initialize();
     }
   }
 
   public async updateRegulatorBalance(btcAmount: number) {
+    await this.ensureInitialized();
+
     if (!this.base) {
       throw new Error('SeaTable base is not initialized');
     }
 
     try {
-      // Получаем существующие карты
+      console.log('Updating regulator balance in SeaTable...');
       const { data: { cards } } = await this.syncFromSeaTable();
-      const regulatorCard = cards.find(c => c.number === '4532 0151 1283 0005');
+      const regulatorCard = cards.find((c: any) => c.number === '4532 0151 1283 0005');
 
       if (regulatorCard) {
-        // Обновляем существующую карту
         await this.base.updateRow('Cards', regulatorCard._id, {
           'btc_balance': btcAmount.toString(),
         });
+        console.log('Regulator card updated successfully');
       } else {
-        // Если карты нет, создаем новую
         await this.base.appendRow('Cards', {
           'number': '4532 0151 1283 0005',
           'type': 'crypto',
@@ -58,17 +106,24 @@ class SeaTableManager {
           'eth_balance': '78194.27446904',
           'status': 'active',
         });
+        console.log('New regulator card created successfully');
       }
 
-      console.log(`Баланс регулятора обновлен до ${btcAmount} BTC`);
+      console.log(`Regulator balance updated to ${btcAmount} BTC`);
       return true;
-    } catch (error) {
-      console.error('Ошибка при обновлении баланса регулятора:', error);
+    } catch (error: any) {
+      console.error('Error updating regulator balance:', {
+        error: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   }
 
   public async syncFromSeaTable() {
+    await this.ensureInitialized();
+
     if (!this.base) {
       throw new Error('SeaTable base is not initialized');
     }
@@ -76,12 +131,17 @@ class SeaTableManager {
     try {
       console.log('Starting data retrieval from SeaTable...');
 
-      // Получаем данные из всех таблиц
       const [usersResult, cardsResult, transactionsResult] = await Promise.all([
         this.base.listRows('Users', { convertKey: true }),
         this.base.listRows('Cards', { convertKey: true }),
         this.base.listRows('Transactions', { convertKey: true })
       ]);
+
+      console.log('SeaTable data retrieval successful', {
+        usersCount: usersResult?.length || 0,
+        cardsCount: cardsResult?.length || 0,
+        transactionsCount: transactionsResult?.length || 0
+      });
 
       return {
         success: true,
@@ -91,8 +151,37 @@ class SeaTableManager {
           transactions: transactionsResult
         }
       };
-    } catch (error) {
-      console.error('Error retrieving data from SeaTable:', error);
+    } catch (error: any) {
+      console.error('Error retrieving data from SeaTable:', {
+        error: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      throw error;
+    }
+  }
+
+  public async createTable(table: { name: string; columns: Array<{ name: string; type: string; data?: any }> }) {
+    await this.ensureInitialized();
+
+    if (!this.base) {
+      throw new Error('SeaTable base is not initialized');
+    }
+
+    try {
+      console.log(`Creating table ${table.name} in SeaTable...`);
+      await this.base.addTable(table.name, table.columns);
+      console.log(`Table ${table.name} created successfully`);
+    } catch (error: any) {
+      if (error.message?.includes('already exists')) {
+        console.log(`Table ${table.name} already exists`);
+        return;
+      }
+      console.error(`Error creating table ${table.name}:`, {
+        error: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   }

@@ -8,7 +8,7 @@ import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
 import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcryptjs';
-import { generateValidAddress } from './routes'; // Added import for address generation
+import { generateValidAddress } from './routes';
 
 const PostgresSessionStore = connectPg(session);
 
@@ -39,7 +39,7 @@ export interface IStorage {
   canGenerateNFT(userId: number): Promise<boolean>;
   updateUserNFTGeneration(userId: number): Promise<void>;
   getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
-  createDefaultCardsForUser(userId: number): Promise<void>; // Added function declaration
+  createDefaultCardsForUser(userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -597,9 +597,15 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log(`Creating default cards for user ${userId}`);
 
-      // Генерируем адреса для крипто-карты
-      const btcAddress = generateValidAddress('btc', userId);
-      const ethAddress = generateValidAddress('eth', userId);
+      // Generate valid crypto addresses
+      let btcAddress, ethAddress;
+      do {
+        btcAddress = generateValidAddress('btc', userId);
+      } while (!validateBtcAddress(btcAddress));
+
+      do {
+        ethAddress = generateValidAddress('eth', userId);
+      } while (!validateEthAddress(ethAddress));
 
       console.log(`Generated addresses for user ${userId}:`, { btcAddress, ethAddress });
 
@@ -629,8 +635,8 @@ export class DatabaseStorage implements IStorage {
         expiry,
         cvv: generateCVV(),
         balance: "0.00000000",
-        btcBalance: "0.00000000", // Changed: Set initial BTC balance to 0
-        ethBalance: "0.00000000", // Changed: Set initial ETH balance to 0
+        btcBalance: "0.00000000",
+        ethBalance: "0.00000000",
         btcAddress,
         ethAddress
       });
@@ -645,7 +651,7 @@ export class DatabaseStorage implements IStorage {
         number: usdNumber,
         expiry,
         cvv: generateCVV(),
-        balance: "0.00000000", // Changed: Set initial USD balance to 0
+        balance: "0.00",
         btcBalance: "0.00000000",
         ethBalance: "0.00000000",
         btcAddress: null,
@@ -662,7 +668,7 @@ export class DatabaseStorage implements IStorage {
         number: uahNumber,
         expiry,
         cvv: generateCVV(),
-        balance: "0.00000000", // Changed: Set initial UAH balance to 0
+        balance: "0.00",
         btcBalance: "0.00000000",
         ethBalance: "0.00000000",
         btcAddress: null,
@@ -683,7 +689,8 @@ export const storage = new DatabaseStorage();
 // Add validation functions (replace with your actual validation logic)
 function validateBtcAddress(address: string): boolean {
   // Implement BTC address validation here
-  return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address);
+  return /^bc1[a-zA-HJ-NP-Z0-9]{39}$/.test(address) || // Native SegWit
+         /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address); // Legacy and SegWit
 }
 
 function validateEthAddress(address: string): boolean {
