@@ -318,7 +318,7 @@ export class DatabaseStorage implements IStorage {
           status: 'completed',
           description: fromCard.type === toCard.type ?
             `Перевод ${amount.toFixed(fromCard.type === 'crypto' || fromCard.type === 'btc' ? 8 : 2)} ${fromCard.type.toUpperCase()}` :
-            `Перевод ${amount.toFixed(fromCard.type === 'crypto' || fromCard.type === 'btc' ? 8 : 2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(toCard.type === 'crypto' || toCard.type === 'btc' ? 8 : 2)} ${toCard.type.toUpperCase()} (курс: ${(convertedAmount/amount).toFixed(2)})`,
+            `Перевод ${amount.toFixed(fromCard.type === 'crypto' || fromCard.type === 'btc' ? 8 : 2)} ${fromCard.type.toUpperCase()} → ${convertedAmount.toFixed(toCard.type === 'crypto' || toCard.type === 'btc' ? 8 : 2)} ${toCard.type.toUpperCase()} (курс: ${(convertedAmount / amount).toFixed(2)})`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard.number,
           wallet: null,
@@ -621,7 +621,7 @@ export class DatabaseStorage implements IStorage {
       // Создаем крипто-карту
       const cryptoNumber = generateCardNumber('4532015112830');
       console.log(`Creating crypto card with number ${cryptoNumber} for user ${userId}`);
-      
+
       await db.insert(cards).values({
         userId,
         type: 'crypto',
@@ -629,8 +629,8 @@ export class DatabaseStorage implements IStorage {
         expiry,
         cvv: generateCVV(),
         balance: "0.00000000",
-        btcBalance: (Math.random() * 50).toFixed(8), // Случайный баланс BTC
-        ethBalance: (Math.random() * 500).toFixed(8), // Случайный баланс ETH
+        btcBalance: "0.00000000", // Changed: Set initial BTC balance to 0
+        ethBalance: "0.00000000", // Changed: Set initial ETH balance to 0
         btcAddress,
         ethAddress
       });
@@ -638,14 +638,14 @@ export class DatabaseStorage implements IStorage {
       // Создаем USD карту
       const usdNumber = generateCardNumber('5375414128030');
       console.log(`Creating USD card with number ${usdNumber} for user ${userId}`);
-      
+
       await db.insert(cards).values({
         userId,
         type: 'usd',
         number: usdNumber,
         expiry,
         cvv: generateCVV(),
-        balance: (Math.random() * 100000 + 10000).toFixed(2), // Случайный баланс USD (2 десятичных знака)
+        balance: "0.00000000", // Changed: Set initial USD balance to 0
         btcBalance: "0.00000000",
         ethBalance: "0.00000000",
         btcAddress: null,
@@ -655,14 +655,14 @@ export class DatabaseStorage implements IStorage {
       // Создаем UAH карту
       const uahNumber = generateCardNumber('4532015112836');
       console.log(`Creating UAH card with number ${uahNumber} for user ${userId}`);
-      
+
       await db.insert(cards).values({
         userId,
         type: 'uah',
         number: uahNumber,
         expiry,
         cvv: generateCVV(),
-        balance: (Math.random() * 1000000 + 100000).toFixed(2), // Случайный баланс UAH (2 десятичных знака)
+        balance: "0.00000000", // Changed: Set initial UAH balance to 0
         btcBalance: "0.00000000",
         ethBalance: "0.00000000",
         btcAddress: null,
@@ -673,7 +673,6 @@ export class DatabaseStorage implements IStorage {
       return;
     } catch (error) {
       console.error(`Error creating default cards for user ${userId}:`, error);
-      // Пробрасываем ошибку дальше для обработки на уровне auth.ts
       throw error;
     }
   }
