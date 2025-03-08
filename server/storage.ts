@@ -627,8 +627,8 @@ export class DatabaseStorage implements IStorage {
             expiry,
             cvv: generateCVV(),
             balance: "0.00",
-            btcBalance: null,
-            ethBalance: null,
+            btcBalance: "0.00000000", 
+            ethBalance: "0.00000000", 
             btcAddress: null,
             ethAddress: null
           });
@@ -646,8 +646,8 @@ export class DatabaseStorage implements IStorage {
             expiry,
             cvv: generateCVV(),
             balance: "0.00",
-            btcBalance: null,
-            ethBalance: null,
+            btcBalance: "0.00000000", 
+            ethBalance: "0.00000000", 
             btcAddress: null,
             ethAddress: null
           });
