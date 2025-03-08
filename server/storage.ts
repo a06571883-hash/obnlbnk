@@ -597,7 +597,7 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log(`Creating default cards for user ${userId}`);
 
-      // Generate valid crypto addresses
+      // Generate valid crypto addresses with proper format
       let btcAddress, ethAddress;
       do {
         btcAddress = generateValidAddress('btc', userId);
@@ -626,54 +626,54 @@ export class DatabaseStorage implements IStorage {
 
       // Создаем крипто-карту
       const cryptoNumber = generateCardNumber('4532015112830');
-      console.log(`Creating crypto card with number ${cryptoNumber} for user ${userId}`);
-
-      await db.insert(cards).values({
-        userId,
-        type: 'crypto',
-        number: cryptoNumber,
-        expiry,
-        cvv: generateCVV(),
-        balance: "0.00000000",
-        btcBalance: "0.00000000",
-        ethBalance: "0.00000000",
-        btcAddress,
-        ethAddress
-      });
+      await this.withRetry(async () => {
+        await db.insert(cards).values({
+          userId,
+          type: 'crypto',
+          number: cryptoNumber,
+          expiry,
+          cvv: generateCVV(),
+          balance: "0.00",
+          btcBalance: "0.00000000",
+          ethBalance: "0.00000000",
+          btcAddress,
+          ethAddress
+        });
+      }, 'Create crypto card');
 
       // Создаем USD карту
       const usdNumber = generateCardNumber('5375414128030');
-      console.log(`Creating USD card with number ${usdNumber} for user ${userId}`);
-
-      await db.insert(cards).values({
-        userId,
-        type: 'usd',
-        number: usdNumber,
-        expiry,
-        cvv: generateCVV(),
-        balance: "0.00",
-        btcBalance: "0.00000000",
-        ethBalance: "0.00000000",
-        btcAddress: null,
-        ethAddress: null
-      });
+      await this.withRetry(async () => {
+        await db.insert(cards).values({
+          userId,
+          type: 'usd',
+          number: usdNumber,
+          expiry,
+          cvv: generateCVV(),
+          balance: "0.00",
+          btcBalance: "0.00000000",
+          ethBalance: "0.00000000",
+          btcAddress: null,
+          ethAddress: null
+        });
+      }, 'Create USD card');
 
       // Создаем UAH карту
       const uahNumber = generateCardNumber('4532015112836');
-      console.log(`Creating UAH card with number ${uahNumber} for user ${userId}`);
-
-      await db.insert(cards).values({
-        userId,
-        type: 'uah',
-        number: uahNumber,
-        expiry,
-        cvv: generateCVV(),
-        balance: "0.00",
-        btcBalance: "0.00000000",
-        ethBalance: "0.00000000",
-        btcAddress: null,
-        ethAddress: null
-      });
+      await this.withRetry(async () => {
+        await db.insert(cards).values({
+          userId,
+          type: 'uah',
+          number: uahNumber,
+          expiry,
+          cvv: generateCVV(),
+          balance: "0.00",
+          btcBalance: "0.00000000",
+          ethBalance: "0.00000000",
+          btcAddress: null,
+          ethAddress: null
+        });
+      }, 'Create UAH card');
 
       console.log(`Created 3 default cards for user ${userId}`);
       return;

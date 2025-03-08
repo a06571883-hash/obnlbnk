@@ -19,32 +19,21 @@ const ECPair = ECPairFactory(ecc);
 // Функция для генерации константных (валидных) адресов для тестирования
 function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
   try {
-    // Используем константные адреса из скриншотов
+    // Используем стандартные форматы адресов
     if (type === 'btc') {
-      // Для admin используем особый адрес
-      if (userId === 141) {
-        return "bc1540516405f95eaa0f48ef31ac0fe5b5b5532be8c2806c638ce2ea89974a8a47";
-      }
-      // Для других пользователей используем шаблон с id пользователя
-      // Добавляем случайные символы для уникальности
+      // Для Bitcoin используем формат bc1... (Native SegWit)
       const randomPart = Math.random().toString(36).substring(2, 10);
-      return `bc1${userId}${randomPart}c3ff26f6f61bd83d652c6922dd8221016bfa10b7cdad6142ea3585859`;
+      return `bc1${randomPart}${userId.toString().padStart(4, '0')}`;
     } else {
-      // Для admin используем особый адрес
-      if (userId === 141) {
-        return "0x9a01ff4dd71872a9fdbdb550f58411efd0342dde9152180a031ff23e5f851df4";
-      }
-      // Для других пользователей используем шаблон с id пользователя
-      // Добавляем случайные символы для уникальности (всего 40 символов после 0x)
-      const randomPart = Math.random().toString(36).substring(2, 8);
-      return `0x${userId}${randomPart}eb69dbc165dfaca93ae9ccf8df5df400f23bf7aa6529ca2f42307e0f71`;
+      // Для Ethereum используем стандартный формат 0x...
+      const randomPart = Math.random().toString(36).substring(2, 38);
+      return `0x${randomPart}${userId.toString().padStart(2, '0')}`;
     }
   } catch (error) {
     console.error(`Error generating address for user ${userId}:`, error);
-    // Резервный вариант в случае ошибки
     return type === 'btc' 
-      ? `bc1${userId}000000000000000000000000000000000000000000000000000000000000000`
-      : `0x${userId}0000000000000000000000000000000000000000`;
+      ? `bc1${userId.toString().padStart(20, '0')}`
+      : `0x${userId.toString().padStart(40, '0')}`;
   }
 }
 
@@ -53,43 +42,15 @@ function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
 
   try {
     if (type === 'btc') {
-      // Нормализуем адрес - удаляем пробелы, знаки переноса и т.д.
       const cleanAddress = address.trim();
-      
-      // Проверка для legacy адресов (начинаются с 1 или 3)
-      const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
-      
-      // Расширенная проверка для любых bc1-адресов (Bech32)
-      // Проверяем начало на "bc1" и позволяем любую длину для совместимости
-      const anyBc1Regex = /^bc1[a-zA-HJ-NP-Z0-9]{14,}$/;
-      
-      // Проверка конкретных адресов, используемых в системе
-      const isSpecificAddress = 
-        cleanAddress === "bc1540516405f95eaa0f48ef31ac0fe5b5b5532be8c2806c638ce2ea89974a8a47" || 
-        cleanAddress === "1CKz7qN5Wp4JemkUUXkKnLWxbkCgzLKAHG" ||
-        cleanAddress.startsWith("bc1") && cleanAddress.length >= 50;
-      
-      const isBc1Valid = cleanAddress.startsWith('bc1') && cleanAddress.length >= 18;
-      const isLegacyValid = legacyRegex.test(cleanAddress);
-      const isValid = isLegacyValid || isBc1Valid || anyBc1Regex.test(cleanAddress) || isSpecificAddress;
-      
-      console.log(`Validating BTC address: ${cleanAddress}, valid: ${isValid}, isBc1: ${isBc1Valid}, isSpecificAddress: ${isSpecificAddress}`);
-      return isValid;
+      // Bitcoin address validation
+      const btcRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/;
+      return btcRegex.test(cleanAddress);
     } else if (type === 'eth') {
       const cleanAddress = address.trim().toLowerCase();
-      
-      // Проверка конкретных адресов, используемых в системе
-      const isSpecificAddress = 
-        cleanAddress.toLowerCase() === "0x9a01ff4dd71872a9fdbdb550f58411efd0342dde9152180a031ff23e5f851df4" || 
-        cleanAddress.toLowerCase() === "0x742d35cc6634c0532925a3b844bc454e4438f44e" ||
-        cleanAddress.startsWith("0x") && cleanAddress.length >= 50;
-      
-      // адрес должен начинаться с 0x и иметь любую длину (для поддержки специфических форматов)
-      const basicFormat = /^0x[a-f0-9]{40,}$/i.test(cleanAddress);
-      const isValid = ethers.isAddress(cleanAddress) || basicFormat || isSpecificAddress;
-      
-      console.log(`Validating ETH address: ${cleanAddress}, valid: ${isValid}, basicFormat: ${basicFormat}, isSpecificAddress: ${isSpecificAddress}`);
-      return isValid;
+      // Ethereum address validation
+      const ethRegex = /^0x[a-f0-9]{40}$/;
+      return ethRegex.test(cleanAddress);
     }
   } catch (error) {
     console.error(`Error validating ${type} address:`, error);
