@@ -29,7 +29,7 @@ export function generateValidAddress(type: 'btc' | 'eth', userId: number): strin
       if (type === 'btc') {
         // Генерируем реальный BTC адрес используя BitcoinJS
         const keyPair = ECPair.makeRandom();
-        const { address: btcAddress } = bitcoin.payments.p2wpkh({ 
+        const { address: btcAddress } = bitcoin.payments.p2pkh({ 
           pubkey: keyPair.publicKey,
           network: bitcoin.networks.bitcoin 
         });
@@ -120,22 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Получение карт пользователя
   app.get("/api/cards", ensureAuthenticated, async (req, res) => {
     try {
-      console.log('GET /api/cards - User:', {
-        id: req.user.id,
-        username: req.user.username,
-        sessionID: req.sessionID
-      });
-
       const cards = await storage.getCardsByUserId(req.user.id);
-      const cryptoCard = cards.find(card => card.type === 'crypto');
-
-      console.log('Cards found:', {
-        userId: req.user.id,
-        totalCards: cards.length,
-        hasCryptoCard: !!cryptoCard,
-        cryptoCardId: cryptoCard?.id
-      });
-
       res.json(cards);
     } catch (error) {
       console.error("Cards fetch error:", error);
@@ -276,24 +261,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/transactions", ensureAuthenticated, async (req, res) => {
     try {
-      console.log('GET /api/transactions - User:', {
-        id: req.user.id,
-        username: req.user.username,
-        sessionID: req.sessionID
-      });
-
       // Get all user's cards
       const userCards = await storage.getCardsByUserId(req.user.id);
       const cardIds = userCards.map(card => card.id);
 
       // Get all transactions related to user's cards
       const transactions = await storage.getTransactionsByCardIds(cardIds);
-
-      console.log('Transactions found:', {
-        userId: req.user.id,
-        cardIds,
-        transactionCount: transactions.length
-      });
 
       res.json(transactions);
     } catch (error) {
