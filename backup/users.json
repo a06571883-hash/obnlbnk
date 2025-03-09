@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": 1,
+    "username": "regulator",
+    "password": "$2b$10$r3Ui7Wor6G7b2cGHEsrrNetitTiaXGfsqNcaMa/s3tkBPgMDn.7h2",
+    "is_regulator": true,
+    "regulator_balance": "1000000.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 2,
+    "username": "user1",
+    "password": "$2b$10$o5n6DfN.bW3OHOPNDD08cu0iY.FbvYBFz0fr8P.T/JTjsFyUSGdL2",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  }
+]

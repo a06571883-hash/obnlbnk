@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '../server/db.js';
 import { users, cards } from '../shared/schema.js';
 import { generateValidAddress } from '../server/utils/crypto.js';
+import { eq } from 'drizzle-orm';
 
 // Функция для создания хеша пароля
 async function hashPassword(password: string): Promise<string> {
@@ -46,7 +47,7 @@ async function createRegulator() {
   
   try {
     // Проверяем, существует ли уже регулятор
-    const existingRegulator = await db.select().from(users).where({ is_regulator: true }).limit(1);
+    const existingRegulator = await db.select().from(users).where(eq(users.is_regulator, true)).limit(1);
     
     if (existingRegulator.length > 0) {
       console.log('Регулятор уже существует:', existingRegulator[0]);
@@ -81,7 +82,7 @@ async function createRegularUser() {
   
   try {
     // Проверяем, существует ли уже пользователь
-    const existingUser = await db.select().from(users).where({ username: 'user1' }).limit(1);
+    const existingUser = await db.select().from(users).where(eq(users.username, 'user1')).limit(1);
     
     if (existingUser.length > 0) {
       console.log('Пользователь уже существует:', existingUser[0]);
@@ -124,8 +125,8 @@ async function createCardsForUser(userId: number) {
       const cvv = generateCVV();
       
       // Генерируем криптоадреса для криптокарты
-      let btcAddress = null;
-      let ethAddress = null;
+      let btcAddress: string | null = null;
+      let ethAddress: string | null = null;
       
       if (type === 'crypto') {
         btcAddress = generateValidAddress('btc', userId);

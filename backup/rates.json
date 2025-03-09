@@ -26,5 +26,26 @@
     "btcToUsd": "84748.00",
     "ethToUsd": "2140.67",
     "updatedAt": "2025-03-09T11:33:16.017Z"
+  },
+  {
+    "id": 5,
+    "usdToUah": "41.22",
+    "btcToUsd": "84748.00",
+    "ethToUsd": "2140.67",
+    "updatedAt": "2025-03-09T11:33:45.567Z"
+  },
+  {
+    "id": 6,
+    "usdToUah": "41.22",
+    "btcToUsd": "84748.00",
+    "ethToUsd": "2140.67",
+    "updatedAt": "2025-03-09T11:34:15.568Z"
+  },
+  {
+    "id": 7,
+    "usdToUah": "41.22",
+    "btcToUsd": "84748.00",
+    "ethToUsd": "2140.67",
+    "updatedAt": "2025-03-09T11:34:45.569Z"
   }
 ]

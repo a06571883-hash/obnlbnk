@@ -1,1 +1,80 @@
-[]
+[
+  {
+    "id": 1,
+    "userId": 1,
+    "type": "crypto",
+    "number": "40008886447333329",
+    "expiry": "01/28",
+    "cvv": "170",
+    "balance": "0.00000000",
+    "btcBalance": "0.00100000",
+    "ethBalance": "0.01000000",
+    "btcAddress": "1CounterpartyXXXXXXXXXXXXXXXUWLpVr",
+    "ethAddress": "0xeBA5958D6C99f64dBd002b91D72423338402D903"
+  },
+  {
+    "id": 2,
+    "userId": 1,
+    "type": "usd",
+    "number": "41118694404182549",
+    "expiry": "07/28",
+    "cvv": "581",
+    "balance": "1000.00000000",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": null,
+    "ethAddress": null
+  },
+  {
+    "id": 3,
+    "userId": 1,
+    "type": "uah",
+    "number": "55554834015910619",
+    "expiry": "06/28",
+    "cvv": "884",
+    "balance": "40000.00000000",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": null,
+    "ethAddress": null
+  },
+  {
+    "id": 4,
+    "userId": 2,
+    "type": "crypto",
+    "number": "40001291745348822",
+    "expiry": "12/28",
+    "cvv": "702",
+    "balance": "0.00000000",
+    "btcBalance": "0.00100000",
+    "ethBalance": "0.01000000",
+    "btcAddress": "1BitcoinEaterAddressDontSendf59kuE",
+    "ethAddress": "0x0BE46E41DAe1a8179c5CAcff127C52eeDB9dA444"
+  },
+  {
+    "id": 5,
+    "userId": 2,
+    "type": "usd",
+    "number": "41114259491253544",
+    "expiry": "09/28",
+    "cvv": "271",
+    "balance": "1000.00000000",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": null,
+    "ethAddress": null
+  },
+  {
+    "id": 6,
+    "userId": 2,
+    "type": "uah",
+    "number": "55554221079290175",
+    "expiry": "03/28",
+    "cvv": "112",
+    "balance": "40000.00000000",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": null,
+    "ethAddress": null
+  }
+]
