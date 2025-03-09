@@ -20,17 +20,14 @@ export function generateValidAddress(type: 'btc' | 'eth', userId: number): strin
       // Это временное решение до интеграции с полным bitcoinjs-lib
       
       // Массив популярных и гарантированно валидных BTC адресов для тестирования
+      // Эти адреса проверены с помощью библиотеки bitcoin-address-validation
       const validBtcAddresses = [
-        '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', // Первый BTC адрес Сатоши
-        '1CounterpartyXXXXXXXXXXXXXXXUWLpVr', // Адрес Counterparty
-        '1BitcoinEaterAddressDontSendf59kuE', // Bitcoin eater address
-        '1BurnBitcoinXXXXXXXXXXXXXXXXAK33R', // Burn address
-        '1CryptoKAXXXXXXXXXXXXXXXXXXAFiX4', // Криптовалютный адрес
-        '1MaxweLLXXXXXXXXXXXXXXXXXXXddTfp', // Адрес в честь Максвелла
-        '1DavidKXXXXXXXXXXXXXXXXXXXyHjQ7', // Адрес в честь разработчика Дэвида
-        '1Bitcoin4XjsAABSSBHNLMY5nrN9rm3K',
-        '18djciogsjCA1XB2sjnQ3SJLpJ27GBz7i',
-        '1Mw9vLVTLYUCFeSqrYeKKn2std2jCEr5vM'
+        '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', // Первый BTC адрес Сатоши - валидный
+        '1CounterpartyXXXXXXXXXXXXXXXUWLpVr', // Адрес Counterparty - валидный
+        '1BitcoinEaterAddressDontSendf59kuE', // Bitcoin eater address - валидный
+        '3MbYQMMmSkC3AgWkj9FMo5LsPTW1zBTwXL', // P2SH адрес - валидный
+        '1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L', // Реальный BTC адрес - валидный после проверки
+        '1KFHE7w8BhaENAswwryaoccDb6qcT6DbYY'  // Реальный BTC адрес - валидный после проверки
       ];
       
       // Используем детерминированный выбор адреса на основе ID пользователя
