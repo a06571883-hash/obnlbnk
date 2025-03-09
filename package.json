@@ -52,6 +52,7 @@
     "better-sqlite3": "^11.8.1",
     "better-sqlite3-session-store": "^0.1.0",
     "bip39": "^3.1.0",
+    "bitcoin-address-validation": "^3.0.0",
     "bitcoinjs-lib": "^6.1.7",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
