@@ -8,6 +8,7 @@ import ECPairFactory from 'ecpair';
 import { exportDatabase, importDatabase } from './database/backup';
 import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
+import { randomBytes } from 'crypto';
 import express from 'express';
 import fetch from 'node-fetch';
 import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
@@ -20,8 +21,19 @@ const ECPair = ECPairFactory(ecc);
 export function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
   try {
     if (type === 'btc') {
-      // Generate a simple deterministic BTC-like address for testing
-      return `bc1${randomBytes(32).toString("hex").slice(0, 39)}`;
+      // Generate a real Bitcoin address using bitcoinjs-lib
+      const network = bitcoin.networks.bitcoin;
+      const keyPair = ECPair.makeRandom({ network });
+      const { address } = bitcoin.payments.p2wpkh({ 
+        pubkey: keyPair.publicKey,
+        network 
+      });
+      
+      if (!address) {
+        throw new Error('Failed to generate BTC address');
+      }
+      
+      return address;
     } else {
       // Generate ETH address using ethers
       const wallet = ethers.Wallet.createRandom();
@@ -94,7 +106,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Получение карт пользователя
   app.get("/api/cards", ensureAuthenticated, async (req, res) => {
     try {
-      const cards = await storage.getCardsByUserId(req.user.id);
+      // В middleware ensureAuthenticated мы уже проверили что req.user существует
+      const cards = await storage.getCardsByUserId(req.user!.id);
       res.json(cards);
     } catch (error) {
       console.error("Cards fetch error:", error);
