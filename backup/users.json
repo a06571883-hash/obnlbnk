@@ -286,5 +286,23 @@
     "regulator_balance": "98779.00891657",
     "last_nft_generation": null,
     "nft_generation_count": 0
+  },
+  {
+    "id": 200,
+    "username": "testuser4",
+    "password": "b1722ed27d0106b51d7673d4f62cfb87d812c3b6638cc756c6c71b0e4d73dc4fed96d351e6ad88412f4801b226c67f1399cea77e954394ac1d5f96ed8dfb6b7d.8bd8486df344fab8705ef943691cf1a5",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 201,
+    "username": "testuser5",
+    "password": "c66893a5fda3d6dd20d0da4ae2d68c0e0b1d0050eff9e07059c8e1d6fd12e00eb003ff79de2ecc58dfcaf6d39595fd7269090e209e1cf5be8554a170c2d1a351.76680f8b74380d575beb5b5406b3e7d5",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
   }
 ]
