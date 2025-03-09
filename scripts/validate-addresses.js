@@ -14,29 +14,47 @@ const addresses = [
 
 // Проверяем каждый адрес
 addresses.forEach(address => {
-  const result = validate(address);
+  const isValid = validator(address);
   console.log(`Адрес: ${address}`);
-  console.log(`Валидный: ${result.isValid}`);
-  console.log(`Тип: ${result.type}`);
-  console.log(`Сеть: ${result.network}`);
+  console.log(`Валидный: ${isValid}`);
+  
+  // Определение типа адреса вручную
+  let type = 'unknown';
+  if (isValid) {
+    if (address.startsWith('1')) {
+      type = 'P2PKH (Legacy)';
+    } else if (address.startsWith('3')) {
+      type = 'P2SH';
+    } else if (address.startsWith('bc1q')) {
+      type = 'Bech32 (SegWit)';
+    }
+    console.log(`Тип: ${type}`);
+    console.log(`Сеть: mainnet`);
+  } else {
+    console.log('Причина: Вероятно, не соответствует формату Base58Check или отсутствует правильная контрольная сумма');
+  }
   console.log('-'.repeat(40));
 });
 
-// Проверим наши бессмысловые последовательности с префиксом 1
-const invalidAddresses = [
+// Проверим наши сгенерированные адреса с префиксом 1
+const ourAddresses = [
+  '1cYswh1CRg89TWzDyvRMAdnyGBCwM', // наш сгенерированный адрес (старый метод)
   '1vJUCxFNBL7fiMiuCYtomDd4M7', // наш сгенерированный адрес из предыдущего теста
-  '1C7ZvT5tas9NJYez9t7R8nYkuLBK49CJg', // наш первый адрес
-  '1CryptoAddressForUser123456789abcdef' // резервный вариант
+  '1CryptoAddressForUser123456789abcdef', // резервный вариант
+  '1MaxweLLXXXXXXXXXXXXXXXXXXXddTfp', // новый метод с предопределенными адресами
+  '1CounterpartyXXXXXXXXXXXXXXXUWLpVr', // новый метод с предопределенными адресами
+  '1BitcoinEaterAddressDontSendf59kuE' // новый метод с предопределенными адресами
 ];
 
 console.log("\nПроверка наших адресов:\n");
-invalidAddresses.forEach(address => {
-  const result = validate(address);
+ourAddresses.forEach(address => {
+  const isValid = validator(address);
   console.log(`Адрес: ${address}`);
-  console.log(`Валидный: ${result.isValid}`);
-  if (result.isValid) {
-    console.log(`Тип: ${result.type}`);
-    console.log(`Сеть: ${result.network}`);
+  console.log(`Валидный: ${isValid}`);
+  
+  if (isValid) {
+    console.log(`Тип: P2PKH (Legacy)`);
+    console.log(`Сеть: mainnet`);
   } else {
     console.log('Причина: Вероятно, не соответствует формату Base58Check или отсутствует правильная контрольная сумма');
   }
