@@ -6,9 +6,9 @@ import { db } from "./db";
 import { cards, users, transactions, exchangeRates } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
-import { generateValidAddress, validateCryptoAddress } from './routes';
+import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
 
 const PostgresSessionStore = connectPg(session);
 

@@ -27256,5 +27256,89 @@
     "btcToUsd": "84949.00",
     "ethToUsd": "2136.73",
     "updatedAt": "2025-03-09T11:08:08.192Z"
+  },
+  {
+    "id": 7601,
+    "usdToUah": "41.22",
+    "btcToUsd": "84949.00",
+    "ethToUsd": "2136.73",
+    "updatedAt": "2025-03-09T11:08:27.705Z"
+  },
+  {
+    "id": 7602,
+    "usdToUah": "41.22",
+    "btcToUsd": "84949.00",
+    "ethToUsd": "2136.73",
+    "updatedAt": "2025-03-09T11:08:38.192Z"
+  },
+  {
+    "id": 7603,
+    "usdToUah": "41.22",
+    "btcToUsd": "84949.00",
+    "ethToUsd": "2136.73",
+    "updatedAt": "2025-03-09T11:08:56.955Z"
+  },
+  {
+    "id": 7604,
+    "usdToUah": "41.22",
+    "btcToUsd": "84949.00",
+    "ethToUsd": "2136.73",
+    "updatedAt": "2025-03-09T11:09:08.193Z"
+  },
+  {
+    "id": 7605,
+    "usdToUah": "41.22",
+    "btcToUsd": "84949.00",
+    "ethToUsd": "2136.73",
+    "updatedAt": "2025-03-09T11:09:26.955Z"
+  },
+  {
+    "id": 7606,
+    "usdToUah": "41.22",
+    "btcToUsd": "84949.00",
+    "ethToUsd": "2136.73",
+    "updatedAt": "2025-03-09T11:09:38.194Z"
+  },
+  {
+    "id": 7607,
+    "usdToUah": "41.22",
+    "btcToUsd": "84956.00",
+    "ethToUsd": "2135.84",
+    "updatedAt": "2025-03-09T11:09:45.944Z"
+  },
+  {
+    "id": 7608,
+    "usdToUah": "41.22",
+    "btcToUsd": "84949.00",
+    "ethToUsd": "2136.73",
+    "updatedAt": "2025-03-09T11:10:08.195Z"
+  },
+  {
+    "id": 7609,
+    "usdToUah": "41.22",
+    "btcToUsd": "84956.00",
+    "ethToUsd": "2135.84",
+    "updatedAt": "2025-03-09T11:10:15.326Z"
+  },
+  {
+    "id": 7610,
+    "usdToUah": "41.22",
+    "btcToUsd": "84958.00",
+    "ethToUsd": "2136.99",
+    "updatedAt": "2025-03-09T11:10:31.954Z"
+  },
+  {
+    "id": 7611,
+    "usdToUah": "41.22",
+    "btcToUsd": "84949.00",
+    "ethToUsd": "2136.73",
+    "updatedAt": "2025-03-09T11:10:38.196Z"
+  },
+  {
+    "id": 7612,
+    "usdToUah": "41.22",
+    "btcToUsd": "84958.00",
+    "ethToUsd": "2136.99",
+    "updatedAt": "2025-03-09T11:10:54.542Z"
   }
 ]

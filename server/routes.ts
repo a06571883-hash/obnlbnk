@@ -1,78 +1,15 @@
-import { ethers } from 'ethers';
-import * as bitcoin from 'bitcoinjs-lib';
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import * as ecc from 'tiny-secp256k1';
-import ECPairFactory from 'ecpair';
 import { exportDatabase, importDatabase } from './database/backup';
 import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
-import { randomBytes } from 'crypto';
 import express from 'express';
 import fetch from 'node-fetch';
 import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
 import { getNews } from './news-service';
 import { seaTableManager } from './utils/seatable';
-
-const ECPair = ECPairFactory(ecc);
-
-// Функция для генерации реальных криптовалютных адресов
-export function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
-  try {
-    if (type === 'btc') {
-      // Generate a real Bitcoin address using bitcoinjs-lib
-      const network = bitcoin.networks.bitcoin;
-      const keyPair = ECPair.makeRandom({ network });
-      const { address } = bitcoin.payments.p2wpkh({ 
-        pubkey: keyPair.publicKey,
-        network 
-      });
-      
-      if (!address) {
-        throw new Error('Failed to generate BTC address');
-      }
-      
-      return address;
-    } else {
-      // Generate ETH address using ethers
-      const wallet = ethers.Wallet.createRandom();
-      return wallet.address;
-    }
-  } catch (error) {
-    console.error(`Error generating ${type} address:`, error);
-    throw error;
-  }
-}
-
-export function validateCryptoAddress(address: string, type: 'btc' | 'eth'): boolean {
-  if (!address) return false;
-
-  try {
-    const cleanAddress = address.trim();
-
-    if (type === 'btc') {
-      try {
-        // Проверяем валидность BTC адреса через BitcoinJS
-        bitcoin.address.toOutputScript(cleanAddress, bitcoin.networks.bitcoin);
-        console.log(`Validating BTC address: ${cleanAddress}, valid: true`);
-        return true;
-      } catch (error) {
-        console.log(`Validating BTC address: ${cleanAddress}, valid: false`);
-        return false;
-      }
-    } else if (type === 'eth') {
-      // Проверяем валидность ETH адреса через ethers.js
-      const isValid = ethers.isAddress(cleanAddress);
-      console.log(`Validating ETH address: ${cleanAddress}, valid: ${isValid}`);
-      return isValid;
-    }
-  } catch (error) {
-    console.error(`Error validating ${type} address:`, error);
-    return false;
-  }
-  return false;
-}
+import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
 
 // Auth middleware to ensure session is valid
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
