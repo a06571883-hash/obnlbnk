@@ -4,8 +4,16 @@ import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+import { ethers } from "ethers";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { User as SelectUser, newUserRegistrationSchema } from "@shared/schema";
+import { ZodError } from "zod";
+
+// Utility function to generate a BIP39 mnemonic phrase
+function generateMnemonic(): string {
+  // Simple implementation for backward compatibility
+  return ethers.Wallet.createRandom().mnemonic?.phrase || "";
+}
 
 declare global {
   namespace Express {
@@ -119,37 +127,41 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res) => {
     console.log("Starting registration process...");
-    let user = null;
+    let user: SelectUser | null = null;
 
     try {
       const { username, password } = req.body;
 
+      // Проверка обязательных полей
       if (!username || !password) {
         return res.status(400).json({ 
           success: false,
-          message: "Username and password are required" 
+          message: "Имя пользователя и пароль обязательны" 
         });
       }
 
-      if (username.length < 3 || username.length > 20) {
-        return res.status(400).json({ 
-          success: false,
-          message: "Username must be between 3 and 20 characters" 
-        });
+      // Применяем строгую валидацию по новой схеме для новых пользователей
+      try {
+        // Валидация данных с использованием Zod схемы
+        newUserRegistrationSchema.parse(req.body);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          const errorMessage = error.errors[0]?.message || "Ошибка валидации";
+          console.log("Registration validation error:", errorMessage);
+          return res.status(400).json({ 
+            success: false,
+            message: errorMessage
+          });
+        }
+        throw error;
       }
 
-      if (password.length < 6) {
-        return res.status(400).json({ 
-          success: false,
-          message: "Password must be at least 6 characters long" 
-        });
-      }
-
+      // Проверка существования пользователя
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ 
           success: false,
-          message: "Username already exists" 
+          message: "Пользователь с таким именем уже существует" 
         });
       }
 
@@ -189,11 +201,18 @@ export function setupAuth(app: Express) {
               message: "Registration successful but login failed" 
             });
           }
-          console.log(`User ${user.id} registered and logged in successfully`);
-          return res.status(201).json({ 
-            success: true,
-            user 
-          });
+          if (user) {  // Type guard for null check
+            console.log(`User ${user.id} registered and logged in successfully`);
+            return res.status(201).json({ 
+              success: true,
+              user 
+            });
+          } else {
+            return res.status(500).json({ 
+              success: false,
+              message: "User registration error" 
+            });
+          }
         });
 
       } catch (createError) {
@@ -276,14 +295,24 @@ function validateCardFormat(cardNumber: string): boolean {
 }
 
 async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddress: string }> {
-  const mnemonic = generateMnemonic();
-  const wallet = ethers.Wallet.fromPhrase(mnemonic);
-  const btcAddress = "bc1" + randomBytes(32).toString("hex").slice(0, 39);
+  try {
+    // Generate a random wallet instead of using mnemonics
+    const wallet = ethers.Wallet.createRandom();
+    // Generate BTC address in legacy format (starting with 1)
+    const btcAddress = "1" + randomBytes(32).toString("hex").slice(0, 33);
 
-  return {
-    btcAddress,
-    ethAddress: wallet.address
-  };
+    return {
+      btcAddress,
+      ethAddress: wallet.address
+    };
+  } catch (error) {
+    console.error("Error generating crypto addresses:", error);
+    // Fallback to simpler approach
+    return {
+      btcAddress: "1" + randomBytes(32).toString("hex").slice(0, 33),
+      ethAddress: "0x" + randomBytes(20).toString("hex")
+    };
+  }
 }
 
 function generateCardNumber(): string {

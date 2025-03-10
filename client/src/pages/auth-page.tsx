@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { insertUserSchema } from "@shared/schema";
+import { insertUserSchema, newUserRegistrationSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Loader2, Shield, Globe, Wallet } from "lucide-react";
@@ -200,7 +200,7 @@ function LoginForm() {
 function RegisterForm() {
   const { registerMutation } = useAuth();
   const form = useForm({
-    resolver: zodResolver(insertUserSchema),
+    resolver: zodResolver(newUserRegistrationSchema), // Используем схему с правилами только для новых пользователей
     defaultValues: {
       username: "",
       password: "",
