@@ -28,21 +28,43 @@ const cardColors = {
   uah: "bg-gradient-to-tr from-blue-700 via-sky-400 to-blue-600 backdrop-blur-md",
 } as const;
 
-// Utility functions
+// Utility functions для проверки криптоадресов
 function validateBtcAddress(address: string): boolean {
-  // Обновленная регулярка для Legacy и P2SH, принимает все допустимые символы (включая повторяющиеся цифры)
+  // Улучшенная регулярка для Legacy и P2SH адресов (начинаются с 1 или 3)
   const legacyRegex = /^[13][a-km-zA-HJ-NP-Z0-9]{24,33}$/;
+  
   // Регулярка для SegWit адресов (bc1...)
   const bech32Regex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
   
-  // Проверяем дополнительно, чтобы отсечь явно некорректные адреса
-  const hasInvalidPattern = address.includes('BTC') || address.includes('btc');
+  // Регулярка для Taproot адресов (начинаются с bc1p)
+  const taprootRegex = /^bc1p[a-km-zA-HJ-NP-Z0-9]{58,89}$/;
   
-  return (legacyRegex.test(address) || bech32Regex.test(address)) && !hasInvalidPattern;
+  // Проверяем дополнительно, чтобы отсечь явно некорректные адреса
+  const hasInvalidPattern = 
+    address.includes('BTC') || 
+    address.includes('btc') ||
+    /^1[0-9]{6,}$/.test(address); // Отсекаем адреса вида 10000000...
+  
+  // Проверяем все допустимые форматы и отсутствие недопустимых паттернов
+  return (legacyRegex.test(address) || bech32Regex.test(address) || taprootRegex.test(address)) && !hasInvalidPattern;
 }
 
+/**
+ * Проверяет валидность Ethereum-адреса
+ * Использует стандартные правила проверки ETH адресов
+ * @param address Адрес для проверки
+ * @returns true если адрес валидный
+ */
 function validateEthAddress(address: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/i.test(address);
+  // Проверяем формат - должен быть 0x + 40 шестнадцатеричных символов
+  const formatRegex = /^0x[a-fA-F0-9]{40}$/i;
+  
+  // Проверяем на явно некорректные паттерны
+  const hasInvalidPattern = 
+    address.includes('ETH') || 
+    address.includes('eth');
+  
+  return formatRegex.test(address) && !hasInvalidPattern;
 }
 
 // Component
