@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": 1,
+    "username": "MaksimHR",
+    "password": "5cf101120e99d53570511b81f9e7c1916684201ab1df4668c461bbed59f37a3caba4d8778339d6f499a2b312e944192edc357421ad2c2d72ea1599cc40405691.c471b13138deee427db96178aa30fdf4",
+    "is_regulator": false,
+    "regulator_balance": "0",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  }
+]

@@ -1,1 +1,41 @@
-[]
+[
+  {
+    "id": 1,
+    "userId": 1,
+    "type": "crypto",
+    "number": "4111628497370667",
+    "expiry": "03/28",
+    "cvv": "709",
+    "balance": "0.00",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": "1CounterpartyXXXXXXXXXXXXXXXUWLpVr",
+    "ethAddress": "0x1e480de75019C68c3753ab5dE19264d15CbC63Cb"
+  },
+  {
+    "id": 2,
+    "userId": 1,
+    "type": "usd",
+    "number": "4112332342219254",
+    "expiry": "03/28",
+    "cvv": "495",
+    "balance": "0.00",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": null,
+    "ethAddress": null
+  },
+  {
+    "id": 3,
+    "userId": 1,
+    "type": "uah",
+    "number": "4113820176638501",
+    "expiry": "03/28",
+    "cvv": "989",
+    "balance": "0.00",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": null,
+    "ethAddress": null
+  }
+]
