@@ -86,13 +86,8 @@ app.use((req, res, next) => {
 (async () => {
   try {
     console.log('Initializing database tables...');
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS session (
-        sid VARCHAR PRIMARY KEY,
-        sess JSON NOT NULL,
-        expire TIMESTAMP(6) NOT NULL
-      )
-    `);
+    // Сессии теперь хранятся в отдельной файле sessions.db и управляются SqliteStore,
+    // поэтому нам не нужно вручную создавать таблицу сессий
     console.log('Database initialized successfully');
 
     const server = await registerRoutes(app);

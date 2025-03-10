@@ -1,7 +1,5 @@
-import { Pool } from 'pg';
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import { MemoryStore } from 'express-session';
 import { db } from "./db";
 import { cards, users, transactions, exchangeRates } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
@@ -9,8 +7,17 @@ import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
 import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
+import store from 'better-sqlite3-session-store';
+import Database from 'better-sqlite3';
+import path from 'path';
 
-const PostgresSessionStore = connectPg(session);
+// Используем SQLite для хранения сессий
+const SqliteStore = store(session);
+
+// Создаем отдельную базу для сессий
+const SESSION_DB_PATH = path.join(process.cwd(), 'sessions.db');
+console.log('SQLite session database path:', SESSION_DB_PATH);
+const sessionDb = new Database(SESSION_DB_PATH);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -47,21 +54,16 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({
-      pool: pool as any,
-      tableName: 'session',
-      createTableIfMissing: true,
-      pruneSessionInterval: 60,
-      ttl: 30 * 24 * 60 * 60
+    // Используем SQLite для хранения сессий вместо PostgreSQL
+    this.sessionStore = new SqliteStore({
+      client: sessionDb,
+      expired: {
+        clear: true,
+        intervalMs: 900000 // Очистка истекших сессий каждые 15 минут
+      }
     });
-
-    this.sessionStore.on('error', (error) => {
-      console.error('Session store error:', error);
-    });
-
-    this.sessionStore.on('connect', () => {
-      console.log('Session store connected successfully');
-    });
+    
+    console.log('Session store initialized with SQLite (free, no expiration)');
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -187,7 +189,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
-    return this.withTransaction(async (client) => {
+    return this.withTransaction(async () => {
       try {
         // Блокируем карты отправителя
         const [fromCard] = await db.select().from(cards).where(eq(cards.id, fromCardId));
@@ -418,38 +420,52 @@ export class DatabaseStorage implements IStorage {
             );
           }
 
-          // Снимаем фиатные деньги с отправителя
+          // Снимаем деньги с фиатной карты
           await this.updateCardBalance(fromCard.id, (fiatBalance - totalDebit).toFixed(2));
-          console.log(`Снято с отправителя: ${totalDebit.toFixed(2)} ${fromCard.type}`);
+          console.log(`Снято с отправителя: ${totalDebit.toFixed(2)} ${fromCard.type.toUpperCase()}`);
         }
 
-        // Если это перевод на карту - зачисляем BTC
+        // Если отправка на внутреннюю карту, то зачисляем средства на неё
         if (toCard) {
-          const toCardCryptoBalance = parseFloat(toCard.btcBalance || '0');
-          const newBalance = toCardCryptoBalance + btcToSend;
-          await this.updateCardBtcBalance(toCard.id, newBalance.toFixed(8));
-          console.log(`Зачислено получателю: ${btcToSend.toFixed(8)} BTC, новый баланс: ${newBalance.toFixed(8)} BTC`);
+          console.log(`Обнаружена внутренняя карта: ${toCard.id}, зачисляем средства`);
+          const toCryptoBalance = parseFloat(toCard.btcBalance || '0');
+          
+          if (cryptoType === 'btc') {
+            await this.updateCardBtcBalance(toCard.id, (toCryptoBalance + btcToSend).toFixed(8));
+          } else {
+            const ethToSend = btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd));
+            const toEthBalance = parseFloat(toCard.ethBalance || '0');
+            await this.updateCardEthBalance(toCard.id, (toEthBalance + ethToSend).toFixed(8));
+          }
+        } else {
+          // Проверяем валидность внешнего адреса
+          if (!validateCryptoAddress(recipientAddress, cryptoType)) {
+            throw new Error(`Недействительный ${cryptoType.toUpperCase()} адрес`);
+          }
+          console.log(`Адрес ${recipientAddress} валиден. Отправляем на внешний адрес...`);
         }
 
         // Зачисляем комиссию регулятору
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
-        await this.updateRegulatorBalance(regulator.id, (regulatorBtcBalance + btcCommission).toFixed(8));
-        console.log(`Комиссия регулятору: ${btcCommission.toFixed(8)} BTC`);
+        await this.updateRegulatorBalance(
+          regulator.id,
+          (regulatorBtcBalance + btcCommission).toFixed(8)
+        );
 
-        // Создаем транзакцию перевода
+        // Создаем транзакцию
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard?.id || null,
-          amount: amount.toString(),
-          convertedAmount: btcToSend.toString(),
-          type: 'transfer',
+          amount: fromCard.type === 'crypto' ? amount.toString() : amount.toString(),
+          convertedAmount: (btcToSend).toString(),
+          type: 'crypto_transfer',
           status: 'completed',
-          wallet: toCard ? null : recipientAddress,
-          description: fromCard.type === 'crypto' ?
-            `Перевод ${amount.toFixed(8)} BTC на адрес ${recipientAddress}` :
-            `Перевод ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} (${btcToSend.toFixed(8)} BTC) на адрес ${recipientAddress}`,
+          description: fromCard.type === 'crypto' 
+            ? `Отправка ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на ${recipientAddress}`
+            : `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${btcToSend.toFixed(8)} ${cryptoType.toUpperCase()} и отправка на ${recipientAddress}`,
           fromCardNumber: fromCard.number,
-          toCardNumber: toCard?.number || "EXTERNAL",
+          toCardNumber: toCard?.number || "",
+          wallet: recipientAddress,
           createdAt: new Date()
         });
 
@@ -457,43 +473,43 @@ export class DatabaseStorage implements IStorage {
         await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: regulator.id,
-          amount: commission.toString(),
+          amount: fromCard.type === 'crypto' ? commission.toString() : commission.toString(),
           convertedAmount: btcCommission.toString(),
           type: 'commission',
           status: 'completed',
-          wallet: null,
-          description: fromCard.type === 'crypto' ?
-            `Комиссия за перевод (${commission.toFixed(8)} BTC)` :
-            `Комиссия за перевод ${commission.toFixed(2)} ${fromCard.type.toUpperCase()} (${btcCommission.toFixed(8)} BTC)`,
+          description: `Комиссия за перевод криптовалюты (${btcCommission.toFixed(8)} BTC)`,
           fromCardNumber: fromCard.number,
           toCardNumber: "REGULATOR",
+          wallet: null,
           createdAt: new Date()
         });
 
         return { success: true, transaction };
       } catch (error) {
         console.error("Crypto transfer error:", error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : "Ошибка при переводе криптовалюты"
-        };
+        throw error;
       }
     }, "Crypto Transfer Operation");
   }
 
   private async withTransaction<T>(operation: (client: any) => Promise<T>, context: string): Promise<T> {
-    const client = await pool.connect();
+    // SQLite имеет автоматические транзакции внутри единого соединения
     try {
-      await client.query('BEGIN');
-      const result = await operation(client);
-      await client.query('COMMIT');
+      // Начинаем транзакцию
+      db.run(sql`BEGIN TRANSACTION`);
+      
+      // Выполняем операцию
+      const result = await operation(null); // client not needed with SQLite
+      
+      // Завершаем транзакцию если всё хорошо
+      db.run(sql`COMMIT`);
+      
       return result;
     } catch (error) {
-      await client.query('ROLLBACK');
+      // Откатываем транзакцию в случае ошибки
+      db.run(sql`ROLLBACK`);
       console.error(`${context} failed:`, error);
       throw error;
-    } finally {
-      client.release();
     }
   }
 
