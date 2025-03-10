@@ -12,76 +12,56 @@ import { validateCryptoAddress } from '../server/utils/crypto.js';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
-import { randomBytes } from 'crypto';
 
 // Создаем ECPair с поддержкой tiny-secp256k1
 const ECPair = ECPairFactory(ecc);
 
+// Инициализируем сеть Bitcoin
+const network = bitcoin.networks.bitcoin;
+
 /**
- * Создает прямой Bitcoin-адрес для пользователя
- * Использует bitcoinjs-lib напрямую
+ * Создает настоящий Bitcoin-адрес для пользователя
+ * Использует bitcoinjs-lib для создания реального адреса
  */
 function generateBitcoinAddress(userId: number): string {
   try {
-    // Создаем пару ключей напрямую через bitcoinjs-lib
-    // Используем ECPair для создания ключей
+    // Создаем пару ключей с использованием ECPair
     const keyPair = ECPair.makeRandom();
-    
-    // Создаем Legacy адрес (P2PKH) 
+
+    // Конвертируем публичный ключ в Buffer для bitcoinjs-lib
+    const pubKeyBuffer = Buffer.from(keyPair.publicKey);
+
+    // Создаем Legacy адрес (P2PKH)
     const { address } = bitcoin.payments.p2pkh({ 
-      pubkey: keyPair.publicKey,
-      network: bitcoin.networks.bitcoin
+      pubkey: pubKeyBuffer,
+      network: network
     });
-    
+
     if (!address) {
       throw new Error("Failed to generate BTC address");
     }
-    
+
     console.log(`✅ Генерация BTC-адреса успешна: ${address} для пользователя: ${userId}`);
     return address;
   } catch (error) {
     console.error(`❌ Ошибка генерации BTC-адреса:`, error);
-    
-    // Используем альтернативный метод генерации
-    try {
-      // Создаем новую случайную пару ключей
-      const keyPair = ECPair.makeRandom();
-      const { address } = bitcoin.payments.p2pkh({ 
-        pubkey: keyPair.publicKey 
-      });
-      
-      if (address) {
-        console.log(`⚠️ Альтернативная генерация BTC-адреса: ${address}`);
-        return address;
-      }
-    } catch (altError) {
-      console.error("Альтернативный метод тоже не сработал:", altError);
-    }
-    
-    // Фиксированный тестовый адрес (ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ)
-    const mockAddress = `1BTC${userId.toString().padStart(6, '0')}${randomBytes(6).toString('hex')}`;
-    console.warn(`⚠️ Возвращаем тестовый BTC-адрес: ${mockAddress}`);
-    return mockAddress;
+    throw error;
   }
 }
 
 /**
- * Создает Ethereum-адрес для пользователя
- * Использует ethers.js напрямую
+ * Создает настоящий Ethereum-адрес для пользователя
+ * Использует ethers.js для создания реального адреса
  */
 function generateEthereumAddress(userId: number): string {
   try {
-    // Создаем случайный ETH-кошелек
+    // Создаем случайный ETH кошелек
     const wallet = ethers.Wallet.createRandom();
     console.log(`✅ Генерация ETH-адреса успешна: ${wallet.address} для пользователя: ${userId}`);
     return wallet.address;
   } catch (error) {
     console.error(`❌ Ошибка генерации ETH-адреса:`, error);
-    
-    // Фиксированный тестовый адрес (ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ)
-    const mockAddress = `0x${userId.toString().padStart(6, '0')}${randomBytes(16).toString('hex')}`;
-    console.warn(`⚠️ Возвращаем тестовый ETH-адрес: ${mockAddress}`);
-    return mockAddress;
+    throw error;
   }
 }
 
@@ -89,54 +69,35 @@ function generateEthereumAddress(userId: number): string {
  * Обновляет криптоадреса для всех существующих пользователей
  */
 async function fixCryptoAddresses() {
-  console.log('🔄 Исправление невалидных криптоадресов для всех пользователей...');
-  console.log('Используем bitcoinjs-lib и ethers.js для генерации реальных криптовалютных адресов');
+  console.log('🔄 Исправление криптоадресов для всех пользователей...');
+  console.log('Используем bitcoinjs-lib и ethers.js для генерации настоящих криптовалютных адресов');
 
   try {
     // Получаем все крипто-карты
     const cryptoCards = await db.select().from(cards).where(eq(cards.type, 'crypto'));
-    console.log(`📋 Найдено ${cryptoCards.length} крипто-карт для проверки и обновления`);
+    console.log(`📋 Найдено ${cryptoCards.length} крипто-карт для обновления`);
 
     let updatedCount = 0;
-    let alreadyValidCount = 0;
     let errorCount = 0;
 
     // Обрабатываем каждую карту
     for (const card of cryptoCards) {
       console.log(`\n📝 Обрабатываем карту #${card.id} пользователя ${card.userId}...`);
-      
+
       try {
-        // Проверяем текущие адреса на валидность
-        const isBtcValid = card.btcAddress ? validateCryptoAddress(card.btcAddress, 'btc') : false;
-        const isEthValid = card.ethAddress ? validateCryptoAddress(card.ethAddress, 'eth') : false;
-
-        console.log(`Текущие адреса:`);
-        console.log(`- BTC: ${card.btcAddress || 'отсутствует'} (${isBtcValid ? '✅ валидный' : '❌ невалидный'})`);
-        console.log(`- ETH: ${card.ethAddress || 'отсутствует'} (${isEthValid ? '✅ валидный' : '❌ невалидный'})`);
-
-        // Если оба адреса валидны, пропускаем карту
-        if (isBtcValid && isEthValid) {
-          console.log(`✅ Карта #${card.id} уже имеет валидные адреса, пропускаем`);
-          alreadyValidCount++;
-          continue;
-        }
-
         // Генерируем новые криптоадреса
         console.log(`🔑 Генерируем новые адреса...`);
-        
-        // Вместо использования функции generateValidAddress, мы используем прямую генерацию здесь
-        // для лучшего контроля над процессом и обработкой ошибок
         const btcAddress = generateBitcoinAddress(card.userId);
         const ethAddress = generateEthereumAddress(card.userId);
 
-        // Двойная проверка, что новые адреса валидны
+        // Проверяем валидность новых адресов
         const isNewBtcValid = validateCryptoAddress(btcAddress, 'btc');
         const isNewEthValid = validateCryptoAddress(ethAddress, 'eth');
 
         if (!isNewBtcValid || !isNewEthValid) {
           console.error(`❌ Ошибка: сгенерированные адреса не прошли валидацию для карты ${card.id}:`);
-          console.error(`- BTC (${isNewBtcValid ? '✅ валидный' : '❌ невалидный'}): ${btcAddress}`);
-          console.error(`- ETH (${isNewEthValid ? '✅ валидный' : '❌ невалидный'}): ${ethAddress}`);
+          console.error(`- BTC (${isNewBtcValid ? '✅' : '❌'}): ${btcAddress}`);
+          console.error(`- ETH (${isNewEthValid ? '✅' : '❌'}): ${ethAddress}`);
           errorCount++;
           continue;
         }
@@ -156,7 +117,7 @@ async function fixCryptoAddresses() {
         console.log(`  Новый BTC: ${btcAddress} ✓`);
         console.log(`  Старый ETH: ${card.ethAddress || 'отсутствует'}`);
         console.log(`  Новый ETH: ${ethAddress} ✓`);
-        
+
         updatedCount++;
       } catch (error) {
         console.error(`❌ Ошибка при обновлении карты ${card.id}:`, error);
@@ -166,10 +127,9 @@ async function fixCryptoAddresses() {
 
     console.log('\n📊 Результаты исправления криптоадресов:');
     console.log(`✅ Успешно обновлено: ${updatedCount} карт`);
-    console.log(`✓ Уже валидных: ${alreadyValidCount} карт`);
     console.log(`❌ Ошибок: ${errorCount}`);
-    
-    // Проверяем результат на примере всех карт
+
+    // Проверяем результат
     const checkCards = await db
       .select({ 
         id: cards.id,
@@ -179,17 +139,17 @@ async function fixCryptoAddresses() {
       })
       .from(cards)
       .where(eq(cards.type, 'crypto'));
-      
+
     console.log("\n🔍 Проверка обновленных карт:");
     checkCards.forEach(card => {
       const isBtcValid = validateCryptoAddress(card.btcAddress || '', 'btc');
       const isEthValid = validateCryptoAddress(card.ethAddress || '', 'eth');
-      
+
       console.log(`\nКарта #${card.id} пользователя ${card.userId}:`);
       console.log(`- BTC: ${card.btcAddress} (${isBtcValid ? '✅ валидный' : '❌ невалидный'})`);
       console.log(`- ETH: ${card.ethAddress} (${isEthValid ? '✅ валидный' : '❌ невалидный'})`);
     });
-    
+
   } catch (error) {
     console.error('❌ Ошибка при обновлении криптоадресов:', error);
   }
