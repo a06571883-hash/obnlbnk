@@ -1510,5 +1510,33 @@
     "description": "Комиссия за перевод (0.00000522 BTC)",
     "fromCardNumber": "4532015112830005",
     "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 709,
+    "fromCardId": 366,
+    "toCardId": 477,
+    "amount": "13.00000000",
+    "convertedAmount": "13.00000000",
+    "type": "transfer",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-10T17:35:00.521Z",
+    "description": "Перевод 13.00000000 BTC на адрес 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L",
+    "fromCardNumber": "4532015112830005",
+    "toCardNumber": "4111099602014002"
+  },
+  {
+    "id": 710,
+    "fromCardId": 366,
+    "toCardId": 141,
+    "amount": "0.13000000",
+    "convertedAmount": "0.13000000",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-10T17:35:00.596Z",
+    "description": "Комиссия за перевод (0.13000000 BTC)",
+    "fromCardNumber": "4532015112830005",
+    "toCardNumber": "REGULATOR"
   }
 ]

@@ -30588,5 +30588,103 @@
     "btcToUsd": "83725.00",
     "ethToUsd": "2123.06",
     "updatedAt": "2025-03-09T14:43:38.418Z"
+  },
+  {
+    "id": 8077,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:31:19.964Z"
+  },
+  {
+    "id": 8078,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:31:47.607Z"
+  },
+  {
+    "id": 8079,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:32:17.607Z"
+  },
+  {
+    "id": 8080,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:32:47.607Z"
+  },
+  {
+    "id": 8081,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:33:17.608Z"
+  },
+  {
+    "id": 8082,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:33:47.608Z"
+  },
+  {
+    "id": 8083,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:34:17.608Z"
+  },
+  {
+    "id": 8084,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:34:47.609Z"
+  },
+  {
+    "id": 8085,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:35:17.612Z"
+  },
+  {
+    "id": 8086,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:35:47.613Z"
+  },
+  {
+    "id": 8087,
+    "usdToUah": "41.24",
+    "btcToUsd": "79079.00",
+    "ethToUsd": "1960.15",
+    "updatedAt": "2025-03-10T17:36:17.614Z"
+  },
+  {
+    "id": 8088,
+    "usdToUah": "41.24",
+    "btcToUsd": "78631.00",
+    "ethToUsd": "1945.50",
+    "updatedAt": "2025-03-10T17:36:47.914Z"
+  },
+  {
+    "id": 8089,
+    "usdToUah": "41.24",
+    "btcToUsd": "78631.00",
+    "ethToUsd": "1945.50",
+    "updatedAt": "2025-03-10T17:37:17.616Z"
+  },
+  {
+    "id": 8090,
+    "usdToUah": "41.24",
+    "btcToUsd": "78421.00",
+    "ethToUsd": "1936.44",
+    "updatedAt": "2025-03-10T17:39:40.135Z"
   }
 ]
