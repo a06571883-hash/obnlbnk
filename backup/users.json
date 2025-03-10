@@ -22,7 +22,7 @@
     "username": "admin",
     "password": "f67abce36cf3a52cf8335f274f25ee3bb895ada9e2a005390d49720ba3bf5b8d6c4d29fdf676bb443535662b15888cb949de68898d84b981acccb773b4e29515.e2c58647bd61afa8129582d5d6f44c8f",
     "is_regulator": true,
-    "regulator_balance": "2000000",
+    "regulator_balance": "10000000",
     "last_nft_generation": null,
     "nft_generation_count": 0
   }
