@@ -118,9 +118,31 @@ function LoginForm() {
     },
   });
 
+  const onSubmit = async (data: any) => {
+    try {
+      loginMutation.mutate(data, {
+        onSuccess: () => {
+          playSoundIfEnabled('success');
+        },
+        onError: () => {
+          playSoundIfEnabled('error');
+        }
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      playSoundIfEnabled('error');
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((data) => loginMutation.mutate(data))} className="space-y-4 mt-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+        {loginMutation.isError && (
+          <div className="text-red-500 text-sm bg-red-50 p-2 rounded border border-red-200">
+            Ошибка авторизации: неправильное имя пользователя или пароль
+          </div>
+        )}
+
         <FormField
           control={form.control}
           name="username"
@@ -128,9 +150,14 @@ function LoginForm() {
             <FormItem>
               <FormLabel>Имя пользователя</FormLabel>
               <FormControl>
-                <Input {...field} className="bg-background/50" />
+                <Input 
+                  {...field} 
+                  className="bg-background/50" 
+                  placeholder="Введите имя пользователя"
+                  autoComplete="username"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-red-500" />
             </FormItem>
           )}
         />
@@ -142,15 +169,27 @@ function LoginForm() {
             <FormItem>
               <FormLabel>Пароль</FormLabel>
               <FormControl>
-                <Input type="password" {...field} className="bg-background/50" />
+                <Input 
+                  type="password" 
+                  {...field} 
+                  className="bg-background/50" 
+                  placeholder="Введите пароль"
+                  autoComplete="current-password"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-red-500" />
             </FormItem>
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-          {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={loginMutation.isPending || form.formState.isSubmitting}
+        >
+          {(loginMutation.isPending || form.formState.isSubmitting) && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
           Войти
         </Button>
       </form>
@@ -177,23 +216,36 @@ function RegisterForm() {
         onSuccess: () => {
           // Set new registration flag
           sessionStorage.setItem('isNewRegistration', 'true');
+          playSoundIfEnabled('success');
         },
         onError: (error: any) => {
           // Handle specific error messages from the server
           const errorMessage = error.response?.data?.message || "Registration failed";
           form.setError('root', { message: errorMessage });
+          playSoundIfEnabled('error');
         }
       });
     } catch (error) {
       console.error("Registration error:", error);
+      playSoundIfEnabled('error');
     }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+        <div className="bg-primary/5 rounded-lg p-3 mb-4 text-xs text-muted-foreground border border-primary/10">
+          <h3 className="font-semibold text-sm mb-1 text-primary">Правила регистрации:</h3>
+          <ul className="list-disc list-inside space-y-1">
+            <li>Имя пользователя: 3-20 символов, только латинские буквы, цифры и знак подчеркивания (_)</li>
+            <li>Пароль: минимум 6 символов</li>
+            <li>Пароль должен содержать хотя бы одну заглавную букву (A-Z)</li>
+            <li>Пароль должен содержать хотя бы одну цифру (0-9)</li>
+          </ul>
+        </div>
+
         {form.formState.errors.root && (
-          <div className="text-red-500 text-sm">
+          <div className="text-red-500 text-sm bg-red-50 p-2 rounded border border-red-200">
             {form.formState.errors.root.message}
           </div>
         )}
@@ -205,9 +257,14 @@ function RegisterForm() {
             <FormItem>
               <FormLabel>Имя пользователя</FormLabel>
               <FormControl>
-                <Input {...field} className="bg-background/50" />
+                <Input 
+                  {...field} 
+                  className="bg-background/50" 
+                  placeholder="Введите имя пользователя"
+                  autoComplete="username"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-red-500" />
             </FormItem>
           )}
         />
@@ -219,9 +276,15 @@ function RegisterForm() {
             <FormItem>
               <FormLabel>Пароль</FormLabel>
               <FormControl>
-                <Input type="password" {...field} className="bg-background/50" />
+                <Input 
+                  type="password" 
+                  {...field} 
+                  className="bg-background/50" 
+                  placeholder="Введите надежный пароль"
+                  autoComplete="new-password"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-red-500" />
             </FormItem>
           )}
         />

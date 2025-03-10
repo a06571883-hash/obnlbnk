@@ -52,6 +52,15 @@ export const exchangeRates = pgTable("exchange_rates", {
 // Базовые схемы
 export const insertUserSchema = createInsertSchema(users, {
   id: undefined,
+  username: z.string()
+    .min(3, 'Имя пользователя должно содержать не менее 3 символов')
+    .max(20, 'Имя пользователя не должно превышать 20 символов')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Имя пользователя может содержать только латинские буквы, цифры и знак подчеркивания'),
+  password: z.string()
+    .min(6, 'Пароль должен содержать не менее 6 символов')
+    .max(64, 'Пароль не должен превышать 64 символа')
+    .regex(/.*[A-Z].*/, 'Пароль должен содержать хотя бы одну заглавную букву')
+    .regex(/.*[0-9].*/, 'Пароль должен содержать хотя бы одну цифру'),
   regulator_balance: z.string().default("0"),
   is_regulator: z.boolean().default(false),
   last_nft_generation: z.date().optional(),
