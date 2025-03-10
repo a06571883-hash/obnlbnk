@@ -43,5 +43,14 @@
     "regulator_balance": "0",
     "last_nft_generation": null,
     "nft_generation_count": 0
+  },
+  {
+    "id": 8,
+    "username": "hdfhdsfesh3",
+    "password": "17123f90398670982b5b83ac0364d0fe956f0d0b153089b4ac4b6c0a966adc8957d33c898fd32baeee173905264360996184f962025d872367b73cfe7645acce.c0c099827ee77df9c0d8a41867cb3c79",
+    "is_regulator": false,
+    "regulator_balance": "0",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
   }
 ]

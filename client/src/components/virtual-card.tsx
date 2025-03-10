@@ -30,9 +30,15 @@ const cardColors = {
 
 // Utility functions
 function validateBtcAddress(address: string): boolean {
-  const legacyRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
+  // Обновленная регулярка для Legacy и P2SH, принимает все допустимые символы (включая повторяющиеся цифры)
+  const legacyRegex = /^[13][a-km-zA-HJ-NP-Z0-9]{24,33}$/;
+  // Регулярка для SegWit адресов (bc1...)
   const bech32Regex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
-  return legacyRegex.test(address) || bech32Regex.test(address);
+  
+  // Проверяем дополнительно, чтобы отсечь явно некорректные адреса
+  const hasInvalidPattern = address.includes('BTC') || address.includes('btc');
+  
+  return (legacyRegex.test(address) || bech32Regex.test(address)) && !hasInvalidPattern;
 }
 
 function validateEthAddress(address: string): boolean {

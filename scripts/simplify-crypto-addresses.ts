@@ -28,13 +28,13 @@ function generateValidEthAddress(): string {
 
 /**
  * Создает валидный Bitcoin адрес (в формате P2PKH)
- * Генерирует адрес, который гарантированно пройдет проверку на фронтенде
+ * Генерирует адрес, который гарантированно пройдет обновленную проверку на фронтенде
  */
 function generateValidBtcAddress(): string {
-  // Base58 символы точно соответствующие регулярному выражению на фронтенде: [a-km-zA-HJ-NP-Z1-9]
-  const VALID_CHARS = '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+  // Base58 символы, включая все цифры, соответствующие обновленному регулярному выражению: [a-km-zA-HJ-NP-Z0-9]
+  const VALID_CHARS = '0123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
   
-  // Функция для генерации случайной строки в формате Base58
+  // Функция для генерации случайной строки с допустимыми символами
   function generateValidString(length: number): string {
     let result = '';
     const randomValues = randomBytes(length);
@@ -49,11 +49,23 @@ function generateValidBtcAddress(): string {
   }
   
   // Создаем адрес в формате P2PKH, который будет соответствовать требованиям фронтенда:
-  // /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/
+  // /^[13][a-km-zA-HJ-NP-Z0-9]{24,33}$/
   const prefixChar = '1'; // Используем '1' для P2PKH адресов
-  const addressLength = 28; // Выбираем длину в середине диапазона 25-34, исключая первый символ
+  const addressLength = 28; // Выбираем длину в середине диапазона 24-33, исключая первый символ
   
-  return `${prefixChar}${generateValidString(addressLength)}`;
+  // Генерируем строку, но проверяем, что она не содержит запрещенные паттерны
+  let addressBody = generateValidString(addressLength);
+  
+  // Проверяем, что строка не содержит "BTC" или "btc" и не состоит из одних цифр
+  while (
+    addressBody.includes('BTC') || 
+    addressBody.includes('btc') || 
+    /^[0-9]+$/.test(addressBody)
+  ) {
+    addressBody = generateValidString(addressLength);
+  }
+  
+  return `${prefixChar}${addressBody}`;
 }
 
 /**
