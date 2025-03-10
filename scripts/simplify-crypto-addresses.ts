@@ -28,30 +28,32 @@ function generateValidEthAddress(): string {
 
 /**
  * Создает валидный Bitcoin адрес (в формате P2PKH)
- * Использует внутреннюю реализацию без зависимости от bitcoinjs-lib
+ * Генерирует адрес, который гарантированно пройдет проверку на фронтенде
  */
 function generateValidBtcAddress(): string {
-  // Base58 символы (алфавит) для Bitcoin адресов
-  const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  // Base58 символы точно соответствующие регулярному выражению на фронтенде: [a-km-zA-HJ-NP-Z1-9]
+  const VALID_CHARS = '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
   
   // Функция для генерации случайной строки в формате Base58
-  function generateBase58String(length: number): string {
+  function generateValidString(length: number): string {
     let result = '';
     const randomValues = randomBytes(length);
     
     for (let i = 0; i < length; i++) {
-      // Берем случайный байт и преобразуем к индексу в строке BASE58_CHARS
-      const randomIndex = randomValues[i] % BASE58_CHARS.length;
-      result += BASE58_CHARS.charAt(randomIndex);
+      // Берем случайный байт и преобразуем к индексу в строке VALID_CHARS
+      const randomIndex = randomValues[i] % VALID_CHARS.length;
+      result += VALID_CHARS.charAt(randomIndex);
     }
     
     return result;
   }
   
-  // Создаем адрес в формате P2PKH (начинается с '1')
-  // Типичная длина P2PKH адреса 26-34 символа
-  // Для надежности выбираем среднее значение - 30 символов
-  return `1${generateBase58String(29)}`;
+  // Создаем адрес в формате P2PKH, который будет соответствовать требованиям фронтенда:
+  // /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/
+  const prefixChar = '1'; // Используем '1' для P2PKH адресов
+  const addressLength = 28; // Выбираем длину в середине диапазона 25-34, исключая первый символ
+  
+  return `${prefixChar}${generateValidString(addressLength)}`;
 }
 
 /**

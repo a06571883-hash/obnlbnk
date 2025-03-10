@@ -34,5 +34,14 @@
     "regulator_balance": "0",
     "last_nft_generation": null,
     "nft_generation_count": 0
+  },
+  {
+    "id": 7,
+    "username": "Denchik",
+    "password": "31eb00c952c85d35395cafb4efbdf80a7ecab427db7885a21d50de1ef282f642c53318264e44cef77fe95e81170904751463d65e162993a90883eb345d7f0dfa.32dc555cc4a9cfec73b6cbde27e1272a",
+    "is_regulator": false,
+    "regulator_balance": "0",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
   }
 ]
