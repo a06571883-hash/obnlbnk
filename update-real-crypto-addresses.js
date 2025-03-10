@@ -22,21 +22,18 @@ bitcoin.initEccLib(ecc);
  */
 function generateRealBitcoinAddress(userId) {
   try {
-    // В качестве альтернативы просто сгенерируем случайный приватный ключ
-    const keyBytes = crypto.randomBytes(32);
-    
-    // Создаем приватный ключ напрямую
-    const privateKey = Buffer.from(keyBytes);
+    // Более простой и надёжный подход - создаем случайный ключ напрямую
+    // с использованием встроенного метода ECPair.makeRandom
     
     // Создаем ECPair с поддержкой tiny-secp256k1
     const ECPair = ECPairFactory(ecc);
     
-    // Создаем пару ключей из приватного ключа
-    const keyPair = ECPair.fromPrivateKey(privateKey);
+    // Создаем полностью случайную пару ключей
+    const keyPair = ECPair.makeRandom();
     
     // Создаем P2PKH адрес (стандартный адрес, начинающийся с 1)
     const { address } = bitcoin.payments.p2pkh({ 
-      pubkey: ECPair.publicKey,
+      pubkey: keyPair.publicKey,
       network: bitcoin.networks.bitcoin
     });
     
