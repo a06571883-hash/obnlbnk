@@ -25,5 +25,14 @@
     "regulator_balance": "10000000",
     "last_nft_generation": null,
     "nft_generation_count": 0
+  },
+  {
+    "id": 6,
+    "username": "Kich9999",
+    "password": "28d98fdaa7be8a875d10a9b62314f6c43126397d9f564d8768a11a7e03edcdce2b56b4b63a6ce28633a045afb5df6daaf416c3a50a7a602a6fff22f50b283ee7.bb3487721834f95a60a70623f2df1bcd",
+    "is_regulator": false,
+    "regulator_balance": "0",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
   }
 ]
