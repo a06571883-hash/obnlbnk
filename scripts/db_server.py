@@ -1,4 +1,4 @@
-from flask import Flask, send_file, jsonify, render_template_string
+from flask import Flask, send_file, jsonify, render_template_string, request
 from flask_cors import CORS
 import os
 
@@ -55,6 +55,30 @@ HTML_TEMPLATE = """
             padding: 2px 5px;
             border-radius: 3px;
             font-family: monospace;
+            word-break: break-all;
+        }
+        .steps {
+            margin-top: 15px;
+        }
+        .step {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #fafafa;
+            border-radius: 5px;
+        }
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            code {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -67,9 +91,13 @@ HTML_TEMPLATE = """
             Размер: {{ size_mb }} MB
         </div>
         <div class="info">
-            <p><strong>Для подключения через DB Browser:</strong></p>
-            <p>1. Выберите "Remote" -> "Connect to Database"</p>
-            <p>2. Укажите URL: <code>http://0.0.0.0:5002/sqlite.db</code></p>
+            <p><strong>Инструкции по подключению:</strong></p>
+            <div class="steps">
+                <div class="step">1️⃣ Откройте DB Browser for SQLite</div>
+                <div class="step">2️⃣ Выберите "Remote" -> "Connect to Database"</div>
+                <div class="step">3️⃣ Укажите URL: <code>{{ url }}</code></div>
+                <div class="step">⚠️ Важно: URL должен совпадать с доменом вашего приложения</div>
+            </div>
         </div>
         {% else %}
         <div class="status error">
@@ -86,7 +114,8 @@ def index():
     db_path = os.path.abspath('sqlite.db')
     exists = os.path.exists(db_path)
     size_mb = round(os.path.getsize(db_path) / (1024 * 1024), 2) if exists else 0
-    return render_template_string(HTML_TEMPLATE, db_exists=exists, size_mb=size_mb)
+    url = f"{request.host_url}sqlite.db"
+    return render_template_string(HTML_TEMPLATE, db_exists=exists, size_mb=size_mb, url=url)
 
 @app.route('/db-status')
 def status():
