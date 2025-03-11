@@ -187,7 +187,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
           </div>
 
           <div className="text-[8px] sm:text-[9px] text-muted-foreground pt-2 border-t text-center">
-            <p>Поддержка: @KA7777AA</p>
+            <p>Поддержка: @OOO_BNAL_BANK</p>
             <p>BNAL Bank © {new Date().getFullYear()}</p>
           </div>
         </div>
