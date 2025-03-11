@@ -5,6 +5,10 @@ import session from "express-session";
 import { storage } from "./storage";
 import { User as SelectUser, newUserRegistrationSchema } from "@shared/schema";
 import { ZodError } from "zod";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import Database from 'better-sqlite3';
+import path from 'path';
 
 declare global {
   namespace Express {
@@ -14,9 +18,31 @@ declare global {
   }
 }
 
-// Простая проверка пароля (без хеширования)
+const scryptAsync = promisify(scrypt);
+
+// Асинхронная функция для проверки пароля с использованием scrypt
+async function comparePasswordsScrypt(supplied: string, stored: string) {
+  const [hashed, salt] = stored.split('.');
+  const hashedBuf = Buffer.from(hashed, 'hex');
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+// Проверка пароля для обычных пользователей (без хеширования)
 async function comparePasswords(supplied: string, stored: string) {
   return supplied === stored;
+}
+
+// Функция для получения админа из SQLite
+async function getAdminFromSqlite(username: string) {
+  const dbPath = path.join(process.cwd(), 'sqlite.db');
+  const db = new Database(dbPath);
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE username = ? AND is_regulator = 1').get(username);
+    return user || null;
+  } finally {
+    db.close();
+  }
 }
 
 export function setupAuth(app: Express) {
@@ -44,16 +70,33 @@ export function setupAuth(app: Express) {
   passport.use(new LocalStrategy(async (username, password, done) => {
     try {
       console.log('LocalStrategy - Attempting login for user:', username);
-      const user = await storage.getUserByUsername(username);
 
+      // Специальная обработка для админа
+      if (username === 'admin') {
+        const adminUser = await getAdminFromSqlite(username);
+        if (!adminUser) {
+          console.log('Login failed: Admin not found');
+          return done(null, false, { message: "Invalid username or password" });
+        }
+
+        const isValid = await comparePasswordsScrypt(password, adminUser.password);
+        if (!isValid) {
+          console.log('Login failed: Invalid admin password');
+          return done(null, false, { message: "Invalid username or password" });
+        }
+
+        console.log('Admin login successful');
+        return done(null, adminUser);
+      }
+
+      // Стандартная обработка для обычных пользователей
+      const user = await storage.getUserByUsername(username);
       if (!user) {
         console.log('Login failed: User not found:', username);
         return done(null, false, { message: "Invalid username or password" });
       }
 
-      console.log('User found, comparing passwords');
       const isValid = await comparePasswords(password, user.password);
-
       if (!isValid) {
         console.log('Login failed: Invalid password for user:', username);
         return done(null, false, { message: "Invalid username or password" });
@@ -96,9 +139,9 @@ export function setupAuth(app: Express) {
       const { username, password } = req.body;
 
       if (!username || !password) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Имя пользователя и пароль обязательны" 
+          message: "Имя пользователя и пароль обязательны"
         });
       }
 
@@ -108,7 +151,7 @@ export function setupAuth(app: Express) {
         if (error instanceof ZodError) {
           const errorMessage = error.errors[0]?.message || "Ошибка валидации";
           console.log("Registration validation error:", errorMessage);
-          return res.status(400).json({ 
+          return res.status(400).json({
             success: false,
             message: errorMessage
           });
@@ -118,9 +161,9 @@ export function setupAuth(app: Express) {
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Пользователь с таким именем уже существует" 
+          message: "Пользователь с таким именем уже существует"
         });
       }
 
@@ -144,30 +187,30 @@ export function setupAuth(app: Express) {
           await storage.deleteUser(user.id);
           console.log(`Cleaned up user ${user.id} after card creation failure`);
         }
-        return res.status(500).json({ 
+        return res.status(500).json({
           success: false,
-          message: "Failed to create user cards" 
+          message: "Failed to create user cards"
         });
       }
 
       req.login(user, (loginErr) => {
         if (loginErr) {
           console.error("Login after registration failed:", loginErr);
-          return res.status(500).json({ 
+          return res.status(500).json({
             success: false,
-            message: "Registration successful but login failed" 
+            message: "Registration successful but login failed"
           });
         }
         if (user) {
           console.log(`User ${user.id} registered and logged in successfully`);
-          return res.status(201).json({ 
+          return res.status(201).json({
             success: true,
-            user 
+            user
           });
         } else {
-          return res.status(500).json({ 
+          return res.status(500).json({
             success: false,
-            message: "User registration error" 
+            message: "User registration error"
           });
         }
       });
@@ -180,9 +223,9 @@ export function setupAuth(app: Express) {
           await storage.deleteUser(userId);
         }
       }
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        message: "Registration failed" 
+        message: "Registration failed"
       });
     }
   });
@@ -247,7 +290,7 @@ function validateCardFormat(cardNumber: string): boolean {
 async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddress: string }> {
   try {
     const wallet = ethers.Wallet.createRandom();
-    
+
     // Legacy BTC address format (starting with 1)
     const btcAddress = "1" + randomBytes(32).toString("hex").slice(0, 33);
 
