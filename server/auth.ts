@@ -2,64 +2,25 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
-import { ethers } from "ethers";
 import { storage } from "./storage";
 import { User as SelectUser, newUserRegistrationSchema } from "@shared/schema";
 import { ZodError } from "zod";
 
-// Utility function to generate a BIP39 mnemonic phrase
-function generateMnemonic(): string {
-  // Simple implementation for backward compatibility
-  return ethers.Wallet.createRandom().mnemonic?.phrase || "";
-}
-
 declare global {
   namespace Express {
     interface User extends Partial<SelectUser> {
-  id?: number; // Make id optional
-}
+      id?: number;
+    }
   }
 }
 
-const scryptAsync = promisify(scrypt);
-
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
-}
-
+// Простая проверка пароля (без хеширования)
 async function comparePasswords(supplied: string, stored: string) {
-  try {
-    console.log("Comparing passwords...");
-
-    if (!stored || !stored.includes('.')) {
-      console.error('Invalid stored password format');
-      return false;
-    }
-
-    const [hashed, salt] = stored.split(".");
-    if (!hashed || !salt) {
-      console.error('Invalid password components');
-      return false;
-    }
-
-    const hashedBuf = Buffer.from(hashed, "hex");
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-
-    const result = timingSafeEqual(hashedBuf, suppliedBuf);
-    console.log("Password comparison result:", result);
-    return result;
-  } catch (error) {
-    console.error("Password comparison error:", error);
-    return false;
-  }
+  return supplied === stored;
 }
 
 export function setupAuth(app: Express) {
-  const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
+  const sessionSecret = process.env.SESSION_SECRET || 'default_secret';
   console.log("Setting up auth with session secret length:", sessionSecret.length);
 
   app.use(session({
@@ -134,7 +95,6 @@ export function setupAuth(app: Express) {
     try {
       const { username, password } = req.body;
 
-      // Проверка обязательных полей
       if (!username || !password) {
         return res.status(400).json({ 
           success: false,
@@ -142,9 +102,7 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Применяем строгую валидацию по новой схеме для новых пользователей
       try {
-        // Валидация данных с использованием Zod схемы
         newUserRegistrationSchema.parse(req.body);
       } catch (error) {
         if (error instanceof ZodError) {
@@ -158,7 +116,6 @@ export function setupAuth(app: Express) {
         throw error;
       }
 
-      // Проверка существования пользователя
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ 
@@ -167,70 +124,56 @@ export function setupAuth(app: Express) {
         });
       }
 
-      const hashedPassword = await hashPassword(password);
+      // Сохраняем пароль в открытом виде
+      user = await storage.createUser({
+        username,
+        password, // Пароль сохраняется как есть, без хеширования
+        is_regulator: false,
+        regulator_balance: "0",
+        nft_generation_count: 0
+      });
+
+      console.log(`User created with ID: ${user.id}`);
 
       try {
-        user = await storage.createUser({
-          username,
-          password: hashedPassword,
-          is_regulator: false,
-          regulator_balance: "0",
-          nft_generation_count: 0
-        });
-
-        console.log(`User created with ID: ${user.id}`);
-
-        try {
-          await storage.createDefaultCardsForUser(user.id);
-          console.log(`Default cards created for user ${user.id}`);
-        } catch (cardError) {
-          console.error(`Failed to create cards for user ${user.id}:`, cardError);
-          if (user) {
-            await storage.deleteUser(user.id);
-            console.log(`Cleaned up user ${user.id} after card creation failure`);
-          }
-          return res.status(500).json({ 
-            success: false,
-            message: "Failed to create user cards" 
-          });
-        }
-
-        req.login(user, (loginErr) => {
-          if (loginErr) {
-            console.error("Login after registration failed:", loginErr);
-            return res.status(500).json({ 
-              success: false,
-              message: "Registration successful but login failed" 
-            });
-          }
-          if (user) {  // Type guard for null check
-            console.log(`User ${user.id} registered and logged in successfully`);
-            return res.status(201).json({ 
-              success: true,
-              user 
-            });
-          } else {
-            return res.status(500).json({ 
-              success: false,
-              message: "User registration error" 
-            });
-          }
-        });
-
-      } catch (createError) {
-        console.error("User creation failed:", createError);
+        await storage.createDefaultCardsForUser(user.id);
+        console.log(`Default cards created for user ${user.id}`);
+      } catch (cardError) {
+        console.error(`Failed to create cards for user ${user.id}:`, cardError);
         if (user) {
           await storage.deleteUser(user.id);
+          console.log(`Cleaned up user ${user.id} after card creation failure`);
         }
         return res.status(500).json({ 
           success: false,
-          message: "Failed to create user" 
+          message: "Failed to create user cards" 
         });
       }
 
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("Login after registration failed:", loginErr);
+          return res.status(500).json({ 
+            success: false,
+            message: "Registration successful but login failed" 
+          });
+        }
+        if (user) {
+          console.log(`User ${user.id} registered and logged in successfully`);
+          return res.status(201).json({ 
+            success: true,
+            user 
+          });
+        } else {
+          return res.status(500).json({ 
+            success: false,
+            message: "User registration error" 
+          });
+        }
+      });
+
     } catch (error) {
       console.error("Registration process failed:", error);
-      // Type guard to ensure user has an id property before using it
       if (user !== null) {
         const userId = (user as SelectUser).id;
         if (userId) {

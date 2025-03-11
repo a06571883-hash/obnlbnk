@@ -252,8 +252,6 @@ function RegisterForm() {
           <ul className="list-disc list-inside space-y-1">
             <li>Имя пользователя: 3-20 символов, только латинские буквы, цифры и знак подчеркивания (_)</li>
             <li>Пароль: минимум 6 символов</li>
-            <li>Пароль должен содержать хотя бы одну заглавную букву (A-Z)</li>
-            <li>Пароль должен содержать хотя бы одну цифру (0-9)</li>
           </ul>
         </div>
 
@@ -293,7 +291,7 @@ function RegisterForm() {
                   type="password" 
                   {...field} 
                   className="bg-background/50" 
-                  placeholder="Введите надежный пароль"
+                  placeholder="Введите пароль"
                   autoComplete="new-password"
                 />
               </FormControl>
