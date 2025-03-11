@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw, BarChart3 } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw, BarChart3, MessageSquare } from "lucide-react";
 
 interface ExchangeRateResponse {
   btcToUsd: string;
@@ -263,54 +263,33 @@ export default function HomePage() {
                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                           <RefreshCw className="h-6 w-6 text-primary" />
                         </div>
-                        <h3 className="font-medium">Обмен валюты</h3>
+                        <h3 className="font-medium">Доставка налички</h3>
                       </div>
                     </CardUI>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Обмен валюты</DialogTitle>
+                      <DialogTitle>Доставка наличных</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
-                      <form onSubmit={async (e) => {
-                        e.preventDefault();
-                        try {
-                          await handleExchange(new FormData(e.currentTarget), cards, toast);
-                          e.currentTarget.reset();
-                          queryClient.invalidateQueries({ queryKey: ['/api/cards'] });
-                        } catch (error) {
-                        }
-                      }}>
-                        <select
-                          name="fromCurrency"
-                          className="w-full p-2 border rounded mb-4"
-                          required
-                        >
-                          <option value="btc">BTC → UAH</option>
-                          <option value="eth">ETH → UAH</option>
-                        </select>
-                        <input
-                          type="number"
-                          name="amount"
-                          placeholder="Сумма"
-                          className="w-full p-2 border rounded mb-4"
-                          step="0.00000001"
-                          min="0.00000001"
-                          required
-                        />
-                        <input
-                          type="text"
-                          name="cardNumber"
-                          placeholder="Номер карты получателя"
-                          className="w-full p-2 border rounded mb-4"
-                          pattern="\d{16}"
-                          title="Номер карты должен состоять из 16 цифр"
-                          required
-                        />
-                        <Button type="submit" className="w-full">
-                          Обменять
-                        </Button>
-                      </form>
+                      <p className="text-sm">
+                        Для заказа наличных, пишите менеджеру:
+                        <br />- Ваш город
+                        <br />- Сумма в долларах\евро\гривнах
+                        <br />и ожидайте ответа по возможном времени доставки.
+                      </p>
+                      <p className="text-sm font-medium">
+                        ПРИМЕЧАНИЕ: Доставка по Киеву происходит от 2 до 5 часов.
+                        <br />Минимальная сумма доставки от 10 000$
+                        <br />Комиссия при любой доставке 1%
+                      </p>
+                      <Button 
+                        className="w-full"
+                        onClick={() => window.open('https://t.me/OOO_BNAL_BANK', '_blank')}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Написать менеджеру
+                      </Button>
                     </div>
                   </DialogContent>
                 </Dialog>

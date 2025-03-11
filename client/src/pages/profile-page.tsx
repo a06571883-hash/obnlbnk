@@ -254,7 +254,7 @@ export default function ProfilePage() {
             </p>
             <Button
               className="w-full mt-2"
-              onClick={() => window.open('https://t.me/KA7777AA', '_blank')}
+              onClick={() => window.open('https://t.me/OOO_BNAL_BANK', '_blank')}
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Написать в Telegram
