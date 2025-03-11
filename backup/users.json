@@ -97,5 +97,14 @@
     "regulator_balance": "0",
     "last_nft_generation": null,
     "nft_generation_count": 0
+  },
+  {
+    "id": 14,
+    "username": "KolyaTokyo9",
+    "password": "TokyoKyiv55656",
+    "is_regulator": false,
+    "regulator_balance": "0",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
   }
 ]

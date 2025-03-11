@@ -427,5 +427,44 @@
     "ethBalance": "0.00000000",
     "btcAddress": null,
     "ethAddress": null
+  },
+  {
+    "id": 40,
+    "userId": 14,
+    "type": "crypto",
+    "number": "4111018619548963",
+    "expiry": "03/28",
+    "cvv": "927",
+    "balance": "0.00",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": "1L2h1vFdFTytD6fvXUSNGc9mTKfSCdyJVX",
+    "ethAddress": "0xa581F9640334d409217B86c307De972b37fE694e"
+  },
+  {
+    "id": 41,
+    "userId": 14,
+    "type": "usd",
+    "number": "4112288327372529",
+    "expiry": "03/28",
+    "cvv": "460",
+    "balance": "0.00",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": null,
+    "ethAddress": null
+  },
+  {
+    "id": 42,
+    "userId": 14,
+    "type": "uah",
+    "number": "4113389468137823",
+    "expiry": "03/28",
+    "cvv": "241",
+    "balance": "0.00",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": null,
+    "ethAddress": null
   }
 ]
