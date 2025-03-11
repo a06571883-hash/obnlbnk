@@ -16,5 +16,5 @@ def serve_db():
     )
 
 if __name__ == '__main__':
-    print("Starting DB server on http://0.0.0.0:5000/sqlite.db")
-    app.run(host='0.0.0.0', port=5000)
+    print("Starting DB server on http://0.0.0.0:5001/sqlite.db")
+    app.run(host='0.0.0.0', port=5001)
