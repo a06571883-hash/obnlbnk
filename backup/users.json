@@ -13,7 +13,7 @@
     "username": "regulator",
     "password": "$2b$10$pvacunM0bEDs8FAM2Pro/uD6.WF28c3RHBNs3hCFo9MVxgBAAqs4G",
     "is_regulator": true,
-    "regulator_balance": "1000000",
+    "regulator_balance": "1000000.34014959",
     "last_nft_generation": null,
     "nft_generation_count": 0
   },
@@ -75,6 +75,24 @@
     "id": 11,
     "username": "Tod_Kolins",
     "password": "01b423385563d013d8f3594bba7e9b6133cfe55c3d9f418ce61ac4789e5590de51c3260dce1a9a4271428da22e3308f3fa87e48ecc117cbd9c54afce70112fb7.39831d0654fbd13c70b0f2c173a6c794",
+    "is_regulator": false,
+    "regulator_balance": "0",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 12,
+    "username": "Kich7777",
+    "password": "2d1a1cf8606bd38e6a279c7dc91a04d56bb38051941fd42d4b387abca152eb1c6096ffb5b4d7119d775362d959e57d59b3071fbe14ca29dab1bb2e30953ef7c6.cf302d101af46eff3e48cc033a22c80e",
+    "is_regulator": false,
+    "regulator_balance": "0",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 13,
+    "username": "Tod_Kolinsk",
+    "password": "acd77b3d18e9566c6da7f3e0ee1518fd4a167344206c28f3e296a098ff2e4057660a9f6a18ea234eb0bbb1e1f18f0df5db569bf522b42f6d54085eff96816b23.1befeb491aef8daaecdb9200c4271ecb",
     "is_regulator": false,
     "regulator_balance": "0",
     "last_nft_generation": null,
