@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins } from "lucide-react";
+import { CreditCard, Wallet, ArrowUpCircle, ArrowDownCircle, RefreshCw, Loader2, Bitcoin, Coins, MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -32,19 +32,19 @@ const cardColors = {
 function validateBtcAddress(address: string): boolean {
   // Улучшенная регулярка для Legacy и P2SH адресов (начинаются с 1 или 3)
   const legacyRegex = /^[13][a-km-zA-HJ-NP-Z0-9]{24,33}$/;
-  
+
   // Регулярка для SegWit адресов (bc1...)
   const bech32Regex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
-  
+
   // Регулярка для Taproot адресов (начинаются с bc1p)
   const taprootRegex = /^bc1p[a-km-zA-HJ-NP-Z0-9]{58,89}$/;
-  
+
   // Проверяем дополнительно, чтобы отсечь явно некорректные адреса
-  const hasInvalidPattern = 
-    address.includes('BTC') || 
+  const hasInvalidPattern =
+    address.includes('BTC') ||
     address.includes('btc') ||
     /^1[0-9]{6,}$/.test(address); // Отсекаем адреса вида 10000000...
-  
+
   // Проверяем все допустимые форматы и отсутствие недопустимых паттернов
   return (legacyRegex.test(address) || bech32Regex.test(address) || taprootRegex.test(address)) && !hasInvalidPattern;
 }
@@ -58,12 +58,12 @@ function validateBtcAddress(address: string): boolean {
 function validateEthAddress(address: string): boolean {
   // Проверяем формат - должен быть 0x + 40 шестнадцатеричных символов
   const formatRegex = /^0x[a-fA-F0-9]{40}$/i;
-  
+
   // Проверяем на явно некорректные паттерны
-  const hasInvalidPattern = 
-    address.includes('ETH') || 
+  const hasInvalidPattern =
+    address.includes('ETH') ||
     address.includes('eth');
-  
+
   return formatRegex.test(address) && !hasInvalidPattern;
 }
 
@@ -392,7 +392,7 @@ export default function VirtualCard({ card }: { card: Card }) {
           transition: 'transform 0.3s ease-out, box-shadow 0.3s ease-out'
         }}
       >
-        <div 
+        <div
           className="relative z-10 flex flex-col justify-between h-full p-1"
           style={{
             transform: `translateZ(${isHovered ? '5px' : '0px'})`,
@@ -457,7 +457,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                       <>
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">BTC Address</p>
-                          <div 
+                          <div
                             className="font-mono text-sm break-all p-2 border rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between"
                             onClick={() => {
                               navigator.clipboard.writeText(card.btcAddress || '');
@@ -475,7 +475,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">ETH Address</p>
-                          <div 
+                          <div
                             className="font-mono text-sm break-all p-2 border rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between"
                             onClick={() => {
                               navigator.clipboard.writeText(card.ethAddress || '');
@@ -495,7 +495,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                     ) : (
                       <div>
                         <p className="text-sm text-muted-foreground mb-2">Card Number</p>
-                        <div 
+                        <div
                           className="font-mono text-sm flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           onClick={() => {
                             navigator.clipboard.writeText(card.number);
@@ -733,7 +733,7 @@ export default function VirtualCard({ card }: { card: Card }) {
                           {withdrawalMethod?.toUpperCase()}
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-mutedforeground">
                         Available: {withdrawalMethod === 'btc' ? card.btcBalance : card.ethBalance} {withdrawalMethod?.toUpperCase()}
                       </p>
                     </div>
@@ -791,10 +791,13 @@ export default function VirtualCard({ card }: { card: Card }) {
                         "Continue with Exchange"
                       )}
                     </Button>
-
-                    <p className="text-center text-sm text-muted-foreground">
-                      Support available 24/7 at @KA7777AA
-                    </p>
+                    <Button
+                      className="w-full mt-2"
+                      onClick={() => window.open('@OOO_BNAL_BANK', '_blank')}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Написать в Telegram
+                    </Button>
                   </form>
                 </DialogContent>
               </Dialog>
