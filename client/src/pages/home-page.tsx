@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, Bitcoin, DollarSign, Coins, RefreshCw, BarChart3, MessageSquare } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins, Truck, BarChart3, MessageSquare } from "lucide-react";
 
 interface ExchangeRateResponse {
   btcToUsd: string;
@@ -261,7 +261,7 @@ export default function HomePage() {
                     <CardUI className="p-4 hover:bg-accent transition-colors cursor-pointer backdrop-blur-sm bg-background/80">
                       <div className="p-2 flex flex-col items-center">
                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                          <RefreshCw className="h-6 w-6 text-primary" />
+                          <Truck className="h-6 w-6 text-primary" />
                         </div>
                         <h3 className="font-medium">Доставка налички</h3>
                       </div>
@@ -276,7 +276,7 @@ export default function HomePage() {
                         Для заказа наличных, пишите менеджеру:
                         <br />- Ваш город
                         <br />- Сумма в долларах\евро\гривнах
-                        <br />и ожидайте ответа по возможном времени доставки.
+                        <br />Ожидайте ответа о возможном времени доставки.
                       </p>
                       <p className="text-sm font-medium">
                         ПРИМЕЧАНИЕ: Доставка по Киеву происходит от 2 до 5 часов.
