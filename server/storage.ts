@@ -82,6 +82,7 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     return this.withRetry(async () => {
+      // Сохраняем пароль в открытом виде, без хеширования
       const [user] = await db.insert(users).values(insertUser).returning();
       return user;
     }, 'Create user');

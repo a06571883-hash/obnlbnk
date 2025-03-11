@@ -8,11 +8,11 @@ import { useForm } from "react-hook-form";
 import { insertUserSchema, newUserRegistrationSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { Loader2, Shield, Globe, Wallet } from "lucide-react";
+import { Loader2, Shield, Globe, Wallet, MessageSquare } from "lucide-react";
 import { LogoFull } from "@/components/logo";
 import AnimatedBackground from "@/components/animated-background";
 import { useEffect } from 'react';
-import { playSoundIfEnabled } from "@/lib/sound-service"; // Added import statement
+import { playSoundIfEnabled } from "@/lib/sound-service";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -50,6 +50,21 @@ export default function AuthPage() {
                 <RegisterForm />
               </TabsContent>
             </Tabs>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground mb-2">
+                Забыли данные для входа? Напишите в поддержку для восстановления данных. Регулятор предоставит вам ваш пароль.
+              </p>
+              <Button 
+                variant="outline"
+                className="w-full"
+                onClick={() => window.open('https://t.me/OOO_BNAL_BANK', '_blank')}
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Написать в Telegram
+              </Button>
+            </div>
+
           </CardContent>
         </Card>
       </div>
@@ -82,7 +97,7 @@ export default function AuthPage() {
 
           <div className="mt-12 text-primary-foreground/80">
             <p>Поддержка 24/7</p>
-            <p>Telegram: @KA7777AA</p>
+            <p>Telegram: @OOO_BNAL_BANK</p>
           </div>
         </div>
 
@@ -200,7 +215,7 @@ function LoginForm() {
 function RegisterForm() {
   const { registerMutation } = useAuth();
   const form = useForm({
-    resolver: zodResolver(newUserRegistrationSchema), // Используем схему с правилами только для новых пользователей
+    resolver: zodResolver(newUserRegistrationSchema), 
     defaultValues: {
       username: "",
       password: "",
@@ -214,12 +229,10 @@ function RegisterForm() {
     try {
       await registerMutation.mutateAsync(data, {
         onSuccess: () => {
-          // Set new registration flag
           sessionStorage.setItem('isNewRegistration', 'true');
           playSoundIfEnabled('success');
         },
         onError: (error: any) => {
-          // Handle specific error messages from the server
           const errorMessage = error.response?.data?.message || "Registration failed";
           form.setError('root', { message: errorMessage });
           playSoundIfEnabled('error');
