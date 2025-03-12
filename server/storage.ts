@@ -722,29 +722,29 @@ export class DatabaseStorage implements IStorage {
       try {
         console.log('Начинаем процесс обнуления всех балансов...');
 
-        // Получаем все карты
-        const allCards = await db.select().from(cards);
-        console.log(`Найдено ${allCards.length} карт для обнуления`);
-
-        // Обнуляем все балансы на картах
-        for (const card of allCards) {
-          await db.update(cards)
-            .set({ 
-              balance: "0.00",
-              btcBalance: "0.00000000",
-              ethBalance: "0.00000000"
-            })
-            .where(eq(cards.id, card.id));
-          console.log(`Обнулены все балансы карты ${card.number} (тип: ${card.type})`);
-        }
+        // Используем drizzle-orm для обновления всех карт
+        await db.update(cards)
+          .set({ 
+            balance: "0.00",
+            btcBalance: "0.00000000",
+            ethBalance: "0.00000000"
+          });
 
         // Обнуляем баланс регулятора
+        await db.update(users)
+          .set({ regulator_balance: "0.00000000" })
+          .where(eq(users.is_regulator, true));
+
+        // Проверяем что все обнулилось
+        const allCards = await db.select().from(cards);
+        console.log('Проверка балансов карт после обнуления:');
+        for (const card of allCards) {
+          console.log(`Карта ${card.number} (${card.type}): balance=${card.balance}, btc=${card.btcBalance}, eth=${card.ethBalance}`);
+        }
+
         const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
         if (regulator) {
-          await db.update(users)
-            .set({ regulator_balance: "0.00000000" })
-            .where(eq(users.id, regulator.id));
-          console.log(`Обнулен баланс регулятора ${regulator.username}`);
+          console.log(`Баланс регулятора после обнуления: ${regulator.regulator_balance}`);
         }
 
         console.log('Все балансы успешно обнулены');
