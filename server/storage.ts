@@ -48,6 +48,7 @@ export interface IStorage {
   getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
   createDefaultCardsForUser(userId: number): Promise<void>;
   deleteUser(userId: number): Promise<void>;
+  resetAllVirtualBalances(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -62,7 +63,6 @@ export class DatabaseStorage implements IStorage {
         intervalMs: 900000 // Очистка истекших сессий каждые 15 минут
       }
     });
-    
     console.log('Session store initialized with SQLite (free, no expiration)');
   }
 
@@ -305,7 +305,7 @@ export class DatabaseStorage implements IStorage {
           }
         }
 
-        // Зачисляем комиссию регулятору
+        // Зачисляем комиссию регулятору только в BTC
         const btcCommission = commission / parseFloat(rates.btcToUsd);
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
         await db.update(users)
@@ -479,7 +479,7 @@ export class DatabaseStorage implements IStorage {
           convertedAmount: (btcToSend).toString(),
           type: 'crypto_transfer',
           status: 'completed',
-          description: fromCard.type === 'crypto' 
+          description: fromCard.type === 'crypto'
             ? `Отправка ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на ${recipientAddress}`
             : `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${btcToSend.toFixed(8)} ${cryptoType.toUpperCase()} и отправка на ${recipientAddress}`,
           fromCardNumber: fromCard.number,
@@ -516,13 +516,13 @@ export class DatabaseStorage implements IStorage {
     try {
       // Начинаем транзакцию
       db.run(sql`BEGIN TRANSACTION`);
-      
+
       // Выполняем операцию
       const result = await operation(null); // client not needed with SQLite
-      
+
       // Завершаем транзакцию если всё хорошо
       db.run(sql`COMMIT`);
-      
+
       return result;
     } catch (error) {
       // Откатываем транзакцию в случае ошибки
@@ -662,8 +662,8 @@ export class DatabaseStorage implements IStorage {
             expiry,
             cvv: generateCVV(),
             balance: "0.00",
-            btcBalance: "0.00000000", 
-            ethBalance: "0.00000000", 
+            btcBalance: "0.00000000",
+            ethBalance: "0.00000000",
             btcAddress: null,
             ethAddress: null
           });
@@ -681,8 +681,8 @@ export class DatabaseStorage implements IStorage {
             expiry,
             cvv: generateCVV(),
             balance: "0.00",
-            btcBalance: "0.00000000", 
-            ethBalance: "0.00000000", 
+            btcBalance: "0.00000000",
+            ethBalance: "0.00000000",
             btcAddress: null,
             ethAddress: null
           });
@@ -732,4 +732,39 @@ function generateCardNumber(type: 'crypto' | 'usd' | 'uah'): string {
   // Генерируем оставшиеся 12 цифр
   const suffix = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
   return `${prefixes[type]}${suffix}`;
+}
+
+async function resetAllVirtualBalances(): Promise<void> {
+  return storage.withTransaction(async () => {
+    try {
+      // Обнуляем все фиатные балансы на картах
+      const allCards = await db.select().from(cards).where(
+        or(
+          eq(cards.type, 'usd'),
+          eq(cards.type, 'uah')
+        )
+      );
+
+      for (const card of allCards) {
+        await db.update(cards)
+          .set({ balance: "0.00" })
+          .where(eq(cards.id, card.id));
+        console.log(`Обнулен баланс ${card.type} карты ${card.number}`);
+      }
+
+      // Обнуляем баланс регулятора
+      const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
+      if (regulator) {
+        await db.update(users)
+          .set({ regulator_balance: "0.00" })
+          .where(eq(users.id, regulator.id));
+        console.log(`Обнулен баланс регулятора ${regulator.username}`);
+      }
+
+      console.log('Все виртуальные балансы успешно обнулены');
+    } catch (error) {
+      console.error('Ошибка при обнулении виртуальных балансов:', error);
+      throw error;
+    }
+  }, 'Reset Virtual Balances Operation');
 }

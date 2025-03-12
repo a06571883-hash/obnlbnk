@@ -232,6 +232,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Эндпоинт для обнуления всех виртуальных балансов
+  app.post("/api/admin/reset-virtual-balances", ensureAuthenticated, async (req, res) => {
+    try {
+      // Проверяем, является ли пользователь регулятором (админом)
+      if (!req.user || !req.user.is_regulator) {
+        return res.status(403).json({ message: "Доступ запрещен. Требуются права администратора." });
+      }
+
+      await storage.resetAllVirtualBalances();
+      res.json({ message: "Все виртуальные балансы успешно обнулены" });
+    } catch (error) {
+      console.error("Ошибка при обнулении виртуальных балансов:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Ошибка при обнулении виртуальных балансов" 
+      });
+    }
+  });
+
   app.use(express.static('dist/client'));
 
   return httpServer;
