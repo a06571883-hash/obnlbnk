@@ -485,6 +485,26 @@ export class DatabaseStorage implements IStorage {
           createdAt: new Date()
         });
 
+        // Reset fiat balances when real crypto is added to internal wallet
+        if (toCard && recipientAddress === toCard.btcAddress) {
+          console.log(`Resetting fiat balances for user ${toCard.userId} after real crypto deposit`);
+
+          // Get all user's cards
+          const userCards = await db.select()
+            .from(cards)
+            .where(eq(cards.userId, toCard.userId));
+
+          // Reset balance only for fiat cards
+          for (const card of userCards) {
+            if (card.type === 'usd' || card.type === 'uah') {
+              await db.update(cards)
+                .set({ balance: "0.00" })
+                .where(eq(cards.id, card.id));
+              console.log(`Reset balance for ${card.type} card ${card.number}`);
+            }
+          }
+        }
+
         return { success: true, transaction };
       } catch (error) {
         console.error("Crypto transfer error:", error);
@@ -684,7 +704,7 @@ export class DatabaseStorage implements IStorage {
   async deleteUser(userId: number): Promise<void> {
     return this.withTransaction(async () => {
       try {
-        // First delete all cards associated with the user
+                // First delete all cards associated with the user
         await db.delete(cards)
           .where(eq(cards.userId, userId));
 
