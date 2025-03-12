@@ -720,23 +720,22 @@ export class DatabaseStorage implements IStorage {
   async resetAllVirtualBalances(): Promise<void> {
     return this.withTransaction(async () => {
       try {
-        console.log('Начинаем процесс обнуления всех виртуальных балансов...');
+        console.log('Начинаем процесс обнуления всех балансов...');
 
-        // Обнуляем все фиатные балансы на картах
-        const allCards = await db.select().from(cards).where(
-          or(
-            eq(cards.type, 'usd'),
-            eq(cards.type, 'uah')
-          )
-        );
+        // Получаем все карты
+        const allCards = await db.select().from(cards);
+        console.log(`Найдено ${allCards.length} карт для обнуления`);
 
-        console.log(`Найдено ${allCards.length} фиатных карт для обнуления`);
-
+        // Обнуляем все балансы на картах
         for (const card of allCards) {
           await db.update(cards)
-            .set({ balance: "0.00" })
+            .set({ 
+              balance: "0.00",
+              btcBalance: "0.00000000",
+              ethBalance: "0.00000000"
+            })
             .where(eq(cards.id, card.id));
-          console.log(`Обнулен баланс ${card.type} карты ${card.number}`);
+          console.log(`Обнулены все балансы карты ${card.number} (тип: ${card.type})`);
         }
 
         // Обнуляем баланс регулятора
@@ -748,13 +747,14 @@ export class DatabaseStorage implements IStorage {
           console.log(`Обнулен баланс регулятора ${regulator.username}`);
         }
 
-        console.log('Все виртуальные балансы успешно обнулены');
+        console.log('Все балансы успешно обнулены');
       } catch (error) {
-        console.error('Ошибка при обнулении виртуальных балансов:', error);
+        console.error('Ошибка при обнулении балансов:', error);
         throw error;
       }
-    }, 'Reset Virtual Balances Operation');
+    }, 'Reset All Balances Operation');
   }
+
 }
 
 export const storage = new DatabaseStorage();
