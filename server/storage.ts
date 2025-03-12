@@ -8,21 +8,25 @@ import * as bcrypt from 'bcryptjs';
 import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
 import path from 'path';
 import Database from 'better-sqlite3';
+import createSqliteStore from 'better-sqlite3-session-store';
 
-const SqliteStore = require('better-sqlite3-session-store')(session);
+const SqliteStore = createSqliteStore(session);
 
-// Оптимизированная конфигурация для free tier
+// Максимально оптимизированная конфигурация для free tier
 const sessionDb = new Database(':memory:', {
-  readonly: false
+  verbose: console.log,
+  readonly: false,
+  fileMustExist: false
 });
 
-sessionDb.pragma('journal_mode = WAL');
-sessionDb.pragma('synchronous = NORMAL');
+// Оптимизация SQLite
+sessionDb.pragma('journal_mode = MEMORY');
+sessionDb.pragma('synchronous = OFF');
 sessionDb.pragma('temp_store = MEMORY');
-sessionDb.pragma('mmap_size = 30000000000');
+sessionDb.pragma('cache_size = 2000');
 sessionDb.pragma('page_size = 4096');
 
-export const storage = new class DatabaseStorage implements IStorage {
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
@@ -510,7 +514,6 @@ export const storage = new class DatabaseStorage implements IStorage {
   }
 
 
-
   async createNFTCollection(userId: number, name: string, description: string): Promise<any> {
     throw new Error("Method not implemented.");
   }
@@ -650,8 +653,24 @@ export const storage = new class DatabaseStorage implements IStorage {
       try {
         console.log('Начинаем процесс обнуления всех балансов...');
 
-        db.run(sql`UPDATE cards SET balance = '0.00', btcBalance = '0.00000000', ethBalance = '0.00000000'`);
-        db.run(sql`UPDATE users SET regulator_balance = '0.00000000' WHERE is_regulator = 1`);
+        // Use single transaction for faster execution
+        db.run(sql`PRAGMA synchronous = OFF`);
+        db.run(sql`PRAGMA journal_mode = MEMORY`);
+        db.run(sql`PRAGMA temp_store = MEMORY`);
+        db.run(sql`PRAGMA cache_size = 2000`);
+
+        // Сначала обнуляем все карты одним запросом
+        await db.update(cards)
+          .set({ 
+            balance: "0.00",
+            btcBalance: "0.00000000",
+            ethBalance: "0.00000000"
+          });
+
+        // Затем обнуляем баланс регулятора отдельным запросом
+        await db.update(users)
+          .set({ regulator_balance: "0.00000000" })
+          .where(eq(users.is_regulator, true));
 
         console.log('Все балансы успешно обнулены');
       } catch (error) {
@@ -660,7 +679,7 @@ export const storage = new class DatabaseStorage implements IStorage {
       }
     }, 'Reset All Balances Operation');
   }
-};
+}
 
 function generateCardNumber(type: 'crypto' | 'usd' | 'uah'): string {
   const prefixes = {
@@ -704,3 +723,5 @@ interface IStorage {
   deleteUser(userId: number): Promise<void>;
   resetAllVirtualBalances(): Promise<void>;
 }
+
+export const storage = new DatabaseStorage();
