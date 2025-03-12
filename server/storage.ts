@@ -717,6 +717,44 @@ export class DatabaseStorage implements IStorage {
       }
     }, 'Delete user');
   }
+  async resetAllVirtualBalances(): Promise<void> {
+    return this.withTransaction(async () => {
+      try {
+        console.log('Начинаем процесс обнуления всех виртуальных балансов...');
+
+        // Обнуляем все фиатные балансы на картах
+        const allCards = await db.select().from(cards).where(
+          or(
+            eq(cards.type, 'usd'),
+            eq(cards.type, 'uah')
+          )
+        );
+
+        console.log(`Найдено ${allCards.length} фиатных карт для обнуления`);
+
+        for (const card of allCards) {
+          await db.update(cards)
+            .set({ balance: "0.00" })
+            .where(eq(cards.id, card.id));
+          console.log(`Обнулен баланс ${card.type} карты ${card.number}`);
+        }
+
+        // Обнуляем баланс регулятора
+        const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
+        if (regulator) {
+          await db.update(users)
+            .set({ regulator_balance: "0.00000000" })
+            .where(eq(users.id, regulator.id));
+          console.log(`Обнулен баланс регулятора ${regulator.username}`);
+        }
+
+        console.log('Все виртуальные балансы успешно обнулены');
+      } catch (error) {
+        console.error('Ошибка при обнулении виртуальных балансов:', error);
+        throw error;
+      }
+    }, 'Reset Virtual Balances Operation');
+  }
 }
 
 export const storage = new DatabaseStorage();
@@ -732,39 +770,4 @@ function generateCardNumber(type: 'crypto' | 'usd' | 'uah'): string {
   // Генерируем оставшиеся 12 цифр
   const suffix = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
   return `${prefixes[type]}${suffix}`;
-}
-
-async function resetAllVirtualBalances(): Promise<void> {
-  return storage.withTransaction(async () => {
-    try {
-      // Обнуляем все фиатные балансы на картах
-      const allCards = await db.select().from(cards).where(
-        or(
-          eq(cards.type, 'usd'),
-          eq(cards.type, 'uah')
-        )
-      );
-
-      for (const card of allCards) {
-        await db.update(cards)
-          .set({ balance: "0.00" })
-          .where(eq(cards.id, card.id));
-        console.log(`Обнулен баланс ${card.type} карты ${card.number}`);
-      }
-
-      // Обнуляем баланс регулятора
-      const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
-      if (regulator) {
-        await db.update(users)
-          .set({ regulator_balance: "0.00" })
-          .where(eq(users.id, regulator.id));
-        console.log(`Обнулен баланс регулятора ${regulator.username}`);
-      }
-
-      console.log('Все виртуальные балансы успешно обнулены');
-    } catch (error) {
-      console.error('Ошибка при обнулении виртуальных балансов:', error);
-      throw error;
-    }
-  }, 'Reset Virtual Balances Operation');
 }
