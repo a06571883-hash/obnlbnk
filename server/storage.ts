@@ -12,9 +12,9 @@ import createSqliteStore from 'better-sqlite3-session-store';
 
 const SqliteStore = createSqliteStore(session);
 
-// Максимально оптимизированная конфигурация для free tier
+// Оптимизированная конфигурация для free tier
 const sessionDb = new Database(':memory:', {
-  verbose: console.log,
+  verbose: () => {}, // Fix for verbose option
   readonly: false,
   fileMustExist: false
 });
@@ -26,7 +26,33 @@ sessionDb.pragma('temp_store = MEMORY');
 sessionDb.pragma('cache_size = 2000');
 sessionDb.pragma('page_size = 4096');
 
-export class DatabaseStorage implements IStorage {
+interface IStorage {
+  sessionStore: session.Store;
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  getCardsByUserId(userId: number): Promise<Card[]>;
+  createCard(card: Omit<Card, "id">): Promise<Card>;
+  getAllUsers(): Promise<User[]>;
+  updateRegulatorBalance(userId: number, balance: string): Promise<void>;
+  updateCardBalance(cardId: number, balance: string): Promise<void>;
+  updateCardBtcBalance(cardId: number, balance: string): Promise<void>;
+  updateCardEthBalance(cardId: number, balance: string): Promise<void>;
+  getCardById(cardId: number): Promise<Card | undefined>;
+  getCardByNumber(cardNumber: string): Promise<Card | undefined>;
+  getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
+  createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction>;
+  transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  getLatestExchangeRates(): Promise<ExchangeRate | undefined>;
+  updateExchangeRates(rates: { usdToUah: number; btcToUsd: number; ethToUsd: number }): Promise<ExchangeRate>;
+  getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
+  createDefaultCardsForUser(userId: number): Promise<void>;
+  deleteUser(userId: number): Promise<void>;
+  resetAllVirtualBalances(): Promise<void>;
+}
+
+class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
@@ -34,7 +60,7 @@ export class DatabaseStorage implements IStorage {
       client: sessionDb,
       expired: {
         clear: true,
-        intervalMs: 900000
+        intervalMs: 900000 // 15 minutes
       }
     });
   }
@@ -659,7 +685,7 @@ export class DatabaseStorage implements IStorage {
         db.run(sql`PRAGMA temp_store = MEMORY`);
         db.run(sql`PRAGMA cache_size = 2000`);
 
-        // Сначала обнуляем все карты одним запросом
+        // Reset all balances in one transaction
         await db.update(cards)
           .set({ 
             balance: "0.00",
@@ -667,7 +693,6 @@ export class DatabaseStorage implements IStorage {
             ethBalance: "0.00000000"
           });
 
-        // Затем обнуляем баланс регулятора отдельным запросом
         await db.update(users)
           .set({ regulator_balance: "0.00000000" })
           .where(eq(users.is_regulator, true));
@@ -692,36 +717,5 @@ function generateCardNumber(type: 'crypto' | 'usd' | 'uah'): string {
   return `${prefixes[type]}${suffix}`;
 }
 
-interface IStorage {
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  getCardsByUserId(userId: number): Promise<Card[]>;
-  createCard(card: Omit<Card, "id">): Promise<Card>;
-  sessionStore: session.Store;
-  getAllUsers(): Promise<User[]>;
-  updateRegulatorBalance(userId: number, balance: string): Promise<void>;
-  updateCardBalance(cardId: number, balance: string): Promise<void>;
-  updateCardBtcBalance(cardId: number, balance: string): Promise<void>;
-  updateCardEthBalance(cardId: number, balance: string): Promise<void>;
-  getCardById(cardId: number): Promise<Card | undefined>;
-  getCardByNumber(cardNumber: string): Promise<Card | undefined>;
-  getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
-  createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction>;
-  transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
-  transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
-  getLatestExchangeRates(): Promise<ExchangeRate | undefined>;
-  updateExchangeRates(rates: { usdToUah: number; btcToUsd: number; ethToUsd: number }): Promise<ExchangeRate>;
-  createNFTCollection(userId: number, name: string, description: string): Promise<any>;
-  createNFT(data: Omit<any, "id">): Promise<any>;
-  getNFTsByUserId(userId: number): Promise<any[]>;
-  getNFTCollectionsByUserId(userId: number): Promise<any[]>;
-  canGenerateNFT(userId: number): Promise<boolean>;
-  updateUserNFTGeneration(userId: number): Promise<void>;
-  getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
-  createDefaultCardsForUser(userId: number): Promise<void>;
-  deleteUser(userId: number): Promise<void>;
-  resetAllVirtualBalances(): Promise<void>;
-}
-
+// Single export instance
 export const storage = new DatabaseStorage();
