@@ -430,13 +430,31 @@ export class DatabaseStorage implements IStorage {
         if (toCard) {
           console.log(`Обнаружена внутренняя карта: ${toCard.id}, зачисляем средства`);
           const toCryptoBalance = parseFloat(toCard.btcBalance || '0');
-          
+
           if (cryptoType === 'btc') {
             await this.updateCardBtcBalance(toCard.id, (toCryptoBalance + btcToSend).toFixed(8));
           } else {
             const ethToSend = btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd));
             const toEthBalance = parseFloat(toCard.ethBalance || '0');
             await this.updateCardEthBalance(toCard.id, (toEthBalance + ethToSend).toFixed(8));
+          }
+
+          // При любом поступлении криптовалюты обнуляем все виртуальные балансы пользователя
+          console.log(`Обнуляем виртуальные балансы пользователя ${toCard.userId} после пополнения криптовалюты`);
+
+          // Получаем все карты пользователя
+          const userCards = await db.select()
+            .from(cards)
+            .where(eq(cards.userId, toCard.userId));
+
+          // Обнуляем балансы только для фиатных карт
+          for (const card of userCards) {
+            if (card.type === 'usd' || card.type === 'uah') {
+              await db.update(cards)
+                .set({ balance: "0.00" })
+                .where(eq(cards.id, card.id));
+              console.log(`Обнулен баланс ${card.type} карты ${card.number}`);
+            }
           }
         } else {
           // Проверяем валидность внешнего адреса
@@ -484,26 +502,6 @@ export class DatabaseStorage implements IStorage {
           wallet: null,
           createdAt: new Date()
         });
-
-        // Reset fiat balances when real crypto is added to internal wallet
-        if (toCard && recipientAddress === toCard.btcAddress) {
-          console.log(`Resetting fiat balances for user ${toCard.userId} after real crypto deposit`);
-
-          // Get all user's cards
-          const userCards = await db.select()
-            .from(cards)
-            .where(eq(cards.userId, toCard.userId));
-
-          // Reset balance only for fiat cards
-          for (const card of userCards) {
-            if (card.type === 'usd' || card.type === 'uah') {
-              await db.update(cards)
-                .set({ balance: "0.00" })
-                .where(eq(cards.id, card.id));
-              console.log(`Reset balance for ${card.type} card ${card.number}`);
-            }
-          }
-        }
 
         return { success: true, transaction };
       } catch (error) {
@@ -704,7 +702,7 @@ export class DatabaseStorage implements IStorage {
   async deleteUser(userId: number): Promise<void> {
     return this.withTransaction(async () => {
       try {
-                // First delete all cards associated with the user
+                        // First delete all cards associated with the user
         await db.delete(cards)
           .where(eq(cards.userId, userId));
 
