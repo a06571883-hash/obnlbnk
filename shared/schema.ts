@@ -7,7 +7,7 @@ import { sql } from "drizzle-orm";
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(), // Теперь это открытый пароль
+  password: text("password").notNull(),
   is_regulator: integer("is_regulator", { mode: "boolean" }).notNull().default(false),
   regulator_balance: text("regulator_balance").notNull().default("0"),
   last_nft_generation: integer("last_nft_generation", { mode: "timestamp" }),
@@ -62,7 +62,7 @@ export const insertUserSchema = createInsertSchema(users, {
   nft_generation_count: z.number().default(0),
 });
 
-// Расширенная схема для регистрации с простыми требованиями к паролю
+// Расширенная схема только для новых пользователей
 export const newUserRegistrationSchema = insertUserSchema.extend({
   username: z.string()
     .min(3, 'Имя пользователя должно содержать не менее 3 символов')
@@ -71,6 +71,8 @@ export const newUserRegistrationSchema = insertUserSchema.extend({
   password: z.string()
     .min(6, 'Пароль должен содержать не менее 6 символов')
     .max(64, 'Пароль не должен превышать 64 символа')
+    .regex(/.*[A-Z].*/, 'Пароль должен содержать хотя бы одну заглавную букву')
+    .regex(/.*[0-9].*/, 'Пароль должен содержать хотя бы одну цифру'),
 });
 
 export const insertCardSchema = createInsertSchema(cards, {

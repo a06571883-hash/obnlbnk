@@ -1,38 +1,31 @@
 import session from "express-session";
+import { MemoryStore } from 'express-session';
 import { db } from "./db";
 import { cards, users, transactions, exchangeRates } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
-import path from 'path';
+import store from 'better-sqlite3-session-store';
 import Database from 'better-sqlite3';
-import createSqliteStore from 'better-sqlite3-session-store';
+import path from 'path';
 
-const SqliteStore = createSqliteStore(session);
+// Используем SQLite для хранения сессий
+const SqliteStore = store(session);
 
-// Оптимизированная конфигурация для free tier
-const sessionDb = new Database(':memory:', {
-  verbose: () => {}, // Fix for verbose option
-  readonly: false,
-  fileMustExist: false
-});
+// Создаем отдельную базу для сессий
+const SESSION_DB_PATH = path.join(process.cwd(), 'sessions.db');
+console.log('SQLite session database path:', SESSION_DB_PATH);
+const sessionDb = new Database(SESSION_DB_PATH);
 
-// Оптимизация SQLite
-sessionDb.pragma('journal_mode = MEMORY');
-sessionDb.pragma('synchronous = OFF');
-sessionDb.pragma('temp_store = MEMORY');
-sessionDb.pragma('cache_size = 2000');
-sessionDb.pragma('page_size = 4096');
-
-interface IStorage {
-  sessionStore: session.Store;
+export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getCardsByUserId(userId: number): Promise<Card[]>;
   createCard(card: Omit<Card, "id">): Promise<Card>;
+  sessionStore: session.Store;
   getAllUsers(): Promise<User[]>;
   updateRegulatorBalance(userId: number, balance: string): Promise<void>;
   updateCardBalance(cardId: number, balance: string): Promise<void>;
@@ -46,23 +39,31 @@ interface IStorage {
   transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   getLatestExchangeRates(): Promise<ExchangeRate | undefined>;
   updateExchangeRates(rates: { usdToUah: number; btcToUsd: number; ethToUsd: number }): Promise<ExchangeRate>;
+  createNFTCollection(userId: number, name: string, description: string): Promise<any>;
+  createNFT(data: Omit<any, "id">): Promise<any>;
+  getNFTsByUserId(userId: number): Promise<any[]>;
+  getNFTCollectionsByUserId(userId: number): Promise<any[]>;
+  canGenerateNFT(userId: number): Promise<boolean>;
+  updateUserNFTGeneration(userId: number): Promise<void>;
   getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
   createDefaultCardsForUser(userId: number): Promise<void>;
   deleteUser(userId: number): Promise<void>;
-  resetAllVirtualBalances(): Promise<void>;
 }
 
-class DatabaseStorage implements IStorage {
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
+    // Используем SQLite для хранения сессий вместо PostgreSQL
     this.sessionStore = new SqliteStore({
       client: sessionDb,
       expired: {
         clear: true,
-        intervalMs: 900000 // 15 minutes
+        intervalMs: 900000 // Очистка истекших сессий каждые 15 минут
       }
     });
+    
+    console.log('Session store initialized with SQLite (free, no expiration)');
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -172,6 +173,7 @@ class DatabaseStorage implements IStorage {
 
   async createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction> {
     return this.withRetry(async () => {
+      // Get the maximum existing ID to avoid conflicts
       const [maxIdResult] = await db.select({ maxId: sql`COALESCE(MAX(id), 0)` }).from(transactions);
       const nextId = Number(maxIdResult?.maxId || 0) + 1;
 
@@ -189,25 +191,30 @@ class DatabaseStorage implements IStorage {
   async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
     return this.withTransaction(async () => {
       try {
+        // Блокируем карты отправителя
         const [fromCard] = await db.select().from(cards).where(eq(cards.id, fromCardId));
         if (!fromCard) {
           throw new Error("Карта отправителя не найдена");
         }
 
+        // Получаем и блокируем карту получателя
         const cleanCardNumber = toCardNumber.replace(/\s+/g, '');
         const [toCard] = await db.select().from(cards).where(eq(cards.number, cleanCardNumber));
         if (!toCard) {
           throw new Error("Карта получателя не найдена");
         }
 
+        // Получаем актуальные курсы валют
         const rates = await this.getLatestExchangeRates();
         if (!rates) {
           throw new Error("Не удалось получить актуальные курсы валют");
         }
 
+        // Рассчитываем комиссию и конвертацию
         const commission = amount * 0.01;
         const totalDebit = amount + commission;
 
+        // Проверяем достаточность средств
         if (fromCard.type === 'crypto') {
           const cryptoBalance = parseFloat(fromCard.btcBalance || '0');
           if (cryptoBalance < totalDebit) {
@@ -220,6 +227,7 @@ class DatabaseStorage implements IStorage {
           }
         }
 
+        // Рассчитываем сумму конвертации
         let convertedAmount = amount;
         if (fromCard.type !== toCard.type) {
           if (fromCard.type === 'usd' && toCard.type === 'uah') {
@@ -249,11 +257,13 @@ class DatabaseStorage implements IStorage {
           }
         }
 
+        // Получаем регулятора для комиссии
         const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
         if (!regulator) {
           throw new Error("Регулятор не найден в системе");
         }
 
+        // Выполняем перевод атомарно
         if (fromCard.type === 'crypto' || fromCard.type === 'btc') {
           const fromCryptoBalance = parseFloat(fromCard.btcBalance || '0');
           await db.update(cards)
@@ -294,12 +304,14 @@ class DatabaseStorage implements IStorage {
           }
         }
 
+        // Зачисляем комиссию регулятору
         const btcCommission = commission / parseFloat(rates.btcToUsd);
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
         await db.update(users)
           .set({ regulator_balance: (regulatorBtcBalance + btcCommission).toFixed(8) })
           .where(eq(users.id, regulator.id));
 
+        // Создаем транзакцию перевода
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard.id,
@@ -316,6 +328,7 @@ class DatabaseStorage implements IStorage {
           createdAt: new Date()
         });
 
+        // Создаем транзакцию комиссии
         await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: regulator.id,
@@ -351,6 +364,7 @@ class DatabaseStorage implements IStorage {
           throw new Error("Не удалось получить актуальные курсы валют");
         }
 
+        // Найти карту получателя по BTC адресу
         const toCard = await this.getCardByNumber(recipientAddress);
         console.log(`Поиск карты получателя по адресу ${recipientAddress}:`, toCard);
 
@@ -359,6 +373,7 @@ class DatabaseStorage implements IStorage {
           throw new Error("Регулятор не найден в системе");
         }
 
+        // Calculate amounts
         const commission = amount * 0.01;
         const totalDebit = amount + commission;
 
@@ -366,6 +381,7 @@ class DatabaseStorage implements IStorage {
         let btcCommission: number;
 
         if (fromCard.type === 'crypto') {
+          // Отправляем напрямую в BTC
           btcToSend = amount;
           btcCommission = commission;
 
@@ -377,18 +393,22 @@ class DatabaseStorage implements IStorage {
             );
           }
 
+          // Снимаем BTC с отправителя
           await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - totalDebit).toFixed(8));
           console.log(`Снято с отправителя: ${totalDebit.toFixed(8)} BTC`);
 
         } else {
+          // Конвертируем из фиатной валюты в BTC
           let usdAmount: number;
 
+          // Сначала конвертируем в USD если нужно
           if (fromCard.type === 'uah') {
             usdAmount = amount / parseFloat(rates.usdToUah);
           } else {
             usdAmount = amount;
           }
 
+          // Конвертируем USD в BTC
           btcToSend = usdAmount / parseFloat(rates.btcToUsd);
           btcCommission = (usdAmount * 0.01) / parseFloat(rates.btcToUsd);
 
@@ -400,14 +420,16 @@ class DatabaseStorage implements IStorage {
             );
           }
 
+          // Снимаем деньги с фиатной карты
           await this.updateCardBalance(fromCard.id, (fiatBalance - totalDebit).toFixed(2));
           console.log(`Снято с отправителя: ${totalDebit.toFixed(2)} ${fromCard.type.toUpperCase()}`);
         }
 
+        // Если отправка на внутреннюю карту, то зачисляем средства на неё
         if (toCard) {
           console.log(`Обнаружена внутренняя карта: ${toCard.id}, зачисляем средства`);
           const toCryptoBalance = parseFloat(toCard.btcBalance || '0');
-
+          
           if (cryptoType === 'btc') {
             await this.updateCardBtcBalance(toCard.id, (toCryptoBalance + btcToSend).toFixed(8));
           } else {
@@ -415,34 +437,22 @@ class DatabaseStorage implements IStorage {
             const toEthBalance = parseFloat(toCard.ethBalance || '0');
             await this.updateCardEthBalance(toCard.id, (toEthBalance + ethToSend).toFixed(8));
           }
-
-          console.log(`Обнуляем виртуальные балансы пользователя ${toCard.userId} после пополнения криптовалюты`);
-
-          const userCards = await db.select()
-            .from(cards)
-            .where(eq(cards.userId, toCard.userId));
-
-          for (const card of userCards) {
-            if (card.type === 'usd' || card.type === 'uah') {
-              await db.update(cards)
-                .set({ balance: "0.00" })
-                .where(eq(cards.id, card.id));
-              console.log(`Обнулен баланс ${card.type} карты ${card.number}`);
-            }
-          }
         } else {
+          // Проверяем валидность внешнего адреса
           if (!validateCryptoAddress(recipientAddress, cryptoType)) {
             throw new Error(`Недействительный ${cryptoType.toUpperCase()} адрес`);
           }
           console.log(`Адрес ${recipientAddress} валиден. Отправляем на внешний адрес...`);
         }
 
+        // Зачисляем комиссию регулятору
         const regulatorBtcBalance = parseFloat(regulator.regulator_balance || '0');
         await this.updateRegulatorBalance(
           regulator.id,
           (regulatorBtcBalance + btcCommission).toFixed(8)
         );
 
+        // Создаем транзакцию
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard?.id || null,
@@ -450,7 +460,7 @@ class DatabaseStorage implements IStorage {
           convertedAmount: (btcToSend).toString(),
           type: 'crypto_transfer',
           status: 'completed',
-          description: fromCard.type === 'crypto'
+          description: fromCard.type === 'crypto' 
             ? `Отправка ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на ${recipientAddress}`
             : `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${btcToSend.toFixed(8)} ${cryptoType.toUpperCase()} и отправка на ${recipientAddress}`,
           fromCardNumber: fromCard.number,
@@ -459,6 +469,7 @@ class DatabaseStorage implements IStorage {
           createdAt: new Date()
         });
 
+        // Создаем транзакцию комиссии
         await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: regulator.id,
@@ -482,22 +493,27 @@ class DatabaseStorage implements IStorage {
   }
 
   private async withTransaction<T>(operation: (client: any) => Promise<T>, context: string): Promise<T> {
+    // SQLite имеет автоматические транзакции внутри единого соединения
     try {
-      db.run(sql`PRAGMA journal_mode = WAL`);
+      // Начинаем транзакцию
       db.run(sql`BEGIN TRANSACTION`);
-
-      const result = await operation(null);
-
+      
+      // Выполняем операцию
+      const result = await operation(null); // client not needed with SQLite
+      
+      // Завершаем транзакцию если всё хорошо
       db.run(sql`COMMIT`);
+      
       return result;
     } catch (error) {
+      // Откатываем транзакцию в случае ошибки
       db.run(sql`ROLLBACK`);
       console.error(`${context} failed:`, error);
       throw error;
     }
   }
 
-  private async withRetry<T>(operation: () => Promise<T>, context: string, maxAttempts = 2): Promise<T> {
+  private async withRetry<T>(operation: () => Promise<T>, context: string, maxAttempts = 3): Promise<T> {
     let lastError: Error | undefined;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
@@ -506,7 +522,7 @@ class DatabaseStorage implements IStorage {
         lastError = error as Error;
         console.error(`${context} failed (attempt ${attempt + 1}/${maxAttempts}):`, error);
         if (attempt < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
         }
       }
     }
@@ -574,6 +590,7 @@ class DatabaseStorage implements IStorage {
     try {
       console.log(`Starting default cards creation for user ${userId}`);
 
+      // Generate crypto addresses with retry limit
       let btcAddress: string, ethAddress: string;
       try {
         btcAddress = generateValidAddress('btc', userId);
@@ -584,16 +601,19 @@ class DatabaseStorage implements IStorage {
         throw new Error('Could not generate valid crypto addresses');
       }
 
+      // Генерируем дату истечения (текущий месяц + 3 года)
       const now = new Date();
       const expiryMonth = String(now.getMonth() + 1).padStart(2, '0');
       const expiryYear = String((now.getFullYear() + 3) % 100).padStart(2, '0');
       const expiry = `${expiryMonth}/${expiryYear}`;
 
+      // Генерируем CVV
       const generateCVV = () => Math.floor(100 + Math.random() * 900).toString();
 
       try {
         console.log('Creating cards...');
 
+        // Создаем крипто-карту
         await this.withRetry(async () => {
           console.log('Creating crypto card...');
           const cryptoCardNumber = generateCardNumber('crypto');
@@ -612,6 +632,7 @@ class DatabaseStorage implements IStorage {
           console.log('Crypto card created successfully:', cryptoCardNumber);
         }, 'Create crypto card');
 
+        // Создаем USD карту
         await this.withRetry(async () => {
           console.log('Creating USD card...');
           const usdCardNumber = generateCardNumber('usd');
@@ -622,14 +643,15 @@ class DatabaseStorage implements IStorage {
             expiry,
             cvv: generateCVV(),
             balance: "0.00",
-            btcBalance: "0.00000000",
-            ethBalance: "0.00000000",
+            btcBalance: "0.00000000", 
+            ethBalance: "0.00000000", 
             btcAddress: null,
             ethAddress: null
           });
           console.log('USD card created successfully:', usdCardNumber);
         }, 'Create USD card');
 
+        // Создаем UAH карту
         await this.withRetry(async () => {
           console.log('Creating UAH card...');
           const uahCardNumber = generateCardNumber('uah');
@@ -640,8 +662,8 @@ class DatabaseStorage implements IStorage {
             expiry,
             cvv: generateCVV(),
             balance: "0.00",
-            btcBalance: "0.00000000",
-            ethBalance: "0.00000000",
+            btcBalance: "0.00000000", 
+            ethBalance: "0.00000000", 
             btcAddress: null,
             ethAddress: null
           });
@@ -661,9 +683,11 @@ class DatabaseStorage implements IStorage {
   async deleteUser(userId: number): Promise<void> {
     return this.withTransaction(async () => {
       try {
+        // First delete all cards associated with the user
         await db.delete(cards)
           .where(eq(cards.userId, userId));
 
+        // Then delete the user
         await db.delete(users)
           .where(eq(users.id, userId));
 
@@ -674,48 +698,19 @@ class DatabaseStorage implements IStorage {
       }
     }, 'Delete user');
   }
-  async resetAllVirtualBalances(): Promise<void> {
-    return this.withTransaction(async () => {
-      try {
-        console.log('Начинаем процесс обнуления всех балансов...');
-
-        // Use single transaction for faster execution
-        db.run(sql`PRAGMA synchronous = OFF`);
-        db.run(sql`PRAGMA journal_mode = MEMORY`);
-        db.run(sql`PRAGMA temp_store = MEMORY`);
-        db.run(sql`PRAGMA cache_size = 2000`);
-
-        // Reset all balances in one transaction
-        await db.update(cards)
-          .set({ 
-            balance: "0.00",
-            btcBalance: "0.00000000",
-            ethBalance: "0.00000000"
-          });
-
-        await db.update(users)
-          .set({ regulator_balance: "0.00000000" })
-          .where(eq(users.is_regulator, true));
-
-        console.log('Все балансы успешно обнулены');
-      } catch (error) {
-        console.error('Ошибка при обнулении балансов:', error);
-        throw error;
-      }
-    }, 'Reset All Balances Operation');
-  }
 }
 
+export const storage = new DatabaseStorage();
+
 function generateCardNumber(type: 'crypto' | 'usd' | 'uah'): string {
+  // Префиксы для разных типов карт
   const prefixes = {
     crypto: '4111',
     usd: '4112',
-    uah: '41113'
+    uah: '4113'
   };
 
+  // Генерируем оставшиеся 12 цифр
   const suffix = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
   return `${prefixes[type]}${suffix}`;
 }
-
-// Single export instance
-export const storage = new DatabaseStorage();
