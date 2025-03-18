@@ -5,8 +5,8 @@ import { Telegraf } from 'telegraf';
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4';
 
 // ИЗМЕНИТЬ ЗДЕСЬ, если нужно поменять URL приложения
-// Использовать фиксированный URL для стабильной работы
-const BASE_URL = 'https://a94eb6c1-c5d1-4dd4-933a-930b9ad1e43c-00-3tpaapxqq7ajh.worf.replit.dev';
+// Использовать временный URL Replit (работает только когда проект открыт)
+const BASE_URL = 'https://workspace.anatoliymmm6.repl.co';
 const WEBAPP_URL = BASE_URL;
 
 // Сохраняем URL в переменных окружения
@@ -37,7 +37,7 @@ bot.command('start', (ctx) => {
       web_app: { url: WEBAPP_URL }
     }).catch(err => console.error('Ошибка при установке главной кнопки WebApp:', err));
 
-    return ctx.reply('Добро пожаловать в BNAL Bank! Нажмите на голубую кнопку внизу экрана, чтобы открыть приложение.', {
+    return ctx.reply('Добро пожаловать в BNAL Bank! Нажмите на голубую кнопку внизу экрана, чтобы открыть приложение.\n\n<b>Внимание:</b> Приложение доступно только во время работы сервера. Если вы видите ошибку, это означает, что сервер в данный момент не активен.', {
       parse_mode: 'HTML'
     });
   } catch (error) {

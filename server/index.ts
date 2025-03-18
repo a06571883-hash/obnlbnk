@@ -31,10 +31,8 @@ app.use((req, res, next) => {
     // Минимальная частота бэкапов
     scheduleBackups();
 
-    // Telegram бот только в production
-    if (process.env.NODE_ENV === 'production') {
-      await startBot();
-    }
+    // Запуск Telegram бота всегда
+    await startBot();
 
     // Базовая обработка ошибок
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -83,15 +83,39 @@ export async function exportDatabase() {
 
     // SQL для transactions
     sqlDump += 'INSERT INTO transactions (id, from_card_id, to_card_id, amount, converted_amount, type, wallet, status, created_at, description, from_card_number, to_card_number) VALUES\n';
-    sqlDump += transactionsData.map(tx => 
-      `(${tx.id}, ${tx.fromCardId}, ${tx.toCardId || 'NULL'}, ${tx.amount}, ${tx.convertedAmount || 'NULL'}, '${tx.type}', ${tx.wallet ? `'${tx.wallet}'` : 'NULL'}, '${tx.status}', '${tx.createdAt.toISOString()}', '${tx.description.replace(/'/g, "''")}', '${tx.fromCardNumber}', ${tx.toCardNumber ? `'${tx.toCardNumber}'` : 'NULL'})`
-    ).join(',\n') + ';\n\n';
+    sqlDump += transactionsData.map(tx => {
+      // Проверка и безопасное форматирование даты
+      let createdAtSql = 'NULL';
+      if (tx.createdAt) {
+        try {
+          // Преобразуем строковую дату в объект Date если это строка
+          const dateObj = typeof tx.createdAt === 'string' ? new Date(tx.createdAt) : tx.createdAt;
+          createdAtSql = `'${dateObj.toISOString()}'`;
+        } catch (e) {
+          createdAtSql = "'2025-01-01'"; // Запасная дата если форматирование не удалось
+        }
+      }
+      
+      return `(${tx.id}, ${tx.fromCardId}, ${tx.toCardId || 'NULL'}, ${tx.amount}, ${tx.convertedAmount || 'NULL'}, '${tx.type}', ${tx.wallet ? `'${tx.wallet}'` : 'NULL'}, '${tx.status}', ${createdAtSql}, '${tx.description.replace(/'/g, "''")}', '${tx.fromCardNumber}', ${tx.toCardNumber ? `'${tx.toCardNumber}'` : 'NULL'})`;
+    }).join(',\n') + ';\n\n';
 
     // SQL для exchange_rates
     sqlDump += 'INSERT INTO exchange_rates (id, usd_to_uah, btc_to_usd, eth_to_usd, updated_at) VALUES\n';
-    sqlDump += ratesData.map(rate => 
-      `(${rate.id}, ${rate.usdToUah}, ${rate.btcToUsd}, ${rate.ethToUsd}, '${rate.updatedAt.toISOString()}')`
-    ).join(',\n') + ';\n';
+    sqlDump += ratesData.map(rate => {
+      // Проверка и безопасное форматирование даты
+      let updatedAtSql = 'NULL';
+      if (rate.updatedAt) {
+        try {
+          // Преобразуем строковую дату в объект Date если это строка
+          const dateObj = typeof rate.updatedAt === 'string' ? new Date(rate.updatedAt) : rate.updatedAt;
+          updatedAtSql = `'${dateObj.toISOString()}'`;
+        } catch (e) {
+          updatedAtSql = "'2025-01-01'"; // Запасная дата если форматирование не удалось
+        }
+      }
+      
+      return `(${rate.id}, ${rate.usdToUah}, ${rate.btcToUsd}, ${rate.ethToUsd}, ${updatedAtSql})`;
+    }).join(',\n') + ';\n';
 
     // Сохраняем SQL дамп
     const sqlFileName = `backup_${timestamp}.sql`;
