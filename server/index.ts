@@ -50,6 +50,11 @@ app.use((req, res, next) => {
 
     server.listen(5000, "0.0.0.0", () => {
       console.log('Server running on port 5000');
+    }).on('error', (error) => {
+      console.error('Server error:', error);
+      if (error.code === 'EADDRINUSE') {
+        console.error('Port 5000 is already in use. Please kill the process or use a different port.');
+      }
     });
   } catch (error) {
     console.error('Startup error:', error);
