@@ -17,15 +17,30 @@ const sounds: Record<SoundType, HTMLAudioElement> = {};
 // Предварительная загрузка звуков
 export const preloadSounds = async () => {
   try {
-    // Загружаем звуки
+    // Загружаем звуки с правильными путями
     for (const [type, path] of Object.entries(soundFiles)) {
-      sounds[type as SoundType] = new Audio(path);
+      const audio = new Audio();
+      audio.preload = 'auto';
+      // Используем абсолютный путь
+      audio.src = path.startsWith('/') ? path : `/${path}`;
+      sounds[type as SoundType] = audio;
+      
+      // Добавляем обработчик ошибок для каждого звука
+      audio.onerror = (e) => {
+        console.error(`Ошибка загрузки звука ${type}:`, e);
+      };
     }
 
-    // Для iOS требуется взаимодействие пользователя перед воспроизведением звука
+    console.log('Звуки проинициализированы');
+
+    // Пробуем воспроизвести тихий звук после загрузки страницы
     const playPromise = sounds.silent.play();
     if (playPromise !== undefined) {
       playPromise.catch(error => {
+        // Это нормально, если воспроизведение не удалось - нужно взаимодействие пользователя
+        console.log('Аудио будет доступно после взаимодействия с пользователем');
+      });
+    }
         console.log('Аудио требует взаимодействия пользователя:', error);
       });
     }
@@ -40,18 +55,28 @@ export const preloadSounds = async () => {
 export const playSound = (soundName: SoundType) => {
   try {
     const sound = sounds[soundName];
-    if (sound) {
-      // Сбрасываем позицию воспроизведения на начало
+    if (!sound) {
+      console.warn(`Звук ${soundName} не найден`);
+      return;
+    }
+
+    // Проверяем готовность звука
+    if (sound.readyState >= 2) {
       sound.currentTime = 0;
-      // Начинаем воспроизведение
+      sound.volume = 0.5; // Устанавливаем среднюю громкость
       const playPromise = sound.play();
+      
       if (playPromise !== undefined) {
         playPromise.catch(error => {
-          console.error(`Ошибка воспроизведения звука ${soundName}:`, error);
+          if (error.name === 'NotAllowedError') {
+            console.log('Звук будет доступен после взаимодействия с пользователем');
+          } else {
+            console.error(`Ошибка воспроизведения звука ${soundName}:`, error);
+          }
         });
       }
     } else {
-      console.warn(`Звук ${soundName} не найден`);
+      console.log(`Звук ${soundName} еще загружается...`);
     }
   } catch (error) {
     console.error(`Ошибка при воспроизведении звука ${soundName}:`, error);
