@@ -6,9 +6,8 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH
 
 // ИЗМЕНИТЬ ЗДЕСЬ, если нужно поменять URL приложения
 // Использовать фиксированный URL для стабильной работы
-// Добавляем ':3000' только если его нет в URL развертывания
-const BASE_URL = 'https://e3aa7355-a2d0-4e43-957e-11898b297172-00-72khzffrs1qv.spock.replit.dev';
-const WEBAPP_URL = BASE_URL + (BASE_URL.includes(':3000') ? '/' : ':3000/');
+const BASE_URL = 'https://a94eb6c1-c5d1-4dd4-933a-930b9ad1e43c-00-3tpaapxqq7ajh.worf.replit.dev';
+const WEBAPP_URL = BASE_URL;
 
 // Сохраняем URL в переменных окружения
 process.env.WEBAPP_URL = WEBAPP_URL;
