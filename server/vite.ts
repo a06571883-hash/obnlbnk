@@ -27,14 +27,15 @@ export async function setupVite(app: Express, server: Server) {
     middlewareMode: true,
     hmr: {
       server,
-      port: 3000,
-      clientPort: 3000,
+      port: 5000,
+      clientPort: 5000,
       host: '0.0.0.0',
       timeout: 120000,
-      overlay: true,
+      overlay: false,
+      protocol: 'ws',
       path: '/@hmr'
     },
-    allowedHosts: true,
+    allowedHosts: 'all',
   };
 
   const vite = await createViteServer({
