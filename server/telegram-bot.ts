@@ -60,15 +60,42 @@ export function startBot() {
   console.log('- REPLIT_DEPLOYMENT_URL:', process.env.REPLIT_DEPLOYMENT_URL);
   console.log('- REPLIT_SLUG:', process.env.REPLIT_SLUG);
 
-  // Запускаем бота в режиме polling с проверкой ошибок
-  bot.launch()
-    .then(() => {
-      console.log('Telegram бот успешно запущен');
-      console.log('Имя бота:', bot.botInfo?.username);
-      console.log('WebApp URL:', WEBAPP_URL);
+  // Вместо polling для надежной работы в Replit используем прямые запросы к API Telegram
+  console.log('Использование прямых запросов к API Telegram вместо polling...');
+  
+  // Проверяем работу бота через прямой API-запрос
+  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        console.log('✅ Telegram бот успешно проверен через API');
+        console.log('Имя бота:', data.result.username);
+        console.log('WebApp URL:', WEBAPP_URL);
+        
+        // Проверим и обновим WebApp URL для бота
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setChatMenuButton`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            menu_button: {
+              type: 'web_app',
+              text: 'Открыть BNAL Bank',
+              web_app: { url: WEBAPP_URL }
+            }
+          })
+        })
+        .then(res => res.json())
+        .then(menuData => {
+          console.log('Результат обновления WebApp URL:', menuData.ok ? 'Успешно' : 'Ошибка');
+          if (!menuData.ok) console.error('Ошибка обновления меню:', menuData.description);
+        })
+        .catch(err => console.error('Ошибка при обновлении WebApp URL:', err));
+      } else {
+        console.error('❌ Ошибка проверки бота:', data);
+      }
     })
     .catch(error => {
-      console.error('Не удалось запустить Telegram бот:', error);
+      console.error('❌ Не удалось проверить Telegram бот:', error);
       console.error('Проверьте правильность токена бота и доступ к API Telegram');
     });
 

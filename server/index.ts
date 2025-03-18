@@ -4,6 +4,7 @@ import { setupVite, serveStatic } from "./vite";
 import { db } from "./database/connection";
 import { scheduleBackups } from "./database/backup";
 import { startBot } from "./telegram-bot";
+import * as NodeJS from 'node:process';
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
@@ -64,7 +65,7 @@ app.use((req, res, next) => {
       console.log(`Mode: ${process.env.NODE_ENV}`);
     }).on('error', (error) => {
       console.error('Server error:', error);
-      if (error.code === 'EADDRINUSE') {
+      if ((error as NodeJS.ErrnoException).code === 'EADDRINUSE') {
         console.error('Port 5000 is already in use. Please kill the process or use a different port.');
       }
     });
