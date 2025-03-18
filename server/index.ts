@@ -48,8 +48,22 @@ app.use((req, res, next) => {
       serveStatic(app);
     }
 
+    // Включаем CORS для development
+    if (process.env.NODE_ENV !== 'production') {
+      app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        if (req.method === 'OPTIONS') {
+          return res.sendStatus(200);
+        }
+        next();
+      });
+    }
+
     server.listen(5000, "0.0.0.0", () => {
       console.log('Server running on port 5000');
+      console.log(`Mode: ${process.env.NODE_ENV}`);
     }).on('error', (error) => {
       console.error('Server error:', error);
       if (error.code === 'EADDRINUSE') {
