@@ -60,8 +60,8 @@ export function startBot() {
   console.log('- REPLIT_DEPLOYMENT_URL:', process.env.REPLIT_DEPLOYMENT_URL);
   console.log('- REPLIT_SLUG:', process.env.REPLIT_SLUG);
 
-  // Вместо polling для надежной работы в Replit используем прямые запросы к API Telegram
-  console.log('Использование прямых запросов к API Telegram вместо polling...');
+  // Используем прямые запросы к API вместо webhook для работы с временными URL Replit
+  console.log('Настройка Telegram бота для работы с временным URL Replit...');
   
   // Проверяем работу бота через прямой API-запрос
   fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`)
@@ -72,7 +72,20 @@ export function startBot() {
         console.log('Имя бота:', data.result.username);
         console.log('WebApp URL:', WEBAPP_URL);
         
-        // Проверим и обновим WebApp URL для бота
+        // Очищаем настройки webhook если они были раньше
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook?drop_pending_updates=true`)
+          .then(res => res.json())
+          .then(deleteWebhookData => {
+            console.log('Webhook удален:', deleteWebhookData.ok ? 'Успешно' : 'Ошибка');
+            if (!deleteWebhookData.ok) {
+              console.error('Ошибка удаления webhook:', deleteWebhookData.description);
+            } else {
+              console.log('Старые настройки webhook успешно очищены');
+            }
+          })
+          .catch(err => console.error('Ошибка при удалении webhook:', err));
+        
+        // Обновим WebApp URL для бота
         fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setChatMenuButton`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -87,7 +100,125 @@ export function startBot() {
         .then(res => res.json())
         .then(menuData => {
           console.log('Результат обновления WebApp URL:', menuData.ok ? 'Успешно' : 'Ошибка');
-          if (!menuData.ok) console.error('Ошибка обновления меню:', menuData.description);
+          if (!menuData.ok) {
+            console.error('Ошибка обновления меню:', menuData.description);
+          } else {
+            console.log('WebApp URL успешно обновлен');
+            
+            // Начинаем периодическую проверку новых сообщений
+            const UPDATE_INTERVAL = 5000; // 5 секунд
+            console.log(`Начинаем проверку новых сообщений с интервалом ${UPDATE_INTERVAL}ms...`);
+            
+            let lastUpdateId = 0;
+            
+            // Функция для получения обновлений
+            function getUpdates() {
+              fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=30`)
+                .then(res => res.json())
+                .then(updatesData => {
+                  if (updatesData.ok && updatesData.result.length > 0) {
+                    console.log(`Получено ${updatesData.result.length} новых сообщений`);
+                    
+                    // Обрабатываем каждое обновление
+                    updatesData.result.forEach(update => {
+                      // Запоминаем последний ID, чтобы не получать одно и то же обновление дважды
+                      if (update.update_id > lastUpdateId) {
+                        lastUpdateId = update.update_id;
+                      }
+                      
+                      // Если это сообщение, обрабатываем его
+                      if (update.message) {
+                        const message = update.message;
+                        const chatId = message.chat.id;
+                        const text = message.text;
+                        
+                        // Обрабатываем команды и сообщения
+                        if (text === '/start') {
+                          // Отправляем приветственное сообщение и кнопку WebApp
+                          fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              chat_id: chatId,
+                              text: 'Добро пожаловать в BNAL Bank!\n\nНажмите кнопку ниже, чтобы открыть приложение.',
+                              reply_markup: {
+                                inline_keyboard: [[
+                                  {
+                                    text: '🏦 Открыть BNAL Bank',
+                                    web_app: { url: WEBAPP_URL }
+                                  }
+                                ]]
+                              }
+                            })
+                          })
+                          .then(response => response.json())
+                          .then(data => {
+                            console.log('Ответ на команду /start отправлен:', data.ok);
+                          })
+                          .catch(error => {
+                            console.error('Ошибка отправки ответа:', error);
+                          });
+                        } else if (text === '/url') {
+                          // Отправляем текущий URL приложения
+                          fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              chat_id: chatId,
+                              text: `Текущий URL приложения:\n${WEBAPP_URL}\n\nОбратите внимание, что URL временный и действует только пока проект запущен в Replit.`,
+                              reply_markup: {
+                                inline_keyboard: [[
+                                  {
+                                    text: '🏦 Открыть BNAL Bank',
+                                    web_app: { url: WEBAPP_URL }
+                                  }
+                                ]]
+                              }
+                            })
+                          })
+                          .then(response => response.json())
+                          .then(data => {
+                            console.log('Ответ на команду /url отправлен:', data.ok);
+                          })
+                          .catch(error => {
+                            console.error('Ошибка отправки ответа:', error);
+                          });
+                        } else {
+                          // Отвечаем на другие сообщения
+                          fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              chat_id: chatId,
+                              text: 'Доступные команды:\n/start - начать\n/url - получить текущий URL приложения\n\nИспользуйте кнопку "Открыть BNAL Bank", чтобы запустить приложение.'
+                            })
+                          })
+                          .then(response => response.json())
+                          .then(data => {
+                            console.log('Ответ на сообщение отправлен:', data.ok);
+                          })
+                          .catch(error => {
+                            console.error('Ошибка отправки ответа:', error);
+                          });
+                        }
+                      }
+                    });
+                  }
+                  
+                  // В любом случае, успешно или нет, продолжаем проверять обновления
+                  setTimeout(getUpdates, UPDATE_INTERVAL);
+                })
+                .catch(error => {
+                  console.error('Ошибка получения обновлений:', error);
+                  
+                  // В случае ошибки тоже продолжаем проверять, но с задержкой
+                  setTimeout(getUpdates, UPDATE_INTERVAL * 2);
+                });
+            }
+            
+            // Запускаем первую проверку обновлений
+            getUpdates();
+          }
         })
         .catch(err => console.error('Ошибка при обновлении WebApp URL:', err));
       } else {

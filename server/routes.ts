@@ -10,6 +10,7 @@ import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from
 import { getNews } from './news-service';
 import { seaTableManager } from './utils/seatable';
 import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
+import { Telegraf } from 'telegraf';
 
 // Auth middleware to ensure session is valid
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -229,6 +230,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating regulator balance:", error);
       res.status(500).json({ message: "Ошибка при обновлении баланса регулятора" });
+    }
+  });
+
+  // Информационный маршрут для Telegram бота (для отладки)
+  app.get("/api/telegram-info", (req, res) => {
+    try {
+      res.json({
+        status: "Telegram бот запущен в режиме polling",
+        webapp_url: process.env.WEBAPP_URL || 'https://workspace.anatoliymmm6.repl.co',
+        bot_username: "OOO_BNAL_BANK_bot",
+        commands: [
+          { command: "/start", description: "Запустить бота" },
+          { command: "/url", description: "Получить текущий URL приложения" }
+        ],
+        note: "Бот работает в режиме polling и доступен только когда проект запущен на Replit"
+      });
+    } catch (error) {
+      console.error('Ошибка при получении информации о Telegram боте:', error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
