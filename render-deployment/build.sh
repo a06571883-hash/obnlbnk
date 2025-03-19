@@ -2,7 +2,8 @@
 # Скрипт сборки для Render.com
 
 npm install
-npm install -g vite
+npm install vite --save-dev
+npm install @babel/core --save-dev
 npm run build
 
 echo "============================================"
