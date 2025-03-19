@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, Bitcoin, DollarSign, Coins, Truck, BarChart3, MessageSquare } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins, Truck, BarChart3, MessageSquare, RefreshCw } from "lucide-react";
 
 interface ExchangeRateResponse {
   btcToUsd: string;
@@ -111,49 +111,102 @@ export default function HomePage() {
   }, [user]);
 
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
-
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-      setWsStatus('connected');
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const newRates = JSON.parse(event.data);
-        setPrevRates(rates);
-        setRates(newRates);
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setWsStatus('error');
-    };
-
-    const fetchRates = async () => {
+    // Определение, запущено ли приложение в Telegram WebApp
+    const isTelegramWebApp = window.Telegram && window.Telegram.WebApp;
+    
+    // Определяем, нужно ли использовать WebSocket или REST API
+    // Если приложение запущено в Telegram по HTTPS, но WebSocket должен быть wss://
+    const useWebSocket = !(isTelegramWebApp && window.location.protocol === 'https:' && window.location.host.includes('replit'));
+    
+    let ws: WebSocket | null = null;
+    let rateUpdateInterval: ReturnType<typeof setInterval> | null = null;
+    
+    const fetchRatesFromAPI = async () => {
       try {
         const response = await fetch('/api/rates');
         if (response.ok) {
           const data = await response.json();
+          setPrevRates(rates);
           setRates(data);
+          return true;
         }
+        return false;
       } catch (error) {
-        console.error('Fallback rates fetch error:', error);
+        console.error('API rates fetch error:', error);
+        return false;
       }
     };
-
-    fetchRates();
-
+    
+    // Всегда делаем начальную загрузку курсов через REST API
+    fetchRatesFromAPI();
+    
+    if (useWebSocket) {
+      try {
+        // Определяем протокол в зависимости от текущего протокола страницы
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+        
+        ws.onopen = () => {
+          console.log('WebSocket connected');
+          setWsStatus('connected');
+        };
+        
+        ws.onmessage = (event) => {
+          try {
+            const newRates = JSON.parse(event.data);
+            setPrevRates(rates);
+            setRates(newRates);
+          } catch (error) {
+            console.error('WebSocket message error:', error);
+          }
+        };
+        
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          setWsStatus('error');
+          
+          // При ошибке WebSocket переключаемся на REST API для обновления курсов
+          if (!rateUpdateInterval) {
+            rateUpdateInterval = setInterval(fetchRatesFromAPI, 30000); // 30 секунд
+          }
+        };
+        
+        ws.onclose = () => {
+          console.log('WebSocket connection closed');
+          setWsStatus('error');
+          
+          // При закрытии WebSocket переключаемся на REST API для обновления курсов
+          if (!rateUpdateInterval) {
+            rateUpdateInterval = setInterval(fetchRatesFromAPI, 30000); // 30 секунд
+          }
+        };
+      } catch (error) {
+        console.error('Failed to create WebSocket connection:', error);
+        setWsStatus('error');
+        
+        // При ошибке создания WebSocket переключаемся на REST API для обновления курсов
+        if (!rateUpdateInterval) {
+          rateUpdateInterval = setInterval(fetchRatesFromAPI, 30000); // 30 секунд
+        }
+      }
+    } else {
+      // Если WebSocket не используется (например, в Telegram WebApp), 
+      // устанавливаем интервал для обновления курсов через REST API
+      console.log('Using REST API for rates updates instead of WebSocket');
+      rateUpdateInterval = setInterval(fetchRatesFromAPI, 30000); // 30 секунд
+    }
+    
+    // Очистка ресурсов при размонтировании компонента
     return () => {
-      if (ws.readyState === WebSocket.OPEN) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close();
       }
+      
+      if (rateUpdateInterval) {
+        clearInterval(rateUpdateInterval);
+      }
     };
-  }, []);
+  }, [rates]);
 
   const { data: cards = [], isLoading: isLoadingCards, error: cardsError } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
