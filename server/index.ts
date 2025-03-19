@@ -63,6 +63,7 @@ app.use((req, res, next) => {
     server.listen(5000, "0.0.0.0", () => {
       console.log('Server running on port 5000');
       console.log(`Mode: ${process.env.NODE_ENV}`);
+      console.log('WebSocket server enabled');
     }).on('error', (error) => {
       console.error('Server error:', error);
       if ((error as NodeJS.ErrnoException).code === 'EADDRINUSE') {
