@@ -6,7 +6,7 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH
 
 // ИЗМЕНИТЬ ЗДЕСЬ, если нужно поменять URL приложения
 // Использовать временный URL Replit (работает только когда проект открыт)
-const BASE_URL = 'https://workspace.anatoliymmm6.repl.co';
+const BASE_URL = 'https://a94eb6c1-c5d1-4dd4-933a-930b9ad1e43c-00-3tpaapxqq7ajh.worf.replit.dev/';
 const WEBAPP_URL = BASE_URL;
 
 // Сохраняем URL в переменных окружения
