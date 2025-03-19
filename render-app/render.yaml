@@ -6,7 +6,7 @@ services:
     plan: starter
     buildCommand: chmod +x build.sh && ./build.sh
     startCommand: chmod +x start.sh && ./start.sh
-    rootDir: render-app
+    rootDir: .
     healthCheckPath: /api/render-status
     envVars:
       - key: NODE_ENV
