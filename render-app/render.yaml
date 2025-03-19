@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: ooobnal-bank
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: chmod +x ./build.sh && ./build.sh
+    startCommand: cd dist && chmod +x ./start.sh && NODE_ENV=production ./start.sh
+    envVars:
+      - key: NODE_VERSION
+        value: 18.18.0
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+    healthCheckPath: /api/health
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
