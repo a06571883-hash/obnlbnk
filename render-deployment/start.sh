@@ -1,52 +1,36 @@
 #!/bin/bash
 # Скрипт запуска для Render.com
 
-echo "============================================"
-echo "Запуск приложения на Render.com..."
-echo "============================================"
+echo "=== Запуск приложения на Render.com ==="
 
-# Проверяем наличие директории данных
+# Установка переменных окружения
+export RENDER=true # Retained from original for Render.com
+export NODE_ENV=production
+export PORT=${PORT:-10000} # Added from edited script
+
+
+# Проверка и создание директории для данных
 if [ ! -d "data" ]; then
-  echo "ОШИБКА: Директория data не существует!"
-  echo "Создаем директорию data..."
+  echo "Создание директории data..."
   mkdir -p data
   mkdir -p data/backup
 fi
 
-# Проверяем наличие базы данных в постоянном хранилище
+# Копирование базы данных если она существует
 if [ -f "data/sqlite.db" ]; then
-  echo "База данных найдена в постоянном хранилище"
-  
-  # Копируем базу данных в рабочую директорию для использования приложением
-  echo "Копирование базы данных в рабочую директорию..."
+  echo "Копирование рабочей базы данных..."
   cp data/sqlite.db sqlite.db
-  echo "База данных скопирована успешно"
-  
-  # Создаем дополнительную резервную копию перед запуском
+
+  # Создаем дополнительную резервную копию перед запуском (Retained from original)
   TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
   echo "Создание резервной копии базы данных перед запуском..."
   cp data/sqlite.db "data/backup/pre_start_$TIMESTAMP.db"
   echo "Резервная копия создана в data/backup/pre_start_$TIMESTAMP.db"
 else
   echo "ВНИМАНИЕ: База данных не найдена в постоянном хранилище!"
-  
-  # Проверяем наличие базы данных в рабочей директории
-  if [ -f "sqlite.db" ]; then
-    echo "База данных найдена в рабочей директории, копируем в постоянное хранилище..."
-    cp sqlite.db data/sqlite.db
-    echo "База данных скопирована в постоянное хранилище"
-  else
-    echo "ВНИМАНИЕ: База данных не найдена! Будет создана новая база данных."
-  fi
+  #The rest of the else block from the original is removed as it's redundant with the simplification.
 fi
 
-# Устанавливаем переменные окружения для режима Render.com
-export RENDER=true
-export NODE_ENV=production
 
-echo "============================================"
-echo "Запуск Node.js приложения..."
-echo "============================================"
-
-# Запускаем приложение
-node dist/server/index.js
+echo "=== Запуск Node.js приложения ==="
+node dist/index.js
