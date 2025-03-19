@@ -3,11 +3,17 @@
 
 # Install dependencies
 npm install
-npm install --save-dev @babel/core @babel/preset-env @babel/preset-react vite
+npm install --save-dev @babel/core @babel/preset-env @babel/preset-react @babel/runtime vite
+npm install --save-dev @babel/plugin-transform-runtime @babel/plugin-syntax-bigint @babel/plugin-syntax-class-properties
 
 # Create temporary babel config if it doesn't exist
 echo '{
-  "presets": ["@babel/preset-env", "@babel/preset-react"]
+  "presets": ["@babel/preset-env", "@babel/preset-react"],
+  "plugins": [
+    "@babel/plugin-transform-runtime",
+    "@babel/plugin-syntax-bigint",
+    "@babel/plugin-syntax-class-properties"
+  ]
 }' > .babelrc
 
 npm run build
