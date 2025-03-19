@@ -2,14 +2,47 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import * as schema from '@shared/schema';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { existsSync } from 'fs';
+import { existsSync, copyFileSync } from 'fs';
 import path from 'path';
+import * as fs from 'fs';
 
 // Используем локальную SQLite базу данных вместо Neon PostgreSQL
 console.log('Using SQLite as the database (completely free and no expiration)');
 
-// Путь к файлу базы данных
-const DB_PATH = path.join(process.cwd(), 'sqlite.db');
+// Определяем, запущено ли приложение на Render.com
+const IS_RENDER = process.env.RENDER === 'true';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+// Пути к файлам базы данных
+let DB_PATH = path.join(process.cwd(), 'sqlite.db');
+const RENDER_DATA_DIR = path.join(process.cwd(), 'data');
+const RENDER_DB_PATH = path.join(RENDER_DATA_DIR, 'sqlite.db');
+
+// Для Render.com используем постоянное хранилище в /data
+if (IS_RENDER && IS_PRODUCTION) {
+  console.log('Running on Render.com in production mode');
+  console.log('Permanent storage directory:', RENDER_DATA_DIR);
+  
+  // Проверяем, существует ли директория data
+  if (!existsSync(RENDER_DATA_DIR)) {
+    console.log('Creating data directory...');
+    fs.mkdirSync(RENDER_DATA_DIR, { recursive: true });
+  }
+  
+  // Проверяем, существует ли база данных в постоянном хранилище
+  if (existsSync(RENDER_DB_PATH)) {
+    console.log('Found database in permanent storage, copying to working directory...');
+    try {
+      copyFileSync(RENDER_DB_PATH, DB_PATH);
+      console.log('Database copied successfully');
+    } catch (error) {
+      console.error('Error copying database from permanent storage:', error);
+    }
+  } else {
+    console.log('No database found in permanent storage, will create a new one');
+  }
+}
+
 console.log('SQLite database path:', DB_PATH);
 
 // Создаем подключение к SQLite
@@ -155,16 +188,77 @@ export async function initializeDatabase() {
   }
 }
 
+// Функция для копирования базы данных в постоянное хранилище (для Render.com)
+async function backupDatabaseToStorage() {
+  if (IS_RENDER && IS_PRODUCTION) {
+    try {
+      console.log('Backing up database to permanent storage...');
+      
+      // Копируем файл базы данных в постоянное хранилище
+      copyFileSync(DB_PATH, RENDER_DB_PATH);
+      console.log('Database backed up successfully to', RENDER_DB_PATH);
+      
+      // Создаем дополнительную резервную копию в директории data/backup
+      const backupDir = path.join(RENDER_DATA_DIR, 'backup');
+      if (!existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+      }
+      
+      const timestamp = new Date().toISOString().replace(/:/g, '-');
+      const backupPath = path.join(backupDir, `backup_${timestamp}.db`);
+      
+      // Копируем файл базы данных в директорию бэкапов
+      copyFileSync(DB_PATH, backupPath);
+      console.log('Additional backup created at', backupPath);
+      
+      // Удаляем старые бэкапы (оставляем только последние 5)
+      const backupFiles = fs.readdirSync(backupDir)
+        .filter(file => file.endsWith('.db'))
+        .sort()
+        .reverse();
+      
+      for (const file of backupFiles.slice(5)) {
+        fs.unlinkSync(path.join(backupDir, file));
+        console.log('Removed old backup:', file);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error backing up database to permanent storage:', error);
+      return false;
+    }
+  }
+  return true; // Не на Render.com, бэкап не требуется
+}
+
 // Handle graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('Received SIGTERM. Closing SQLite connection...');
+process.on('SIGTERM', async () => {
+  console.log('Received SIGTERM. Backing up database and closing connection...');
+  await backupDatabaseToStorage();
   sqlite.close();
 });
 
-process.on('SIGINT', () => {
-  console.log('Received SIGINT. Closing SQLite connection...');
+process.on('SIGINT', async () => {
+  console.log('Received SIGINT. Backing up database and closing connection...');
+  await backupDatabaseToStorage();
   sqlite.close();
 });
+
+// Также устанавливаем регулярный бэкап базы данных в постоянное хранилище
+if (IS_RENDER && IS_PRODUCTION) {
+  // Каждые 15 минут копируем базу в постоянное хранилище
+  const BACKUP_INTERVAL = 15 * 60 * 1000; // 15 минут
+  
+  setInterval(async () => {
+    console.log('Running scheduled database backup to permanent storage...');
+    const result = await backupDatabaseToStorage();
+    if (result) {
+      console.log('Scheduled backup to permanent storage completed successfully');
+    } else {
+      console.error('Scheduled backup to permanent storage failed');
+    }
+  }, BACKUP_INTERVAL);
+}
 
 // Initialize the database connection
 initializeDatabase().catch(console.error);

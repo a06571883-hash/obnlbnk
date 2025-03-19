@@ -349,6 +349,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Эндпоинт для ручного создания резервной копии (требует аутентификации регулятора)
+  app.get("/api/backup", ensureAuthenticated, async (req, res) => {
+    try {
+      // Проверяем, что пользователь имеет права регулятора
+      const user = await storage.getUser(req.user!.id);
+      if (!user || !user.is_regulator) {
+        return res.status(403).json({ 
+          message: "Только регулятор может создавать резервные копии" 
+        });
+      }
+
+      // Создаем резервную копию
+      const { exportDatabase } = await import('./database/backup');
+      const result = await exportDatabase();
+      
+      if (!result.success) {
+        return res.status(500).json({ 
+          message: "Ошибка при создании резервной копии", 
+          error: result.error 
+        });
+      }
+      
+      res.json({
+        message: "Резервная копия успешно создана",
+        files: result.files
+      });
+    } catch (error) {
+      console.error("Backup error:", error);
+      res.status(500).json({ 
+        message: "Ошибка при создании резервной копии",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Эндпоинт для восстановления из резервной копии (только для регулятора)
+  app.post("/api/restore", ensureAuthenticated, async (req, res) => {
+    try {
+      // Проверяем, что пользователь имеет права регулятора
+      const user = await storage.getUser(req.user!.id);
+      if (!user || !user.is_regulator) {
+        return res.status(403).json({ 
+          message: "Только регулятор может восстанавливать из резервных копий"
+        });
+      }
+
+      // Восстанавливаем из резервной копии
+      const { importDatabase } = await import('./database/backup');
+      const success = await importDatabase();
+      
+      if (!success) {
+        return res.status(500).json({ 
+          message: "Ошибка при восстановлении из резервной копии" 
+        });
+      }
+      
+      res.json({ message: "Данные успешно восстановлены из резервной копии" });
+    } catch (error) {
+      console.error("Restore error:", error);
+      res.status(500).json({ 
+        message: "Ошибка при восстановлении из резервной копии",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Эндпоинт для проверки подключения к Render.com
+  app.get("/api/render-status", (req, res) => {
+    const isRender = process.env.RENDER === 'true';
+    const isProd = process.env.NODE_ENV === 'production';
+    const renderUrl = process.env.RENDER_EXTERNAL_URL;
+    
+    res.json({
+      environment: isRender ? 'Render.com' : 'Replit',
+      mode: isProd ? 'Production' : 'Development',
+      render_url: renderUrl || 'Not available',
+      disk_storage: isRender ? 'Available at /data' : 'Not available',
+      database: {
+        type: 'SQLite',
+        path: isRender ? '/data/sqlite.db' : 'sqlite.db',
+        status: 'Connected'
+      },
+      telegram_bot: {
+        mode: (isRender && isProd) ? 'webhook' : 'polling',
+        webhook_url: isRender ? `${renderUrl}/webhook/${process.env.TELEGRAM_BOT_TOKEN}` : 'Not available'
+      }
+    });
+  });
+
   app.use(express.static('dist/client'));
 
   return httpServer;
