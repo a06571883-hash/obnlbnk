@@ -2,12 +2,12 @@
 # Скрипт сборки для Render.com
 
 # Install dependencies
-npm install
-npm install --save-dev vite @vitejs/plugin-react
-npm install --save-dev @babel/core@^7.22.0 @babel/preset-env @babel/preset-react
-npm install --save-dev @babel/plugin-transform-runtime @babel/runtime
-npm install --save-dev @babel/plugin-syntax-top-level-await @babel/plugin-syntax-json-strings
-npm install --save-dev @babel/plugin-syntax-class-static-block
+npm install --legacy-peer-deps
+npm install --save-dev --legacy-peer-deps @vitejs/plugin-react vite@latest esbuild @babel/core@^7.22.0
+npm install --save-dev --legacy-peer-deps @babel/preset-env @babel/preset-react @babel/plugin-transform-runtime
+npm install --save-dev --legacy-peer-deps @babel/plugin-syntax-top-level-await @babel/plugin-syntax-json-strings
+npm install --save-dev --legacy-peer-deps @babel/plugin-syntax-class-static-block @babel/plugin-syntax-nullish-coalescing-operator
+npm install --save-dev --legacy-peer-deps @babel/plugin-syntax-optional-chaining @babel/plugin-syntax-class-properties
 
 # Create babel config
 echo '{
@@ -19,12 +19,15 @@ echo '{
     "@babel/plugin-transform-runtime",
     "@babel/plugin-syntax-top-level-await",
     "@babel/plugin-syntax-json-strings",
-    "@babel/plugin-syntax-class-static-block"
+    "@babel/plugin-syntax-class-static-block",
+    "@babel/plugin-syntax-nullish-coalescing-operator",
+    "@babel/plugin-syntax-optional-chaining",
+    "@babel/plugin-syntax-class-properties"
   ]
 }' > .babelrc
 
-# Ensure build command uses local vite
-./node_modules/.bin/vite build && ./node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+# Build using npx to ensure local versions are used
+npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
 echo "============================================"
 echo "Запуск скрипта сборки для Render.com..."
