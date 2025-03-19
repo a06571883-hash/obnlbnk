@@ -236,19 +236,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Информационный маршрут для Telegram бота (для отладки)
   app.get("/api/telegram-info", (req, res) => {
     try {
+      // Определяем, работает ли бот в режиме webhook или polling
+      const isRender = process.env.RENDER === 'true';
+      const isProd = process.env.NODE_ENV === 'production';
+      const botMode = (isRender && isProd) ? 'webhook' : 'polling';
+
       res.json({
-        status: "Telegram бот запущен в режиме polling",
-        webapp_url: process.env.WEBAPP_URL || 'https://workspace.anatoliymmm6.repl.co',
+        status: `Telegram бот запущен в режиме ${botMode}`,
+        webapp_url: process.env.WEBAPP_URL || 'https://а-нет-пока-url.repl.co',
         bot_username: "OOO_BNAL_BANK_bot",
+        environment: isRender ? 'Render.com' : 'Replit',
+        mode: isProd ? 'Production' : 'Development',
         commands: [
           { command: "/start", description: "Запустить бота" },
           { command: "/url", description: "Получить текущий URL приложения" }
         ],
-        note: "Бот работает в режиме polling и доступен только когда проект запущен на Replit"
+        note: botMode === 'polling' 
+          ? "Бот работает в режиме polling и доступен только когда проект запущен на Replit" 
+          : "Бот работает в режиме webhook и доступен постоянно на Render.com"
       });
     } catch (error) {
       console.error('Ошибка при получении информации о Telegram боте:', error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
+  // Маршрут для обработки Webhook от Telegram (используется только на Render.com)
+  app.post('/webhook/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const botToken = process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4';
+      
+      // Проверяем, что токен совпадает с ожидаемым
+      if (token !== botToken) {
+        console.error('Неправильный токен в запросе webhook:', token);
+        return res.status(403).send('Forbidden');
+      }
+      
+      const update = req.body;
+      
+      // Логируем входящий update от Telegram
+      console.log('Получен webhook от Telegram:', JSON.stringify(update, null, 2));
+      
+      // Простой обработчик команд
+      if (update && update.message && update.message.text) {
+        const message = update.message;
+        const chatId = message.chat.id;
+        const text = message.text;
+        
+        // Определяем URL приложения
+        const WEBAPP_URL = process.env.WEBAPP_URL || 
+                           process.env.RENDER_EXTERNAL_URL || 
+                           'https://app.example.com/';
+        
+        // Обрабатываем команды
+        if (text === '/start') {
+          // Отправляем приветственное сообщение и кнопку WebApp
+          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: 'Добро пожаловать в BNAL Bank!\n\nНажмите кнопку ниже, чтобы открыть приложение.',
+              reply_markup: {
+                inline_keyboard: [[{
+                  text: '🏦 Открыть BNAL Bank',
+                  web_app: { url: WEBAPP_URL }
+                }]]
+              }
+            })
+          });
+          
+          console.log('Ответ на команду /start отправлен пользователю', chatId);
+        } else if (text === '/url') {
+          // Отправляем текущий URL приложения
+          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: `Текущий URL приложения:\n${WEBAPP_URL}\n\nЭто постоянный URL на Render.com.`,
+              reply_markup: {
+                inline_keyboard: [[{
+                  text: '🏦 Открыть BNAL Bank',
+                  web_app: { url: WEBAPP_URL }
+                }]]
+              }
+            })
+          });
+          
+          console.log('Ответ на команду /url отправлен пользователю', chatId);
+        } else {
+          // Отвечаем на другие сообщения
+          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: 'Доступные команды:\n/start - начать\n/url - получить текущий URL приложения\n\nИспользуйте кнопку "Открыть BNAL Bank", чтобы запустить приложение.'
+            })
+          });
+          
+          console.log('Ответ на сообщение отправлен пользователю', chatId);
+        }
+      }
+      
+      // Отправляем 200 OK Telegram серверу
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error('Ошибка обработки webhook от Telegram:', error);
+      res.status(500).send('Internal Server Error');
     }
   });
 
