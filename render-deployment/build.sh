@@ -1,9 +1,15 @@
 #!/bin/bash
 # Скрипт сборки для Render.com
 
+# Install dependencies
 npm install
-npm install vite --save-dev
-npm install @babel/core --save-dev
+npm install --save-dev @babel/core @babel/preset-env @babel/preset-react vite
+
+# Create temporary babel config if it doesn't exist
+echo '{
+  "presets": ["@babel/preset-env", "@babel/preset-react"]
+}' > .babelrc
+
 npm run build
 
 echo "============================================"
