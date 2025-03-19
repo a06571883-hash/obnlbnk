@@ -4,7 +4,7 @@
   "description": "Многофункциональная финансовая платформа с поддержкой криптовалют",
   "main": "dist/server/index.js",
   "scripts": {
-    "build": "echo 'Этап сборки'",
+    "build": "tsc --skipLibCheck --esModuleInterop --target es2016 --module commonjs --outDir dist server/index.ts",
     "start": "node dist/server/index.js",
     "dev": "tsx server/index.ts",
     "lint": "eslint .",
