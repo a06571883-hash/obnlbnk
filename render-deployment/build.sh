@@ -1,17 +1,13 @@
 #!/bin/bash
 # Скрипт сборки для Render.com
 
+npm install
+npm install -g vite
+npm run build
+
 echo "============================================"
 echo "Запуск скрипта сборки для Render.com..."
 echo "============================================"
-
-# Установка зависимостей
-echo "Установка зависимостей Node.js..."
-npm ci
-
-# Сборка проекта
-echo "Сборка проекта..."
-npm run build
 
 # Создаем директорию для хранения данных, если она не существует
 echo "Проверка и создание директорий для хранения данных..."
@@ -31,7 +27,7 @@ if [ -f "data/sqlite.db" ]; then
   echo "Создание резервной копии базы данных с временной меткой $TIMESTAMP..."
   cp data/sqlite.db "data/backup/backup_$TIMESTAMP.db"
   echo "Резервная копия создана в data/backup/backup_$TIMESTAMP.db"
-  
+
   # Удаляем старые резервные копии (оставляем только последние 5)
   echo "Удаление старых резервных копий..."
   ls -t data/backup/backup_*.db | tail -n +6 | xargs -r rm
