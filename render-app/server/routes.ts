@@ -200,7 +200,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/transactions", ensureAuthenticated, async (req, res) => {
     try {
       // Get all user's cards
-      const userCards = await storage.getCardsByUserId(req.user.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+      const userCards = await storage.getCardsByUserId(userId);
       const cardIds = userCards.map(card => card.id);
 
       // Get all transactions related to user's cards
@@ -366,7 +370,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/backup", ensureAuthenticated, async (req, res) => {
     try {
       // Проверяем, что пользователь имеет права регулятора
-      const user = await storage.getUser(req.user!.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+      const user = await storage.getUser(userId);
       if (!user || !user.is_regulator) {
         return res.status(403).json({ 
           message: "Только регулятор может создавать резервные копии" 
@@ -401,7 +409,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/restore", ensureAuthenticated, async (req, res) => {
     try {
       // Проверяем, что пользователь имеет права регулятора
-      const user = await storage.getUser(req.user!.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Необходима авторизация" });
+      }
+      const user = await storage.getUser(userId);
       if (!user || !user.is_regulator) {
         return res.status(403).json({ 
           message: "Только регулятор может восстанавливать из резервных копий"

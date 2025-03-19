@@ -1,24 +1,35 @@
 #!/bin/bash
 
-echo "Starting server in production mode..."
-echo "NODE_ENV: $NODE_ENV"
-echo "RENDER: $RENDER"
-echo "RENDER_EXTERNAL_URL: $RENDER_EXTERNAL_URL"
+# Скрипт для запуска приложения на Render.com
 
-# Если мы на Render, используем RENDER_EXTERNAL_URL для WEBAPP_URL
-if [ -n "$RENDER" ] && [ -n "$RENDER_EXTERNAL_URL" ]; then
-  export WEBAPP_URL="$RENDER_EXTERNAL_URL"
-  echo "Setting WEBAPP_URL to $WEBAPP_URL from RENDER_EXTERNAL_URL"
-  
-  # Подготавливаем директории для данных
-  echo "Preparing data directories..."
-  node prepare-data.js
-  
-  # Настраиваем Telegram webhook
-  echo "Setting up Telegram webhook..."
-  node setup-telegram.js
+echo "🚀 Запуск приложения на Render.com..."
+
+# Проверяем наличие переменных окружения
+if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+  echo "⚠️ Предупреждение: TELEGRAM_BOT_TOKEN не задан, функциональность Telegram бота будет ограничена"
 fi
 
-# Запускаем сервер
-echo "Starting application server..."
-node dist/index.js
+if [ -z "$RENDER_EXTERNAL_URL" ]; then
+  echo "⚠️ Предупреждение: RENDER_EXTERNAL_URL не задан, некоторые функции могут работать некорректно"
+fi
+
+# Устанавливаем переменные окружения
+export NODE_ENV=production
+export RENDER=true
+export DATABASE_PATH=/data/sqlite.db
+
+# Проверяем наличие базы данных
+if [ ! -f "/data/sqlite.db" ]; then
+  echo "📝 База данных не найдена, создаем новую..."
+fi
+
+# Обновляем права на скрипты
+chmod +x setup-telegram.js
+
+# Настраиваем Telegram бота
+echo "🤖 Настройка Telegram бота..."
+node setup-telegram.js
+
+# Запускаем приложение
+echo "🌐 Запуск веб-сервера..."
+node dist/server/index.js

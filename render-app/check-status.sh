@@ -1,75 +1,143 @@
 #!/bin/bash
 
-echo "===== ПРОВЕРКА СТАТУСА ПРИЛОЖЕНИЯ ====="
-echo "Дата: $(date)"
-echo "Окружение: $NODE_ENV"
+# Скрипт для проверки статуса приложения на Render.com
 
-echo ""
-echo "=== Проверка директорий ==="
-if [ -d "./data" ]; then
-  echo "✅ Директория data существует"
-  echo "   Размер: $(du -sh ./data | cut -f1)"
-  echo "   Файлы: $(ls -la ./data | wc -l) элементов"
+# Цвета для вывода
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Проверяем переменные окружения
+echo -e "${BLUE}Проверка переменных окружения:${NC}"
+
+# Проверяем RENDER_EXTERNAL_URL
+if [ -z "$RENDER_EXTERNAL_URL" ]; then
+  echo -e "${RED}❌ RENDER_EXTERNAL_URL не задан${NC}"
 else
-  echo "❌ Директория data не существует"
+  echo -e "${GREEN}✅ RENDER_EXTERNAL_URL: $RENDER_EXTERNAL_URL${NC}"
+  BASE_URL=$RENDER_EXTERNAL_URL
 fi
 
-if [ -d "./data/backup" ]; then
-  echo "✅ Директория data/backup существует"
-  echo "   Размер: $(du -sh ./data/backup | cut -f1)"
-  echo "   Файлы: $(ls -la ./data/backup | wc -l) элементов"
+# Проверяем TELEGRAM_BOT_TOKEN
+if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+  echo -e "${RED}❌ TELEGRAM_BOT_TOKEN не задан${NC}"
 else
-  echo "❌ Директория data/backup не существует"
+  echo -e "${GREEN}✅ TELEGRAM_BOT_TOKEN: установлен${NC}"
 fi
 
-echo ""
-echo "=== Проверка файлов ==="
-if [ -f "./data/sqlite.db" ]; then
-  echo "✅ База данных sqlite.db существует"
-  echo "   Размер: $(du -sh ./data/sqlite.db | cut -f1)"
+# Проверяем NODE_ENV
+if [ "$NODE_ENV" == "production" ]; then
+  echo -e "${GREEN}✅ NODE_ENV: production${NC}"
 else
-  echo "❌ База данных sqlite.db не существует"
+  echo -e "${YELLOW}⚠️ NODE_ENV: $NODE_ENV (рекомендуется production)${NC}"
 fi
 
-if [ -f "./sessions.db" ]; then
-  echo "✅ База сессий sessions.db существует"
-  echo "   Размер: $(du -sh ./sessions.db | cut -f1)"
+# Проверяем RENDER
+if [ "$RENDER" == "true" ]; then
+  echo -e "${GREEN}✅ RENDER: true${NC}"
 else
-  echo "❌ База сессий sessions.db не существует"
-fi
-
-echo ""
-echo "=== Проверка переменных окружения ==="
-echo "NODE_ENV: $NODE_ENV"
-echo "RENDER: $RENDER"
-echo "RENDER_EXTERNAL_URL: $RENDER_EXTERNAL_URL"
-if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
-  echo "✅ TELEGRAM_BOT_TOKEN установлен"
-else
-  echo "❌ TELEGRAM_BOT_TOKEN отсутствует"
-fi
-
-if [ -n "$SESSION_SECRET" ]; then
-  echo "✅ SESSION_SECRET установлен"
-else
-  echo "❌ SESSION_SECRET отсутствует"
-fi
-
-if [ -n "$WEBAPP_URL" ]; then
-  echo "✅ WEBAPP_URL установлен: $WEBAPP_URL"
-else
-  echo "❌ WEBAPP_URL отсутствует"
+  echo -e "${YELLOW}⚠️ RENDER: $RENDER (рекомендуется true)${NC}"
 fi
 
 echo ""
-echo "=== Статус приложения ==="
-echo "PID текущего процесса: $$"
-echo "Запущенные процессы node:"
-ps aux | grep node | grep -v grep
+echo -e "${BLUE}Проверка файловой системы:${NC}"
+
+# Проверяем доступность директории /data
+if [ -d "/data" ]; then
+  echo -e "${GREEN}✅ Директория /data существует${NC}"
+  
+  # Проверяем права на запись
+  if [ -w "/data" ]; then
+    echo -e "${GREEN}✅ Директория /data доступна для записи${NC}"
+  else
+    echo -e "${RED}❌ Директория /data недоступна для записи${NC}"
+  fi
+  
+  # Проверяем наличие базы данных
+  if [ -f "/data/sqlite.db" ]; then
+    echo -e "${GREEN}✅ База данных найдена: /data/sqlite.db${NC}"
+    
+    # Проверяем размер базы данных
+    DB_SIZE=$(du -h /data/sqlite.db | cut -f1)
+    echo -e "${GREEN}✅ Размер базы данных: $DB_SIZE${NC}"
+  else
+    echo -e "${YELLOW}⚠️ База данных не найдена: /data/sqlite.db${NC}"
+  fi
+  
+  # Проверяем наличие директорий для бэкапов
+  if [ -d "/data/backup" ]; then
+    echo -e "${GREEN}✅ Директория для бэкапов существует${NC}"
+    
+    # Проверяем наличие бэкапов
+    BACKUP_COUNT=$(find /data/backup -type f | wc -l)
+    echo -e "${GREEN}✅ Количество файлов бэкапов: $BACKUP_COUNT${NC}"
+  else
+    echo -e "${YELLOW}⚠️ Директория для бэкапов не найдена${NC}"
+  fi
+else
+  echo -e "${RED}❌ Директория /data не существует. Необходимо создать постоянное хранилище!${NC}"
+fi
 
 echo ""
-echo "=== Доступные порты ==="
-netstat -tlpn 2>/dev/null | grep node
+echo -e "${BLUE}Проверка статуса приложения:${NC}"
+
+# Проверяем, работает ли приложение
+if [ ! -z "$BASE_URL" ]; then
+  # Проверяем главную страницу
+  MAIN_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $BASE_URL)
+  if [ "$MAIN_STATUS" == "200" ]; then
+    echo -e "${GREEN}✅ Главная страница доступна (200 OK)${NC}"
+  else
+    echo -e "${RED}❌ Главная страница недоступна (HTTP $MAIN_STATUS)${NC}"
+  fi
+  
+  # Проверяем API статуса
+  API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $BASE_URL/api/render-status)
+  if [ "$API_STATUS" == "200" ]; then
+    echo -e "${GREEN}✅ API статуса доступно (200 OK)${NC}"
+    
+    # Получаем детали статуса
+    STATUS_DETAILS=$(curl -s $BASE_URL/api/render-status)
+    echo -e "${GREEN}✅ Детали статуса: $STATUS_DETAILS${NC}"
+  else
+    echo -e "${RED}❌ API статуса недоступно (HTTP $API_STATUS)${NC}"
+  fi
+  
+  # Проверяем информацию о Telegram боте
+  TG_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $BASE_URL/api/telegram-info)
+  if [ "$TG_STATUS" == "200" ]; then
+    echo -e "${GREEN}✅ Информация о Telegram боте доступна (200 OK)${NC}"
+    
+    # Получаем детали о боте
+    TG_DETAILS=$(curl -s $BASE_URL/api/telegram-info)
+    echo -e "${GREEN}✅ Детали Telegram бота: $TG_DETAILS${NC}"
+  else
+    echo -e "${RED}❌ Информация о Telegram боте недоступна (HTTP $TG_STATUS)${NC}"
+  fi
+else
+  echo -e "${RED}❌ Невозможно проверить статус приложения - RENDER_EXTERNAL_URL не задан${NC}"
+fi
 
 echo ""
-echo "===== ПРОВЕРКА ЗАВЕРШЕНА ====="
+echo -e "${BLUE}Рекомендации:${NC}"
+
+if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+  echo -e "${YELLOW}⚠️ Установите TELEGRAM_BOT_TOKEN для полной функциональности Telegram бота${NC}"
+fi
+
+if [ "$NODE_ENV" != "production" ]; then
+  echo -e "${YELLOW}⚠️ Установите NODE_ENV=production для оптимальной производительности${NC}"
+fi
+
+if [ "$RENDER" != "true" ]; then
+  echo -e "${YELLOW}⚠️ Установите RENDER=true для корректной работы на Render.com${NC}"
+fi
+
+if [ ! -d "/data" ]; then
+  echo -e "${RED}❌ Создайте постоянное хранилище (disk) в настройках Render.com с путем /data${NC}"
+fi
+
+echo ""
+echo -e "${GREEN}Проверка завершена!${NC}"

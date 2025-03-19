@@ -1,35 +1,33 @@
 #!/bin/bash
 
-echo "Starting build process..."
+# Скрипт для сборки приложения на Render.com
 
-# Устанавливаем глобально необходимые зависимости
-echo "Installing global dependencies..."
-npm install -g vite esbuild typescript
+echo "🏗️ Запуск сборки проекта для Render.com..."
 
-# Устанавливаем зависимости проекта
-echo "Installing project dependencies..."
+# Создаем директории для хранения данных и резервных копий
+echo "📁 Создание директорий для данных..."
+mkdir -p /data
+mkdir -p /data/backup
+mkdir -p /data/backup/json
+mkdir -p /data/backup/sql
+mkdir -p /data/backup/zip
+
+# Проверяем наличие базы данных
+if [ ! -f "/data/sqlite.db" ]; then
+  echo "🔄 База данных не найдена, будет создана новая..."
+else
+  echo "✅ База данных найдена: /data/sqlite.db"
+fi
+
+# Устанавливаем зависимости
+echo "📦 Установка зависимостей..."
 npm install
 
-# Создаем директорию для сборки
-echo "Creating build directory..."
-mkdir -p dist/public
+# Создаем production сборку
+echo "🔨 Компиляция TypeScript..."
+npx tsc
 
-# Сборка клиента
-echo "Building client..."
-npx vite build --outDir=dist/public
+echo "🚀 Сборка клиентской части..."
+npm run build
 
-# Сборка сервера
-echo "Building server..."
-npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
-
-# Копируем необходимые файлы для запуска
-echo "Copying required files..."
-cp start.sh dist/
-chmod +x dist/start.sh
-
-# Создаем директории для данных
-echo "Creating data directories..."
-mkdir -p dist/data
-mkdir -p dist/data/backup
-
-echo "Build process completed successfully!"
+echo "✅ Сборка проекта завершена!"
