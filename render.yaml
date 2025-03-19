@@ -1,5 +1,5 @@
+
 services:
-  # Web-сервис для основного приложения
   - type: web
     name: ooo-bnal-bank
     runtime: node
