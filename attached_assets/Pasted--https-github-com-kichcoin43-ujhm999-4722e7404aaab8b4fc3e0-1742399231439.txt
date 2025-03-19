@@ -1,0 +1,469 @@
+Клонирование с https://github.com/kichcoin43/ujhm999   
+== > Проверка коммита 4722e7404aaab8b4fc3e04c582aab7569bf29c09 в ветке main       
+==> Запрос версии Node.js >=18.0.0    
+==> Используем Node.js версии 23.10.0 через /opt/render/project/src/package.json      
+==> Документация по указанию версии Node.js : https://render.com/docs/node-version       
+==> Используем Bun версии 1.1.0 (по умолчанию)     
+==> Документация по указанию версии пучка : https://render.com/docs/bun-version       
+==> Выполнение команды сборки 'chmod +x build.sh && ./build.sh'...        
+🏗️  Запуск  сборки  проекта  для  Render.com...
+📁  Создание  каталога  данных  ...
+mkdir:  невозможно  создать  каталог  '/data': Файловая система  только для чтения  
+mkdir:  невозможно  создать  каталог  '/data': Файловая система  только для чтения  
+mkdir:  невозможно  создать  каталог  '/data': Файловая система  только для чтения  
+mkdir:  невозможно  создать  каталог  '/data': Файловая система  только для чтения  
+mkdir:  невозможно  создать  каталог  '/data': Файловая система  только для чтения  
+🔄  База  данных  не  найдена,  будет  создана  новая...
+📦  Установка  зависимостей...
+код  ошибки npm 1  
+путь  к ошибке npm /opt/render/project/src/node_modules/better-sqlite3  
+npm  ошибка  команда  не удалась
+npm  ошибка  команды  sh  -c  prebuild-install  ||  node-gyp  пересборка  --release
+ Ошибка npm  make:  Вход в  каталог  '/opt/render/project/src/node_modules/better-sqlite3/build'
+npm  ошибка    TOUCH  ba23eeee118cd63e16015df367567cb043fed872.intermediate
+ ошибка npm    ДЕЙСТВИЕ  deps_sqlite3_gyp_locate_sqlite3_target_copy_builtin_sqlite3  ba23eeee118cd63e16015df367567cb043fed872.intermediate
+ ошибка npm    TOUCH  Release/obj.target/deps/locate_sqlite3.stamp
+ ошибка npm    CC(цель)  Release/obj.target/sqlite3/gen/sqlite3/sqlite3.o
+npm  error  rm  -f  Release/obj.target/deps/sqlite3.a  Release/obj.target/deps/sqlite3.a.ar-file-list;  mkdir  -p  `dirname  Release/obj.target/deps/sqlite3.a`
+npm  ошибка  ar  crs  Release/obj.target/deps/sqlite3.a  @Release/obj.target/deps/sqlite3.a.ar-file-list
+ ошибка npm    COPY  Release/sqlite3.a
+ ошибка npm    CXX(цель)  Выпуск/obj.target/better_sqlite3/src/better_sqlite3.o
+ ошибка npm  rm  ba23eeee118cd63e16015df367567cb043fed872.intermediate
+ Ошибка npm  make:  выход из  каталога  '/opt/render/project/src/node_modules/better-sqlite3/build'
+npm  error  prebuild-install  warn  install  Не найдено  готовых  двоичных файлов (target=23.10.0 runtime=node arch=x64 libc= platform=linux)      
+npm  error  gyp  info  это  сработало ,  если  заканчивается на ok   
+npm  error  gyp  info  при использовании  node-gyp@11.0.0
+npm  error  gyp  info  с использованием  node@23.10.0  |  linux  |  x64
+npm  error  gyp  info  find  Python  с использованием  Python  версии  3.11.2  найден  в  "/usr/bin/python"
+npm  ошибка  gyp  http  GET https://nodejs.org/download/release/v23.10.0/node-v23.10.0-headers.tar.gz 
+npm  ошибка  gyp  http  200 https://nodejs.org/download/release/v23.10.0/node-v23.10.0-headers.tar.gz 
+npm  ошибка  gyp  http  GET https://nodejs.org/download/release/v23.10.0/SHASUMS256.txt 
+npm  ошибка  gyp  http  200 https://nodejs.org/download/release/v23.10.0/SHASUMS256.txt 
+npm  ошибка  gyp  информация  spawn  /usr/bin/python
+npm  error  gyp  info  spawn  args  [
+npm  error  gyp  info  spawn  args  '/opt/render/project/nodes/node-23.10.0/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py',
+npm  error  gyp  info  spawn  args  'binding.gyp',
+npm  error  gyp  info  spawn  args  '-f',
+npm  error  gyp  info  spawn  args  'make',
+npm  error  gyp  info  spawn  args  '-I',
+npm  error  gyp  info  spawn  args  '/opt/render/project/src/node_modules/better-sqlite3/build/config.gypi',
+npm  error  gyp  info  spawn  args  '-I',
+npm  error  gyp  info  spawn  args  '/opt/render/project/nodes/node-23.10.0/lib/node_modules/npm/node_modules/node-gyp/addon.gypi',
+npm  error  gyp  info  spawn  args  '-I',
+npm  error  gyp  info  spawn  args  '/opt/render/.cache/node-gyp/23.10.0/include/node/common.gypi',
+npm  error  gyp  info  spawn  args  '-Dlibrary=shared_library',
+npm  error  gyp  info  spawn  args  '-Dvisibility=default',
+npm  error  gyp  info  spawn  args  '-Dnode_root_dir=/opt/render/.cache/node-gyp/23.10.0',
+npm  error  gyp  info  spawn  args  '-Dnode_gyp_dir=/opt/render/project/nodes/node-23.10.0/lib/node_modules/npm/node_modules/node-gyp',
+npm  error  gyp  info  spawn  args  '-Dnode_lib_file=/opt/render/.cache/node-gyp/23.10.0/<(target_arch)/node.lib',
+npm  error  gyp  info  spawn  args  '-Dmodule_root_dir=/opt/render/project/src/node_modules/better-sqlite3',
+npm  error  gyp  info  spawn  args  '-Dnode_engine=v8',
+npm  error  gyp  info  spawn  args  '--depth=.',
+npm  error  gyp  info  spawn  args  '--no-parallel',
+npm  error  gyp  info  spawn  args  '--generator-output',
+npm  error  gyp  info  spawn  args  'build',
+npm  error  gyp  info  spawn  args  '-Goutput_dir=.'
+npm  ошибка  gyp  информация  spawn  args  ]
+npm  ошибка  gyp  информация  спавн  сделать
+npm  error  gyp  info  spawn  args  [  'BUILDTYPE=Release',  '-C',  'build'  ]
+ Ошибка npm  В  файле  , включенном  из  /opt/render/.cache/node-gyp/23.10.0/include/node/cppgc/common.h:8,
+ ошибка npm                   из  /opt/render/.cache/node-gyp/23.10.0/include/node/v8.h:23,
+ ошибка npm                   из  /opt/render/.cache/node-gyp/23.10.0/include/node/node.h:73,
+ ошибка npm                   из  ./src/better_sqlite3.lzz:11,
+ ошибка npm                   из  ../src/better_sqlite3.cpp:4:
+ ошибка npm  /opt/render/.cache/node-gyp/23.10.0/include/node/v8config.h:13:2:  ошибка:  #error " Требуется  C++20  или  более поздняя версия ." 
+npm  error     13  |  #error " Требуется  C++20  или  более поздняя версия ." 
+ ошибка npm        |   ^~~~~
+ Ошибка npm  ./src/util/macros.lzz:31:69:  ошибка:  «CopyablePersistentTraits» не  является членом «v8»; вы имели в виду « NonCopyablePersistentTraits»?         
+ ошибка npm  ./src/util/macros.lzz:31:94:  ошибка : аргумент  шаблона 2 недействителен    
+ ошибка npm  ./src/util/macros.lzz:149:2:  ошибка: 'v8 ::  AccessorGetterCallback' не  был объявлен   
+ ошибка npm  ./src/util/macros.lzz:33:97:  ошибка: « CopyablePersistent  » не  был объявлен   
+ ошибка npm  ./src/util/macros.lzz:33:116:  ошибка:  ожидалось  «,»  или  «...»  перед токеном  «<» 
+ ошибка npm ./src/util/constants.lzz:119:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:120:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:121:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:122:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:123:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:124:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:125:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:126:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:127:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:128:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:129:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:130:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:131:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:132:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:133:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:134:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:135:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/constants.lzz:136:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm  ./src/util/constants.lzz:140:49:  ошибка: « CopyablePersistent  » не  был объявлен   
+ ошибка npm  ./src/util/constants.lzz:140:68:  ошибка:  ожидалось  «,»  или  «...»  перед токеном  «<» 
+ ошибка npm  ./src/util/constants.lzz:150:28:  ошибка:  «CopyablePersistent» не  был объявлен в этой области     
+ ошибка npm  ./src/util/constants.lzz:150:57:  ошибка : аргумент  шаблона 2 недействителен    
+ ошибка npm  ./src/util/constants.lzz:150:57:  ошибка : аргумент  шаблона 5 недействителен    
+ ошибка npm  ./src/util/constants.lzz:150:59:  ошибка:  ожидался  неквалифицированный идентификатор  перед токеном  '>' 
+ ошибка npm ./src/util/bind-map.lzz:25:5  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/objects/database.lzz:465:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/custom-function.lzz:57:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm  ./src/util/custom-aggregate.lzz:39:90:  ошибка: « CopyablePersistent  » не  был объявлен   
+ ошибка npm  ./src/util/custom-aggregate.lzz:39:109:  ошибка:  ожидалось  «,»  или  «...»  перед токеном  «<» 
+ ошибка npm ./src/util/custom-aggregate.lzz:83:5  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/custom-aggregate.lzz:118:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm  ./src/util/custom-aggregate.lzz:119:3:  ошибка: « CopyablePersistent  »  не  указывает  тип  
+ ошибка npm  ./src/util/custom-aggregate.lzz:120:3:  ошибка: « CopyablePersistent  »  не  указывает  тип  
+ ошибка npm ./src/util/custom-table.lzz:104:5  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/custom-table.lzz:123:5  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/custom-table.lzz:124:5  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/custom-table.lzz:125:5  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/util/custom-table.lzz:403:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/better_sqlite3.lzz:56:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/better_sqlite3.lzz:57:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/better_sqlite3.lzz:58:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm ./src/better_sqlite3.lzz:59:3  :  ошибка: «  CopyablePersistent»  не  указывает  тип  
+ ошибка npm  ./src/util/macros.lzz:33:108:  ошибка: « CopyablePersistent  » не  был объявлен   
+ ошибка npm  ./src/util/macros.lzz:33:127:  ошибка:  ожидалось  «,»  или  «...»  перед токеном  «<» 
+ ошибка npm  ./src/util/macros.lzz:  В  функции  'void  SetFrozen(v8::Isolate*,  v8::Local<v8::Context>,  v8::Local<v8::Object>,  int)':
+ ошибка npm  ./src/util/macros.lzz:34:37:  ошибка:  «key» не  был объявлен в этой области; вы имели в виду «key_t»?         
+ ошибка npm  ./src/util/macros.lzz:34:55:  ошибка:  «значение» не  было объявлено в этой области     
+ Ошибка npm  ./src/util/bind-map.lzz:  В функции-  члене 'v8::Local<v8::String> BindMap::Pair::GetName(v8::Isolate*)':   
+ Ошибка npm  ./src/util/bind-map.lzz:14:40:  ошибка:  «name» не  было объявлено в этой области; вы имели в виду «tzname»?         
+ ошибка npm  ./src/objects/statement-iterator.lzz:  В  статической функции-  члене 'static v8::Local<v8::Object> StatementIterator::NewRecord(v8::Isolate*, v8::Local<v8::Context>, v8::Local<v8::Value>, Addon*, bool)':        
+ ошибка npm  ./src/objects/statement-iterator.lzz:121:44:  ошибка:  «класс  CS» не  имеет члена с именем «value»    
+ ошибка npm  ./src/objects/statement-iterator.lzz:122:44:  ошибка:  «класс  CS» не  имеет члена с именем «done»    
+ Ошибка npm  ./src/util/custom-aggregate.lzz:  В  глобальной  области видимости:
+ ошибка npm  ./src/util/custom-aggregate.lzz:39:109:  ошибка: « CopyablePersistent  » не  был объявлен   
+ ошибка npm  ./src/util/custom-aggregate.lzz:39:128:  ошибка:  ожидалось  «,»  или  «...»  перед токеном  «<» 
+ Ошибка npm  ./src/util/custom-aggregate.lzz:  В  статической функции-  члене 'static void CustomAggregate::xStepBase(sqlite3_context*, int, sqlite3_value**, int)':       
+ ошибка npm  ./src/util/custom-aggregate.lzz:40:269:  ошибка:  'struct  CustomAggregate::Accumulator' не  имеет члена с именем 'value'    
+ ошибка npm  ./src/util/custom-aggregate.lzz:44:32:  ошибка:  'struct  CustomAggregate::Accumulator' не  имеет члена с именем 'value'    
+ ошибка npm  ./src/util/custom-aggregate.lzz:47:70:  ошибка:  «ptrtm» не  был объявлен в этой области     
+ ошибка npm  ./src/util/custom-aggregate.lzz:54:63:  ошибка:  'struct  CustomAggregate::Accumulator' не  имеет члена с именем 'value'    
+ Ошибка npm  ./src/util/custom-aggregate.lzz:  В  статической функции-  члене 'static void CustomAggregate::xValueBase(sqlite3_context*, bool)':     
+ ошибка npm  ./src/util/custom-aggregate.lzz:59:269:  ошибка:  'struct  CustomAggregate::Accumulator' не  имеет члена с именем 'value'    
+ ошибка npm  ./src/util/custom-aggregate.lzz:68:52:  ошибка:  'struct  CustomAggregate::Accumulator' не  имеет члена с именем 'value'    
+ ошибка npm  ./src/util/custom-aggregate.lzz:70:71:  ошибка:  «class  CustomAggregate» не  имеет члена с именем «result»    
+ Ошибка npm  ./src/util/macros.lzz:  В  глобальной  области видимости:
+ ошибка npm  ./src/util/macros.lzz:158:2:  ошибка:  «v8::AccessorGetterCallback » не  был объявлен   
+ ошибка npm  ./src/util/macros.lzz:  В  функции  'void  SetPrototypeGetter(v8::Isolate*,  v8::Local<v8::External>,  v8::Local<v8::FunctionTemplate>,  const  char*,  int)':
+ ошибка npm  ./src/util/macros.lzz:172:28:  ошибка:  «class  v8::ObjectTemplate» не  имеет члена с именем «SetAccessor»    
+ Ошибка npm  ./src/better_sqlite3.lzz:  В  глобальной  области видимости:
+ ошибка npm  /opt/render/.cache/node-gyp/23.10.0/include/node/node.h:1247:7:  предупреждение:  приведение  между  несовместимыми типами  функций из 'void (*)(v8::Local<v8::Object>, v8::Local<v8::Value>, v8::Local<v8::Context>)' в 'node::addon_context_register_func' {он же 'void (*)(v8::Local<v8::Object>, v8::Local<v8::Value>, v8::Local<v8::Context>, void*)'} [-Wcast-function-type]               
+ ошибка npm   1247  |        (node::addon_context_register_func)  (regfunc),                   \
+ ошибка npm        |        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ошибка npm  /opt/render/.cache/node-gyp/23.10.0/include/node/node.h:1265:3:  примечание:  в  расширении  макроса «NODE_MODULE_CONTEXT_AWARE_X  » 
+ ошибка npm   1265  |    NODE_MODULE_CONTEXT_AWARE_X(modname,  regfunc,  NULL,  0)
+ ошибка npm        |    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ошибка npm  /opt/render/.cache/node-gyp/23.10.0/include/node/node.h:1296:3:  примечание:  в  расширении  макроса «NODE_MODULE_CONTEXT_AWARE  » 
+ ошибка npm   1296  |    NODE_MODULE_CONTEXT_AWARE(NODE_GYP_MODULE_NAME,                      \
+ ошибка npm        |    ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ ошибка npm  ./src/better_sqlite3.lzz:67:1:  примечание:  в  расширении  макроса «NODE_MODULE_INIT  » 
+ ошибка npm  ./src/better_sqlite3.lzz:  В  функции  'void  node_register_module_v131(v8::Local<v8::Object>,  v8::Local<v8::Value>,  v8::Local<v8::Context>)':
+ ошибка npm  ./src/better_sqlite3.lzz:84:9:  ошибка:  'struct  Addon' не  имеет члена с именем 'Statement'    
+ ошибка npm  ./src/better_sqlite3.lzz:85:9:  ошибка:  'struct  Addon' не  имеет члена с именем 'StatementIterator'    
+ ошибка npm  ./src/better_sqlite3.lzz:86:9:  ошибка: в  структуре  Addon  нет члена с именем Backup    
+ Ошибка npm  ./src/util/constants.lzz:  В функции-  члене 'v8::Local<v8::String> CS::Code(v8::Isolate*, int)':    
+npm  error  ./src/util/constants.lzz:5:32:  error:  «codes» не  был объявлен в этой области видимости; вы имели в виду «code»?         
+ Ошибка npm  ./src/util/constants.lzz:  В  конструкторе  «CS::CS(v8::Isolate*)»:
+ Ошибка npm  ./src/util/constants.lzz:11:36:  ошибка:  «database» не  был объявлен в этой области действия; вы имели в виду «Database»?         
+ Ошибка npm  ./src/util/constants.lzz:12:36:  ошибка:  «reader» не  был объявлен в этой области видимости; вы имели в виду «read»?         
+ ошибка npm  ./src/util/constants.lzz:13:36:  ошибка:  «source» не  был объявлен в этой области     
+ Ошибка npm  ./src/util/constants.lzz:14:36:  ошибка:  «memory» не  был объявлен в этой области видимости; вы имели в виду «memcpy»?         
+ ошибка npm  ./src/util/constants.lzz:15:36:  ошибка:  «readonly» не  был объявлен в этой области     
+ Ошибка npm  ./src/util/constants.lzz:16:36:  ошибка:  «name» не  было объявлено в этой области; вы имели в виду «tzname»?         
+npm  error  ./src/util/constants.lzz:17:36:  error:  «next» не  был объявлен в этой области видимости; вы имели в виду «std::next»?         
+ Ошибка npm  В  файле  , включенном  из  /usr/include/c++/12/string:46,
+ ошибка npm                   из  ./src/better_sqlite3.lzz:5:
+ ошибка npm  /usr/include/c++/12/bits/stl_iterator_base_funcs.h:230:5:  примечание: здесь объявлено  'std::next'  
+ ошибка npm    230  |      next(_InputIterator  __x,  typename
+ ошибка npm        |      ^~~~
+ ошибка npm  ./src/util/constants.lzz:18:36:  ошибка:  «length» не  был объявлен в этой области     
+ ошибка npm  ./src/util/constants.lzz:19:36:  ошибка:  «done» не  был объявлен в этой области     
+ ошибка npm  ./src/util/constants.lzz:20:36:  ошибка:  «значение» не  было объявлено в этой области     
+ ошибка npm  ./src/util/constants.lzz:21:36:  ошибка:  «изменения» не  были объявлены в этой области     
+ ошибка npm  ./src/util/constants.lzz:22:36:  ошибка:  «lastInsertRowid» не  был объявлен в этой области     
+ Ошибка npm  ./src/util/constants.lzz:23:36:  ошибка:  «statement» не  был объявлен в этой области действия; вы имели в виду «Statement»?         
+ ошибка npm  ./src/util/constants.lzz:24:36:  ошибка:  «столбец» не  был объявлен в этой области     
+ ошибка npm  ./src/util/constants.lzz:25:36:  ошибка:  «таблица» не  была объявлена ​​в этой области     
+ ошибка npm  ./src/util/constants.lzz:26:36:  ошибка:  «type» не  был объявлен в этой области; вы имели в виду «wctype»?         
+ ошибка npm  ./src/util/constants.lzz:27:36:  ошибка:  «totalPages» не  был объявлен в этой области     
+ ошибка npm  ./src/util/constants.lzz:28:36:  ошибка:  «remainingPages» не  был объявлен в этой области     
+ Ошибка npm  ./src/util/constants.lzz:  В  глобальной  области видимости:
+ ошибка npm  ./src/util/constants.lzz:140:44:  ошибка: « CopyablePersistent  » не  был объявлен   
+ ошибка npm  ./src/util/constants.lzz:140:63:  ошибка:  ожидалось  «,»  или  «...»  перед токеном  «<» 
+ Ошибка npm  ./src/util/constants.lzz:  В  статической функции-  члене 'static void CS::SetString(v8::Isolate*, int)':     
+ Ошибка npm  ./src/util/constants.lzz:141:17:  ошибка:  «constant» не  был объявлен в этой области действия; вы имели в виду «const»?         
+npm  error  ./src/util/constants.lzz:141:73:  ошибка:  «str» не  был объявлен в этой области; вы имели в виду «std»?         
+ Ошибка npm  ./src/util/constants.lzz:  В функции-  члене 'void CS::SetCode(v8::Isolate*, int, const char*)':      
+ Ошибка npm  ./src/util/constants.lzz:145:17:  ошибка:  «codes» не  был объявлен в этой области действия; вы имели в виду «code»?         
+ ошибка npm  ./src/util/bind-map.lzz:  В  конструкторе  'BindMap::Pair::Pair(v8::Isolate*,  const  char*,  int)':
+ ошибка npm  ./src/util/bind-map.lzz:20:5:  ошибка:  класс  'BindMap::Pair' не  имеет  поля с  именем ' name'    
+ ошибка npm  ./src/util/bind-map.lzz:  В  конструкторе  'BindMap::Pair::Pair(v8::Isolate*,  BindMap::Pair*)':
+ ошибка npm  ./src/util/bind-map.lzz:23:5:  ошибка:  класс  'BindMap::Pair' не  имеет  поля с  именем ' name'    
+ ошибка npm  ./src/util/bind-map.lzz:23:26:  ошибка:  «class  BindMap::Pair» не  имеет члена с именем «name»    
+ ошибка npm  ./src/objects/database.lzz:  В  статической функции-  члене 'static v8::Local<v8::Function> Database::Init(v8::Isolate*, v8::Local<v8::External>)':     
+ ошибка npm  ./src/objects/database.lzz:17:35:  ошибка:  недопустимое  преобразование  из  «void  (*)(v8::Local<v8::String>,  const  v8::PropertyCallbackInfo<v8::Value>&)»  в  «int»  [-fpermissive]
+ ошибка npm  ./src/util/macros.lzz:158:29:  примечание:    инициализация  аргумента  5  для  'void  SetPrototypeGetter(v8::Isolate*,  v8::Local<v8::External>,  v8::Local<v8::FunctionTemplate>,  const  char*,  int)'
+ ошибка npm  ./src/objects/database.lzz:18:35:  ошибка:  недопустимое  преобразование  из  «void  (*)(v8::Local<v8::String>,  const  v8::PropertyCallbackInfo<v8::Value>&)»  в  «int»  [-fpermissive]
+ ошибка npm  ./src/util/macros.lzz:158:29:  примечание:    инициализация  аргумента  5  для  'void  SetPrototypeGetter(v8::Isolate*,  v8::Local<v8::External>,  v8::Local<v8::FunctionTemplate>,  const  char*,  int)'
+ ошибка npm  ./src/objects/database.lzz:  В  статической функции-  члене 'static void Database::ThrowSqliteError(Addon*, const char*, int)':       
+ ошибка npm  ./src/objects/database.lzz:58:48:  ошибка:  'struct  Addon' не  имеет члена с именем 'SqliteError'    
+ Ошибка npm  ./src/objects/database.lzz:  В функции-  члене 'bool Database::Log(v8::Isolate*, sqlite3_stmt*)':    
+ ошибка npm  ./src/objects/database.lzz:69:32:  ошибка:  «logger» не  был объявлен в этой области     
+ ошибка npm  ./src/objects/database.lzz:69:67:  ошибка:  ожидалось  первичное выражение  перед токеном  '>' 
+ ошибка npm  ./src/objects/database.lzz:69:69:  ошибка:  ожидалось  первичное выражение  перед токеном  ')' 
+ Ошибка npm  ./src/objects/database.lzz:  В  конструкторе  «Database::Database(v8::Isolate*,  Addon*,  sqlite3*,  v8::Local<v8::Value>)»:
+ ошибка npm  ./src/objects/database.lzz:131:203:  ошибка:  класс  «Database» не  имеет  поля с  именем « logger»    
+ ошибка npm  ./src/objects/database.lzz:  В  статической функции-  члене 'static void Database::JS_new(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/objects/database.lzz:194:64:  ошибка:  «класс  CS» не  имеет члена с именем «memory»    
+ ошибка npm  ./src/objects/database.lzz:195:64:  ошибка:  «класс  CS» не  имеет члена с именем «readonly»    
+ ошибка npm  ./src/objects/database.lzz:196:64:  ошибка:  «класс  CS» не  имеет члена с именем «имя»    
+ ошибка npm  ./src/objects/database.lzz:  В  статической функции-  члене 'static void Database::JS_prepare(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/objects/database.lzz:210:52:  ошибка:  'struct  Addon' не  имеет члена с именем 'Statement'    
+ ошибка npm  ./src/objects/database.lzz:  В  статической функции-  члене 'static void Database::JS_backup(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/objects/database.lzz:268:52:  ошибка: в  структуре  Addon  нет члена с именем Backup    
+ ошибка npm  ./src/objects/statement.lzz:  В  статической функции-  члене 'static v8::Local<v8::Function> Statement::Init(v8::Isolate*, v8::Local<v8::External>)':     
+ ошибка npm  ./src/objects/statement.lzz:16:35:  ошибка:  недопустимое  преобразование  из  «void  (*)(v8::Local<v8::String>,  const  v8::PropertyCallbackInfo<v8::Value>&)»  в  «int»  [-fpermissive]
+ ошибка npm  ./src/util/macros.lzz:158:29:  примечание:    инициализация  аргумента  5  для  'void  SetPrototypeGetter(v8::Isolate*,  v8::Local<v8::External>,  v8::Local<v8::FunctionTemplate>,  const  char*,  int)'
+ ошибка npm  ./src/objects/statement.lzz:  В  статической функции-  члене 'static void Statement::JS_new(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/objects/statement.lzz:148:64:  ошибка:  «класс  CS» не  имеет члена с именем «reader»    
+ ошибка npm  ./src/objects/statement.lzz:149:64:  ошибка:  «класс  CS» не  имеет члена с именем «readonly»    
+ ошибка npm  ./src/objects/statement.lzz:150:64:  ошибка:  «класс  CS» не  имеет члена с именем «source»    
+ ошибка npm  ./src/objects/statement.lzz:151:64:  ошибка:  «класс  CS» не  имеет члена с именем «database»    
+ ошибка npm  ./src/objects/statement.lzz:  В  статической функции-  члене 'static void Statement::JS_run(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/objects/statement.lzz:168:52:  ошибка:  «класс  CS» не  имеет члена с именем «изменения»    
+ ошибка npm  ./src/objects/statement.lzz:169:52:  ошибка:  «класс  CS» не  имеет члена с именем «lastInsertRowid»    
+ ошибка npm  ./src/objects/statement.lzz:  В  статической функции-  члене 'static void Statement::JS_iterate(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/objects/statement.lzz:218:52:  ошибка:  'struct  Addon' не  имеет члена с именем 'StatementIterator'    
+ ошибка npm  ./src/objects/statement.lzz:  В  статической функции-  члене 'static void Statement::JS_columns(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/objects/statement.lzz:290:56:  ошибка:  «класс  CS» не  имеет члена с именем «name»    
+ ошибка npm  ./src/objects/statement.lzz:291:62:  ошибка:  «класс  CS» не  имеет члена с именем «column»    
+ ошибка npm  ./src/objects/statement.lzz:292:61:  ошибка:  «класс  CS» не  имеет члена с именем «таблица»    
+ ошибка npm  ./src/objects/statement.lzz:293:64:  ошибка:  «класс  CS» не  имеет члена с именем «database»    
+ ошибка npm  ./src/objects/statement.lzz:294:60:  ошибка:  «класс  CS» не  имеет члена с именем «тип»    
+ ошибка npm  ./src/objects/statement-iterator.lzz:  В  статической функции-  члене 'static void StatementIterator::JS_new(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/objects/statement-iterator.lzz:52:64:  ошибка:  «класс  CS» не  имеет члена с именем «statement»    
+ ошибка npm  ./src/objects/backup.lzz:  В  статической функции-  члене 'static void Backup::JS_new(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/objects/backup.lzz:93:94:  ошибка:  «класс  CS» не  имеет члена с именем «database»    
+ Ошибка npm  ./src/objects/backup.lzz:  В  статической функции-  члене 'static void Backup::JS_transfer(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/objects/backup.lzz:115:52:  ошибка:  «класс  CS» не  имеет члена с именем «totalPages»    
+ ошибка npm  ./src/objects/backup.lzz:116:52:  ошибка:  «класс  CS» не  имеет члена с именем «remainingPages»    
+ ошибка npm  ./src/util/custom-function.lzz:  В  конструкторе  'CustomFunction::CustomFunction(v8::Isolate*,  Database*,  const  char*,  v8::Local<v8::Function>,  bool)':
+ ошибка npm  ./src/util/custom-function.lzz:10:46:  ошибка:  класс  «CustomFunction» не  имеет  поля с  именем « fn»    
+ ошибка npm  ./src/util/custom-function.lzz:  В  статической функции-  члене 'static void CustomFunction::xFunc(sqlite3_context*, int, sqlite3_value**)':      
+ ошибка npm  ./src/util/custom-function.lzz:33:68:  ошибка:  «class  CustomFunction» не  имеет члена с именем «fn»    
+ ошибка npm  ./src/util/custom-aggregate.lzz:  В  конструкторе  'CustomAggregate::CustomAggregate(v8::Isolate*,  Database*,  const  char*,  v8::Local<v8::Value>,  v8::Local<v8::Function>,  v8::Local<v8::Value>,  v8::Local<v8::Value>,  bool)':
+ ошибка npm  ./src/util/custom-aggregate.lzz:13:132:  ошибка:  класс  «CustomAggregate» не  имеет  поля с  именем « inverse»    
+ ошибка npm  ./src/util/custom-aggregate.lzz:13:231:  ошибка:  класс  «CustomAggregate» не  имеет  поля с  именем « result»    
+ ошибка npm  ./src/util/custom-aggregate.lzz:13:327:  ошибка:  класс  «CustomAggregate» не  имеет  поля с  именем « start»    
+ Ошибка npm  ./src/util/custom-aggregate.lzz:  В  статической функции-  члене 'static void CustomAggregate::xStep(sqlite3_context*, int, sqlite3_value**)':      
+ ошибка npm  ./src/util/custom-aggregate.lzz:22:69:  ошибка:  «fn» не  является членом « CustomAggregate »     
+ Ошибка npm  ./src/util/custom-aggregate.lzz:  В  статической функции-  члене 'static void CustomAggregate::xInverse(sqlite3_context*, int, sqlite3_value**)':      
+ ошибка npm  ./src/util/custom-aggregate.lzz:26:69:  ошибка:  «inverse» не  является членом « CustomAggregate »     
+ Ошибка npm  ./src/util/custom-aggregate.lzz:  В функции-  члене 'CustomAggregate::Accumulator* CustomAggregate::GetAccumulator(sqlite3_context*)':   
+ ошибка npm  ./src/util/custom-aggregate.lzz:94:71:  ошибка:  «start» не  был объявлен в этой области     
+ ошибка npm  ./src/util/custom-aggregate.lzz:94:105:  ошибка:  ожидалось  первичное выражение  перед токеном  '>' 
+ ошибка npm  ./src/util/custom-aggregate.lzz:94:107:  ошибка:  ожидалось  первичное выражение  перед токеном  ')' 
+ ошибка npm  ./src/util/custom-aggregate.lzz:96:43:  ошибка:  'struct  CustomAggregate::Accumulator' не  имеет члена с именем 'value'    
+ ошибка npm  ./src/util/custom-aggregate.lzz:99:38:  ошибка:  'struct  CustomAggregate::Accumulator' не  имеет члена с именем 'value'    
+ ошибка npm  ./src/util/custom-aggregate.lzz:99:59:  ошибка:  «start» не  был объявлен в этой области     
+ Ошибка npm  ./src/util/custom-aggregate.lzz:  В  статической функции-  члене 'static void CustomAggregate::DestroyAccumulator(sqlite3_context*)':    
+ ошибка npm  ./src/util/custom-aggregate.lzz:108:22:  ошибка:  'struct  CustomAggregate::Accumulator' не  имеет члена с именем 'value'    
+ ошибка npm  ./src/util/custom-table.lzz:  В  конструкторе  'CustomTable::CustomTable(v8::Isolate*,  Database*,  const  char*,  v8::Local<v8::Function>)':
+ ошибка npm  ./src/util/custom-table.lzz:9:70:  ошибка:  класс  «CustomTable» не  имеет  поля с  именем « factory»    
+ Ошибка npm  ./src/util/custom-table.lzz:  В  глобальной  области видимости:
+ ошибка npm  ./src/util/custom-table.lzz:45:9:  предупреждение:  отсутствует  инициализатор  для  элемента  'sqlite3_module::xIntegrity'  [-Wmissing-field-initializers]
+ ошибка npm  ./src/util/custom-table.lzz:72:9:  предупреждение:  отсутствует  инициализатор  для  элемента  'sqlite3_module::xIntegrity'  [-Wmissing-field-initializers]
+ ошибка npm  ./src/util/custom-table.lzz:  В  конструкторе  'CustomTable::VTab::VTab(CustomTable*,  v8::Local<v8::Function>,  std::vector<std::__cxx11::basic_string<char>  >,  bool)':
+ ошибка npm ./src/util/custom-table.lzz:83:87  :  ошибка:  класс  'CustomTable::VTab'  не  имеет поля  с именем 'generator'    
+ Ошибка npm  ./src/util/custom-table.lzz:  В  статической функции-  члене 'static int CustomTable::xConnect(sqlite3*, void*, int, const char* const*, sqlite3_vtab**, char**)':           
+ ошибка npm  ./src/util/custom-table.lzz:168:68:  ошибка:  «class  CustomTable» не  имеет члена с именем «factory»    
+ ошибка npm  ./src/util/custom-table.lzz:  В  статической функции-  члене 'static int CustomTable::xFilter(sqlite3_vtab_cursor*, int, const char*, int, sqlite3_value**)':         
+ ошибка npm  ./src/util/custom-table.lzz:263:65:  ошибка:  «class  CustomTable::VTab» не  имеет члена с именем «generator»    
+ ошибка npm  ./src/util/custom-table.lzz:273:77:  ошибка:  «class  CS» не  имеет члена с именем «next»    
+ ошибка npm  ./src/util/custom-table.lzz:273:128:  ошибка:  ожидалось  первичное выражение  перед токеном  '>' 
+ ошибка npm  ./src/util/custom-table.lzz:273:130:  ошибка:  ожидалось  первичное выражение  перед токеном  ')' 
+ ошибка npm  ./src/util/custom-table.lzz:274:25:  ошибка:  «class  CustomTable::Cursor» не  имеет члена с именем «iterator»    
+ ошибка npm  ./src/util/custom-table.lzz:275:25:  ошибка:  «class  CustomTable::Cursor» не  имеет члена с именем «next»    
+ ошибка npm  ./src/util/custom-table.lzz:  В  статической функции-  члене 'static int CustomTable::xNext(sqlite3_vtab_cursor*)':    
+ ошибка npm  ./src/util/custom-table.lzz:292:58:  ошибка:  «class  CustomTable::Cursor» не  имеет члена с именем «iterator»    
+ ошибка npm  ./src/util/custom-table.lzz:293:56:  ошибка:  «class  CustomTable::Cursor» не  имеет члена с именем «next»    
+ ошибка npm  ./src/util/custom-table.lzz:302:56:  ошибка:  «class  CS» не  имеет члена с именем «done»    
+ ошибка npm  ./src/util/custom-table.lzz:302:106:  ошибка:  ожидалось  первичное выражение  перед токеном  '>' 
+ ошибка npm  ./src/util/custom-table.lzz:302:108:  ошибка:  ожидалось  первичное выражение  перед токеном  ')' 
+ ошибка npm  ./src/util/custom-table.lzz:304:33:  ошибка:  «class  CustomTable::Cursor» не  имеет члена с именем «row»; вы имели в виду «rowid»?        
+ ошибка npm  ./src/util/custom-table.lzz:304:79:  ошибка:  «класс  CS» не  имеет члена с именем «value»    
+ ошибка npm  ./src/util/custom-table.lzz:304:128:  ошибка:  ожидалось  первичное выражение  перед токеном  '>' 
+ ошибка npm  ./src/util/custom-table.lzz:304:130:  ошибка:  ожидалось  первичное выражение  перед токеном  ')' 
+ ошибка npm  ./src/util/custom-table.lzz:  в  статической функции-  члене 'static int CustomTable::xColumn(sqlite3_vtab_cursor*, sqlite3_context*, int)':      
+ ошибка npm  ./src/util/custom-table.lzz:325:52:  ошибка:  «class  CustomTable::Cursor» не  имеет члена с именем «row»; вы имели в виду «rowid»?        
+ ошибка npm  ./src/better_sqlite3.lzz:  В  статической функции-  члене 'static void Addon::JS_setErrorConstructor(const v8::FunctionCallbackInfo<v8::Value>&)':     
+ ошибка npm  ./src/better_sqlite3.lzz:37:104:  ошибка:  'struct  Addon' не  имеет члена с именем 'SqliteError'    
+ ошибка npm  ./src/util/data.lzz:  В  функции  'v8::Local<v8::Value>  Data::GetValueJS(v8::Isolate*,  sqlite3_stmt*,  int,  bool)':
+ ошибка npm  ./src/util/data.lzz:73:92:  предупреждение:  это  утверждение  может  не  сработать  [-Wimplicit-fallthrough=]
+ ошибка npm  ./src/util/data.lzz:73:197:  примечание:  здесь
+ Ошибка npm  ./src/util/data.lzz:  В  функции  'v8::Local<v8::Value>  Data::GetValueJS(v8::Isolate*,  sqlite3_value*,  bool)':
+ ошибка npm  ./src/util/data.lzz:77:81:  предупреждение:  это  утверждение  может  не  сработать  [-Wimplicit-fallthrough=]
+ ошибка npm  ./src/util/data.lzz:77:175:  примечание:  здесь
+ ошибка npm  make:  ***  [better_sqlite3.target.mk:122:  Release/obj.target/better_sqlite3/src/better_sqlite3.o]  Ошибка  1
+npm  ошибка  gyp  ERR! ошибка  сборки  
+npm  error  gyp  ERR! Ошибка  стека  :  `make`  завершился неудачно  с кодом  выхода  :  2
+npm  error  gyp  ERR!  стек  в  ChildProcess.<anonymous>  (/opt/render/project/nodes/node-23.10.0/lib/node_modules/npm/node_modules/node-gyp/lib/build.js:216:23)
+npm  ошибка  gyp  ERR!  Система  Linux  6.8.0-1024-aws
+npm  error  gyp  ERR!  команда  "/opt/render/project/nodes/node-23.10.0/bin/node"  "/opt/render/project/nodes/node-23.10.0/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js"  "rebuild"  "--release"
+npm  ошибка  gyp  ERR!  cwd  /opt/render/project/src/node_modules/better-sqlite3
+npm  ошибка  gyp  ERR!  узел  -v  v23.10.0
+npm  ошибка  gyp  ERR!  node-gyp  -v  v11.0.0
+npm  error  gyp  ERR!  не  в порядке
+ Ошибка npm  Полный журнал этого запуска можно найти в : /opt/render/.cache/_logs/2025-03-19T15_36_57_345Z-debug-0.log ​​         
+⚠️  Были  проблемы  с  установкой  некоторых  пакетов,  но  продолжаем  сборку.
+🔧  Настройка  прав  доступа...
+🔨Компиляция  TypeScript  ...
+                                                                               
+                Это  не  та  команда  tsc  , которую  вы  ищете .                  
+                                                                               
+Чтобы  получить  доступ  к  компилятору  TypeScript  ,  tsc ,  из  командной строки : ​  
+-  Используйте  npm  install  typescript  , чтобы  сначала  добавить  TypeScript  в  свой  проект  перед  использованием  npx.
+-  Используйте  yarn  , чтобы  избежать  случайного  запуска  кода  из  неустановленных  пакетов.
+Предупреждение: компиляция  TypeScript завершилась с ошибками, но продолжаем сборку       
+🚀  Сборка  клиентской  части...
+> сборка  bnal-bank@1.0.0 
+>  echo  'Этап  сборки'
+Этап  сборки
+✅  Сборка  проекта  завершена!
+==> Загрузка сборки...  
+==> Загружено за 4.3с. Сжатие заняло 1.1с.      
+==> Успешно постройте 🎉   
+==>  Развертывание...
+==> Запрос версии Node.js >=18.0.0    
+==> Используем Node.js версии 23.10.0 через /opt/render/project/src/package.json      
+==> Документация по указанию версии Node.js : https://render.com/docs/node-version       
+==> Запуск 'chmod +x start.sh && ./start.sh'      
+🚀  Запуск  приложения  на  Render.com...
+⚠️  Директория  /данные  не  найдены.  Создаем...
+mkdir:  невозможно  создать  каталог  '/data':  Отказано  в доступе
+mkdir:  невозможно  создать  каталог  '/data':  Отказано  в доступе
+📝 Данные  базы не найдены, создаем новую...     
+touch:  невозможно  touch  '/data/sqlite.db':  нет  такого  файла  или  каталога
+🤖  Настройка  Telegram  бота...
+узел:внутренний/модули/cjs/загрузчик:1408
+  бросить  ошибку;
+  ^
+Ошибка:  Невозможно  найти  модуль  «node-fetch»
+Требуемый  стек:
+-  /opt/render/project/src/setup-telegram.js
+    в  Function._resolveFilename  (node:internal/modules/cjs/loader:1405:15)
+    в  defaultResolveImpl  (node:internal/modules/cjs/loader:1061:19)
+    в  resolveForCJSWithHooks  (узел:внутренний/модули/cjs/загрузчик:1066:22)
+    в  Function._load  (узел:внутренний/модули/cjs/loader:1215:37)
+    в  TracingChannel.traceSync  (узел:diagnostics_channel:322:14)
+    в  wrapModuleLoad  (узел:внутренний/модули/cjs/загрузчик:235:24)
+    в  Module.require  (узел:внутренний/модули/cjs/loader:1491:12)
+    в  require  (узел:внутренний/модули/помощники:135:16)
+    в  Объекте.<аноним>  (/opt/render/project/src/setup-telegram.js:6:15)
+    в  Module._compile  (узел:внутренний/модули/cjs/загрузчик:1734:14)  {
+  код:  'МОДУЛЬ_НЕ_НАЙДЕН',
+  requireStack:  [  '/opt/render/project/src/setup-telegram.js'  ]
+}
+Node.js  v23.10.0
+⚠️  Не  удалось  настроить  Telegram  бота
+🌐  Запуск  веб-сервера...
+узел:внутренний/модули/cjs/загрузчик:1408
+  бросить  ошибку;
+  ^
+Ошибка:  Невозможно  найти  модуль  «/opt/render/project/src/dist/server/index.js»
+    в  Function._resolveFilename  (node:internal/modules/cjs/loader:1405:15)
+    в  defaultResolveImpl  (node:internal/modules/cjs/loader:1061:19)
+    в  resolveForCJSWithHooks  (узел:внутренний/модули/cjs/загрузчик:1066:22)
+    в  Function._load  (узел:внутренний/модули/cjs/loader:1215:37)
+    в  TracingChannel.traceSync  (узел:diagnostics_channel:322:14)
+    в  wrapModuleLoad  (узел:внутренний/модули/cjs/загрузчик:235:24)
+    в  Function.executeUserEntryPoint  [как  runMain]  (node:internal/modules/run_main:151:5)
+    в  узле:внутренний/главный/запустить_основной_модуль:33:47  {
+  код:  'МОДУЛЬ_НЕ_НАЙДЕН',
+  требуетсяСтек:  []
+}
+Node.js  v23.10.0
+узел:внутренний/модули/cjs/загрузчик:1408
+  бросить  ошибку;
+  ^
+Ошибка:  Невозможно  найти  модуль  '/opt/render/project/src/server/index.js'
+    в  Function._resolveFilename  (node:internal/modules/cjs/loader:1405:15)
+    в  defaultResolveImpl  (node:internal/modules/cjs/loader:1061:19)
+    в  resolveForCJSWithHooks  (узел:внутренний/модули/cjs/загрузчик:1066:22)
+    в  Function._load  (узел:внутренний/модули/cjs/loader:1215:37)
+    в  TracingChannel.traceSync  (узел:diagnostics_channel:322:14)
+    в  wrapModuleLoad  (узел:внутренний/модули/cjs/загрузчик:235:24)
+    в  Function.executeUserEntryPoint  [как  runMain]  (node:internal/modules/run_main:151:5)
+    в  узле:внутренний/главный/запустить_основной_модуль:33:47  {
+  код:  'МОДУЛЬ_НЕ_НАЙДЕН',
+  требуетсяСтек:  []
+}
+Node.js  v23.10.0
+==>  Вышел  со  статусом  1
+==>  Распространенные  способы  устранения  неполадок  при  развертывании: https://render.com/docs/troubleshooting-deploys 
+==> Запрос версии Node.js >=18.0.0    
+==> Используем Node.js версии 23.10.0 через /opt/render/project/src/package.json      
+==> Документация по указанию версии Node.js : https://render.com/docs/node-version       
+==> Запуск 'chmod +x start.sh && ./start.sh'      
+🚀  Запуск  приложения  на  Render.com...
+⚠️  Директория  /данные  не  найдены.  Создаем...
+mkdir:  невозможно  создать  каталог  '/data':  Отказано  в доступе
+mkdir:  невозможно  создать  каталог  '/data':  Отказано  в доступе
+📝 Данные  базы не найдены, создаем новую...     
+touch:  невозможно  touch  '/data/sqlite.db':  нет  такого  файла  или  каталога
+🤖  Настройка  Telegram  бота...
+узел:внутренний/модули/cjs/загрузчик:1408
+  бросить  ошибку;
+  ^
+Ошибка:  Невозможно  найти  модуль  «node-fetch»
+Требуемый  стек:
+-  /opt/render/project/src/setup-telegram.js
+    в  Function._resolveFilename  (node:internal/modules/cjs/loader:1405:15)
+    в  defaultResolveImpl  (node:internal/modules/cjs/loader:1061:19)
+    в  resolveForCJSWithHooks  (узел:внутренний/модули/cjs/загрузчик:1066:22)
+    в  Function._load  (узел:внутренний/модули/cjs/loader:1215:37)
+    в  TracingChannel.traceSync  (узел:diagnostics_channel:322:14)
+    в  wrapModuleLoad  (узел:внутренний/модули/cjs/загрузчик:235:24)
+    в  Module.require  (узел:внутренний/модули/cjs/loader:1491:12)
+    в  require  (узел:внутренний/модули/помощники:135:16)
+    в  Объекте.<аноним>  (/opt/render/project/src/setup-telegram.js:6:15)
+    в  Module._compile  (узел:внутренний/модули/cjs/загрузчик:1734:14)  {
+  код:  'МОДУЛЬ_НЕ_НАЙДЕН',
+  requireStack:  [  '/opt/render/project/src/setup-telegram.js'  ]
+}
+Node.js  v23.10.0
+⚠️  Не  удалось  настроить  Telegram  бота
+🌐  Запуск  веб-сервера...
+узел:внутренний/модули/cjs/загрузчик:1408
+  бросить  ошибку;
+  ^
+Ошибка:  Невозможно  найти  модуль  «/opt/render/project/src/dist/server/index.js»
+    в  Function._resolveFilename  (node:internal/modules/cjs/loader:1405:15)
+    в  defaultResolveImpl  (node:internal/modules/cjs/loader:1061:19)
+    в  resolveForCJSWithHooks  (узел:внутренний/модули/cjs/загрузчик:1066:22)
+    в  Function._load  (узел:внутренний/модули/cjs/loader:1215:37)
+    в  TracingChannel.traceSync  (узел:diagnostics_channel:322:14)
+    в  wrapModuleLoad  (узел:внутренний/модули/cjs/загрузчик:235:24)
+    в  Function.executeUserEntryPoint  [как  runMain]  (node:internal/modules/run_main:151:5)
+    в  узле:внутренний/главный/запустить_основной_модуль:33:47  {
+  код:  'МОДУЛЬ_НЕ_НАЙДЕН',
+  требуетсяСтек:  []
+}
+Node.js  v23.10.0
+узел:внутренний/модули/cjs/загрузчик:1408
+  бросить  ошибку;
+  ^
+Ошибка:  Невозможно  найти  модуль  '/opt/render/project/src/server/index.js'
+    в  Function._resolveFilename  (node:internal/modules/cjs/loader:1405:15)
+    в  defaultResolveImpl  (node:internal/modules/cjs/loader:1061:19)
+    в  resolveForCJSWithHooks  (узел:внутренний/модули/cjs/загрузчик:1066:22)
+    в  Function._load  (узел:внутренний/модули/cjs/loader:1215:37)
+    в  TracingChannel.traceSync  (узел:diagnostics_channel:322:14)
+    в  wrapModuleLoad  (узел:внутренний/модули/cjs/загрузчик:235:24)
+    в  Function.executeUserEntryPoint  [как  runMain]  (node:internal/modules/run_main:151:5)
+    в  узле:внутренний/главный/запустить_основной_модуль:33:47  {
+  код:  'МОДУЛЬ_НЕ_НАЙДЕН',
+  требуетсяСтек:  []
+}
+Node.js  v23.10.0
