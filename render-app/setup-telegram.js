@@ -9,7 +9,7 @@ async function setupTelegramWebhook() {
   try {
     // Получаем необходимые переменные окружения
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const renderUrl = process.env.RENDER_EXTERNAL_URL;
+    const renderUrl = process.env.RENDER_EXTERNAL_URL || process.env.WEBAPP_URL;
     const isRender = process.env.RENDER === 'true';
     const isProd = process.env.NODE_ENV === 'production';
     
@@ -19,8 +19,8 @@ async function setupTelegramWebhook() {
     }
 
     if (!renderUrl) {
-      console.error('❌ Ошибка: Не указан RENDER_EXTERNAL_URL');
-      return { success: false, error: 'Не указан RENDER_EXTERNAL_URL' };
+      console.error('❌ Ошибка: Не указан ни RENDER_EXTERNAL_URL, ни WEBAPP_URL');
+      return { success: false, error: 'Не указан URL приложения' };
     }
 
     console.log('Настройка Telegram бота для Render.com');

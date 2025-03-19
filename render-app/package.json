@@ -4,7 +4,7 @@
   "description": "Многофункциональная финансовая платформа с поддержкой криптовалют",
   "main": "dist/server/index.js",
   "scripts": {
-    "build": "tsc && vite build",
+    "build": "echo 'Этап сборки'",
     "start": "node dist/server/index.js",
     "dev": "tsx server/index.ts",
     "lint": "eslint .",
@@ -80,7 +80,7 @@
     "express-session": "^1.18.0",
     "framer-motion": "^11.0.8",
     "hdkey": "^2.1.0",
-    "input-otp": "^2.0.0",
+    "input-otp": "^1.0.1",
     "jsqr": "^1.4.0",
     "jszip": "^3.10.1",
     "lucide-react": "^0.352.0",

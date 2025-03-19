@@ -4,8 +4,8 @@ services:
     name: bnal-bank
     env: node
     plan: starter
-    buildCommand: ./build.sh
-    startCommand: ./start.sh
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: chmod +x start.sh && ./start.sh
     rootDir: render-app
     healthCheckPath: /api/render-status
     envVars:
