@@ -4,8 +4,8 @@ services:
     name: ooo-bnal-bank
     runtime: node
     plan: free
-    buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: chmod +x start.sh && ./start.sh
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
     envVars:
       - key: NODE_ENV
         value: production
