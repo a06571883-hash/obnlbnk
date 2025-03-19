@@ -3,20 +3,28 @@
 
 # Install dependencies
 npm install
-npm install --save-dev @babel/core @babel/preset-env @babel/preset-react @babel/runtime vite
-npm install --save-dev @babel/plugin-transform-runtime @babel/plugin-syntax-bigint @babel/plugin-syntax-class-properties
+npm install --save-dev vite @vitejs/plugin-react
+npm install --save-dev @babel/core@^7.22.0 @babel/preset-env @babel/preset-react
+npm install --save-dev @babel/plugin-transform-runtime @babel/runtime
+npm install --save-dev @babel/plugin-syntax-top-level-await @babel/plugin-syntax-json-strings
+npm install --save-dev @babel/plugin-syntax-class-static-block
 
-# Create temporary babel config if it doesn't exist
+# Create babel config
 echo '{
-  "presets": ["@babel/preset-env", "@babel/preset-react"],
+  "presets": [
+    ["@babel/preset-env", { "targets": { "node": "current" } }],
+    "@babel/preset-react"
+  ],
   "plugins": [
     "@babel/plugin-transform-runtime",
-    "@babel/plugin-syntax-bigint",
-    "@babel/plugin-syntax-class-properties"
+    "@babel/plugin-syntax-top-level-await",
+    "@babel/plugin-syntax-json-strings",
+    "@babel/plugin-syntax-class-static-block"
   ]
 }' > .babelrc
 
-npm run build
+# Ensure build command uses local vite
+./node_modules/.bin/vite build && ./node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
 echo "============================================"
 echo "Запуск скрипта сборки для Render.com..."
