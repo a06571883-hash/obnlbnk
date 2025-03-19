@@ -3,6 +3,7 @@ services:
   - type: web
     name: ooo-bnal-bank
     runtime: node
+    nodeVersion: 18.18.0
     plan: free
     buildCommand: chmod +x build.sh && ./build.sh
     startCommand: chmod +x start.sh && ./start.sh
@@ -13,6 +14,8 @@ services:
         value: true
       - key: TELEGRAM_BOT_TOKEN
         sync: false
+      - key: PORT
+        value: 10000
     disk:
       name: data
       mountPath: /opt/render/project/src/data
