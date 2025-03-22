@@ -1,10 +1,7 @@
-import { ethers } from 'ethers';
 import axios from 'axios';
 import { validateCryptoAddress } from './crypto';
 
-// Получаем API ключи из переменных окружения
-const INFURA_API_KEY = process.env.INFURA_API_KEY;
-const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
+// Получаем API ключ из переменных окружения
 const BLOCKDAEMON_API_KEY = process.env.BLOCKDAEMON_API_KEY;
 
 /**
@@ -12,21 +9,7 @@ const BLOCKDAEMON_API_KEY = process.env.BLOCKDAEMON_API_KEY;
  * @returns true если ключи настроены, false если нет
  */
 export function hasBlockchainApiKeys(): boolean {
-  return Boolean(BLOCKDAEMON_API_KEY || INFURA_API_KEY || ALCHEMY_API_KEY);
-}
-
-/**
- * Получает Ethereum провайдер для доступа к сети
- * @returns Провайдер Ethereum
- */
-function getEthereumProvider() {
-  if (INFURA_API_KEY) {
-    return new ethers.JsonRpcProvider(`https://mainnet.infura.io/v3/${INFURA_API_KEY}`);
-  } else if (ALCHEMY_API_KEY) {
-    return new ethers.JsonRpcProvider(`https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`);
-  } else {
-    throw new Error('Не настроены API ключи для доступа к Ethereum');
-  }
+  return Boolean(BLOCKDAEMON_API_KEY);
 }
 
 /**
@@ -71,7 +54,7 @@ export async function getBitcoinBalance(address: string): Promise<number> {
 }
 
 /**
- * Получает баланс Ethereum-адреса
+ * Получает баланс Ethereum-адреса через BlockDaemon API
  * @param address Ethereum-адрес
  * @returns Promise с балансом в ETH
  */
@@ -81,14 +64,30 @@ export async function getEthereumBalance(address: string): Promise<number> {
       throw new Error(`Недействительный Ethereum адрес: ${address}`);
     }
 
-    const provider = getEthereumProvider();
-    const balanceWei = await provider.getBalance(address);
-    
-    // Конвертируем из Wei в ETH (1 ETH = 10^18 Wei)
-    const balanceEth = parseFloat(ethers.formatEther(balanceWei));
-    
-    console.log(`Баланс ETH адреса ${address}: ${balanceEth} ETH`);
-    return balanceEth;
+    if (!BLOCKDAEMON_API_KEY) {
+      throw new Error('Не настроен API ключ для доступа к BlockDaemon API');
+    }
+
+    const response = await axios.get(
+      `https://svc.blockdaemon.com/ethereum/mainnet/account/${address}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${BLOCKDAEMON_API_KEY}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    // Проверяем ответ API
+    if (response.data && typeof response.data.balance === 'string') {
+      // Баланс приходит в Wei, конвертируем в ETH (1 ETH = 10^18 Wei)
+      const balanceInEth = parseFloat(response.data.balance) / 1e18;
+      console.log(`Баланс ETH адреса ${address}: ${balanceInEth} ETH`);
+      return balanceInEth;
+    } else {
+      console.error('Неожиданный формат ответа API:', response.data);
+      throw new Error('Не удалось получить баланс ETH адреса: неправильный формат ответа API');
+    }
   } catch (error) {
     console.error(`Ошибка при получении баланса ETH адреса ${address}:`, error);
     throw error;
@@ -134,7 +133,7 @@ export async function sendBitcoinTransaction(
 }
 
 /**
- * Отправляет Ethereum транзакцию (только через внешний кошелек)
+ * Отправляет Ethereum транзакцию через BlockDaemon API
  * Возвращает идентификатор для отслеживания статуса
  */
 export async function sendEthereumTransaction(
@@ -151,10 +150,14 @@ export async function sendEthereumTransaction(
       throw new Error(`Недействительный целевой Ethereum адрес: ${toAddress}`);
     }
 
+    if (!BLOCKDAEMON_API_KEY) {
+      throw new Error('Не настроен API ключ для доступа к BlockDaemon API');
+    }
+
     console.log(`Отправка ${amountEth} ETH с ${fromAddress} на ${toAddress}`);
 
-    // В реальном приложении здесь был бы код для подписания транзакции
-    // через приватный ключ или внешний кошелек
+    // В реальном приложении здесь был бы запрос к BlockDaemon API для отправки транзакции
+    // Для этого потребуется приватный ключ или интеграция с внешним кошельком
     
     // Для демонстрации, просто логируем попытку отправки и симулируем успешную отправку
     const fakeTxId = `eth_tx_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
@@ -180,30 +183,40 @@ export async function checkTransactionStatus(
   try {
     console.log(`Проверка статуса транзакции ${txId} (${cryptoType})`);
     
+    if (!BLOCKDAEMON_API_KEY) {
+      throw new Error('Не настроен API ключ для доступа к BlockDaemon API');
+    }
+    
     if (cryptoType === 'btc') {
-      if (!BLOCKDAEMON_API_KEY) {
-        throw new Error('Не настроен API ключ для доступа к Bitcoin API');
+      try {
+        // Попытка проверки статуса через BlockDaemon API
+        // В реальном приложении здесь был бы код для запроса к API
+        
+        // Для демонстрации возвращаем случайный статус
+        const statuses = ['pending', 'completed'] as const;
+        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+        const confirmations = randomStatus === 'completed' ? Math.floor(Math.random() * 6) + 1 : 0;
+        
+        return { status: randomStatus, confirmations };
+      } catch (btcError) {
+        console.error('Ошибка при проверке BTC транзакции:', btcError);
+        throw btcError;
       }
-      
-      // Здесь был бы код для проверки статуса через BlockDaemon API
-      
-      // Для демонстрации возвращаем случайный статус
-      const statuses = ['pending', 'completed'] as const;
-      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-      const confirmations = randomStatus === 'completed' ? Math.floor(Math.random() * 6) + 1 : 0;
-      
-      return { status: randomStatus, confirmations };
     } else if (cryptoType === 'eth') {
-      const provider = getEthereumProvider();
-      
-      // Здесь был бы код для проверки статуса ETH транзакции
-      
-      // Для демонстрации возвращаем случайный статус
-      const statuses = ['pending', 'completed'] as const;
-      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-      const confirmations = randomStatus === 'completed' ? Math.floor(Math.random() * 12) + 1 : 0;
-      
-      return { status: randomStatus, confirmations };
+      try {
+        // Попытка проверки статуса через BlockDaemon API для Ethereum
+        // В реальном приложении здесь был бы код для запроса к API
+        
+        // Для демонстрации возвращаем случайный статус
+        const statuses = ['pending', 'completed'] as const;
+        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+        const confirmations = randomStatus === 'completed' ? Math.floor(Math.random() * 12) + 1 : 0;
+        
+        return { status: randomStatus, confirmations };
+      } catch (ethError) {
+        console.error('Ошибка при проверке ETH транзакции:', ethError);
+        throw ethError;
+      }
     } else {
       throw new Error(`Неподдерживаемый тип криптовалюты: ${cryptoType}`);
     }
@@ -218,8 +231,6 @@ export async function checkTransactionStatus(
   if (hasBlockchainApiKeys()) {
     console.log('🔑 API ключи для работы с блокчейнами настроены');
     if (BLOCKDAEMON_API_KEY) console.log('✓ BlockDaemon API Key настроен');
-    if (INFURA_API_KEY) console.log('✓ Infura API Key настроен');
-    if (ALCHEMY_API_KEY) console.log('✓ Alchemy API Key настроен');
   } else {
     console.warn('⚠️ API ключи для работы с блокчейнами не настроены. Работа в режиме симуляции.');
   }
