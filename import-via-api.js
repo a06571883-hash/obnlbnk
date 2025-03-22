@@ -1,6 +1,5 @@
 /**
- * Скрипт для активации эндпоинта Neon PostgreSQL перед импортом данных
- * Использует Neon API для активации эндпоинта, а затем запускает импорт данных
+ * Скрипт для импорта данных через новый URL эндпоинта Neon
  */
 
 import fs from 'fs';
@@ -13,29 +12,6 @@ const NEON_API_KEY = process.env.NEON_API_KEY;
 if (!NEON_API_KEY) {
   console.error('Необходимо указать NEON_API_KEY в переменных окружения');
   process.exit(1);
-}
-
-// URL базы данных
-const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) {
-  console.error('Необходимо указать DATABASE_URL в переменных окружения');
-  process.exit(1);
-}
-
-// Примечание: мы не извлекаем endpointId из URL, так как фактический ID 
-// может отличаться от того, что указан в URL. Вместо этого, мы получаем
-// список всех эндпоинтов из API Neon и используем правильный ID.
-function extractNeonInfo(databaseUrl) {
-  console.log(`Подключение к базе данных: ${databaseUrl}`);
-  
-  // На основе проверки через API, правильный ID эндпоинта:
-  const fullEndpointId = `ep-gentle-dawn-abd8o4bc`;
-  
-  console.log(`Используем ID эндпоинта: ${fullEndpointId}`);
-  
-  return {
-    endpointId: fullEndpointId
-  };
 }
 
 // Путь к JSON файлам
@@ -58,12 +34,11 @@ function readJsonFile(filePath) {
   }
 }
 
-// Активирует эндпоинт Neon через API
-async function activateEndpoint(endpointId) {
+// Получает информацию о доступных проектах и эндпоинтах в Neon
+async function getNeonConnectionInfo() {
   try {
-    console.log(`Активация эндпоинта ${endpointId}...`);
-    
-    // Получаем список проектов, чтобы найти наш проект
+    // Получаем список проектов
+    console.log('Получение списка проектов Neon...');
     const projectsResponse = await fetch('https://console.neon.tech/api/v2/projects', {
       headers: {
         'Accept': 'application/json',
@@ -77,7 +52,7 @@ async function activateEndpoint(endpointId) {
     }
     
     const projects = await projectsResponse.json();
-    const project = projects.projects[0]; // Берем первый проект, обычно он один в бесплатном плане
+    const project = projects.projects[0]; // Берем первый проект
     
     if (!project) {
       throw new Error('Проект не найден');
@@ -85,7 +60,7 @@ async function activateEndpoint(endpointId) {
     
     console.log(`Найден проект: ${project.name} (${project.id})`);
     
-    // Получаем список эндпоинтов проекта
+    // Получаем список эндпоинтов
     const endpointsResponse = await fetch(`https://console.neon.tech/api/v2/projects/${project.id}/endpoints`, {
       headers: {
         'Accept': 'application/json',
@@ -99,39 +74,59 @@ async function activateEndpoint(endpointId) {
     }
     
     const endpoints = await endpointsResponse.json();
-    const endpoint = endpoints.endpoints.find(ep => ep.id === endpointId);
+    const endpoint = endpoints.endpoints[0]; // Берем первый эндпоинт
     
     if (!endpoint) {
-      throw new Error(`Эндпоинт с ID ${endpointId} не найден`);
+      throw new Error('Эндпоинт не найден');
     }
     
     console.log(`Найден эндпоинт: ${endpoint.id} (${endpoint.host})`);
     
-    // Активируем эндпоинт, если он не активен
-    if (endpoint.suspended) {
-      console.log(`Эндпоинт ${endpoint.id} в спящем режиме, активируем...`);
-      
-      const activateResponse = await fetch(`https://console.neon.tech/api/v2/projects/${project.id}/endpoints/${endpoint.id}/start`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${NEON_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!activateResponse.ok) {
-        throw new Error(`Ошибка активации эндпоинта: ${activateResponse.statusText}`);
+    // Получаем информацию о подключении
+    const connectionInfo = {
+      projectId: project.id,
+      endpointId: endpoint.id,
+      host: endpoint.host,
+      databaseName: 'neondb', // Стандартное имя базы данных Neon
+      user: 'neondb_owner', // Стандартный пользователь Neon
+    };
+    
+    console.log('Информация о подключении успешно получена');
+    return connectionInfo;
+  } catch (error) {
+    console.error('Ошибка получения информации о подключении:', error);
+    return null;
+  }
+}
+
+// Активирует эндпоинт Neon
+async function activateEndpoint(projectId, endpointId) {
+  try {
+    console.log(`Активация эндпоинта ${endpointId}...`);
+    
+    const activateResponse = await fetch(`https://console.neon.tech/api/v2/projects/${projectId}/endpoints/${endpointId}/start`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${NEON_API_KEY}`,
+        'Content-Type': 'application/json'
       }
-      
-      console.log(`Эндпоинт ${endpoint.id} успешно активирован`);
-      
-      // Ждем небольшую паузу, чтобы эндпоинт успел полностью активироваться
-      console.log('Ждем 5 секунд для полной активации эндпоинта...');
-      await new Promise(resolve => setTimeout(resolve, 5000));
-    } else {
-      console.log(`Эндпоинт ${endpoint.id} уже активен`);
+    });
+    
+    if (!activateResponse.ok) {
+      // Если эндпоинт уже активен, это не считается ошибкой
+      if (activateResponse.status === 409) {
+        console.log(`Эндпоинт ${endpointId} уже активен`);
+        return true;
+      }
+      throw new Error(`Ошибка активации эндпоинта: ${activateResponse.statusText}`);
     }
+    
+    console.log(`Эндпоинт ${endpointId} успешно активирован`);
+    
+    // Даем эндпоинту время на полную активацию
+    console.log('Ждем 5 секунд для полной активации эндпоинта...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
     
     return true;
   } catch (error) {
@@ -140,18 +135,89 @@ async function activateEndpoint(endpointId) {
   }
 }
 
+// Получает пароль для подключения к базе данных
+async function getDatabasePassword(projectId, databaseName) {
+  try {
+    console.log(`Получение информации о базе данных ${databaseName}...`);
+    
+    const databasesResponse = await fetch(`https://console.neon.tech/api/v2/projects/${projectId}/databases`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${NEON_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!databasesResponse.ok) {
+      throw new Error(`Ошибка получения списка баз данных: ${databasesResponse.statusText}`);
+    }
+    
+    const databases = await databasesResponse.json();
+    const database = databases.databases.find(db => db.name === databaseName);
+    
+    if (!database) {
+      throw new Error(`База данных ${databaseName} не найдена`);
+    }
+    
+    console.log(`Найдена база данных: ${database.name} (${database.id})`);
+    
+    // Получаем информацию о ролях (пользователях)
+    const rolesResponse = await fetch(`https://console.neon.tech/api/v2/projects/${projectId}/branches/main/roles`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${NEON_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!rolesResponse.ok) {
+      throw new Error(`Ошибка получения списка ролей: ${rolesResponse.statusText}`);
+    }
+    
+    const roles = await rolesResponse.json();
+    console.log(`Найдено ${roles.roles.length} ролей`);
+    
+    // Запрашиваем пароль для первой роли
+    if (roles.roles.length > 0) {
+      const role = roles.roles[0];
+      
+      const passwordResponse = await fetch(`https://console.neon.tech/api/v2/projects/${projectId}/branches/main/roles/${role.name}/reveal_password`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${NEON_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!passwordResponse.ok) {
+        throw new Error(`Ошибка получения пароля: ${passwordResponse.statusText}`);
+      }
+      
+      const passwordData = await passwordResponse.json();
+      console.log(`Получен пароль для роли ${role.name}`);
+      
+      return {
+        username: role.name,
+        password: passwordData.password
+      };
+    } else {
+      throw new Error('Не найдено ролей для получения пароля');
+    }
+  } catch (error) {
+    console.error('Ошибка получения пароля для базы данных:', error);
+    return null;
+  }
+}
+
 // Импорт данных в базу данных
-async function importData() {
+async function importData(connectionUrl) {
   try {
     console.log('Начинаем импорт данных...');
+    console.log(`Подключение к базе данных: ${connectionUrl}`);
     
-    // Создаем специальный URL для @neondatabase/serverless
-    // URL меняется с postgresql:// на postgres://
-    const serverlessUrl = DATABASE_URL.replace('postgresql://', 'postgres://');
-    console.log('Используем специальный URL для Neon Serverless:', serverlessUrl);
-    
-    // Создаем подключение к Neon PostgreSQL через serverless драйвер
-    const sql = neon(serverlessUrl);
+    // Создаем подключение к Neon PostgreSQL
+    const sql = neon(connectionUrl);
     
     // Создаем таблицы если их нет
     await createTables(sql);
@@ -166,8 +232,10 @@ async function importData() {
     await resetSequences(sql);
     
     console.log('Данные успешно импортированы!');
+    return true;
   } catch (error) {
     console.error('Ошибка при импорте данных:', error);
+    return false;
   }
 }
 
@@ -409,18 +477,45 @@ async function resetSequences(sql) {
 // Основная функция
 async function main() {
   try {
-    // Извлекаем информацию о Neon проекте из URL
-    const { endpointId } = extractNeonInfo(DATABASE_URL);
+    // Получаем информацию о подключении
+    const connectionInfo = await getNeonConnectionInfo();
+    
+    if (!connectionInfo) {
+      console.error('Не удалось получить информацию о подключении. Импорт данных отменен.');
+      return;
+    }
     
     // Активируем эндпоинт
-    const activated = await activateEndpoint(endpointId);
+    const activated = await activateEndpoint(connectionInfo.projectId, connectionInfo.endpointId);
     
-    if (activated) {
-      // Если эндпоинт активирован, импортируем данные
-      await importData();
-    } else {
+    if (!activated) {
       console.error('Не удалось активировать эндпоинт. Импорт данных отменен.');
+      return;
     }
+    
+    // Извлекаем учетные данные из DATABASE_URL
+    const databaseUrl = process.env.DATABASE_URL;
+    const match = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@[^\/]+\/([^?]+)/);
+    
+    if (!match) {
+      console.error('Не удалось извлечь учетные данные из DATABASE_URL. Импорт данных отменен.');
+      return;
+    }
+    
+    const username = match[1];
+    const password = match[2];
+    const database = match[3];
+    
+    // Создаем URL для подключения с новым хостом эндпоинта
+    console.log('Создаем URL для активного эндпоинта с нашими учетными данными');
+    const connectionUrl = `postgres://${username}:${password}@${connectionInfo.host}/${database}?sslmode=require`;
+    
+    // Выводим данные для отладки (без пароля)
+    const sanitizedUrl = connectionUrl.replace(/\/\/[^:]+:[^@]+@/, '//***:***@');
+    console.log(`Использую URL для подключения: ${sanitizedUrl}`);
+    
+    // Импортируем данные
+    await importData(connectionUrl);
   } catch (error) {
     console.error('Ошибка в основной функции:', error);
   }
