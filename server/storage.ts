@@ -7,6 +7,14 @@ import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
 import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
+import { 
+  hasBlockchainApiKeys, 
+  sendBitcoinTransaction, 
+  sendEthereumTransaction,
+  getBitcoinBalance,
+  getEthereumBalance,
+  checkTransactionStatus
+} from './utils/blockchain';
 import path from 'path';
 import pgSession from 'connect-pg-simple';
 
