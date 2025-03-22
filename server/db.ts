@@ -1,78 +1,53 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from '@shared/schema';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { existsSync, copyFileSync } from 'fs';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import path from 'path';
 import * as fs from 'fs';
 
-// Используем локальную SQLite базу данных вместо Neon PostgreSQL
-console.log('Using SQLite as the database (completely free and no expiration)');
+// Используем PostgreSQL базу данных
+console.log('Using PostgreSQL as the database');
 
 // Определяем, запущено ли приложение на Render.com
 const IS_RENDER = process.env.RENDER === 'true';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-// Пути к файлам базы данных
-let DB_PATH = path.join(process.cwd(), 'sqlite.db');
-const RENDER_DATA_DIR = path.join(process.cwd(), 'data');
-const RENDER_DB_PATH = path.join(RENDER_DATA_DIR, 'sqlite.db');
+// Получаем DATABASE_URL из переменных окружения
+const DATABASE_URL = process.env.DATABASE_URL;
 
-// Для Render.com используем постоянное хранилище в /data
-if (IS_RENDER && IS_PRODUCTION) {
-  console.log('Running on Render.com in production mode');
-  console.log('Permanent storage directory:', RENDER_DATA_DIR);
-  
-  // Проверяем, существует ли директория data
-  if (!existsSync(RENDER_DATA_DIR)) {
-    console.log('Creating data directory...');
-    fs.mkdirSync(RENDER_DATA_DIR, { recursive: true });
-  }
-  
-  // Проверяем, существует ли база данных в постоянном хранилище
-  if (existsSync(RENDER_DB_PATH)) {
-    console.log('Found database in permanent storage, copying to working directory...');
-    try {
-      copyFileSync(RENDER_DB_PATH, DB_PATH);
-      console.log('Database copied successfully');
-    } catch (error) {
-      console.error('Error copying database from permanent storage:', error);
-    }
-  } else {
-    console.log('No database found in permanent storage, will create a new one');
-  }
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is not set');
 }
 
-console.log('SQLite database path:', DB_PATH);
+console.log('Connecting to PostgreSQL database...');
 
-// Создаем подключение к SQLite
-const sqlite = new Database(DB_PATH);
-
-// Включаем foreign keys для поддержки связей между таблицами
-sqlite.pragma('foreign_keys = ON');
+// Создаем клиент подключения к PostgreSQL
+export const client = postgres(DATABASE_URL, { ssl: 'require' });
 
 // Создаем экземпляр Drizzle ORM
-export const db = drizzle(sqlite, { schema });
+export const db = drizzle(client, { schema });
 
-// Создаем таблицы в SQLite базе данных
+// Создаем таблицы в PostgreSQL базе данных
 async function createTablesIfNotExist() {
   try {
     console.log('Checking and creating database tables if needed...');
     
-    // Создаем таблицы используя SQL
-    sqlite.exec(`
+    // Создаем таблицы с прямыми SQL запросами
+    await client`
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-        is_regulator INTEGER NOT NULL DEFAULT 0,
+        is_regulator BOOLEAN NOT NULL DEFAULT false,
         regulator_balance TEXT NOT NULL DEFAULT '0',
-        last_nft_generation INTEGER,
+        last_nft_generation TIMESTAMP,
         nft_generation_count INTEGER NOT NULL DEFAULT 0
-      );
-      
+      )
+    `;
+    
+    await client`
       CREATE TABLE IF NOT EXISTS cards (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL,
         type TEXT NOT NULL,
         number TEXT NOT NULL,
@@ -83,10 +58,12 @@ async function createTablesIfNotExist() {
         eth_balance TEXT NOT NULL DEFAULT '0',
         btc_address TEXT,
         eth_address TEXT
-      );
-      
+      )
+    `;
+    
+    await client`
       CREATE TABLE IF NOT EXISTS transactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         from_card_id INTEGER NOT NULL,
         to_card_id INTEGER,
         amount TEXT NOT NULL,
@@ -94,20 +71,31 @@ async function createTablesIfNotExist() {
         type TEXT NOT NULL,
         wallet TEXT,
         status TEXT NOT NULL,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         description TEXT NOT NULL DEFAULT '',
         from_card_number TEXT NOT NULL,
         to_card_number TEXT
-      );
-      
+      )
+    `;
+    
+    await client`
       CREATE TABLE IF NOT EXISTS exchange_rates (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         usd_to_uah TEXT NOT NULL,
         btc_to_usd TEXT NOT NULL,
         eth_to_usd TEXT NOT NULL,
-        updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
-      );
-    `);
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    
+    // Создаем таблицу для сессий если её нет
+    await client`
+      CREATE TABLE IF NOT EXISTS session (
+        sid TEXT PRIMARY KEY,
+        sess JSON NOT NULL,
+        expire TIMESTAMP(6) NOT NULL
+      )
+    `;
     
     console.log('Database tables created or verified successfully');
     return true;
@@ -142,7 +130,7 @@ async function logDatabaseContent() {
     }
     
     // Создаем базовые данные если база пуста
-    if (usersResult.length === 0) {
+    if (usersResult && usersResult.length === 0) {
       console.log('Database is empty, creating initial data...');
       await createDefaultData();
     }
@@ -160,7 +148,7 @@ async function createDefaultData() {
     await db.insert(schema.exchangeRates).values({
       usdToUah: "40.5",
       btcToUsd: "65000",
-      ethToUsd: "3500",
+      ethToUsd: "3500"
     });
     console.log('Created default exchange rates');
     
@@ -188,77 +176,16 @@ export async function initializeDatabase() {
   }
 }
 
-// Функция для копирования базы данных в постоянное хранилище (для Render.com)
-async function backupDatabaseToStorage() {
-  if (IS_RENDER && IS_PRODUCTION) {
-    try {
-      console.log('Backing up database to permanent storage...');
-      
-      // Копируем файл базы данных в постоянное хранилище
-      copyFileSync(DB_PATH, RENDER_DB_PATH);
-      console.log('Database backed up successfully to', RENDER_DB_PATH);
-      
-      // Создаем дополнительную резервную копию в директории data/backup
-      const backupDir = path.join(RENDER_DATA_DIR, 'backup');
-      if (!existsSync(backupDir)) {
-        fs.mkdirSync(backupDir, { recursive: true });
-      }
-      
-      const timestamp = new Date().toISOString().replace(/:/g, '-');
-      const backupPath = path.join(backupDir, `backup_${timestamp}.db`);
-      
-      // Копируем файл базы данных в директорию бэкапов
-      copyFileSync(DB_PATH, backupPath);
-      console.log('Additional backup created at', backupPath);
-      
-      // Удаляем старые бэкапы (оставляем только последние 5)
-      const backupFiles = fs.readdirSync(backupDir)
-        .filter(file => file.endsWith('.db'))
-        .sort()
-        .reverse();
-      
-      for (const file of backupFiles.slice(5)) {
-        fs.unlinkSync(path.join(backupDir, file));
-        console.log('Removed old backup:', file);
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error backing up database to permanent storage:', error);
-      return false;
-    }
-  }
-  return true; // Не на Render.com, бэкап не требуется
-}
-
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('Received SIGTERM. Backing up database and closing connection...');
-  await backupDatabaseToStorage();
-  sqlite.close();
+  console.log('Received SIGTERM. Closing database connection...');
+  await client.end();
 });
 
 process.on('SIGINT', async () => {
-  console.log('Received SIGINT. Backing up database and closing connection...');
-  await backupDatabaseToStorage();
-  sqlite.close();
+  console.log('Received SIGINT. Closing database connection...');
+  await client.end();
 });
-
-// Также устанавливаем регулярный бэкап базы данных в постоянное хранилище
-if (IS_RENDER && IS_PRODUCTION) {
-  // Каждые 15 минут копируем базу в постоянное хранилище
-  const BACKUP_INTERVAL = 15 * 60 * 1000; // 15 минут
-  
-  setInterval(async () => {
-    console.log('Running scheduled database backup to permanent storage...');
-    const result = await backupDatabaseToStorage();
-    if (result) {
-      console.log('Scheduled backup to permanent storage completed successfully');
-    } else {
-      console.error('Scheduled backup to permanent storage failed');
-    }
-  }, BACKUP_INTERVAL);
-}
 
 // Initialize the database connection
 initializeDatabase().catch(console.error);

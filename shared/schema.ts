@@ -1,21 +1,21 @@
-import { sqliteTable, text, integer, numeric, integer as int, blob } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, boolean, timestamp, decimal, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 
-// SQLite не имеет decimal/timestamp типов как в PostgreSQL, поэтому используем текст/число
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+// Используем PostgreSQL типы данных
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  is_regulator: integer("is_regulator", { mode: "boolean" }).notNull().default(false),
+  is_regulator: boolean("is_regulator").notNull().default(false),
   regulator_balance: text("regulator_balance").notNull().default("0"),
-  last_nft_generation: integer("last_nft_generation", { mode: "timestamp" }),
+  last_nft_generation: timestamp("last_nft_generation"),
   nft_generation_count: integer("nft_generation_count").notNull().default(0),
 });
 
-export const cards = sqliteTable("cards", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const cards = pgTable("cards", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   type: text("type").notNull(),
   number: text("number").notNull(),
@@ -28,8 +28,8 @@ export const cards = sqliteTable("cards", {
   ethAddress: text("eth_address"),
 });
 
-export const transactions = sqliteTable("transactions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
   fromCardId: integer("from_card_id").notNull(),
   toCardId: integer("to_card_id"),
   amount: text("amount").notNull(),
@@ -37,18 +37,18 @@ export const transactions = sqliteTable("transactions", {
   type: text("type").notNull(),
   wallet: text("wallet"),
   status: text("status").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
   description: text("description").notNull().default(""),
   fromCardNumber: text("from_card_number").notNull(),
   toCardNumber: text("to_card_number"), // Разрешаем NULL для переводов на внешние адреса
 });
 
-export const exchangeRates = sqliteTable("exchange_rates", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const exchangeRates = pgTable("exchange_rates", {
+  id: serial("id").primaryKey(),
   usdToUah: text("usd_to_uah").notNull(),
   btcToUsd: text("btc_to_usd").notNull(),
   ethToUsd: text("eth_to_usd").notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Базовые схемы

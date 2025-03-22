@@ -1,23 +1,21 @@
 import session from "express-session";
 import { MemoryStore } from 'express-session';
-import { db } from "./db";
+import { db, client } from "./db";
 import { cards, users, transactions, exchangeRates } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
 import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
-import store from 'better-sqlite3-session-store';
-import Database from 'better-sqlite3';
 import path from 'path';
+import pgSession from 'connect-pg-simple';
 
-// Используем SQLite для хранения сессий
-const SqliteStore = store(session);
+// Используем PostgreSQL для хранения сессий
+const PostgresStore = pgSession(session);
 
-// Создаем отдельную базу для сессий
-const SESSION_DB_PATH = path.join(process.cwd(), 'sessions.db');
-console.log('SQLite session database path:', SESSION_DB_PATH);
-const sessionDb = new Database(SESSION_DB_PATH);
+// Получаем DATABASE_URL из переменных окружения
+const DATABASE_URL = process.env.DATABASE_URL;
+console.log('PostgreSQL session store enabled');
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -54,16 +52,17 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    // Используем SQLite для хранения сессий вместо PostgreSQL
-    this.sessionStore = new SqliteStore({
-      client: sessionDb,
-      expired: {
-        clear: true,
-        intervalMs: 900000 // Очистка истекших сессий каждые 15 минут
-      }
+    // Используем PostgreSQL для хранения сессий
+    this.sessionStore = new PostgresStore({
+      conObject: {
+        connectionString: DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      },
+      tableName: 'session',
+      createTableIfMissing: true
     });
     
-    console.log('Session store initialized with SQLite (free, no expiration)');
+    console.log('Session store initialized with PostgreSQL');
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -493,21 +492,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async withTransaction<T>(operation: (client: any) => Promise<T>, context: string): Promise<T> {
-    // SQLite имеет автоматические транзакции внутри единого соединения
+    // PostgreSQL требует явного управления транзакциями
     try {
       // Начинаем транзакцию
-      db.run(sql`BEGIN TRANSACTION`);
+      await client`BEGIN`;
       
       // Выполняем операцию
-      const result = await operation(null); // client not needed with SQLite
+      const result = await operation(client);
       
       // Завершаем транзакцию если всё хорошо
-      db.run(sql`COMMIT`);
+      await client`COMMIT`;
       
       return result;
     } catch (error) {
       // Откатываем транзакцию в случае ошибки
-      db.run(sql`ROLLBACK`);
+      await client`ROLLBACK`;
       console.error(`${context} failed:`, error);
       throw error;
     }
