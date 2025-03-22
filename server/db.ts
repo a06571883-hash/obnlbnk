@@ -1,35 +1,43 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from '@shared/schema';
-import { migrate } from 'drizzle-orm/neon-serverless/migrator';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import path from 'path';
 import * as fs from 'fs';
 
-// Используем PostgreSQL базу данных с поддержкой serverless
-console.log('Using Neon PostgreSQL with serverless support');
+// Используем PostgreSQL базу данных
+console.log('Using PostgreSQL database');
 
 // Определяем, запущено ли приложение на Render.com
 const IS_RENDER = process.env.RENDER === 'true';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Получаем DATABASE_URL из переменных окружения
-let DATABASE_URL = process.env.DATABASE_URL;
+const DATABASE_URL = process.env.DATABASE_URL;
 
 if (!DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set');
 }
 
-// Преобразуем URL для работы с @neondatabase/serverless
-// Меняем postgresql:// на postgres://
-DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgres://');
+console.log('Connecting to PostgreSQL database...');
 
-console.log('Connecting to Neon PostgreSQL database with serverless support...');
+// Создаем клиент подключения к PostgreSQL с параметрами для надежного соединения
+export const client = postgres(DATABASE_URL, { 
+  ssl: { rejectUnauthorized: false }, // Необходимо для подключения к Neon PostgreSQL
+  max: 10, // Максимальное количество соединений в пуле
+  idle_timeout: 20, // Timeout для неиспользуемых соединений
+  connect_timeout: 30, // Увеличиваем timeout для подключения
+  types: {
+    date: {
+      to: 1184,
+      from: [1082, 1083, 1114, 1184],
+      serialize: (date: Date) => date,
+      parse: (date: string) => date
+    }
+  }
+});
 
-// Создаем клиент подключения к Neon PostgreSQL с поддержкой serverless
-// Этот клиент может работать даже с отключенными эндпоинтами
-export const client = neon(DATABASE_URL);
-
-// Создаем экземпляр Drizzle ORM с поддержкой serverless
+// Создаем экземпляр Drizzle ORM
 export const db = drizzle(client, { schema });
 
 // Создаем таблицы в PostgreSQL базе данных

@@ -26,7 +26,8 @@ const FILES = {
   users: path.join(INPUT_DIR, 'users (3).json'),
   cards: path.join(INPUT_DIR, 'cards (4).json'),
   transactions: path.join(INPUT_DIR, 'transactions (2).json'),
-  exchangeRates: path.join(INPUT_DIR, 'exchange_rates (3).json')
+  exchangeRates: path.join(INPUT_DIR, 'exchange_rates (3).json'),
+  session: path.join(INPUT_DIR, 'session (2).json')
 };
 
 // Функция для чтения JSON файла
@@ -40,9 +41,12 @@ function readJsonFile(filePath) {
   }
 }
 
-// Создаем клиент подключения к PostgreSQL
+// Создаем клиент подключения к PostgreSQL с SSL
 const client = new pg.Client({
-  connectionString
+  connectionString,
+  ssl: {
+    rejectUnauthorized: false // Необходимо для подключения к Neon PostgreSQL
+  }
 });
 
 // Импорт данных в базу данных
@@ -60,6 +64,7 @@ async function importData() {
     await importCards();
     await importTransactions();
     await importExchangeRates();
+    await importSessions();
     
     // Сбрасываем последовательности ID
     await resetSequences();
@@ -326,6 +331,38 @@ async function importExchangeRates() {
     console.log('Курсы обмена успешно импортированы');
   } catch (error) {
     console.error('Ошибка при импорте курсов обмена:', error);
+  }
+}
+
+// Импорт сессий
+async function importSessions() {
+  try {
+    console.log('Импорт сессий...');
+    const sessions = readJsonFile(FILES.session);
+    
+    // Очищаем таблицу сессий
+    await client.query('DELETE FROM session');
+    
+    // Добавляем сессии
+    for (const session of sessions) {
+      await client.query(`
+        INSERT INTO session
+        (sid, sess, expire)
+        VALUES
+        ($1, $2, $3)
+        ON CONFLICT (sid) DO UPDATE
+        SET sess = EXCLUDED.sess,
+            expire = EXCLUDED.expire
+      `, [
+        session.sid,
+        session.sess,
+        new Date(session.expire)
+      ]);
+    }
+    
+    console.log(`Импортировано ${sessions.length} сессий`);
+  } catch (error) {
+    console.error('Ошибка при импорте сессий:', error);
   }
 }
 
