@@ -80,7 +80,7 @@
     "openai": "^4.85.4",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
-    "pg": "^8.13.3",
+    "pg": "^8.14.1",
     "pg-connection-string": "^2.7.0",
     "postgres": "^3.4.5",
     "qrcode": "^1.5.4",
