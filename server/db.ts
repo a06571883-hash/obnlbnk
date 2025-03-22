@@ -22,7 +22,21 @@ if (!DATABASE_URL) {
 console.log('Connecting to PostgreSQL database...');
 
 // Создаем клиент подключения к PostgreSQL
-export const client = postgres(DATABASE_URL, { ssl: 'require' });
+// Модифицируем параметры подключения для работы на Replit
+export const client = postgres(DATABASE_URL, { 
+  ssl: { rejectUnauthorized: false },
+  max: 2,
+  idle_timeout: 10,
+  connect_timeout: 15,
+  types: {
+    date: {
+      to: 1184,
+      from: [1082, 1083, 1114, 1184],
+      serialize: (date: Date) => date,
+      parse: (date: string) => date
+    }
+  }
+});
 
 // Создаем экземпляр Drizzle ORM
 export const db = drizzle(client, { schema });
@@ -111,7 +125,7 @@ async function logDatabaseContent() {
     console.log('Testing database connection...');
     
     // Проверяем наличие таблиц и пользователей
-    let usersResult;
+    let usersResult: schema.User[] = [];
     try {
       usersResult = await db.select().from(schema.users);
       console.log('Successfully connected to database');
