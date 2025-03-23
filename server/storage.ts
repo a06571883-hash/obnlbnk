@@ -371,9 +371,22 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Не удалось получить актуальные курсы валют");
         }
 
-        // Найти карту получателя по BTC адресу
-        const toCard = await this.getCardByNumber(recipientAddress);
-        console.log(`Поиск карты получателя по адресу ${recipientAddress}:`, toCard);
+        // Ищем карту получателя в зависимости от типа криптовалюты
+        let toCard;
+        if (cryptoType === 'btc') {
+          // Для BTC находим карту по BTC-адресу или номеру карты
+          const [btcCard] = await db.select().from(cards).where(eq(cards.btcAddress, recipientAddress));
+          toCard = btcCard || await this.getCardByNumber(recipientAddress);
+          console.log(`🔍 Поиск карты получателя по BTC-адресу ${recipientAddress}:`, toCard);
+        } else if (cryptoType === 'eth') {
+          // Для ETH находим карту по ETH-адресу или номеру карты
+          const [ethCard] = await db.select().from(cards).where(eq(cards.ethAddress, recipientAddress));
+          toCard = ethCard || await this.getCardByNumber(recipientAddress);
+          console.log(`🔍 Поиск карты получателя по ETH-адресу ${recipientAddress}:`, toCard);
+        } else {
+          toCard = await this.getCardByNumber(recipientAddress);
+          console.log(`🔍 Поиск карты получателя по номеру ${recipientAddress}:`, toCard);
+        }
 
         const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
         if (!regulator) {
@@ -657,7 +670,7 @@ export class DatabaseStorage implements IStorage {
           status: 'completed',
           description: transactionDescription,
           fromCardNumber: fromCard.number,
-          toCardNumber: toCard?.number || "",
+          toCardNumber: toCard?.number || recipientAddress,
           wallet: recipientAddress,
           createdAt: new Date()
         });
