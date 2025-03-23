@@ -460,5 +460,33 @@
     "description": "Комиссия за перевод (0.00000000 BTC)",
     "fromCardNumber": "4111151178490202",
     "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 58,
+    "fromCardId": 13,
+    "toCardId": null,
+    "amount": "1",
+    "convertedAmount": "1",
+    "type": "crypto_transfer",
+    "wallet": "0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D",
+    "status": "completed",
+    "createdAt": "2025-03-23T13:51:27.400Z",
+    "description": "Отправка 1.00000000 ETH на 0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": ""
+  },
+  {
+    "id": 59,
+    "fromCardId": 13,
+    "toCardId": 2,
+    "amount": "0.01",
+    "convertedAmount": "0.01",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T13:51:27.471Z",
+    "description": "Комиссия за перевод криптовалюты (0.01000000 BTC)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "REGULATOR"
   }
 ]

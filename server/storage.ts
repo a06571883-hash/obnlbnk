@@ -388,21 +388,41 @@ export class DatabaseStorage implements IStorage {
         let btcCommission: number;
 
         if (fromCard.type === 'crypto') {
-          // Отправляем напрямую в BTC
-          btcToSend = amount;
-          btcCommission = commission;
+          if (cryptoType === 'btc') {
+            // Отправляем напрямую в BTC
+            btcToSend = amount;
+            btcCommission = commission;
 
-          const cryptoBalance = parseFloat(fromCard.btcBalance || '0');
-          if (cryptoBalance < totalDebit) {
-            throw new Error(
-              `Недостаточно BTC. Доступно: ${cryptoBalance.toFixed(8)} BTC, ` +
-              `требуется: ${amount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ${totalDebit.toFixed(8)} BTC`
-            );
+            const cryptoBalance = parseFloat(fromCard.btcBalance || '0');
+            if (cryptoBalance < totalDebit) {
+              throw new Error(
+                `Недостаточно BTC. Доступно: ${cryptoBalance.toFixed(8)} BTC, ` +
+                `требуется: ${amount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ${totalDebit.toFixed(8)} BTC`
+              );
+            }
+
+            // Снимаем BTC с отправителя
+            await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - totalDebit).toFixed(8));
+            console.log(`Снято с отправителя: ${totalDebit.toFixed(8)} BTC`);
+          } else {
+            // Отправляем напрямую в ETH
+            const ethToSend = amount;
+            const ethCommission = commission;
+            btcToSend = amount * (parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd)); // Конвертируем ETH в BTC для учета
+            btcCommission = commission * (parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd)); // Комиссия в BTC эквиваленте
+
+            const ethBalance = parseFloat(fromCard.ethBalance || '0');
+            if (ethBalance < totalDebit) {
+              throw new Error(
+                `Недостаточно ETH. Доступно: ${ethBalance.toFixed(8)} ETH, ` +
+                `требуется: ${amount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ${totalDebit.toFixed(8)} ETH`
+              );
+            }
+
+            // Снимаем ETH с отправителя
+            await this.updateCardEthBalance(fromCard.id, (ethBalance - totalDebit).toFixed(8));
+            console.log(`Снято с отправителя: ${totalDebit.toFixed(8)} ETH`);
           }
-
-          // Снимаем BTC с отправителя
-          await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - totalDebit).toFixed(8));
-          console.log(`Снято с отправителя: ${totalDebit.toFixed(8)} BTC`);
 
         } else {
           // Конвертируем из фиатной валюты в BTC
@@ -439,10 +459,17 @@ export class DatabaseStorage implements IStorage {
           
           if (cryptoType === 'btc') {
             await this.updateCardBtcBalance(toCard.id, (toCryptoBalance + btcToSend).toFixed(8));
+            console.log(`Зачислено на карту ${toCard.id}: ${btcToSend.toFixed(8)} BTC`);
           } else {
-            const ethToSend = btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd));
+            // Если отправитель использует крипто-карту, используем напрямую сумму в ETH
+            // Если отправитель использует фиатную карту, конвертируем из BTC в ETH
+            const ethToSend = fromCard.type === 'crypto'
+              ? amount  // Прямая сумма в ETH
+              : btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd));
+              
             const toEthBalance = parseFloat(toCard.ethBalance || '0');
             await this.updateCardEthBalance(toCard.id, (toEthBalance + ethToSend).toFixed(8));
+            console.log(`Зачислено на карту ${toCard.id}: ${ethToSend.toFixed(8)} ETH`);
           }
         } else {
           // Проверяем валидность внешнего адреса
@@ -465,11 +492,16 @@ export class DatabaseStorage implements IStorage {
                 );
                 console.log(`✅ BTC транзакция запущена: ${txResult.txId} (статус: ${txResult.status})`);
               } else {
+                // При отправке ETH, если это крипто-карта, мы используем прямую сумму в ETH
+                // Если это фиатная карта, конвертируем из BTC в ETH
+                const ethAmount = fromCard.type === 'crypto' 
+                  ? amount  // Прямая сумма в ETH
+                  : btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd)); // Конвертация из BTC в ETH
+                
                 txResult = await sendEthereumTransaction(
                   fromCard.ethAddress || '',  // Адрес отправителя
                   recipientAddress,           // Адрес получателя
-                  // Конвертация из BTC в ETH по курсу
-                  btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd))
+                  ethAmount                   // Сумма в ETH
                 );
                 console.log(`✅ ETH транзакция запущена: ${txResult.txId} (статус: ${txResult.status})`);
               }
@@ -500,8 +532,10 @@ export class DatabaseStorage implements IStorage {
           type: 'crypto_transfer',
           status: 'completed',
           description: fromCard.type === 'crypto' 
-            ? `Отправка ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на ${recipientAddress}`
-            : `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${btcToSend.toFixed(8)} ${cryptoType.toUpperCase()} и отправка на ${recipientAddress}`,
+            ? `Отправка ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}`
+            : cryptoType === 'btc'
+              ? `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${btcToSend.toFixed(8)} BTC и отправка на адрес ${recipientAddress}`
+              : `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${(btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd))).toFixed(8)} ETH и отправка на адрес ${recipientAddress}`,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard?.number || "",
           wallet: recipientAddress,
@@ -516,7 +550,9 @@ export class DatabaseStorage implements IStorage {
           convertedAmount: btcCommission.toString(),
           type: 'commission',
           status: 'completed',
-          description: `Комиссия за перевод криптовалюты (${btcCommission.toFixed(8)} BTC)`,
+          description: `Комиссия за перевод ${cryptoType.toUpperCase()} ${cryptoType === 'btc' ? 
+                        `(${btcCommission.toFixed(8)} BTC)` : 
+                        `(${commission.toFixed(8)} ETH ~ ${btcCommission.toFixed(8)} BTC)`}`,
           fromCardNumber: fromCard.number,
           toCardNumber: "REGULATOR",
           wallet: null,
