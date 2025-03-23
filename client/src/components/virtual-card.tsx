@@ -219,10 +219,16 @@ export default function VirtualCard({ card }: { card: Card }) {
 
       if (recipientType === 'crypto_wallet') {
         const address = recipientCardNumber.trim();
-        if (selectedWallet === 'btc' && !validateBtcAddress(address)) {
-          throw new Error('Неверный формат BTC адреса');
-        } else if (selectedWallet === 'eth' && !validateEthAddress(address)) {
-          throw new Error('Неверный формат ETH адреса');
+        
+        // Использовать встроенные функции валидации
+        if (selectedWallet === 'btc') {
+          if (!validateBtcAddress(address)) {
+            throw new Error('Неверный формат BTC адреса');
+          } 
+        } else if (selectedWallet === 'eth') {
+          if (!validateEthAddress(address)) {
+            throw new Error('Неверный формат ETH адреса');
+          }
         }
       }
 
