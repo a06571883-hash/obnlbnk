@@ -1,3 +1,4 @@
+import * as schema from "@shared/schema";
 import { InsertCard, InsertTransaction, InsertUser, Transaction, User, Card, cards, exchangeRates, transactions, users } from "@shared/schema";
 import { eq, sql, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -752,7 +753,7 @@ export class DatabaseStorage implements IStorage {
           console.log(`✅ Транзакция начата: ${context}`);
           
           // Создаем экземпляр Drizzle с транзакционным соединением
-          const txDb = drizzle(sqlWithTx, { schema });
+          const txDb = drizzle(sqlWithTx, { schema: schema });
           
           // Выполняем операцию с транзакционным экземпляром Drizzle
           const result = await operation(txDb);

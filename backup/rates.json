@@ -10295,5 +10295,96 @@
     "btcToUsd": "85023",
     "ethToUsd": "1996.6",
     "updatedAt": "2025-03-23T19:57:38.338Z"
+  },
+  {
+    "id": 1476,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:07:47.040Z"
+  },
+  {
+    "id": 1477,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:08:16.228Z"
+  },
+  {
+    "id": 1478,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:08:46.228Z"
+  },
+  {
+    "id": 1479,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:09:16.228Z"
+  },
+  {
+    "id": 1480,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:09:46.229Z"
+  },
+  {
+    "id": 1481,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:10:16.229Z"
+  },
+  {
+    "id": 1482,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:10:46.229Z"
+  },
+  {
+    "id": 1483,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:11:16.229Z"
+  },
+  {
+    "id": 1484,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:11:46.230Z"
+  },
+  {
+    "id": 1485,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:12:16.230Z"
+  },
+  {
+    "id": 1486,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85163",
+    "ethToUsd": "1998.02",
+    "updatedAt": "2025-03-23T20:12:46.231Z"
+  },
+  {
+    "id": 1487,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85152",
+    "ethToUsd": "1997.82",
+    "updatedAt": "2025-03-23T20:13:16.398Z"
+  },
+  {
+    "id": 1488,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85152",
+    "ethToUsd": "1997.82",
+    "updatedAt": "2025-03-23T20:13:46.230Z"
   }
 ]
