@@ -177,6 +177,14 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
                 {transaction.status === 'completed' ? 'Выполнено' : 'В обработке'}
               </span>
             </div>
+            
+            {/* Индикатор режима симуляции для крипто-переводов */}
+            {transaction.description && transaction.description.includes('СИМУЛЯЦИЯ') && (
+              <div className="flex items-center justify-between bg-yellow-50 p-1.5 rounded-sm mt-1 mb-1">
+                <span className="text-[9px] text-amber-600 font-medium">Режим симуляции</span>
+                <span className="text-[8px] text-amber-600">Внешняя транзакция не выполнена</span>
+              </div>
+            )}
 
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Дата</span>

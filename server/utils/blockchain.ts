@@ -6,10 +6,26 @@ const BLOCKDAEMON_API_KEY = process.env.BLOCKDAEMON_API_KEY;
 
 /**
  * Проверяет наличие API ключей для работы с блокчейном
- * @returns true если ключи настроены, false если нет
+ * @returns объект с информацией о доступности и статусе API ключей
  */
-export function hasBlockchainApiKeys(): boolean {
-  return Boolean(BLOCKDAEMON_API_KEY);
+export function hasBlockchainApiKeys(): { 
+  available: boolean; 
+  blockdaemon: boolean;
+  reason?: string;
+} {
+  const blockdaemonAvailable = Boolean(BLOCKDAEMON_API_KEY);
+  const available = blockdaemonAvailable;
+  
+  let reason: string | undefined;
+  if (!available) {
+    reason = 'Отсутствуют необходимые API ключи для работы с блокчейном';
+  }
+  
+  return {
+    available,
+    blockdaemon: blockdaemonAvailable,
+    reason
+  };
 }
 
 /**
@@ -269,10 +285,11 @@ export async function checkTransactionStatus(
 
 // При инициализации модуля проверяем наличие API ключей
 (() => {
-  if (hasBlockchainApiKeys()) {
+  const apiStatus = hasBlockchainApiKeys();
+  if (apiStatus.available) {
     console.log('🔑 API ключи для работы с блокчейнами настроены');
-    if (BLOCKDAEMON_API_KEY) console.log('✓ BlockDaemon API Key настроен');
+    if (apiStatus.blockdaemon) console.log('✓ BlockDaemon API Key настроен');
   } else {
-    console.warn('⚠️ API ключи для работы с блокчейнами не настроены. Работа в режиме симуляции.');
+    console.warn(`⚠️ ${apiStatus.reason || 'API ключи для работы с блокчейнами не настроены.'}. Работа в режиме симуляции.`);
   }
 })();

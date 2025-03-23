@@ -255,6 +255,10 @@ function TransactionList({
                 <span className="text-[8px] text-muted-foreground whitespace-nowrap">
                   • {formatDate(tx.createdAt)}
                 </span>
+                {/* Индикатор симуляции в списке транзакций */}
+                {tx.description && tx.description.includes('СИМУЛЯЦИЯ') && (
+                  <span className="text-[7px] text-amber-600 bg-amber-50 px-1 rounded-sm ml-1">сим</span>
+                )}
               </div>
               <div className="flex items-center gap-1 text-[8px] text-muted-foreground">
                 {tx.status === 'completed' ? (
