@@ -17,7 +17,8 @@ interface CreateTransaction {
   cryptoCard?: {
     btcBalance: string;
     ethBalance: string;
-    btcAddress: string;
+    btcAddress?: string | null;
+    ethAddress?: string | null;
   };
 }
 
@@ -82,7 +83,7 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       to: "uah",
       amount: params.fromAmount,
       address: cleanCardNumber,
-      refundAddress: params.cryptoCard.btcAddress,
+      refundAddress: params.cryptoCard.btcAddress || '', // Убеждаемся, что null не будет передан
       payoutCurrency: "UAH",
       payoutMethod: "bank_card",
       bankDetails: {
