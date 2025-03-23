@@ -265,14 +265,13 @@ export async function sendEthereumTransaction(
       const valueInWei = BigInt(Math.floor(amountEth * 1e18)).toString();
       console.log(`💱 [ETH] Конвертация: ${amountEth} ETH = ${valueInWei} Wei`);
       
-      // Параметры для транзакции - возвращаемся к нативному формату Ethereum API
-      // https://docs.blockdaemon.com/reference/ethereum-post-tx
+      // Параметры для транзакции - пробуем упрощенный формат для отправки ETH
+      // https://docs.blockdaemon.com/docs/ethereum
       const transactionData = {
         from: fromAddress,
         to: toAddress,
         value: valueInWei,
-        gas_limit: "21000", // Стандартный газ для простой транзакции
-        fee_rate: "medium" // Средний приоритет транзакции
+        gas: 21000, // Стандартный газ для простой транзакции
       };
       
       console.log(`📤 [ETH] Отправка транзакции через BlockDaemon API с параметрами:`);

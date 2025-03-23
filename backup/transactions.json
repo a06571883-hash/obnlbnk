@@ -922,5 +922,33 @@
     "description": "Возврат средств: 1.00000000 ETH (транзакция не прошла)",
     "fromCardNumber": "SYSTEM",
     "toCardNumber": "4000101461947771"
+  },
+  {
+    "id": 91,
+    "fromCardId": 94,
+    "toCardId": 95,
+    "amount": "1",
+    "convertedAmount": "85169",
+    "type": "transfer",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T15:53:18.673Z",
+    "description": "Перевод 1.00000000 CRYPTO → 85169.00 USD (курс: 85169.00)",
+    "fromCardNumber": "4111151178490202",
+    "toCardNumber": "4112376747946500"
+  },
+  {
+    "id": 92,
+    "fromCardId": 94,
+    "toCardId": 5,
+    "amount": "0.01",
+    "convertedAmount": "1.174136129342836e-7",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T15:53:18.740Z",
+    "description": "Комиссия за перевод (0.00000012 BTC)",
+    "fromCardNumber": "4111151178490202",
+    "toCardNumber": "REGULATOR"
   }
 ]

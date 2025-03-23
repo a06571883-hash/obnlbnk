@@ -48,13 +48,12 @@ export function setupDebugRoutes(app: express.Express) {
       const valueInWei = BigInt(Math.floor(amount * 1e18)).toString();
       console.log(`💱 [TEST ETH] Конвертация: ${amount} ETH = ${valueInWei} Wei`);
       
-      // Параметры для транзакции - используем нативный API формат для Ethereum
+      // Параметры для транзакции - упрощенный формат для Ethereum
       const transactionData = {
         from: fromAddress,
         to: toAddress,
         value: valueInWei,
-        gas_limit: "21000", // Стандартный газ для простой транзакции
-        fee_rate: "medium" // Средний приоритет транзакции
+        gas: 21000 // Стандартный газ для простой транзакции
       };
       
       console.log(`📤 [TEST ETH] Отправка транзакции через BlockDaemon API с параметрами:`);
