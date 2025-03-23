@@ -223,6 +223,12 @@ export class DatabaseStorage implements IStorage {
         // Используем переданное соединение с транзакцией, если оно есть
         const database = txDb || db;
         
+        // Логируем информацию о переданном соединении
+        console.log(`📊 Создание транзакции с ${txDb ? 'переданным txDb' : 'глобальным db'}`);
+        if (txDb) {
+          console.log(`📋 txDb содержит: ${Object.keys(txDb).join(', ')}`);
+        }
+        
         // Находим максимальный ID и инкрементируем его вручную
         const [maxIdResult] = await database.select({ maxId: sql`COALESCE(MAX(id), 0)` }).from(transactions);
         const nextId = Number(maxIdResult?.maxId || 0) + 1;
@@ -241,6 +247,12 @@ export class DatabaseStorage implements IStorage {
         return result;
       } catch (error) {
         console.error(`Ошибка при создании транзакции:`, error);
+        // Логируем дополнительную информацию об ошибке
+        if (error instanceof Error) {
+          console.error(`🔴 Тип ошибки: ${error.name}, сообщение: ${error.message}`);
+          console.error(`🔴 Стек: ${error.stack}`);
+        }
+        
         throw error;
       }
     }, 'Create transaction');
@@ -353,7 +365,7 @@ export class DatabaseStorage implements IStorage {
           toCardNumber: toCard.number,
           wallet: null,
           createdAt: new Date()
-        });
+        }, null);
 
         // Создаем транзакцию комиссии
         await this.createTransaction({
@@ -368,7 +380,7 @@ export class DatabaseStorage implements IStorage {
           toCardNumber: "REGULATOR",
           wallet: null,
           createdAt: new Date()
-        });
+        }, null);
 
         return { success: true, transaction };
       } catch (error) {
@@ -379,9 +391,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
+    // Используем явное объявление типа для txDb
     return this.withTransaction(async (txDb) => {
       try {
         console.log(`🔄 Начало крипто-транзакции: ${fromCardId} → ${recipientAddress} (${amount} ${cryptoType})`);
+        
+        // Проверим, что в txDb есть таблицы из схемы drizzle
+        console.log(`🧩 Таблицы в txDb: ${Object.keys(txDb).join(', ')}`);
         
         const fromCard = await this.getCardById(fromCardId);
         if (!fromCard) {
@@ -752,8 +768,15 @@ export class DatabaseStorage implements IStorage {
         return await client.begin(async (sqlWithTx) => {
           console.log(`✅ Транзакция начата: ${context}`);
           
-          // Создаем экземпляр Drizzle с транзакционным соединением
-          const txDb = drizzle(sqlWithTx, { schema: schema });
+          // Создаем экземпляр Drizzle с транзакционным соединением и явным указанием схемы
+          const txDb = drizzle(sqlWithTx, { 
+            schema: {
+              cards,
+              exchangeRates,
+              transactions,
+              users
+            }
+          });
           
           // Выполняем операцию с транзакционным экземпляром Drizzle
           const result = await operation(txDb);
