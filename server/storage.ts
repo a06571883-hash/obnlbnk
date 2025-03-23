@@ -700,57 +700,173 @@ export class DatabaseStorage implements IStorage {
     }, "Crypto Transfer Operation");
   }
 
-  private async withTransaction<T>(operation: (tx: any) => Promise<T>, context: string): Promise<T> {
-    try {
-      console.log(`🔄 Starting transaction: ${context}`);
-      
-      // Создаем новое соединение с транзакцией, используя postgres.js
-      const sql = client.unsafe('BEGIN');
-      
-      try {
-        // Выполняем операцию с обычным db (не транзакционным)
-        // В будущем можно улучшить этот метод, используя транзакционную сессию
-        const result = await operation(db);
-        
-        // Фиксируем транзакцию если все успешно
-        await client.unsafe('COMMIT');
-        console.log(`✓ Transaction completed successfully: ${context}`);
-        return result;
-      } catch (txError) {
-        // В случае ошибки откатываем транзакцию
-        await client.unsafe('ROLLBACK');
-        console.error(`❌ Transaction rolled back (${context}):`, txError);
-        throw txError;
-      }
-    } catch (error) {
-      // Общая ошибка транзакции - логгируем и пробрасываем дальше
-      console.error(`❌ Transaction failed (${context}):`, error);
-      
-      // Гарантируем отмену транзакции в любом случае
-      try {
-        await client.unsafe('ROLLBACK');
-      } catch (rollbackError) {
-        console.error('Error during rollback:', rollbackError);
-      }
-      
-      throw error;
-    }
-  }
-
-  private async withRetry<T>(operation: () => Promise<T>, context: string, maxAttempts = 3): Promise<T> {
+  private async withTransaction<T>(operation: (tx: any) => Promise<T>, context: string, maxAttempts = 3): Promise<T> {
     let lastError: Error | undefined;
+
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
+        if (attempt > 0) {
+          console.log(`🔄 Повторная попытка транзакции ${attempt + 1}/${maxAttempts}: ${context}`);
+        } else {
+          console.log(`🔄 Начало транзакции: ${context}`);
+        }
+        
+        // Начинаем транзакцию
+        await client.unsafe('BEGIN');
+        
+        try {
+          // Выполняем операцию с обычным db (не транзакционным)
+          const result = await operation(db);
+          
+          // Фиксируем транзакцию если все успешно
+          await client.unsafe('COMMIT');
+          
+          if (attempt > 0) {
+            console.log(`✅ Транзакция успешно завершена после ${attempt + 1} попыток: ${context}`);
+          } else {
+            console.log(`✅ Транзакция успешно завершена: ${context}`);
+          }
+          
+          return result;
+        } catch (txError: any) {
+          // Определяем тип ошибки
+          const isRetryable = 
+            txError.code === '40001' || // Serialization failure
+            txError.code === '40P01' || // Deadlock detected
+            txError.message?.includes('serializable') ||
+            txError.message?.includes('deadlock') ||
+            txError.message?.includes('conflict') ||
+            txError.message?.includes('duplicate');
+          
+          // В случае ошибки откатываем транзакцию
+          await client.unsafe('ROLLBACK');
+          
+          // Если ошибка может быть решена повторной попыткой и у нас есть еще попытки
+          if (isRetryable && attempt < maxAttempts - 1) {
+            console.warn(`⚠️ Транзакция отменена из-за конфликта (${context}), попытка ${attempt + 1}/${maxAttempts}:`);
+            console.warn(`   - Код: ${txError.code || 'Неизвестно'}`); 
+            console.warn(`   - Сообщение: ${txError.message || 'Нет сообщения'}`);
+            
+            // Экспоненциальная задержка с элементом случайности
+            const delay = Math.min(1000 * Math.pow(2, attempt), 10000) + Math.random() * 1000;
+            console.warn(`   - Повторная попытка через ${Math.round(delay/1000)} секунд...`);
+            
+            await new Promise(resolve => setTimeout(resolve, delay));
+            lastError = txError;
+            continue;
+          }
+          
+          // Для непреодолимых ошибок или последней попытки
+          console.error(`❌ Транзакция отменена (${context}), попытка ${attempt + 1}/${maxAttempts}:`);
+          console.error(`   - Код: ${txError.code || 'Неизвестно'}`);
+          console.error(`   - Сообщение: ${txError.message || 'Нет сообщения'}`);
+          console.error(`   - SQL: ${txError.sql || 'Нет SQL'}`);
+          console.error(`   - Stack: ${txError.stack || 'Нет стека'}`);
+          
+          lastError = txError;
+          throw txError;
+        }
+      } catch (outerError: any) {
+        // Ошибка вне транзакции или при начале/окончании транзакции
+        console.error(`❌ Ошибка управления транзакцией (${context}):`);
+        console.error(`   - Код: ${outerError.code || 'Неизвестно'}`);
+        console.error(`   - Сообщение: ${outerError.message || 'Нет сообщения'}`);
+        
+        // Попытка отмены транзакции в любом случае
+        try {
+          await client.unsafe('ROLLBACK');
+        } catch (rollbackError: any) {
+          console.error('   - Ошибка при отмене транзакции:', rollbackError.message);
+        }
+        
+        lastError = outerError;
+        
+        // Для критических ошибок БД не пытаемся повторить
+        const isCriticalError = 
+          outerError.code === '3D000' || // Database does not exist
+          outerError.code === '28P01' || // Invalid password
+          outerError.code === '42P01';   // Relation does not exist
+          
+        if (isCriticalError || attempt >= maxAttempts - 1) {
+          break;
+        }
+        
+        // Для других ошибок делаем паузу и пробуем снова
+        const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    // Если все попытки исчерпаны, возвращаем последнюю ошибку
+    throw lastError || new Error(`Транзакция ${context} не удалась после ${maxAttempts} попыток`);
+  }
+
+  private async withRetry<T>(operation: () => Promise<T>, context: string, maxAttempts = 5): Promise<T> {
+    let lastError: Error | undefined;
+    const MAX_DELAY = 30000; // Максимальная задержка между попытками (30 секунд)
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        // Логируем только первую и последующие попытки, но не каждую
+        if (attempt > 0) {
+          console.log(`🔄 ${context}: повторная попытка ${attempt + 1}/${maxAttempts}`);
+        }
+        
         return await operation();
-      } catch (error) {
+      } catch (error: any) {
         lastError = error as Error;
-        console.error(`${context} failed (attempt ${attempt + 1}/${maxAttempts}):`, error);
-        if (attempt < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+        
+        // Категоризируем ошибки
+        const isTransientError = 
+          error.code === 'ECONNRESET' || 
+          error.code === 'ETIMEDOUT' || 
+          error.code === 'ECONNREFUSED' ||
+          error.message.includes('connection') ||
+          error.message.includes('timeout') ||
+          error.code === '40P01'; // Deadlock detected
+        
+        // Для временных ошибок делаем больше попыток
+        if (isTransientError && attempt < maxAttempts - 1) {
+          // Экспоненциальная задержка с случайным элементом (jitter)
+          const baseDelay = Math.min(1000 * Math.pow(2, attempt), MAX_DELAY);
+          // Добавляем случайность от 1 до 1000 мс чтобы избежать "thundering herd"
+          const jitter = Math.floor(Math.random() * 1000);
+          const delay = baseDelay + jitter;
+          
+          console.warn(`⚠️ ${context} не удалось (временная ошибка, попытка ${attempt + 1}/${maxAttempts}):`);
+          console.warn(`   - Код ошибки: ${error.code || 'Неизвестно'}`);
+          console.warn(`   - Сообщение: ${error.message || 'Нет сообщения'}`);
+          console.warn(`   - Повторная попытка через ${Math.round(delay/1000)} секунд...`);
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // Для критических/постоянных ошибок выводим более подробную информацию
+        console.error(`❌ ${context} не удалось (попытка ${attempt + 1}/${maxAttempts}):`);
+        console.error(`   - Код: ${error.code || 'Неизвестно'}`);
+        console.error(`   - Сообщение: ${error.message || 'Нет сообщения'}`);
+        console.error(`   - SQL: ${error.sql || 'Нет SQL'}`);
+        console.error(`   - Параметры: ${JSON.stringify(error.parameters || {})}`);
+        console.error(`   - Stack: ${error.stack || 'Нет стека'}`);
+        
+        // Для непреодолимых ошибок не пытаемся повторить
+        if (!isTransientError || attempt >= maxAttempts - 1) {
+          break;
         }
       }
     }
-    throw lastError || new Error(`${context} failed after ${maxAttempts} attempts`);
+    
+    // Возвращаем информативную ошибку с контекстом
+    const errorMsg = `${context} не удалось после ${maxAttempts} попыток`;
+    console.error(errorMsg);
+    
+    if (lastError) {
+      lastError.message = `${errorMsg}: ${lastError.message}`;
+      throw lastError;
+    } else {
+      throw new Error(errorMsg);
+    }
   }
 
   async getLatestExchangeRates(): Promise<ExchangeRate | undefined> {

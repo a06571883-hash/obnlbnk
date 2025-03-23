@@ -7,6 +7,30 @@ import { startBot } from "./telegram-bot";
 import * as NodeJS from 'node:process';
 import { setupDebugRoutes } from "./debug";
 
+// Глобальные обработчики необработанных исключений
+process.on('uncaughtException', (error) => {
+  console.error('🚨 КРИТИЧЕСКАЯ ОШИБКА (uncaughtException):', error);
+  console.error('🔍 Stack trace:', error.stack);
+  // Не завершаем процесс, чтобы приложение продолжало работать
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🚨 НЕОБРАБОТАННЫЙ PROMISE (unhandledRejection):', reason);
+  console.error('🔍 Promise:', promise);
+  // Не завершаем процесс, чтобы приложение продолжало работать
+});
+
+// Обрабатываем сигналы завершения
+process.on('SIGTERM', () => {
+  console.log('🛑 Получен сигнал SIGTERM, выполняется плавное завершение...');
+  // Здесь можно добавить логику очистки, если нужно
+});
+
+process.on('SIGINT', () => {
+  console.log('🛑 Получен сигнал SIGINT, выполняется плавное завершение...');
+  // Здесь можно добавить логику очистки, если нужно
+});
+
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 const app = express();
@@ -39,10 +63,46 @@ app.use((req, res, next) => {
     // Запуск Telegram бота всегда
     await startBot();
 
-    // Базовая обработка ошибок
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      console.error('Error:', err.message);
-      res.status(500).json({ error: "Internal server error" });
+    // Улучшенная обработка ошибок
+    app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+      // Подробное логирование ошибки
+      console.error('🔴 Error URL:', req.method, req.originalUrl);
+      console.error('🔴 Error headers:', req.headers);
+      console.error('🔴 Error body:', req.body);
+      console.error('🔴 Error details:', err);
+      console.error('🔴 Error stack:', err.stack);
+      
+      // Разные сообщения для разных типов ошибок
+      let statusCode = 500;
+      let errorMessage = "Внутренняя ошибка сервера";
+      
+      if (err.name === 'ValidationError') {
+        statusCode = 400;
+        errorMessage = "Ошибка валидации данных";
+      } else if (err.name === 'UnauthorizedError') {
+        statusCode = 401;
+        errorMessage = "Требуется авторизация";
+      } else if (err.name === 'ForbiddenError') {
+        statusCode = 403;
+        errorMessage = "Доступ запрещен";
+      } else if (err.name === 'NotFoundError') {
+        statusCode = 404;
+        errorMessage = "Ресурс не найден";
+      }
+      
+      // Скрываем технические детали от пользователя в production
+      if (process.env.NODE_ENV === 'production') {
+        res.status(statusCode).json({ error: errorMessage });
+      } else {
+        // В development показываем полную информацию об ошибке
+        res.status(statusCode).json({
+          error: errorMessage,
+          details: err.message,
+          stack: err.stack
+        });
+      }
+      
+      // Даже если произошла ошибка, приложение продолжит работать
     });
 
     if (process.env.NODE_ENV !== 'production') {

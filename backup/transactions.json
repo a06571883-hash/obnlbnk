@@ -1034,5 +1034,61 @@
     "description": "Комиссия за перевод ETH (12.00000000 ETH ~ 0.00014096 BTC)",
     "fromCardNumber": "4112376747946500",
     "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 99,
+    "fromCardId": 13,
+    "toCardId": 94,
+    "amount": "12",
+    "convertedAmount": "0.28269917017325275",
+    "type": "crypto_transfer",
+    "wallet": "0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D",
+    "status": "completed",
+    "createdAt": "2025-03-23T16:06:12.351Z",
+    "description": "Отправка 12.00000000 ETH на адрес 0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D (внутренний перевод)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "4111151178490202"
+  },
+  {
+    "id": 100,
+    "fromCardId": 13,
+    "toCardId": 5,
+    "amount": "0.12",
+    "convertedAmount": "0.0028269917017325276",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T16:06:12.421Z",
+    "description": "Комиссия за перевод ETH (0.12000000 ETH ~ 0.00282699 BTC)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 101,
+    "fromCardId": 95,
+    "toCardId": 94,
+    "amount": "12000",
+    "convertedAmount": "0.14104703918756906",
+    "type": "crypto_transfer",
+    "wallet": "0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D",
+    "status": "completed",
+    "createdAt": "2025-03-23T16:06:47.667Z",
+    "description": "Конвертация 12000.00 USD → 5.98715755 ETH и отправка на адрес 0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D (внутренний перевод)",
+    "fromCardNumber": "4112376747946500",
+    "toCardNumber": "4111151178490202"
+  },
+  {
+    "id": 102,
+    "fromCardId": 95,
+    "toCardId": 2,
+    "amount": "120",
+    "convertedAmount": "0.0014104703918756906",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T16:06:47.729Z",
+    "description": "Комиссия за перевод ETH (120.00000000 ETH ~ 0.00141047 BTC)",
+    "fromCardNumber": "4112376747946500",
+    "toCardNumber": "REGULATOR"
   }
 ]
