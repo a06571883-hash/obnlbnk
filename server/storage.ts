@@ -532,22 +532,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async withTransaction<T>(operation: (client: any) => Promise<T>, context: string): Promise<T> {
-    // PostgreSQL требует явного управления транзакциями
     try {
-      // Начинаем транзакцию
-      await client`BEGIN`;
-      
-      // Выполняем операцию
-      const result = await operation(client);
-      
-      // Завершаем транзакцию если всё хорошо
-      await client`COMMIT`;
-      
-      return result;
+      // Используем Postgres.js транзакции напрямую для избежания ошибки "UNSAFE_TRANSACTION"
+      return await client.transaction(async (sql) => {
+        console.log(`🔄 Starting safe transaction: ${context}`);
+        
+        // Создаем временный экземпляр Drizzle на основе транзакционного клиента sql
+        const txDb = drizzle(sql, { schema });
+        
+        // Выполняем операцию с транзакционным DB
+        const result = await operation(txDb);
+        
+        console.log(`✓ Transaction completed: ${context}`);
+        return result;
+      });
     } catch (error) {
-      // Откатываем транзакцию в случае ошибки
-      await client`ROLLBACK`;
-      console.error(`${context} failed:`, error);
+      // Транзакция будет автоматически отменена при ошибке
+      console.error(`❌ Transaction failed (${context}):`, error);
       throw error;
     }
   }
