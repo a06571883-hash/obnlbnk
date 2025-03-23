@@ -702,7 +702,7 @@ export class DatabaseStorage implements IStorage {
     }, "Crypto Transfer Operation");
   }
 
-  private async withTransaction<T>(operation: (tx: any) => Promise<T>, context: string, maxAttempts = 3): Promise<T> {
+  private async withTransaction<T>(operation: (db: any) => Promise<T>, context: string, maxAttempts = 3): Promise<T> {
     let lastError: Error | undefined;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -713,13 +713,14 @@ export class DatabaseStorage implements IStorage {
           console.log(`🔄 Начало транзакции: ${context}`);
         }
         
-        return await client.begin(async (tx: any) => {
+        // Используем sql.begin() метод для транзакций в postgres.js
+        return await client.begin(async (sqlWithTx) => {
           console.log(`✅ Транзакция начата: ${context}`);
           
-          // Создаем экземпляр Drizzle с транзакционным клиентом
-          const txDb = drizzle(tx, { schema });
+          // Создаем экземпляр Drizzle с транзакционным соединением
+          const txDb = drizzle(sqlWithTx, { schema });
           
-          // Выполняем операцию с транзакционным клиентом
+          // Выполняем операцию с транзакционным экземпляром Drizzle
           const result = await operation(txDb);
           
           console.log(`✅ Транзакция успешно завершена: ${context}`);
