@@ -112,7 +112,7 @@
     "username": "admin",
     "password": "admin123",
     "is_regulator": true,
-    "regulator_balance": "10000000.05770825",
+    "regulator_balance": "10000000.05770837",
     "last_nft_generation": null,
     "nft_generation_count": 0
   },
@@ -121,7 +121,7 @@
     "username": "regulator",
     "password": "$2b$10$pvacunM0bEDs8FAM2Pro/uD6.WF28c3RHBNs3hCFo9MVxgBAAqs4G",
     "is_regulator": true,
-    "regulator_balance": "1000000.41764340",
+    "regulator_balance": "1000000.42764340",
     "last_nft_generation": null,
     "nft_generation_count": 0
   }

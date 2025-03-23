@@ -78,19 +78,6 @@
     "ethAddress": null
   },
   {
-    "id": 14,
-    "userId": 5,
-    "type": "usd",
-    "number": "4111323103306819",
-    "expiry": "01/28",
-    "cvv": "761",
-    "balance": "200000000",
-    "btcBalance": "0",
-    "ethBalance": "0",
-    "btcAddress": null,
-    "ethAddress": null
-  },
-  {
     "id": 15,
     "userId": 5,
     "type": "uah",
@@ -416,19 +403,6 @@
     "ethAddress": null
   },
   {
-    "id": 13,
-    "userId": 5,
-    "type": "crypto",
-    "number": "4000101461947771",
-    "expiry": "10/28",
-    "cvv": "240",
-    "balance": "0",
-    "btcBalance": "968347.43900000",
-    "ethBalance": "179843.89000000",
-    "btcAddress": "16L3S7YZ2SVaZjRn7wt1G2UE4aVW8vGpyb",
-    "ethAddress": "0x8AFf45c3aE9F66fAc33EA042f3A7fC2C338E4b2E"
-  },
-  {
     "id": 95,
     "userId": 18,
     "type": "usd",
@@ -442,6 +416,32 @@
     "ethAddress": null
   },
   {
+    "id": 14,
+    "userId": 5,
+    "type": "usd",
+    "number": "4111323103306819",
+    "expiry": "01/28",
+    "cvv": "761",
+    "balance": "200085155.00",
+    "btcBalance": "0",
+    "ethBalance": "0",
+    "btcAddress": null,
+    "ethAddress": null
+  },
+  {
+    "id": 13,
+    "userId": 5,
+    "type": "crypto",
+    "number": "4000101461947771",
+    "expiry": "10/28",
+    "cvv": "240",
+    "balance": "0",
+    "btcBalance": "968345.41900000",
+    "ethBalance": "179843.89000000",
+    "btcAddress": "16L3S7YZ2SVaZjRn7wt1G2UE4aVW8vGpyb",
+    "ethAddress": "0x8AFf45c3aE9F66fAc33EA042f3A7fC2C338E4b2E"
+  },
+  {
     "id": 94,
     "userId": 18,
     "type": "crypto",
@@ -449,7 +449,7 @@
     "expiry": "03/28",
     "cvv": "923",
     "balance": "0.00",
-    "btcBalance": "2.07990000",
+    "btcBalance": "3.07990000",
     "ethBalance": "17.98715755",
     "btcAddress": "1MhprVFAKXW5URUYK7xKLq7fk4ry8Cq851",
     "ethAddress": "0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D"

@@ -11,11 +11,11 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 // Определяем URL приложения в зависимости от среды
 let WEBAPP_URL = process.env.WEBAPP_URL;
 
-// Для Replit используем временный URL (может меняться при каждом запуске)
+// Для Replit используем постоянный URL
 if (!WEBAPP_URL) {
-  // Временный URL для Replit
+  // Постоянный URL для Replit
   if (!IS_RENDER && !IS_PRODUCTION) {
-    WEBAPP_URL = 'https://a94eb6c1-c5d1-4dd4-933a-930b9ad1e43c-00-3tpaapxqq7ajh.worf.replit.dev/';
+    WEBAPP_URL = 'https://ooobnalbank.replit.app/';
   } else if (IS_RENDER && IS_PRODUCTION) {
     // Для Render используем постоянный URL
     WEBAPP_URL = process.env.RENDER_EXTERNAL_URL || 'https://app.example.com/';
@@ -24,7 +24,7 @@ if (!WEBAPP_URL) {
 
 // Убедимся, что URL всегда определен
 if (!WEBAPP_URL) {
-  WEBAPP_URL = 'https://app.example.com/';
+  WEBAPP_URL = 'https://ooobnalbank.replit.app/';
 }
 
 // Сохраняем URL в переменных окружения

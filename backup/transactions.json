@@ -1090,5 +1090,61 @@
     "description": "Комиссия за перевод ETH (120.00000000 ETH ~ 0.00141047 BTC)",
     "fromCardNumber": "4112376747946500",
     "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 103,
+    "fromCardId": 13,
+    "toCardId": 14,
+    "amount": "1",
+    "convertedAmount": "85155",
+    "type": "transfer",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T20:58:01.835Z",
+    "description": "Перевод 1.00000000 CRYPTO → 85155.00 USD (курс: 85155.00)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "4111323103306819"
+  },
+  {
+    "id": 104,
+    "fromCardId": 13,
+    "toCardId": 5,
+    "amount": "0.01",
+    "convertedAmount": "1.1743291644647995e-7",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T20:58:01.915Z",
+    "description": "Комиссия за перевод (0.00000012 BTC)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 105,
+    "fromCardId": 13,
+    "toCardId": 94,
+    "amount": "1",
+    "convertedAmount": "1",
+    "type": "crypto_transfer",
+    "wallet": "1MhprVFAKXW5URUYK7xKLq7fk4ry8Cq851",
+    "status": "completed",
+    "createdAt": "2025-03-23T20:58:25.446Z",
+    "description": "Отправка 1.00000000 BTC на адрес 1MhprVFAKXW5URUYK7xKLq7fk4ry8Cq851 (внутренний перевод)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "4111151178490202"
+  },
+  {
+    "id": 106,
+    "fromCardId": 13,
+    "toCardId": 2,
+    "amount": "0.01",
+    "convertedAmount": "0.01",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T20:58:25.513Z",
+    "description": "Комиссия за перевод BTC (0.01000000 BTC)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "REGULATOR"
   }
 ]
