@@ -11,6 +11,15 @@ import {
   checkTransaction, 
   getPendingTransactions 
 } from './utils/transaction-monitor';
+import {
+  startSuperTransactionMonitoring,
+  trackTransactionWithEffects,
+  checkTransactionWithEffects,
+  getPendingTransactionsWithStyle,
+  showTransactionsHelp,
+  EMOJIS,
+  COLORS
+} from './utils/super-transaction-monitor';
 import { hasBlockchainApiKeys } from './utils/blockchain';
 import { AppError, NotFoundError } from './utils/error-handler';
 
@@ -123,12 +132,26 @@ router.post('/clear-errors', requireAdmin, async (req: Request, res: Response) =
  */
 router.post('/transactions/start-monitoring', requireAdmin, async (req: Request, res: Response) => {
   try {
-    startTransactionMonitoring();
+    // Определяем, какой вид мониторинга запустить
+    const useSuper = req.query.super === 'true' || req.body.super === true;
     
-    res.json({
-      status: 'success',
-      message: 'Мониторинг транзакций запущен'
-    });
+    if (useSuper) {
+      startSuperTransactionMonitoring();
+      
+      res.json({
+        status: 'success',
+        message: '🚀 СУПЕР-мониторинг транзакций запущен! 🎉',
+        type: 'super'
+      });
+    } else {
+      startTransactionMonitoring();
+      
+      res.json({
+        status: 'success',
+        message: 'Стандартный мониторинг транзакций запущен',
+        type: 'standard'
+      });
+    }
   } catch (error) {
     res.status(500).json({
       status: 'error',
@@ -143,12 +166,31 @@ router.post('/transactions/start-monitoring', requireAdmin, async (req: Request,
  */
 router.get('/transactions/pending', requireAdmin, async (req: Request, res: Response) => {
   try {
-    const pendingTransactions = getPendingTransactions();
+    // Определяем, какой вид списка использовать
+    const useSuper = req.query.super === 'true';
     
-    res.json({
-      status: 'success',
-      data: pendingTransactions
-    });
+    let pendingTransactions;
+    
+    if (useSuper) {
+      // Используем стильный список с форматированием
+      pendingTransactions = getPendingTransactionsWithStyle();
+      
+      res.json({
+        status: 'success',
+        data: pendingTransactions,
+        listType: 'super',
+        message: '🚀 Получен СТИЛЬНЫЙ список ожидающих транзакций! ✨'
+      });
+    } else {
+      // Используем стандартный список
+      pendingTransactions = getPendingTransactions();
+      
+      res.json({
+        status: 'success',
+        data: pendingTransactions,
+        listType: 'standard'
+      });
+    }
   } catch (error) {
     res.status(500).json({
       status: 'error',
@@ -169,15 +211,28 @@ router.get('/transactions/:id/check', requireAdmin, async (req: Request, res: Re
       throw new AppError('Некорректный ID транзакции', 400);
     }
     
-    const result = await checkTransaction(transactionId);
+    // Определяем, какой вид проверки использовать
+    const useSuper = req.query.super === 'true';
+    
+    let result;
+    
+    if (useSuper) {
+      // Используем супер-проверку с визуальными эффектами
+      result = await checkTransactionWithEffects(transactionId);
+    } else {
+      // Используем стандартную проверку
+      result = await checkTransaction(transactionId);
+    }
     
     if (!result) {
       throw new NotFoundError(`Транзакция #${transactionId} не найдена`);
     }
     
+    // Добавляем информацию о типе проверки в ответ
     res.json({
       status: 'success',
-      data: result
+      data: result,
+      checkType: useSuper ? 'super' : 'standard'
     });
   } catch (error) {
     if (error instanceof AppError) {
@@ -207,12 +262,28 @@ router.post('/transactions/:id/track', requireAdmin, async (req: Request, res: R
       throw new AppError('Некорректный ID транзакции', 400);
     }
     
-    await trackTransaction(transactionId);
+    // Определяем, какой вид отслеживания использовать
+    const useSuper = req.query.super === 'true' || req.body.super === true;
     
-    res.json({
-      status: 'success',
-      message: `Транзакция #${transactionId} добавлена для отслеживания`
-    });
+    if (useSuper) {
+      // Используем супер-отслеживание с визуальными эффектами
+      await trackTransactionWithEffects(transactionId);
+      
+      res.json({
+        status: 'success',
+        message: `🚀 Транзакция #${transactionId} добавлена для СУПЕР-отслеживания с визуальными эффектами! ✨`,
+        trackType: 'super'
+      });
+    } else {
+      // Используем стандартное отслеживание
+      await trackTransaction(transactionId);
+      
+      res.json({
+        status: 'success',
+        message: `Транзакция #${transactionId} добавлена для отслеживания`,
+        trackType: 'standard'
+      });
+    }
   } catch (error) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
@@ -235,12 +306,41 @@ router.post('/transactions/:id/track', requireAdmin, async (req: Request, res: R
  */
 router.post('/transactions/fix-stuck', requireAdmin, async (req: Request, res: Response) => {
   try {
+    // Используем супер эффекты при исправлении транзакций
+    const useSuper = req.query.super === 'true' || req.body.super === true;
     const result = await fixStuckTransactions();
     
-    res.json({
-      status: 'success',
-      data: result
-    });
+    if (useSuper) {
+      // Показываем ASCII-арт для успешно исправленных транзакций
+      if (result.fixed && result.fixed.length > 0) {
+        console.log(`
+    ${COLORS.green}  ______ _               _   _ 
+    ${COLORS.green} |  ____(_)             | | | |
+    ${COLORS.green} | |__   ___  _____  ___| | | |
+    ${COLORS.green} |  __| | \\ \\/ / _ \\/ __| | | |
+    ${COLORS.green} | |    | |>  <  __/\\__ \\_| |_|
+    ${COLORS.green} |_|    |_/_/\\_\\___||___(_) (_)
+    ${COLORS.reset}
+        `);
+        
+        // Печатаем информацию с эффектами
+        for (const tx of result.fixed) {
+          console.log(`${COLORS.cyan}${EMOJIS.sparkles} Исправлена транзакция #${tx.id} ${tx.type.includes('btc') ? EMOJIS.bitcoin : EMOJIS.ethereum} (${tx.amount})${COLORS.reset}`);
+        }
+      }
+      
+      res.json({
+        status: 'success',
+        data: result,
+        message: `🛠️ УСПЕХ! Исправлено ${result.fixed?.length || 0} транзакций! ${result.fixed?.length ? '🎉' : ''}`,
+        fixType: 'super'
+      });
+    } else {
+      res.json({
+        status: 'success',
+        data: result
+      });
+    }
   } catch (error) {
     res.status(500).json({
       status: 'error',
