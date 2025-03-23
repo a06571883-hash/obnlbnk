@@ -20,7 +20,10 @@ import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ExchangeRequest, ExchangeResponse } from "@/types/exchange";
+import { ExchangeRequest as ApiExchangeRequest, ExchangeResponse } from "@/types/exchange";
+
+// Define RecipientType type
+type RecipientType = 'usd_card' | 'uah_card' | 'crypto_wallet';
 
 // Constants - улучшенные градиенты для красивого переливания
 const cardColors = {
@@ -153,7 +156,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   }, [gyroscope, isMobile, isIOS]);
 
   const withdrawalMutation = useMutation({
-    mutationFn: async (request: ExchangeRequest) => {
+    mutationFn: async (request: ApiExchangeRequest) => {
       setIsProcessingExchange(true);
       setBankCardError('');
 
@@ -368,7 +371,7 @@ export default function VirtualCard({ card }: { card: Card }) {
     };
 
     // Create exchange request с безопасными типами данных
-    const request: ExchangeRequest = {
+    const request: ApiExchangeRequest = {
       fromCurrency: withdrawalMethod,
       toCurrency: "uah",
       fromAmount: withdrawalAmount,
@@ -893,18 +896,10 @@ export default function VirtualCard({ card }: { card: Card }) {
   );
 }
 
-type RecipientType = 'usd_card' | 'crypto_wallet';
+
 
 interface ExchangeRate {
   estimatedAmount: string;
   rate: string;
   transactionSpeedForecast: string;
-}
-
-interface ExchangeRequest {
-  fromCurrency: string;
-  toCurrency: string;
-  fromAmount: string;
-  address: string;
-  cryptoCard?: Card;
 }
