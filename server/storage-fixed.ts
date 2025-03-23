@@ -2,7 +2,6 @@ import { InsertCard, InsertTransaction, InsertUser, Transaction, User, Card, car
 import { eq, sql, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import express from "express";
-import session from "express-session";
 import { Store } from "express-session";
 import postgres from "postgres";
 import PGSession from "connect-pg-simple";
@@ -46,7 +45,7 @@ export class DatabaseStorage implements IStorage {
   sessionStore: Store;
 
   constructor() {
-    const PGSessionStore = PGSession(session);
+    const PGSessionStore = PGSession(express.session);
     this.sessionStore = new PGSessionStore({
       conObject: {
         connectionString: process.env.DATABASE_URL,
