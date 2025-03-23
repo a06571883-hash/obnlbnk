@@ -3,6 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import Logo from "@/components/logo";
 import { format } from "date-fns";
@@ -89,7 +90,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-sm mx-auto relative bg-gradient-to-b from-white to-slate-50 border-2 border-primary/20 rounded-xl shadow-lg">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-sm mx-auto relative bg-white border-2 border-primary/20 rounded-xl shadow-lg">
         {/* Декоративные элементы чека */}
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white border-2 border-primary/30 rounded-full p-1 shadow-md">
           <Logo size={32} className="text-primary" />
@@ -104,6 +105,9 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
           <DialogTitle className="text-center font-bold text-lg bg-gradient-to-r from-primary to-blue-500 text-transparent bg-clip-text">
             Чек транзакции
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Детали транзакции
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-2.5 relative z-10">
           <div className="flex justify-center mb-2">
