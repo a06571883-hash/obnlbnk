@@ -180,20 +180,32 @@ export class DatabaseStorage implements IStorage {
     }, 'Get transactions by card ID');
   }
 
-  async createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction> {
+  async createTransaction(transaction: Omit<Transaction, "id">, txDb?: any): Promise<Transaction> {
+    // Используем переданный транзакционный экземпляр Drizzle или основной экземпляр, если не в транзакции
+    const database = txDb || db;
+    
     return this.withRetry(async () => {
-      // Get the maximum existing ID to avoid conflicts
-      const [maxIdResult] = await db.select({ maxId: sql`COALESCE(MAX(id), 0)` }).from(transactions);
-      const nextId = Number(maxIdResult?.maxId || 0) + 1;
+      try {
+        // Get the maximum existing ID to avoid conflicts
+        const [maxIdResult] = await database.select({ maxId: sql`COALESCE(MAX(id), 0)` }).from(transactions);
+        const nextId = Number(maxIdResult?.maxId || 0) + 1;
 
-      const [result] = await db.insert(transactions).values({
-        ...transaction,
-        id: nextId,
-        wallet: transaction.wallet || null,
-        description: transaction.description || "",
-        createdAt: new Date()
-      }).returning();
-      return result;
+        console.log(`Создание транзакции с ID ${nextId}:`, transaction);
+        
+        const [result] = await database.insert(transactions).values({
+          ...transaction,
+          id: nextId,
+          wallet: transaction.wallet || null,
+          description: transaction.description || "",
+          createdAt: new Date()
+        }).returning();
+        
+        console.log(`Транзакция успешно создана:`, result);
+        return result;
+      } catch (error) {
+        console.error(`Ошибка при создании транзакции:`, error);
+        throw error;
+      }
     }, 'Create transaction');
   }
 
