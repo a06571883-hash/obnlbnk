@@ -20,6 +20,7 @@ import { useGyroscope } from "@/hooks/use-gyroscope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ExchangeRequest, ExchangeResponse } from "@/types/exchange";
 
 // Constants - улучшенные градиенты для красивого переливания
 const cardColors = {
@@ -83,7 +84,11 @@ export default function VirtualCard({ card }: { card: Card }) {
   const [rates, setRates] = useState<{ usdToUah: number; btcToUsd: number; ethToUsd: number } | null>(null);
   const [withdrawalMethod, setWithdrawalMethod] = useState<string | null>(null);
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
-  const [exchangeRate, setExchangeRate] = useState<ExchangeRate | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<{
+    estimatedAmount: string;
+    rate: string;
+    transactionSpeedForecast: string;
+  } | null>(null);
   const [bankCardNumber, setBankCardNumber] = useState('');
   const [bankCardError, setBankCardError] = useState('');
   const [exchangeStatus, setExchangeStatus] = useState<string>('');
