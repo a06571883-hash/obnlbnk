@@ -89,13 +89,27 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-sm mx-auto">
-        <DialogHeader>
-          <DialogTitle className="text-center">Чек</DialogTitle>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-sm mx-auto relative bg-gradient-to-b from-white to-slate-50 border-2 border-primary/20 rounded-xl shadow-lg">
+        {/* Декоративные элементы чека */}
+        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white border-2 border-primary/30 rounded-full p-1 shadow-md">
+          <Logo size={32} className="text-primary" />
+        </div>
+        
+        <div className="absolute -left-2 top-1/4 w-4 h-8 bg-background rounded-r-full"></div>
+        <div className="absolute -right-2 top-1/4 w-4 h-8 bg-background rounded-l-full"></div>
+        
+        <div className="absolute top-1/4 left-0 right-0 border-t-2 border-dashed border-slate-200 -mt-1"></div>
+        
+        <DialogHeader className="pt-4">
+          <DialogTitle className="text-center font-bold text-lg bg-gradient-to-r from-primary to-blue-500 text-transparent bg-clip-text">
+            Чек транзакции
+          </DialogTitle>
         </DialogHeader>
-        <div className="space-y-2.5">
-          <div className="flex justify-center">
-            <Logo size={28} className="text-primary" />
+        <div className="space-y-2.5 relative z-10">
+          <div className="flex justify-center mb-2">
+            <div className="bg-primary/10 rounded-full p-1">
+              <Logo size={28} className="text-primary" />
+            </div>
           </div>
 
           <div className="space-y-2 text-[10px] sm:text-xs">
@@ -277,9 +291,36 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
             </div>
           </div>
 
-          <div className="text-[8px] sm:text-[9px] text-muted-foreground pt-2 border-t text-center">
-            <p>Поддержка: @OOO_BNAL_BANK</p>
-            <p>BNAL Bank © {new Date().getFullYear()}</p>
+          <div className="relative mt-4">
+            {/* Штрих-код эффект */}
+            <div className="absolute top-0 left-0 right-0 h-10 overflow-hidden">
+              <div className="flex justify-between h-full">
+                {Array.from({ length: 40 }).map((_, idx) => (
+                  <div 
+                    key={idx} 
+                    className="h-full w-0.5" 
+                    style={{ 
+                      backgroundColor: idx % 3 === 0 ? '#000' : '#666', 
+                      opacity: Math.random() * 0.5 + 0.2
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* Серийный номер */}
+            <div className="text-center pb-1 pt-12">
+              <span className="font-mono text-[8px] tracking-wider">
+                {Array.from({ length: 12 }).map(() => 
+                  String.fromCharCode(Math.floor(Math.random() * 10) + 48)
+                ).join('')}
+              </span>
+            </div>
+            
+            <div className="text-[8px] sm:text-[9px] text-muted-foreground pt-1 border-t text-center">
+              <p>Поддержка: @OOO_BNAL_BANK</p>
+              <p>BNAL Bank © {new Date().getFullYear()}</p>
+            </div>
           </div>
         </div>
       </DialogContent>
