@@ -200,7 +200,7 @@ export default function VirtualCard({ card }: { card: Card }) {
   });
 
   const transferMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (transferData: void) => {
       setTransferError('');
 
       if (!transferAmount || isNaN(parseFloat(transferAmount)) || parseFloat(transferAmount) <= 0) {
@@ -289,7 +289,7 @@ export default function VirtualCard({ card }: { card: Card }) {
     if (isTransferring || transferMutation.isPending) {
       return;
     }
-    transferMutation.mutate();
+    transferMutation.mutate(undefined);
   };
 
   const getConvertedAmount = () => {
