@@ -265,25 +265,22 @@ export async function sendEthereumTransaction(
       const valueInWei = BigInt(Math.floor(amountEth * 1e18)).toString();
       console.log(`💱 [ETH] Конвертация: ${amountEth} ETH = ${valueInWei} Wei`);
       
-      // Параметры для транзакции - используем Universal API формат
-      // https://docs.blockdaemon.com/reference/universal-post-tx
+      // Параметры для транзакции - используем стандартный формат BlockDaemon API для Ethereum
+      // https://docs.blockdaemon.com/reference/ethereum-post-tx
       const transactionData = {
-        network_name: "ethereum", 
-        network_type: "mainnet",
-        transaction: {
-          from: fromAddress,
-          to: toAddress,
-          value: valueInWei,
-          gas_limit: "21000", // Стандартный газ для простой транзакции
-          gas_price: "medium" // Средний приоритет транзакции
-        }
+        from: fromAddress,
+        to: toAddress,
+        value: valueInWei,
+        gas_limit: "21000", // Стандартный газ для простой транзакции
+        fee_rate: "medium" // Средний приоритет транзакции
       };
       
       console.log(`📤 [ETH] Отправка транзакции через BlockDaemon API с параметрами:`);
       console.log(JSON.stringify(transactionData, null, 2));
       
-      // Исправляем URL для Ethereum транзакций - должен содержать v1 в URL
-      const txURL = `https://svc.blockdaemon.com/universal/v1/ethereum/mainnet/tx`;
+      // Исправляем URL для Ethereum транзакций - должен соответствовать документации BlockDaemon
+      // По документации: https://docs.blockdaemon.com/reference/ethereum-post-tx
+      const txURL = `https://svc.blockdaemon.com/ethereum/mainnet/tx/send`;
       console.log(`🌐 [ETH] URL запроса: ${txURL}`);
       
       const txResponse = await axios.post(
@@ -395,10 +392,10 @@ export async function checkTransactionStatus(
       }
     } else if (cryptoType === 'eth') {
       try {
-        // Проверка статуса ETH транзакции через BlockDaemon API (Universal API)
+        // Проверка статуса ETH транзакции через BlockDaemon API
         console.log(`🔍 Запрос статуса ETH транзакции: ${txId}`);
         
-        const txURL = `https://svc.blockdaemon.com/universal/v1/ethereum/mainnet/tx/${txId}`;
+        const txURL = `https://svc.blockdaemon.com/ethereum/mainnet/tx/${txId}`;
         console.log(`🌐 [ETH] URL запроса статуса: ${txURL}`);
         
         const response = await axios.get(

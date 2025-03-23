@@ -6781,5 +6781,33 @@
     "btcToUsd": "85223",
     "ethToUsd": "2009.41",
     "updatedAt": "2025-03-23T15:44:25.396Z"
+  },
+  {
+    "id": 972,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85223",
+    "ethToUsd": "2009.41",
+    "updatedAt": "2025-03-23T15:44:35.328Z"
+  },
+  {
+    "id": 973,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85223",
+    "ethToUsd": "2009.41",
+    "updatedAt": "2025-03-23T15:45:04.271Z"
+  },
+  {
+    "id": 974,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85223",
+    "ethToUsd": "2009.41",
+    "updatedAt": "2025-03-23T15:45:34.271Z"
+  },
+  {
+    "id": 975,
+    "usdToUah": "41.527183",
+    "btcToUsd": "85102",
+    "ethToUsd": "2006.42",
+    "updatedAt": "2025-03-23T15:46:01.411Z"
   }
 ]
