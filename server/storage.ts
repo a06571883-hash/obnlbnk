@@ -391,18 +391,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
-    // Используем явное объявление типа для txDb
-    return this.withTransaction(async (txDb) => {
-      try {
-        console.log(`🔄 Начало крипто-транзакции: ${fromCardId} → ${recipientAddress} (${amount} ${cryptoType})`);
-        
-        // Проверим, что в txDb есть таблицы из схемы drizzle
-        console.log(`🧩 Таблицы в txDb: ${Object.keys(txDb).join(', ')}`);
-        
-        const fromCard = await this.getCardById(fromCardId);
-        if (!fromCard) {
-          throw new Error("Карта отправителя не найдена");
-        }
+    // Убираем транзакцию для обхода проблемы с parsers
+    try {
+      console.log(`🔄 Начало крипто-транзакции БЕЗ ТРАНЗАКЦИИ: ${fromCardId} → ${recipientAddress} (${amount} ${cryptoType})`);
+    
+      const fromCard = await this.getCardById(fromCardId);
+      if (!fromCard) {
+        throw new Error("Карта отправителя не найдена");
+      }
 
         const rates = await this.getLatestExchangeRates();
         if (!rates) {
@@ -615,7 +611,7 @@ export class DatabaseStorage implements IStorage {
                         toCardNumber: fromCard.number,
                         wallet: null,
                         createdAt: new Date()
-                      }, txDb);
+                      });
                     } else {
                       console.log(`✅ BTC транзакция ${txId} в обработке (статус: ${status.status})`);
                     }
