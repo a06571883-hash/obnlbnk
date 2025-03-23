@@ -170,20 +170,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Создаем безопасную версию карты без null-значений
-      const safeCryptoCard = {
-        btcBalance: userCryptoCard.btcBalance,
-        ethBalance: userCryptoCard.ethBalance,
-        btcAddress: userCryptoCard.btcAddress || '', // Преобразуем null в пустую строку
-        ethAddress: userCryptoCard.ethAddress || '' // Добавляем для полноты
-      };
-      
       const transaction = await createExchangeTransaction({
         fromCurrency,
         toCurrency,
         fromAmount,
         address: cleanCardNumber,
-        cryptoCard: safeCryptoCard
+        cryptoCard: userCryptoCard
       });
 
       res.json(transaction);

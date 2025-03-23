@@ -1,31 +1,23 @@
 import session from "express-session";
 import { MemoryStore } from 'express-session';
-import { db, client } from "./db";
+import { db } from "./db";
 import { cards, users, transactions, exchangeRates } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import * as schema from "@shared/schema";
 import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
-import { 
-  hasBlockchainApiKeys, 
-  sendBitcoinTransaction, 
-  sendEthereumTransaction,
-  getBitcoinBalance,
-  getEthereumBalance,
-  checkTransactionStatus
-} from './utils/blockchain';
+import store from 'better-sqlite3-session-store';
+import Database from 'better-sqlite3';
 import path from 'path';
-import pgSession from 'connect-pg-simple';
 
-// Используем PostgreSQL для хранения сессий
-const PostgresStore = pgSession(session);
+// Используем SQLite для хранения сессий
+const SqliteStore = store(session);
 
-// Получаем DATABASE_URL из переменных окружения
-const DATABASE_URL = process.env.DATABASE_URL;
-console.log('PostgreSQL session store enabled');
+// Создаем отдельную базу для сессий
+const SESSION_DB_PATH = path.join(process.cwd(), 'sessions.db');
+console.log('SQLite session database path:', SESSION_DB_PATH);
+const sessionDb = new Database(SESSION_DB_PATH);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -62,17 +54,16 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    // Используем PostgreSQL для хранения сессий
-    this.sessionStore = new PostgresStore({
-      conObject: {
-        connectionString: DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
-      },
-      tableName: 'session',
-      createTableIfMissing: true
+    // Используем SQLite для хранения сессий вместо PostgreSQL
+    this.sessionStore = new SqliteStore({
+      client: sessionDb,
+      expired: {
+        clear: true,
+        intervalMs: 900000 // Очистка истекших сессий каждые 15 минут
+      }
     });
     
-    console.log('Session store initialized with PostgreSQL');
+    console.log('Session store initialized with SQLite (free, no expiration)');
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -180,32 +171,20 @@ export class DatabaseStorage implements IStorage {
     }, 'Get transactions by card ID');
   }
 
-  async createTransaction(transaction: Omit<Transaction, "id">, txDb?: any): Promise<Transaction> {
-    // Используем переданный транзакционный экземпляр Drizzle или основной экземпляр, если не в транзакции
-    const database = txDb || db;
-    
+  async createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction> {
     return this.withRetry(async () => {
-      try {
-        // Get the maximum existing ID to avoid conflicts
-        const [maxIdResult] = await database.select({ maxId: sql`COALESCE(MAX(id), 0)` }).from(transactions);
-        const nextId = Number(maxIdResult?.maxId || 0) + 1;
+      // Get the maximum existing ID to avoid conflicts
+      const [maxIdResult] = await db.select({ maxId: sql`COALESCE(MAX(id), 0)` }).from(transactions);
+      const nextId = Number(maxIdResult?.maxId || 0) + 1;
 
-        console.log(`Создание транзакции с ID ${nextId}:`, transaction);
-        
-        const [result] = await database.insert(transactions).values({
-          ...transaction,
-          id: nextId,
-          wallet: transaction.wallet || null,
-          description: transaction.description || "",
-          createdAt: new Date()
-        }).returning();
-        
-        console.log(`Транзакция успешно создана:`, result);
-        return result;
-      } catch (error) {
-        console.error(`Ошибка при создании транзакции:`, error);
-        throw error;
-      }
+      const [result] = await db.insert(transactions).values({
+        ...transaction,
+        id: nextId,
+        wallet: transaction.wallet || null,
+        description: transaction.description || "",
+        createdAt: new Date()
+      }).returning();
+      return result;
     }, 'Create transaction');
   }
 
@@ -373,10 +352,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
-    return this.withTransaction(async (txDb) => {
+    return this.withTransaction(async () => {
       try {
-        console.log(`🔄 Начало крипто-транзакции: ${fromCardId} → ${recipientAddress} (${amount} ${cryptoType})`);
-        
         const fromCard = await this.getCardById(fromCardId);
         if (!fromCard) {
           throw new Error("Карта отправителя не найдена");
@@ -387,22 +364,9 @@ export class DatabaseStorage implements IStorage {
           throw new Error("Не удалось получить актуальные курсы валют");
         }
 
-        // Ищем карту получателя в зависимости от типа криптовалюты
-        let toCard;
-        if (cryptoType === 'btc') {
-          // Для BTC находим карту по BTC-адресу или номеру карты
-          const [btcCard] = await db.select().from(cards).where(eq(cards.btcAddress, recipientAddress));
-          toCard = btcCard || await this.getCardByNumber(recipientAddress);
-          console.log(`🔍 Поиск карты получателя по BTC-адресу ${recipientAddress}:`, toCard);
-        } else if (cryptoType === 'eth') {
-          // Для ETH находим карту по ETH-адресу или номеру карты
-          const [ethCard] = await db.select().from(cards).where(eq(cards.ethAddress, recipientAddress));
-          toCard = ethCard || await this.getCardByNumber(recipientAddress);
-          console.log(`🔍 Поиск карты получателя по ETH-адресу ${recipientAddress}:`, toCard);
-        } else {
-          toCard = await this.getCardByNumber(recipientAddress);
-          console.log(`🔍 Поиск карты получателя по номеру ${recipientAddress}:`, toCard);
-        }
+        // Найти карту получателя по BTC адресу
+        const toCard = await this.getCardByNumber(recipientAddress);
+        console.log(`Поиск карты получателя по адресу ${recipientAddress}:`, toCard);
 
         const [regulator] = await db.select().from(users).where(eq(users.is_regulator, true));
         if (!regulator) {
@@ -417,41 +381,21 @@ export class DatabaseStorage implements IStorage {
         let btcCommission: number;
 
         if (fromCard.type === 'crypto') {
-          if (cryptoType === 'btc') {
-            // Отправляем напрямую в BTC
-            btcToSend = amount;
-            btcCommission = commission;
+          // Отправляем напрямую в BTC
+          btcToSend = amount;
+          btcCommission = commission;
 
-            const cryptoBalance = parseFloat(fromCard.btcBalance || '0');
-            if (cryptoBalance < totalDebit) {
-              throw new Error(
-                `Недостаточно BTC. Доступно: ${cryptoBalance.toFixed(8)} BTC, ` +
-                `требуется: ${amount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ${totalDebit.toFixed(8)} BTC`
-              );
-            }
-
-            // Снимаем BTC с отправителя
-            await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - totalDebit).toFixed(8));
-            console.log(`Снято с отправителя: ${totalDebit.toFixed(8)} BTC`);
-          } else {
-            // Отправляем напрямую в ETH
-            const ethToSend = amount;
-            const ethCommission = commission;
-            btcToSend = amount * (parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd)); // Конвертируем ETH в BTC для учета
-            btcCommission = commission * (parseFloat(rates.ethToUsd) / parseFloat(rates.btcToUsd)); // Комиссия в BTC эквиваленте
-
-            const ethBalance = parseFloat(fromCard.ethBalance || '0');
-            if (ethBalance < totalDebit) {
-              throw new Error(
-                `Недостаточно ETH. Доступно: ${ethBalance.toFixed(8)} ETH, ` +
-                `требуется: ${amount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ${totalDebit.toFixed(8)} ETH`
-              );
-            }
-
-            // Снимаем ETH с отправителя
-            await this.updateCardEthBalance(fromCard.id, (ethBalance - totalDebit).toFixed(8));
-            console.log(`Снято с отправителя: ${totalDebit.toFixed(8)} ETH`);
+          const cryptoBalance = parseFloat(fromCard.btcBalance || '0');
+          if (cryptoBalance < totalDebit) {
+            throw new Error(
+              `Недостаточно BTC. Доступно: ${cryptoBalance.toFixed(8)} BTC, ` +
+              `требуется: ${amount.toFixed(8)} + ${commission.toFixed(8)} комиссия = ${totalDebit.toFixed(8)} BTC`
+            );
           }
+
+          // Снимаем BTC с отправителя
+          await this.updateCardBtcBalance(fromCard.id, (cryptoBalance - totalDebit).toFixed(8));
+          console.log(`Снято с отправителя: ${totalDebit.toFixed(8)} BTC`);
 
         } else {
           // Конвертируем из фиатной валюты в BTC
@@ -482,173 +426,23 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Если отправка на внутреннюю карту, то зачисляем средства на неё
-        let transactionMode = 'internal'; // internal, simulated, blockchain
-        let txId: string | null = null;
-        
         if (toCard) {
-          console.log(`Обнаружена внутренняя карта: ${toCard.id}, зачисляем средства напрямую`);
+          console.log(`Обнаружена внутренняя карта: ${toCard.id}, зачисляем средства`);
           const toCryptoBalance = parseFloat(toCard.btcBalance || '0');
           
           if (cryptoType === 'btc') {
             await this.updateCardBtcBalance(toCard.id, (toCryptoBalance + btcToSend).toFixed(8));
-            console.log(`Зачислено на карту ${toCard.id}: ${btcToSend.toFixed(8)} BTC`);
           } else {
-            // Если отправитель использует крипто-карту, используем напрямую сумму в ETH
-            // Если отправитель использует фиатную карту, конвертируем из BTC в ETH
-            const ethToSend = fromCard.type === 'crypto'
-              ? amount  // Прямая сумма в ETH
-              : btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd));
-              
+            const ethToSend = btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd));
             const toEthBalance = parseFloat(toCard.ethBalance || '0');
             await this.updateCardEthBalance(toCard.id, (toEthBalance + ethToSend).toFixed(8));
-            console.log(`Зачислено на карту ${toCard.id}: ${ethToSend.toFixed(8)} ETH`);
           }
         } else {
-          // Определяем, является ли адрес номером внутренней карты
-        // Если toCard существует, значит мы нашли внутреннюю карту по номеру или адресу
-        if (!toCard) {
-          // Это внешний адрес - проверяем валидность
+          // Проверяем валидность внешнего адреса
           if (!validateCryptoAddress(recipientAddress, cryptoType)) {
             throw new Error(`Недействительный ${cryptoType.toUpperCase()} адрес`);
           }
           console.log(`Адрес ${recipientAddress} валиден. Отправляем на внешний адрес...`);
-          
-          // Устанавливаем режим транзакции по умолчанию в 'blockchain'
-          // Если BlockDaemon API доступен - используем режим блокчейна, иначе - симуляцию
-          const apiStatus = hasBlockchainApiKeys();
-          
-          console.log(`🔐 Проверка API ключей: available=${apiStatus.available}, blockdaemon=${apiStatus.blockdaemon}`);
-          console.log(`🔐 Причина (если недоступно): ${apiStatus.reason || 'Нет ошибок'}`);
-          
-          // ВАЖНО! Всегда форсируем режим блокчейна независимо от API ключей для тестирования
-          transactionMode = 'blockchain';
-          console.log(`🔐 Режим транзакции установлен на: ${transactionMode}`);
-
-          // Оригинальная логика ниже:
-          // transactionMode = apiStatus.available ? 'blockchain' : 'simulated';
-          
-          // Проверка доступности API ключей для выполнения реальных транзакций
-          // ВАЖНО: убираем проверку доступности API ключей, т.к. мы форсируем режим блокчейна
-          // Отправка реальной криптотранзакции через блокчейн
-          let txResult;
-            
-          try {
-              if (cryptoType === 'btc') {
-                // Логика для Bitcoin транзакций
-                txResult = await sendBitcoinTransaction(
-                  fromCard.btcAddress || '',  // Адрес отправителя
-                  recipientAddress,           // Адрес получателя
-                  btcToSend                   // Сумма в BTC
-                );
-                console.log(`✅ BTC транзакция запущена: ${txResult.txId} (статус: ${txResult.status})`);
-                txId = txResult.txId;
-                
-                // Если получен реальный ID транзакции (не начинается с btc_tx_ или btc_err_)
-                if (!txId.startsWith('btc_tx_') && !txId.startsWith('btc_err_')) {
-                  // Это настоящая блокчейн-транзакция, меняем режим
-                  transactionMode = 'blockchain';
-                  console.log(`🚀 BTC транзакция успешно отправлена в блокчейн! TxID: ${txId}`);
-                  
-                  // Проверяем статус транзакции через 5 секунд, чтобы убедиться, что она началась
-                  setTimeout(async () => {
-                    try {
-                      console.log(`🔍 Проверка начальной обработки BTC транзакции: ${txId}`);
-                      const status = await checkTransactionStatus(txId || '', 'btc');
-                      if (status.status === 'failed') {
-                        console.error(`❌ BTC транзакция не прошла: ${txId}`);
-                        
-                        // Если транзакция завершилась с ошибкой, возвращаем средства пользователю
-                        const originalBtcBalance = parseFloat(fromCard.btcBalance || '0');
-                        await this.updateCardBtcBalance(fromCard.id, originalBtcBalance.toFixed(8));
-                        console.log(`♻️ Возвращены средства пользователю: ${totalDebit.toFixed(8)} BTC на карту ${fromCard.id}`);
-                        
-                        // Создаем запись о возврате средств
-                        await this.createTransaction({
-                          fromCardId: regulator.id,
-                          toCardId: fromCard.id,
-                          amount: totalDebit.toString(),
-                          convertedAmount: '0',
-                          type: 'refund',
-                          status: 'completed',
-                          description: `Возврат средств: ${amount.toFixed(8)} BTC (транзакция не прошла)`,
-                          fromCardNumber: "SYSTEM",
-                          toCardNumber: fromCard.number,
-                          wallet: null,
-                          createdAt: new Date()
-                        }, txDb);
-                      } else {
-                        console.log(`✅ BTC транзакция ${txId} в обработке (статус: ${status.status})`);
-                      }
-                    } catch (checkError) {
-                      console.error(`❌ Ошибка при проверке BTC транзакции:`, checkError);
-                    }
-                  }, 5000);
-                }
-              } else {
-                // Логика для Ethereum транзакций - точно такая же, как для BTC                  
-                // При отправке ETH, если это крипто-карта, мы используем прямую сумму в ETH
-                // Если это фиатная карта, конвертируем из BTC в ETH
-                const ethAmount = fromCard.type === 'crypto' 
-                  ? amount  // Прямая сумма в ETH
-                  : btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd)); // Конвертация из BTC в ETH
-                
-                txResult = await sendEthereumTransaction(
-                  fromCard.ethAddress || '',  // Адрес отправителя
-                  recipientAddress,           // Адрес получателя
-                  ethAmount                   // Сумма в ETH
-                );
-                console.log(`✅ ETH транзакция запущена: ${txResult.txId} (статус: ${txResult.status})`);
-                txId = txResult.txId;
-                
-                // ВАЖНО: Всегда устанавливаем режим blockchain для всех Ethereum транзакций
-                // Это соответствует логике для Bitcoin транзакций
-                transactionMode = 'blockchain'; 
-                console.log(`🚀 ETH транзакция успешно отправлена в блокчейн! TxID: ${txId}`);
-                
-                // Проверяем статус транзакции через 5 секунд, чтобы убедиться, что она началась
-                setTimeout(async () => {
-                  try {
-                    console.log(`🔍 Проверка начальной обработки ETH транзакции: ${txId}`);
-                    const status = await checkTransactionStatus(txId || '', 'eth');
-                    if (status.status === 'failed') {
-                      console.error(`❌ ETH транзакция не прошла: ${txId}`);
-                      
-                      // Если транзакция завершилась с ошибкой, возвращаем средства пользователю
-                      const originalEthBalance = parseFloat(fromCard.ethBalance || '0');
-                      await this.updateCardEthBalance(fromCard.id, originalEthBalance.toFixed(8));
-                      console.log(`♻️ Возвращены средства пользователю: ${totalDebit.toFixed(8)} ETH на карту ${fromCard.id}`);
-                      
-                      // Создаем запись о возврате средств
-                      await this.createTransaction({
-                        fromCardId: regulator.id,
-                        toCardId: fromCard.id,
-                        amount: totalDebit.toString(),
-                        convertedAmount: '0',
-                        type: 'refund',
-                        status: 'completed',
-                        description: `Возврат средств: ${amount.toFixed(8)} ETH (транзакция не прошла)`,
-                        fromCardNumber: "SYSTEM",
-                        toCardNumber: fromCard.number,
-                        wallet: null,
-                        createdAt: new Date()
-                      }, txDb);
-                    } else {
-                      console.log(`✅ ETH транзакция ${txId} в обработке (статус: ${status.status})`);
-                    }
-                  } catch (checkError) {
-                    console.error(`❌ Ошибка при проверке ETH транзакции:`, checkError);
-                  }
-                }, 5000);
-              }
-            } catch (blockchainError) {
-              console.error(`❌ Ошибка отправки ${cryptoType.toUpperCase()} транзакции:`, blockchainError);
-              // Продолжаем выполнение, даже если реальная отправка не удалась
-              // Это позволяет приложению работать даже при проблемах с блокчейн API
-              console.log(`⚠️ Продолжаем в режиме симуляции...`);
-              transactionMode = 'simulated';
-            }
-          // Убираем проверку else для API ключей - мы всегда работаем в режиме блокчейна
-          // Благодаря этому изменению, приложение всегда будет пытаться отправить реальные транзакции
         }
 
         // Зачисляем комиссию регулятору
@@ -658,28 +452,7 @@ export class DatabaseStorage implements IStorage {
           (regulatorBtcBalance + btcCommission).toFixed(8)
         );
 
-        // Создаем транзакцию с информацией о режиме
-        const transactionDescription = (() => {
-          let baseDescription = '';
-          
-          if (fromCard.type === 'crypto') {
-            baseDescription = `Отправка ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}`;
-          } else if (cryptoType === 'btc') {
-            baseDescription = `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${btcToSend.toFixed(8)} BTC и отправка на адрес ${recipientAddress}`;
-          } else {
-            baseDescription = `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${(btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd))).toFixed(8)} ETH и отправка на адрес ${recipientAddress}`;
-          }
-          
-          // Добавляем информацию о режиме работы
-          if (transactionMode === 'internal') {
-            return baseDescription + " (внутренний перевод)";
-          } else if (transactionMode === 'simulated') {
-            return baseDescription + " (СИМУЛЯЦИЯ - средства списаны, но блокчейн-транзакция не выполнена)";
-          } else {
-            return baseDescription + " (блокчейн)";
-          }
-        })();
-        
+        // Создаем транзакцию
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard?.id || null,
@@ -687,12 +460,14 @@ export class DatabaseStorage implements IStorage {
           convertedAmount: (btcToSend).toString(),
           type: 'crypto_transfer',
           status: 'completed',
-          description: transactionDescription,
+          description: fromCard.type === 'crypto' 
+            ? `Отправка ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на ${recipientAddress}`
+            : `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${btcToSend.toFixed(8)} ${cryptoType.toUpperCase()} и отправка на ${recipientAddress}`,
           fromCardNumber: fromCard.number,
-          toCardNumber: toCard?.number || recipientAddress,
+          toCardNumber: toCard?.number || "",
           wallet: recipientAddress,
           createdAt: new Date()
-        }, txDb);
+        });
 
         // Создаем транзакцию комиссии
         await this.createTransaction({
@@ -702,14 +477,12 @@ export class DatabaseStorage implements IStorage {
           convertedAmount: btcCommission.toString(),
           type: 'commission',
           status: 'completed',
-          description: `Комиссия за перевод ${cryptoType.toUpperCase()} ${cryptoType === 'btc' ? 
-                        `(${btcCommission.toFixed(8)} BTC)` : 
-                        `(${commission.toFixed(8)} ETH ~ ${btcCommission.toFixed(8)} BTC)`}`,
+          description: `Комиссия за перевод криптовалюты (${btcCommission.toFixed(8)} BTC)`,
           fromCardNumber: fromCard.number,
           toCardNumber: "REGULATOR",
           wallet: null,
           createdAt: new Date()
-        }, txDb);
+        });
 
         return { success: true, transaction };
       } catch (error) {
@@ -719,142 +492,41 @@ export class DatabaseStorage implements IStorage {
     }, "Crypto Transfer Operation");
   }
 
-  private async withTransaction<T>(operation: (db: any) => Promise<T>, context: string, maxAttempts = 3): Promise<T> {
-    let lastError: Error | undefined;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      try {
-        if (attempt > 0) {
-          console.log(`🔄 Повторная попытка транзакции ${attempt + 1}/${maxAttempts}: ${context}`);
-        } else {
-          console.log(`🔄 Начало транзакции: ${context}`);
-        }
-        
-        // Используем sql.begin() метод для транзакций в postgres.js
-        return await client.begin(async (sqlWithTx) => {
-          console.log(`✅ Транзакция начата: ${context}`);
-          
-          // Создаем экземпляр Drizzle с транзакционным соединением
-          const txDb = drizzle(sqlWithTx, { schema });
-          
-          // Выполняем операцию с транзакционным экземпляром Drizzle
-          const result = await operation(txDb);
-          
-          console.log(`✅ Транзакция успешно завершена: ${context}`);
-          return result;
-        });
-      } catch (error: any) {
-        // Определяем тип ошибки для решения о повторной попытке
-        const isRetryable = 
-          error.code === '40001' || // Serialization failure
-          error.code === '40P01' || // Deadlock detected
-          error.message?.includes('serializable') ||
-          error.message?.includes('deadlock') ||
-          error.message?.includes('conflict') ||
-          error.message?.includes('duplicate');
-        
-        // Если ошибка может быть решена повторной попыткой и у нас есть еще попытки
-        if (isRetryable && attempt < maxAttempts - 1) {
-          console.warn(`⚠️ Транзакция отменена из-за конфликта (${context}), попытка ${attempt + 1}/${maxAttempts}:`);
-          console.warn(`   - Код: ${error.code || 'Неизвестно'}`);
-          console.warn(`   - Сообщение: ${error.message || 'Нет сообщения'}`);
-          
-          // Экспоненциальная задержка с элементом случайности
-          const delay = Math.min(1000 * Math.pow(2, attempt), 10000) + Math.random() * 1000;
-          console.warn(`   - Повторная попытка через ${Math.round(delay/1000)} секунд...`);
-          
-          // Ждем перед повторной попыткой
-          lastError = error;
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        }
-        
-        // Если это последняя попытка или ошибка не поддается повторной попытке
-        console.error(`❌ Транзакция не удалась (${context}), попытка ${attempt + 1}/${maxAttempts}:`);
-        console.error(`   - Код: ${error.code || 'Неизвестно'}`);
-        console.error(`   - Сообщение: ${error.message || 'Нет сообщения'}`);
-        console.error(`   - SQL: ${error.sql || 'Нет SQL'}`);
-        console.error(`   - Stack: ${error.stack || 'Нет стека'}`);
-        
-        // Сохраняем ошибку и бросаем исключение, если это последняя попытка
-        lastError = error;
-        if (attempt === maxAttempts - 1) {
-          console.error(`Transfer error: ${error.stack}`);
-          throw new Error(`Не удалось выполнить операцию '${context}' после ${maxAttempts} попыток: ${error.message}`);
-        }
-      }
+  private async withTransaction<T>(operation: (client: any) => Promise<T>, context: string): Promise<T> {
+    // SQLite имеет автоматические транзакции внутри единого соединения
+    try {
+      // Начинаем транзакцию
+      db.run(sql`BEGIN TRANSACTION`);
+      
+      // Выполняем операцию
+      const result = await operation(null); // client not needed with SQLite
+      
+      // Завершаем транзакцию если всё хорошо
+      db.run(sql`COMMIT`);
+      
+      return result;
+    } catch (error) {
+      // Откатываем транзакцию в случае ошибки
+      db.run(sql`ROLLBACK`);
+      console.error(`${context} failed:`, error);
+      throw error;
     }
-    
-    // Если все попытки исчерпаны, возвращаем последнюю ошибку
-    throw lastError || new Error(`Транзакция ${context} не удалась после ${maxAttempts} попыток`);
   }
 
-  private async withRetry<T>(operation: () => Promise<T>, context: string, maxAttempts = 5): Promise<T> {
+  private async withRetry<T>(operation: () => Promise<T>, context: string, maxAttempts = 3): Promise<T> {
     let lastError: Error | undefined;
-    const MAX_DELAY = 30000; // Максимальная задержка между попытками (30 секунд)
-    
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        // Логируем только первую и последующие попытки, но не каждую
-        if (attempt > 0) {
-          console.log(`🔄 ${context}: повторная попытка ${attempt + 1}/${maxAttempts}`);
-        }
-        
         return await operation();
-      } catch (error: any) {
+      } catch (error) {
         lastError = error as Error;
-        
-        // Категоризируем ошибки
-        const isTransientError = 
-          error.code === 'ECONNRESET' || 
-          error.code === 'ETIMEDOUT' || 
-          error.code === 'ECONNREFUSED' ||
-          error.message.includes('connection') ||
-          error.message.includes('timeout') ||
-          error.code === '40P01'; // Deadlock detected
-        
-        // Для временных ошибок делаем больше попыток
-        if (isTransientError && attempt < maxAttempts - 1) {
-          // Экспоненциальная задержка с случайным элементом (jitter)
-          const baseDelay = Math.min(1000 * Math.pow(2, attempt), MAX_DELAY);
-          // Добавляем случайность от 1 до 1000 мс чтобы избежать "thundering herd"
-          const jitter = Math.floor(Math.random() * 1000);
-          const delay = baseDelay + jitter;
-          
-          console.warn(`⚠️ ${context} не удалось (временная ошибка, попытка ${attempt + 1}/${maxAttempts}):`);
-          console.warn(`   - Код ошибки: ${error.code || 'Неизвестно'}`);
-          console.warn(`   - Сообщение: ${error.message || 'Нет сообщения'}`);
-          console.warn(`   - Повторная попытка через ${Math.round(delay/1000)} секунд...`);
-          
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        }
-        
-        // Для критических/постоянных ошибок выводим более подробную информацию
-        console.error(`❌ ${context} не удалось (попытка ${attempt + 1}/${maxAttempts}):`);
-        console.error(`   - Код: ${error.code || 'Неизвестно'}`);
-        console.error(`   - Сообщение: ${error.message || 'Нет сообщения'}`);
-        console.error(`   - SQL: ${error.sql || 'Нет SQL'}`);
-        console.error(`   - Параметры: ${JSON.stringify(error.parameters || {})}`);
-        console.error(`   - Stack: ${error.stack || 'Нет стека'}`);
-        
-        // Для непреодолимых ошибок не пытаемся повторить
-        if (!isTransientError || attempt >= maxAttempts - 1) {
-          break;
+        console.error(`${context} failed (attempt ${attempt + 1}/${maxAttempts}):`, error);
+        if (attempt < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
         }
       }
     }
-    
-    // Возвращаем информативную ошибку с контекстом
-    const errorMsg = `${context} не удалось после ${maxAttempts} попыток`;
-    console.error(errorMsg);
-    
-    if (lastError) {
-      lastError.message = `${errorMsg}: ${lastError.message}`;
-      throw lastError;
-    } else {
-      throw new Error(errorMsg);
-    }
+    throw lastError || new Error(`${context} failed after ${maxAttempts} attempts`);
   }
 
   async getLatestExchangeRates(): Promise<ExchangeRate | undefined> {
