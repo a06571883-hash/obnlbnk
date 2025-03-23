@@ -550,7 +550,7 @@ export class DatabaseStorage implements IStorage {
           if (transactionMode === 'internal') {
             return baseDescription + " (внутренний перевод)";
           } else if (transactionMode === 'simulated') {
-            return baseDescription + " (симуляция)";
+            return baseDescription + " (СИМУЛЯЦИЯ - средства списаны, но блокчейн-транзакция не выполнена)";
           } else {
             return baseDescription + " (блокчейн)";
           }
