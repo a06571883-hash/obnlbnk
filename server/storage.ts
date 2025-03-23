@@ -568,53 +568,45 @@ export class DatabaseStorage implements IStorage {
                 console.log(`✅ ETH транзакция запущена: ${txResult.txId} (статус: ${txResult.status})`);
                 txId = txResult.txId;
                 
-                // ВАЖНО: Всегда устанавливаем режим blockchain для Ethereum транзакций
-                // если txId не является начинающимся с eth_tx_ или eth_err_
-                // Это настоящая блокчейн-транзакция
+                // ВАЖНО: Всегда устанавливаем режим blockchain для всех Ethereum транзакций
+                // Это соответствует логике для Bitcoin транзакций
                 transactionMode = 'blockchain'; 
+                console.log(`🚀 ETH транзакция успешно отправлена в блокчейн! TxID: ${txId}`);
                 
-                if (!txId.startsWith('eth_tx_') && !txId.startsWith('eth_err_')) {
-                  console.log(`🚀 ETH транзакция успешно отправлена в блокчейн! TxID: ${txId}`);
-                  
-                  // Проверяем статус транзакции через 5 секунд, чтобы убедиться, что она началась
-                  setTimeout(async () => {
-                    try {
-                      console.log(`🔍 Проверка начальной обработки ETH транзакции: ${txId}`);
-                      const status = await checkTransactionStatus(txId || '', 'eth');
-                      if (status.status === 'failed') {
-                        console.error(`❌ ETH транзакция не прошла: ${txId}`);
-                        
-                        // Если транзакция завершилась с ошибкой, возвращаем средства пользователю
-                        const originalEthBalance = parseFloat(fromCard.ethBalance || '0');
-                        await this.updateCardEthBalance(fromCard.id, originalEthBalance.toFixed(8));
-                        console.log(`♻️ Возвращены средства пользователю: ${totalDebit.toFixed(8)} ETH на карту ${fromCard.id}`);
-                        
-                        // Создаем запись о возврате средств
-                        await this.createTransaction({
-                          fromCardId: regulator.id,
-                          toCardId: fromCard.id,
-                          amount: totalDebit.toString(),
-                          convertedAmount: '0',
-                          type: 'refund',
-                          status: 'completed',
-                          description: `Возврат средств: ${amount.toFixed(8)} ETH (транзакция не прошла)`,
-                          fromCardNumber: "SYSTEM",
-                          toCardNumber: fromCard.number,
-                          wallet: null,
-                          createdAt: new Date()
-                        });
-                      } else {
-                        console.log(`✅ ETH транзакция ${txId} в обработке (статус: ${status.status})`);
-                      }
-                    } catch (checkError) {
-                      console.error(`❌ Ошибка при проверке ETH транзакции:`, checkError);
+                // Проверяем статус транзакции через 5 секунд, чтобы убедиться, что она началась
+                setTimeout(async () => {
+                  try {
+                    console.log(`🔍 Проверка начальной обработки ETH транзакции: ${txId}`);
+                    const status = await checkTransactionStatus(txId || '', 'eth');
+                    if (status.status === 'failed') {
+                      console.error(`❌ ETH транзакция не прошла: ${txId}`);
+                      
+                      // Если транзакция завершилась с ошибкой, возвращаем средства пользователю
+                      const originalEthBalance = parseFloat(fromCard.ethBalance || '0');
+                      await this.updateCardEthBalance(fromCard.id, originalEthBalance.toFixed(8));
+                      console.log(`♻️ Возвращены средства пользователю: ${totalDebit.toFixed(8)} ETH на карту ${fromCard.id}`);
+                      
+                      // Создаем запись о возврате средств
+                      await this.createTransaction({
+                        fromCardId: regulator.id,
+                        toCardId: fromCard.id,
+                        amount: totalDebit.toString(),
+                        convertedAmount: '0',
+                        type: 'refund',
+                        status: 'completed',
+                        description: `Возврат средств: ${amount.toFixed(8)} ETH (транзакция не прошла)`,
+                        fromCardNumber: "SYSTEM",
+                        toCardNumber: fromCard.number,
+                        wallet: null,
+                        createdAt: new Date()
+                      });
+                    } else {
+                      console.log(`✅ ETH транзакция ${txId} в обработке (статус: ${status.status})`);
                     }
-                  }, 5000);
-                } else {
-                  // Если это НЕ реальная блокчейн-транзакция, устанавливаем режим симуляции
-                  transactionMode = 'simulated';
-                  console.log(`⚠️ ETH транзакция работает в режиме симуляции. TxID: ${txId}`);
-                }
+                  } catch (checkError) {
+                    console.error(`❌ Ошибка при проверке ETH транзакции:`, checkError);
+                  }
+                }, 5000);
               }
             } catch (blockchainError) {
               console.error(`❌ Ошибка отправки ${cryptoType.toUpperCase()} транзакции:`, blockchainError);

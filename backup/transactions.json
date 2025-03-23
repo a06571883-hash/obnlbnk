@@ -740,5 +740,61 @@
     "description": "Комиссия за перевод BTC (0.01000000 BTC)",
     "fromCardNumber": "4000101461947771",
     "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 78,
+    "fromCardId": 13,
+    "toCardId": 94,
+    "amount": "1",
+    "convertedAmount": "1",
+    "type": "crypto_transfer",
+    "wallet": "1MhprVFAKXW5URUYK7xKLq7fk4ry8Cq851",
+    "status": "completed",
+    "createdAt": "2025-03-23T15:30:40.116Z",
+    "description": "Отправка 1.00000000 BTC на адрес 1MhprVFAKXW5URUYK7xKLq7fk4ry8Cq851 (внутренний перевод)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "4111151178490202"
+  },
+  {
+    "id": 79,
+    "fromCardId": 13,
+    "toCardId": 2,
+    "amount": "0.01",
+    "convertedAmount": "0.01",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T15:30:40.180Z",
+    "description": "Комиссия за перевод BTC (0.01000000 BTC)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 80,
+    "fromCardId": 13,
+    "toCardId": null,
+    "amount": "1",
+    "convertedAmount": "0.023610566019999293",
+    "type": "crypto_transfer",
+    "wallet": "0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D",
+    "status": "completed",
+    "createdAt": "2025-03-23T15:31:09.705Z",
+    "description": "Отправка 1.00000000 ETH на адрес 0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D (СИМУЛЯЦИЯ - средства списаны, но блокчейн-транзакция не выполнена)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": ""
+  },
+  {
+    "id": 81,
+    "fromCardId": 13,
+    "toCardId": 5,
+    "amount": "0.01",
+    "convertedAmount": "0.00023610566019999294",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T15:31:09.770Z",
+    "description": "Комиссия за перевод ETH (0.01000000 ETH ~ 0.00023611 BTC)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "REGULATOR"
   }
 ]
