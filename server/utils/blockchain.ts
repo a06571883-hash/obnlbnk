@@ -265,18 +265,14 @@ export async function sendEthereumTransaction(
       const valueInWei = BigInt(Math.floor(amountEth * 1e18)).toString();
       console.log(`💱 [ETH] Конвертация: ${amountEth} ETH = ${valueInWei} Wei`);
       
-      // Параметры для транзакции - используем Universal API формат
-      // https://docs.blockdaemon.com/reference/universal-post-tx
+      // Параметры для транзакции - возвращаемся к нативному формату Ethereum API
+      // https://docs.blockdaemon.com/reference/ethereum-post-tx
       const transactionData = {
-        network_name: "ethereum", 
-        network_type: "mainnet",
-        transaction: {
-          from: fromAddress,
-          to: toAddress,
-          value: valueInWei,
-          gas_limit: "21000", // Стандартный газ для простой транзакции
-          gas_price: "medium" // Средний приоритет транзакции
-        }
+        from: fromAddress,
+        to: toAddress,
+        value: valueInWei,
+        gas_limit: "21000", // Стандартный газ для простой транзакции
+        fee_rate: "medium" // Средний приоритет транзакции
       };
       
       console.log(`📤 [ETH] Отправка транзакции через BlockDaemon API с параметрами:`);
@@ -399,7 +395,7 @@ export async function checkTransactionStatus(
         // Проверка статуса ETH транзакции через BlockDaemon API
         console.log(`🔍 Запрос статуса ETH транзакции: ${txId}`);
         
-        const txURL = `https://svc.blockdaemon.com/universal/v1/ethereum/mainnet/tx/${txId}`;
+        const txURL = `https://svc.blockdaemon.com/ethereum/mainnet/tx/${txId}`;
         console.log(`🌐 [ETH] URL запроса статуса: ${txURL}`);
         
         const response = await axios.get(

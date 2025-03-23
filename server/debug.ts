@@ -48,23 +48,19 @@ export function setupDebugRoutes(app: express.Express) {
       const valueInWei = BigInt(Math.floor(amount * 1e18)).toString();
       console.log(`💱 [TEST ETH] Конвертация: ${amount} ETH = ${valueInWei} Wei`);
       
-      // Параметры для транзакции - используем Universal API формат
+      // Параметры для транзакции - используем нативный API формат для Ethereum
       const transactionData = {
-        network_name: "ethereum", 
-        network_type: "mainnet",
-        transaction: {
-          from: fromAddress,
-          to: toAddress,
-          value: valueInWei,
-          gas_limit: "21000", // Стандартный газ для простой транзакции
-          gas_price: "medium" // Средний приоритет транзакции
-        }
+        from: fromAddress,
+        to: toAddress,
+        value: valueInWei,
+        gas_limit: "21000", // Стандартный газ для простой транзакции
+        fee_rate: "medium" // Средний приоритет транзакции
       };
       
       console.log(`📤 [TEST ETH] Отправка транзакции через BlockDaemon API с параметрами:`);
       console.log(JSON.stringify(transactionData, null, 2));
       
-      const txURL = `https://svc.blockdaemon.com/universal/v1/ethereum/mainnet/tx`;
+      const txURL = `https://svc.blockdaemon.com/ethereum/mainnet/tx/send`;
       console.log(`🌐 [TEST ETH] URL запроса: ${txURL}`);
       
       try {
@@ -130,5 +126,194 @@ export function setupDebugRoutes(app: express.Express) {
     }
   });
 
+  // Эндпоинт для проверки поддерживаемых сетей в BlockDaemon API
+  app.get('/api/debug/blockdaemon-networks', async (req, res) => {
+    try {
+      if (!BLOCKDAEMON_API_KEY) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'BlockDaemon API ключ не настроен' 
+        });
+      }
+      
+      const networksURL = 'https://svc.blockdaemon.com/universal/v1/networks';
+      console.log(`🌐 Запрос поддерживаемых сетей: ${networksURL}`);
+      
+      const response = await axios.get(networksURL, {
+        headers: {
+          'Authorization': `Bearer ${BLOCKDAEMON_API_KEY}`,
+          'Accept': 'application/json'
+        }
+      });
+      
+      res.json({
+        success: true,
+        networks: response.data
+      });
+    } catch (error: any) {
+      console.error('Ошибка при запросе поддерживаемых сетей:', error.message);
+      res.status(500).json({
+        success: false,
+        message: 'Ошибка при запросе поддерживаемых сетей',
+        error: error.message,
+        details: error.response?.data
+      });
+    }
+  });
+  
+  // Эндпоинт для проверки эндпоинтов BlockDaemon API для Ethereum
+  app.get('/api/debug/ethereum-endpoints', async (req, res) => {
+    try {
+      if (!BLOCKDAEMON_API_KEY) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'BlockDaemon API ключ не настроен' 
+        });
+      }
+      
+      // Список URL для проверки
+      const endpointsToCheck = [
+        'https://svc.blockdaemon.com/ethereum/mainnet/tx/send',
+        'https://svc.blockdaemon.com/ethereum/mainnet/account',
+        'https://svc.blockdaemon.com/universal/v1/ethereum/mainnet/tx',
+        'https://svc.blockdaemon.com/universal/v1/ethereum/mainnet/account'
+      ];
+      
+      console.log(`🌐 Проверка доступных эндпоинтов Ethereum для вашего API ключа`);
+      
+      // Проверяем каждый эндпоинт используя HTTP OPTIONS
+      const results = await Promise.all(
+        endpointsToCheck.map(async url => {
+          try {
+            const response = await axios({
+              method: 'options',
+              url,
+              headers: {
+                'Authorization': `Bearer ${BLOCKDAEMON_API_KEY}`,
+                'Accept': 'application/json'
+              }
+            });
+            
+            return {
+              url,
+              status: response.status,
+              available: true,
+              methods: response.headers['allow'] || 'Unknown'
+            };
+          } catch (error: any) {
+            return {
+              url,
+              status: error.response?.status || 0,
+              available: false,
+              error: error.message,
+              details: error.response?.data
+            };
+          }
+        })
+      );
+      
+      res.json({
+        success: true,
+        endpoints: results
+      });
+    } catch (error: any) {
+      console.error('Ошибка при проверке Ethereum эндпоинтов:', error.message);
+      res.status(500).json({
+        success: false,
+        message: 'Ошибка при проверке Ethereum эндпоинтов',
+        error: error.message
+      });
+    }
+  });
+  
+  // Эндпоинт для проверки статуса и доступных протоколов Ethereum
+  app.get('/api/debug/ethereum-protocols', async (req, res) => {
+    try {
+      if (!BLOCKDAEMON_API_KEY) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'BlockDaemon API ключ не настроен' 
+        });
+      }
+      
+      const protocolsURL = 'https://svc.blockdaemon.com/ethereum/mainnet/protocols';
+      console.log(`🌐 Запрос протоколов Ethereum: ${protocolsURL}`);
+      
+      const response = await axios.get(protocolsURL, {
+        headers: {
+          'Authorization': `Bearer ${BLOCKDAEMON_API_KEY}`,
+          'Accept': 'application/json'
+        }
+      });
+      
+      res.json({
+        success: true,
+        protocols: response.data
+      });
+    } catch (error: any) {
+      console.error('Ошибка при запросе протоколов Ethereum:', error.message);
+      res.status(500).json({
+        success: false,
+        message: 'Ошибка при запросе протоколов Ethereum',
+        error: error.message,
+        details: error.response?.data
+      });
+    }
+  });
+  
+  // Эндпоинт для проверки поддерживаемых методов для отправки ETH транзакций
+  app.get('/api/debug/ethereum-send-methods', async (req, res) => {
+    try {
+      if (!BLOCKDAEMON_API_KEY) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'BlockDaemon API ключ не настроен' 
+        });
+      }
+      
+      const endpointURL = 'https://svc.blockdaemon.com/ethereum/mainnet/tx/send';
+      console.log(`🌐 Проверка методов для URL: ${endpointURL}`);
+      
+      try {
+        // Сначала пробуем HEAD запрос чтобы не тратить ресурсы
+        const headResponse = await axios({
+          method: 'head',
+          url: endpointURL,
+          headers: {
+            'Authorization': `Bearer ${BLOCKDAEMON_API_KEY}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        res.json({
+          success: true,
+          url: endpointURL,
+          available: true,
+          status: headResponse.status,
+          headers: headResponse.headers
+        });
+      } catch (headError: any) {
+        // Если HEAD не поддерживается, смотрим на ошибку
+        console.log(`⚠️ HEAD запрос не прошел: ${headError.message}`);
+        
+        res.json({
+          success: false,
+          url: endpointURL,
+          available: false,
+          error: headError.message,
+          status: headError.response?.status,
+          data: headError.response?.data
+        });
+      }
+    } catch (error: any) {
+      console.error('Ошибка при проверке методов отправки ETH:', error.message);
+      res.status(500).json({
+        success: false,
+        message: 'Ошибка при проверке методов отправки ETH',
+        error: error.message
+      });
+    }
+  });
+  
   console.log('✅ Отладочные эндпоинты настроены');
 }
