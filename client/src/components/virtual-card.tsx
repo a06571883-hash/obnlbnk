@@ -653,6 +653,15 @@ export default function VirtualCard({ card }: { card: Card }) {
                     {transferError && (
                       <p className="text-xs text-red-500">{transferError}</p>
                     )}
+                    
+                    {/* Информация о симуляции при переводе на внешний адрес */}
+                    {recipientType === 'crypto_wallet' && (
+                      <div className="text-xs text-muted-foreground bg-gray-100 p-2 rounded my-2">
+                        <span className="font-medium">Важно!</span> Перевод {selectedWallet.toUpperCase()} на внешний адрес 
+                        работает в режиме симуляции. Средства списываются с вашей карты, но фактическая транзакция в блокчейне 
+                        не выполняется. Для реальных переводов используйте внутренние карты.
+                      </div>
+                    )}
 
                     <Button
                       type="submit"

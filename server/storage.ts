@@ -453,8 +453,11 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Если отправка на внутреннюю карту, то зачисляем средства на неё
+        let transactionMode = 'internal'; // internal, simulated, blockchain
+        let txId = null;
+        
         if (toCard) {
-          console.log(`Обнаружена внутренняя карта: ${toCard.id}, зачисляем средства`);
+          console.log(`Обнаружена внутренняя карта: ${toCard.id}, зачисляем средства напрямую`);
           const toCryptoBalance = parseFloat(toCard.btcBalance || '0');
           
           if (cryptoType === 'btc') {
@@ -478,6 +481,9 @@ export class DatabaseStorage implements IStorage {
           }
           console.log(`Адрес ${recipientAddress} валиден. Отправляем на внешний адрес...`);
           
+          // Установим режим симуляции
+          transactionMode = 'simulated';
+          
           // Проверка доступности API ключей для выполнения реальных транзакций
           if (hasBlockchainApiKeys()) {
             try {
@@ -491,6 +497,7 @@ export class DatabaseStorage implements IStorage {
                   btcToSend                   // Сумма в BTC
                 );
                 console.log(`✅ BTC транзакция запущена: ${txResult.txId} (статус: ${txResult.status})`);
+                txId = txResult.txId;
               } else {
                 // При отправке ETH, если это крипто-карта, мы используем прямую сумму в ETH
                 // Если это фиатная карта, конвертируем из BTC в ETH
@@ -504,7 +511,11 @@ export class DatabaseStorage implements IStorage {
                   ethAmount                   // Сумма в ETH
                 );
                 console.log(`✅ ETH транзакция запущена: ${txResult.txId} (статус: ${txResult.status})`);
+                txId = txResult.txId;
               }
+              
+              // В будущем, когда будет реализована настоящая отправка транзакций в блокчейн:
+              // transactionMode = 'blockchain';
             } catch (blockchainError) {
               console.error(`❌ Ошибка отправки ${cryptoType.toUpperCase()} транзакции:`, blockchainError);
               // Продолжаем выполнение, даже если реальная отправка не удалась
@@ -523,7 +534,28 @@ export class DatabaseStorage implements IStorage {
           (regulatorBtcBalance + btcCommission).toFixed(8)
         );
 
-        // Создаем транзакцию
+        // Создаем транзакцию с информацией о режиме
+        const transactionDescription = (() => {
+          let baseDescription = '';
+          
+          if (fromCard.type === 'crypto') {
+            baseDescription = `Отправка ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}`;
+          } else if (cryptoType === 'btc') {
+            baseDescription = `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${btcToSend.toFixed(8)} BTC и отправка на адрес ${recipientAddress}`;
+          } else {
+            baseDescription = `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${(btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd))).toFixed(8)} ETH и отправка на адрес ${recipientAddress}`;
+          }
+          
+          // Добавляем информацию о режиме работы
+          if (transactionMode === 'internal') {
+            return baseDescription + " (внутренний перевод)";
+          } else if (transactionMode === 'simulated') {
+            return baseDescription + " (симуляция)";
+          } else {
+            return baseDescription + " (блокчейн)";
+          }
+        })();
+        
         const transaction = await this.createTransaction({
           fromCardId: fromCard.id,
           toCardId: toCard?.id || null,
@@ -531,11 +563,7 @@ export class DatabaseStorage implements IStorage {
           convertedAmount: (btcToSend).toString(),
           type: 'crypto_transfer',
           status: 'completed',
-          description: fromCard.type === 'crypto' 
-            ? `Отправка ${amount.toFixed(8)} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}`
-            : cryptoType === 'btc'
-              ? `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${btcToSend.toFixed(8)} BTC и отправка на адрес ${recipientAddress}`
-              : `Конвертация ${amount.toFixed(2)} ${fromCard.type.toUpperCase()} → ${(btcToSend * (parseFloat(rates.btcToUsd) / parseFloat(rates.ethToUsd))).toFixed(8)} ETH и отправка на адрес ${recipientAddress}`,
+          description: transactionDescription,
           fromCardNumber: fromCard.number,
           toCardNumber: toCard?.number || "",
           wallet: recipientAddress,

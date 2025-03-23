@@ -136,8 +136,8 @@ export async function sendBitcoinTransaction(
       );
       
       console.log(`✅ Адрес BTC подтвержден через API: ${JSON.stringify(checkResponse.data)}`);
-    } catch (apiError) {
-      console.error(`⚠️ Ошибка при проверке BTC адреса через API:`, apiError.message);
+    } catch (apiError: any) {
+      console.error(`⚠️ Ошибка при проверке BTC адреса через API:`, apiError?.message || 'Неизвестная ошибка');
       // Продолжаем выполнение даже при ошибке API
     }
     
@@ -195,8 +195,8 @@ export async function sendEthereumTransaction(
       );
       
       console.log(`✅ Адрес ETH подтвержден через API: ${JSON.stringify(checkResponse.data)}`);
-    } catch (apiError) {
-      console.error(`⚠️ Ошибка при проверке ETH адреса через API:`, apiError.message);
+    } catch (apiError: any) {
+      console.error(`⚠️ Ошибка при проверке ETH адреса через API:`, apiError?.message || 'Неизвестная ошибка');
       // Продолжаем выполнение даже при ошибке API
     }
     
