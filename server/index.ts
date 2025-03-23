@@ -6,17 +6,21 @@ import { scheduleBackups } from "./database/backup";
 import { startBot } from "./telegram-bot";
 import * as NodeJS from 'node:process';
 import { setupDebugRoutes } from "./debug";
+import { setupGlobalErrorHandlers, logError, errorHandler, notFoundHandler } from "./utils/error-handler";
 
-// Глобальные обработчики необработанных исключений
+// Устанавливаем глобальные обработчики ошибок
+setupGlobalErrorHandlers();
+
+// Дополнительные обработчики специфичные для этого приложения
 process.on('uncaughtException', (error) => {
   console.error('🚨 КРИТИЧЕСКАЯ ОШИБКА (uncaughtException):', error);
-  console.error('🔍 Stack trace:', error.stack);
+  logError(error);
   // Не завершаем процесс, чтобы приложение продолжало работать
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason: any, promise) => {
   console.error('🚨 НЕОБРАБОТАННЫЙ PROMISE (unhandledRejection):', reason);
-  console.error('🔍 Promise:', promise);
+  logError(reason instanceof Error ? reason : new Error(String(reason)));
   // Не завершаем процесс, чтобы приложение продолжало работать
 });
 
@@ -63,53 +67,18 @@ app.use((req, res, next) => {
     // Запуск Telegram бота всегда
     await startBot();
 
-    // Улучшенная обработка ошибок
-    app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-      // Подробное логирование ошибки
-      console.error('🔴 Error URL:', req.method, req.originalUrl);
-      console.error('🔴 Error headers:', req.headers);
-      console.error('🔴 Error body:', req.body);
-      console.error('🔴 Error details:', err);
-      console.error('🔴 Error stack:', err.stack);
-      
-      // Разные сообщения для разных типов ошибок
-      let statusCode = 500;
-      let errorMessage = "Внутренняя ошибка сервера";
-      
-      if (err.name === 'ValidationError') {
-        statusCode = 400;
-        errorMessage = "Ошибка валидации данных";
-      } else if (err.name === 'UnauthorizedError') {
-        statusCode = 401;
-        errorMessage = "Требуется авторизация";
-      } else if (err.name === 'ForbiddenError') {
-        statusCode = 403;
-        errorMessage = "Доступ запрещен";
-      } else if (err.name === 'NotFoundError') {
-        statusCode = 404;
-        errorMessage = "Ресурс не найден";
-      }
-      
-      // Скрываем технические детали от пользователя в production
-      if (process.env.NODE_ENV === 'production') {
-        res.status(statusCode).json({ error: errorMessage });
-      } else {
-        // В development показываем полную информацию об ошибке
-        res.status(statusCode).json({
-          error: errorMessage,
-          details: err.message,
-          stack: err.stack
-        });
-      }
-      
-      // Даже если произошла ошибка, приложение продолжит работать
-    });
-
     if (process.env.NODE_ENV !== 'production') {
       await setupVite(app, server);
     } else {
       serveStatic(app);
     }
+    
+    // Включаем централизованную обработку ошибок ПОСЛЕ настройки Vite
+    // Добавляем обработчик для 404 ошибок (маршруты которые не найдены)
+    app.use(notFoundHandler);
+    
+    // Добавляем центральный обработчик ошибок
+    app.use(errorHandler);
 
     // Включаем CORS для development
     if (process.env.NODE_ENV !== 'production') {

@@ -1,9 +1,13 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '@shared/schema';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import path from 'path';
 import * as fs from 'fs';
+import { 
+  DatabaseError, 
+  AppError, 
+  logError 
+} from '../error-handler';
 
 // Используем PostgreSQL базу данных
 console.log('Using PostgreSQL database');
@@ -16,10 +20,103 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const DATABASE_URL = process.env.DATABASE_URL;
 
 if (!DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is not set');
+  throw new DatabaseError('DATABASE_URL environment variable is not set', {
+    environmentVariables: Object.keys(process.env).filter(key => 
+      key.includes('DB') || key.includes('DATABASE') || key.includes('PG')
+    )
+  });
 }
 
 console.log('Connecting to PostgreSQL database...');
+
+/**
+ * Универсальная функция для операций с базой данных с ретраями и обработкой ошибок
+ * @param operation Функция, выполняющая запрос к базе данных
+ * @param context Контекст операции для логов
+ * @param maxRetries Максимальное количество повторных попыток
+ * @returns Результат операции
+ */
+export async function withDatabaseRetry<T>(
+  operation: () => Promise<T>,
+  context: string,
+  maxRetries: number = 3
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        console.log(`🔄 Повторная попытка ${attempt + 1}/${maxRetries} для операции: ${context}`);
+      }
+      
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Определяем типы ошибок, которые можно повторить
+      const isConnectionError = 
+        error.code === '08000' || // Connection exception
+        error.code === '08003' || // Connection does not exist
+        error.code === '08006' || // Connection failure
+        error.code === '08001' || // Unable to connect
+        error.code === '08004' || // Rejected connection
+        error.code === 'ECONNRESET' ||
+        error.code === 'ECONNREFUSED' ||
+        error.code === 'ETIMEDOUT' ||
+        error.message?.includes('timeout') ||
+        error.message?.includes('connection');
+      
+      const isTransientError =
+        error.code === '40001' || // Serialization failure
+        error.code === '40P01' || // Deadlock
+        error.code === '57014' || // Query canceled
+        error.code === 'XX000'; // Internal error
+      
+      if ((isConnectionError || isTransientError) && attempt < maxRetries - 1) {
+        // Для временных ошибок делаем экспоненциальную задержку
+        const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+        console.warn(`⚠️ ${context} не удалось (временная ошибка), повторная попытка через ${delay/1000}s...`);
+        console.warn(`   - Код ошибки: ${error.code || 'Нет кода'}`);
+        console.warn(`   - Сообщение: ${error.message || 'Нет сообщения'}`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // Для критических ошибок
+      logError(error);
+      
+      // Форматируем ошибку перед выбрасыванием
+      let enhancedError: AppError;
+      
+      if (error.code) {
+        // Конвертируем ошибку Postgres в нашу структуру
+        enhancedError = new DatabaseError(
+          `Ошибка базы данных при ${context}: ${error.message}`,
+          { 
+            code: error.code, 
+            detail: error.detail,
+            hint: error.hint,
+            position: error.position,
+            table: error.table,
+            column: error.column,
+            query: error.query
+          }
+        );
+      } else {
+        enhancedError = new DatabaseError(
+          `Неизвестная ошибка базы данных при ${context}: ${error.message}`,
+          { originalError: error.toString() }
+        );
+      }
+      
+      throw enhancedError;
+    }
+  }
+  
+  // Если все попытки исчерпаны, выбрасываем последнюю ошибку
+  throw lastError || new DatabaseError(`Ошибка при ${context} после ${maxRetries} попыток`);
+}
 
 // Создаем клиент подключения к PostgreSQL с параметрами для надежного соединения
 export const client = postgres(DATABASE_URL, { 
@@ -36,15 +133,27 @@ export const client = postgres(DATABASE_URL, {
       serialize: (date: Date) => date,
       parse: (date: string) => date
     }
-  }
+  },
   
-  // Дополнительные параметры доступны, но могут вызывать ошибки TypeScript
-  // max_lifetime: 60 * 60, // Максимальное время жизни соединения (1 час)
-  // connection_limit: 15, // Увеличенный предел соединений
-  // connection_timeout: 30, // Таймаут соединения
-  // onError: (err, query) => { ... },
-  // onRetry: (count, error) => { ... },
-  // retryLimit: 5,
+  // Обработчики ошибок (работают только если вызывать запросы через client напрямую)
+  onError: (err, sql) => {
+    console.error('🔴 PostgreSQL error:', err);
+    logError(new DatabaseError(
+      `Ошибка при выполнении SQL: ${err.message}`,
+      { 
+        code: err.code,
+        query: sql.substring(0, 200) + (sql.length > 200 ? '...' : '')
+      }
+    ));
+  },
+  
+  // Обработчик повторных попыток
+  onRetry: (count, error) => {
+    console.warn(`⚠️ PostgreSQL retry #${count} due to:`, error.message);
+  },
+  
+  // Лимит повторных попыток для client
+  retryLimit: 3
 });
 
 // Создаем экземпляр Drizzle ORM
@@ -52,7 +161,7 @@ export const db = drizzle(client, { schema });
 
 // Создаем таблицы в PostgreSQL базе данных
 async function createTablesIfNotExist() {
-  try {
+  return withDatabaseRetry(async () => {
     console.log('Checking and creating database tables if needed...');
     
     // Создаем таблицы с прямыми SQL запросами
@@ -122,15 +231,12 @@ async function createTablesIfNotExist() {
     
     console.log('Database tables created or verified successfully');
     return true;
-  } catch (error) {
-    console.error('Error creating tables:', error);
-    throw error;
-  }
+  }, 'создание таблиц в базе данных', 3);
 }
 
 // Test database connection and log content
 async function logDatabaseContent() {
-  try {
+  return withDatabaseRetry(async () => {
     console.log('Testing database connection...');
     
     // Проверяем наличие таблиц и пользователей
@@ -158,15 +264,12 @@ async function logDatabaseContent() {
       await createDefaultData();
     }
     
-  } catch (error) {
-    console.error('Error connecting to database:', error);
-    throw error; // Propagate the error
-  }
+  }, 'проверка содержимого базы данных', 3);
 }
 
 // Создание начальных данных для тестирования
 async function createDefaultData() {
-  try {
+  return withDatabaseRetry(async () => {
     // Создаем дефолтные курсы обмена
     await db.insert(schema.exchangeRates).values({
       usdToUah: "40.5",
@@ -178,23 +281,29 @@ async function createDefaultData() {
     // В реальном коде здесь может быть создание тестовых пользователей
     // для примера, но мы оставим это для регистрации
     
-  } catch (error) {
-    console.error('Error creating default data:', error);
-  }
+  }, 'создание начальных данных в базе', 2);
 }
 
 // Export the initialization function
 export async function initializeDatabase() {
   try {
+    console.log('Initializing database tables...');
+    
     // Создаем таблицы
     await createTablesIfNotExist();
     
     // Проверяем содержимое базы
     await logDatabaseContent();
     
-    console.log('Database initialization completed successfully');
+    console.log('Database initialized successfully');
   } catch (error) {
     console.error('Database initialization failed:', error);
+    
+    // Логируем и выбрасываем ошибку
+    logError(error instanceof AppError ? error : new DatabaseError(
+      `Ошибка инициализации базы данных: ${(error as Error).message}`
+    ));
+    
     throw error;
   }
 }
@@ -210,5 +319,10 @@ process.on('SIGINT', async () => {
   await client.end();
 });
 
-// Initialize the database connection
-initializeDatabase().catch(console.error);
+// Экспортируем все необходимые функции и объекты
+export default {
+  db,
+  client,
+  initializeDatabase,
+  withDatabaseRetry
+};
