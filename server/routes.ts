@@ -10,6 +10,7 @@ import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from
 import { getNews } from './news-service';
 import { seaTableManager } from './utils/seatable';
 import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
+import { hasBlockchainApiKeys } from './utils/blockchain';
 import { Telegraf } from 'telegraf';
 
 // Auth middleware to ensure session is valid
@@ -38,6 +39,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Ошибка получения курсов:", error);
       res.status(500).json({ message: "Ошибка при получении курсов валют" });
+    }
+  });
+  
+  // Эндпоинт для проверки статуса API ключей блокчейна
+  app.get("/api/blockchain/status", (req, res) => {
+    try {
+      const apiStatus = hasBlockchainApiKeys();
+      res.json({
+        available: apiStatus.available,
+        blockdaemon: apiStatus.blockdaemon || false,
+        reason: apiStatus.reason || null,
+        mode: apiStatus.available ? 'real' : 'simulation'
+      });
+    } catch (error) {
+      console.error("Error checking blockchain API status:", error);
+      res.status(500).json({ message: "Ошибка при проверке статуса API ключей" });
     }
   });
 
