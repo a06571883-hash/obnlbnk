@@ -485,8 +485,15 @@ export class DatabaseStorage implements IStorage {
           // Если BlockDaemon API доступен - используем режим блокчейна, иначе - симуляцию
           const apiStatus = hasBlockchainApiKeys();
           
-          // По умолчанию всегда используем режим блокчейна, если есть API ключи
-          transactionMode = apiStatus.available ? 'blockchain' : 'simulated';
+          console.log(`🔐 Проверка API ключей: available=${apiStatus.available}, blockdaemon=${apiStatus.blockdaemon}`);
+          console.log(`🔐 Причина (если недоступно): ${apiStatus.reason || 'Нет ошибок'}`);
+          
+          // ВАЖНО! Всегда форсируем режим блокчейна независимо от API ключей для тестирования
+          transactionMode = 'blockchain';
+          console.log(`🔐 Режим транзакции установлен на: ${transactionMode}`);
+
+          // Оригинальная логика ниже:
+          // transactionMode = apiStatus.available ? 'blockchain' : 'simulated';
           
           // Проверка доступности API ключей для выполнения реальных транзакций
           if (apiStatus.available) {

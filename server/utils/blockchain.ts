@@ -3,6 +3,7 @@ import { validateCryptoAddress } from './crypto';
 
 // Получаем API ключ из переменных окружения
 const BLOCKDAEMON_API_KEY = process.env.BLOCKDAEMON_API_KEY;
+console.log('🔑 Значение BLOCKDAEMON_API_KEY:', BLOCKDAEMON_API_KEY ? 'Присутствует, длина: ' + BLOCKDAEMON_API_KEY.length : 'Отсутствует!');
 
 /**
  * Проверяет наличие API ключей для работы с блокчейном
