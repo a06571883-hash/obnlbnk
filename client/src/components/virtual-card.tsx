@@ -353,15 +353,25 @@ export default function VirtualCard({ card }: { card: Card }) {
       return;
     }
 
-    // Create exchange request
+    // Подготавливаем безопасный объект для криптокарты
+    // Убеждаемся, что все поля имеют правильный тип
+    const safeCard = {
+      btcBalance: card.btcBalance || '0',
+      ethBalance: card.ethBalance || '0',
+      btcAddress: card.btcAddress || '',  // Преобразуем null в пустую строку
+      ethAddress: card.ethAddress || ''   // Преобразуем null в пустую строку
+    };
+
+    // Create exchange request с безопасными типами данных
     const request: ExchangeRequest = {
       fromCurrency: withdrawalMethod,
       toCurrency: "uah",
       fromAmount: withdrawalAmount,
       address: bankCardNumber.replace(/\s+/g, ''),
-      cryptoCard: card // Pass the entire card object
+      cryptoCard: safeCard // Передаем только нужные поля с гарантированными типами
     };
 
+    console.log('Exchange request:', JSON.stringify(request, null, 2));
     // Execute exchange
     withdrawalMutation.mutate(request);
   };
