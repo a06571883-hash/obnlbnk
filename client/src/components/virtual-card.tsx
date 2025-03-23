@@ -199,59 +199,22 @@ export default function VirtualCard({ card }: { card: Card }) {
     }
   });
 
-  const transferMutation = useMutation({
-    mutationFn: async (transferData: void) => {
-      setTransferError('');
+  // Define TransferRequest type
+  type TransferRequest = {
+    fromCardId: number;
+    recipientAddress: string;
+    amount: number;
+    transferType: 'crypto' | 'fiat';
+    cryptoType?: 'btc' | 'eth';
+  };
 
-      if (!transferAmount || isNaN(parseFloat(transferAmount)) || parseFloat(transferAmount) <= 0) {
-        throw new Error('Пожалуйста, введите корректную сумму');
-      }
-
-      if (!recipientCardNumber.trim()) {
-        throw new Error('Пожалуйста, введите номер карты/адрес получателя');
-      }
-
-      if (card.type === 'crypto') {
-        const cryptoBalance = selectedWallet === 'btc' ? parseFloat(card.btcBalance || '0') : parseFloat(card.ethBalance || '0');
-        if (parseFloat(transferAmount) > cryptoBalance) {
-          throw new Error(`Недостаточно ${selectedWallet.toUpperCase()}. Доступно: ${cryptoBalance.toFixed(8)} ${selectedWallet.toUpperCase()}`);
-        }
-      } else {
-        if (parseFloat(transferAmount) > parseFloat(card.balance)) {
-          throw new Error(`Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`);
-        }
-      }
-
-      if (recipientType === 'crypto_wallet') {
-        const address = recipientCardNumber.trim();
-        
-        // Использовать встроенные функции валидации
-        if (selectedWallet === 'btc') {
-          if (!validateBtcAddress(address)) {
-            throw new Error('Неверный формат BTC адреса');
-          } 
-        } else if (selectedWallet === 'eth') {
-          if (!validateEthAddress(address)) {
-            throw new Error('Неверный формат ETH адреса');
-          }
-        }
-      }
-
-      const transferRequest = {
-        fromCardId: card.id,
-        recipientAddress: recipientCardNumber.replace(/\s+/g, ''),
-        amount: parseFloat(transferAmount),
-        transferType: recipientType === 'crypto_wallet' ? 'crypto' : 'fiat',
-        cryptoType: card.type === 'crypto' ? selectedWallet : (recipientType === 'crypto_wallet' ? selectedWallet : undefined)
-      };
-
+  const transferMutation = useMutation<any, Error, TransferRequest>({
+    mutationFn: async (transferRequest: TransferRequest) => {
       const response = await apiRequest("POST", "/api/transfer", transferRequest);
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Ошибка при переводе');
       }
-
       return response.json();
     },
     onMutate: () => {
@@ -289,7 +252,92 @@ export default function VirtualCard({ card }: { card: Card }) {
     if (isTransferring || transferMutation.isPending) {
       return;
     }
-    transferMutation.mutate(undefined);
+    
+    setTransferError('');
+
+    // Validate inputs
+    if (!transferAmount || isNaN(parseFloat(transferAmount)) || parseFloat(transferAmount) <= 0) {
+      setTransferError('Пожалуйста, введите корректную сумму');
+      toast({
+        title: "Ошибка",
+        description: 'Пожалуйста, введите корректную сумму',
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!recipientCardNumber.trim()) {
+      setTransferError('Пожалуйста, введите номер карты/адрес получателя');
+      toast({
+        title: "Ошибка",
+        description: 'Пожалуйста, введите номер карты/адрес получателя',
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (card.type === 'crypto') {
+      const cryptoBalance = selectedWallet === 'btc' ? parseFloat(card.btcBalance || '0') : parseFloat(card.ethBalance || '0');
+      if (parseFloat(transferAmount) > cryptoBalance) {
+        const errorMsg = `Недостаточно ${selectedWallet.toUpperCase()}. Доступно: ${cryptoBalance.toFixed(8)} ${selectedWallet.toUpperCase()}`;
+        setTransferError(errorMsg);
+        toast({
+          title: "Ошибка",
+          description: errorMsg,
+          variant: "destructive"
+        });
+        return;
+      }
+    } else {
+      if (parseFloat(transferAmount) > parseFloat(card.balance)) {
+        const errorMsg = `Недостаточно средств. Доступно: ${card.balance} ${card.type.toUpperCase()}`;
+        setTransferError(errorMsg);
+        toast({
+          title: "Ошибка",
+          description: errorMsg,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    if (recipientType === 'crypto_wallet') {
+      const address = recipientCardNumber.trim();
+      
+      if (selectedWallet === 'btc') {
+        if (!validateBtcAddress(address)) {
+          setTransferError('Неверный формат BTC адреса');
+          toast({
+            title: "Ошибка",
+            description: 'Неверный формат BTC адреса',
+            variant: "destructive"
+          });
+          return;
+        } 
+      } else if (selectedWallet === 'eth') {
+        if (!validateEthAddress(address)) {
+          setTransferError('Неверный формат ETH адреса');
+          toast({
+            title: "Ошибка",
+            description: 'Неверный формат ETH адреса',
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+    }
+
+    // Create transfer request
+    const transferRequest: TransferRequest = {
+      fromCardId: card.id,
+      recipientAddress: recipientCardNumber.replace(/\s+/g, ''),
+      amount: parseFloat(transferAmount),
+      transferType: recipientType === 'crypto_wallet' ? 'crypto' : 'fiat',
+      cryptoType: card.type === 'crypto' ? selectedWallet : (recipientType === 'crypto_wallet' ? selectedWallet : undefined)
+    };
+
+    // Execute transfer
+    transferMutation.mutate(transferRequest);
   };
 
   const getConvertedAmount = () => {
