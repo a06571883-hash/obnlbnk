@@ -950,5 +950,61 @@
     "description": "Комиссия за перевод (0.00000012 BTC)",
     "fromCardNumber": "4111151178490202",
     "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 93,
+    "fromCardId": 95,
+    "toCardId": null,
+    "amount": "30000",
+    "convertedAmount": "0.35238565085629714",
+    "type": "crypto_transfer",
+    "wallet": "0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D",
+    "status": "completed",
+    "createdAt": "2025-03-23T15:53:49.388Z",
+    "description": "Конвертация 30000.00 USD → 14.95133341 ETH и отправка на адрес 0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D (СИМУЛЯЦИЯ - средства списаны, но блокчейн-транзакция не выполнена)",
+    "fromCardNumber": "4112376747946500",
+    "toCardNumber": ""
+  },
+  {
+    "id": 94,
+    "fromCardId": 95,
+    "toCardId": 2,
+    "amount": "300",
+    "convertedAmount": "0.0035238565085629714",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T15:53:49.458Z",
+    "description": "Комиссия за перевод ETH (300.00000000 ETH ~ 0.00352386 BTC)",
+    "fromCardNumber": "4112376747946500",
+    "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 95,
+    "fromCardId": 95,
+    "toCardId": null,
+    "amount": "10",
+    "convertedAmount": "0.00011746188361876571",
+    "type": "crypto_transfer",
+    "wallet": "0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D",
+    "status": "completed",
+    "createdAt": "2025-03-23T15:55:09.107Z",
+    "description": "Конвертация 10.00 USD → 0.00498378 ETH и отправка на адрес 0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D (СИМУЛЯЦИЯ - средства списаны, но блокчейн-транзакция не выполнена)",
+    "fromCardNumber": "4112376747946500",
+    "toCardNumber": ""
+  },
+  {
+    "id": 96,
+    "fromCardId": 95,
+    "toCardId": 5,
+    "amount": "0.1",
+    "convertedAmount": "0.0000011746188361876573",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T15:55:09.176Z",
+    "description": "Комиссия за перевод ETH (0.10000000 ETH ~ 0.00000117 BTC)",
+    "fromCardNumber": "4112376747946500",
+    "toCardNumber": "REGULATOR"
   }
 ]
