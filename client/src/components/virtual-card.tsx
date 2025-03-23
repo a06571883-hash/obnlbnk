@@ -21,11 +21,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-// Constants
+// Constants - улучшенные градиенты для красивого переливания
 const cardColors = {
-  crypto: "bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500",
-  usd: "bg-gradient-to-tr from-green-600 via-emerald-400 to-green-600 backdrop-blur-md",
-  uah: "bg-gradient-to-tr from-blue-700 via-sky-400 to-blue-600 backdrop-blur-md",
+  crypto: "bg-gradient-to-br from-violet-700 via-violet-500 to-fuchsia-600 animate-gradient-slow",
+  usd: "bg-gradient-to-tr from-emerald-700 via-green-500 to-emerald-600 animate-gradient-slow backdrop-blur-md",
+  uah: "bg-gradient-to-tr from-blue-700 via-sky-500 to-blue-600 animate-gradient-slow backdrop-blur-md",
 } as const;
 
 // Utility functions для проверки криптоадресов
@@ -380,22 +380,64 @@ export default function VirtualCard({ card }: { card: Card }) {
         transformStyle: 'preserve-3d'
       }}
     >
+      {/* Добавляем эффект блика/блеска вокруг всей карты */}
+      <div 
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{
+          background: isHovered 
+            ? `radial-gradient(circle at ${rotation.y + 50}% ${rotation.x + 50}%, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 60%)` 
+            : 'none',
+          transform: 'translateZ(30px)',
+          transition: 'all 0.5s ease-out',
+          opacity: isHovered ? 1 : 0,
+          zIndex: 12,
+          borderRadius: '0.75rem'
+        }} 
+      />
+      
       <div
-        className={`relative h-[160px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 text-white shadow-xl overflow-hidden backdrop-blur-sm`}
+        className={`relative h-[160px] w-full rounded-xl ${cardColors[card.type as keyof typeof cardColors]} p-3 text-white shadow-xl overflow-hidden backdrop-blur-sm bg-gradient-pos`}
         style={{
           boxShadow: `
             0 10px 20px rgba(0,0,0,0.19), 
             0 6px 6px rgba(0,0,0,0.23),
-            ${Math.abs(rotation.y)}px ${Math.abs(rotation.x)}px ${20 + Math.abs(rotation.x + rotation.y) / 2}px rgba(0,0,0,${0.1 + Math.abs(rotation.x + rotation.y) / 100})
+            ${Math.abs(rotation.y)}px ${Math.abs(rotation.x)}px ${20 + Math.abs(rotation.x + rotation.y) / 2}px rgba(0,0,0,${0.1 + Math.abs(rotation.x + rotation.y) / 100}),
+            inset 0 0 15px rgba(255,255,255,0.3),
+            inset 0 0 8px rgba(255,255,255,0.5)
           `,
-          transform: `translateZ(${isHovered ? '10px' : '0px'})`,
+          transform: `translateZ(${isHovered ? '20px' : '10px'})`,
           transition: 'transform 0.3s ease-out, box-shadow 0.3s ease-out'
         }}
       >
+        {/* Добавление эффекта световых бликов */}
+        <div 
+          className="absolute inset-0 opacity-50 pointer-events-none overflow-hidden"
+          style={{ transform: `translateZ(5px)` }}
+        >
+          <div 
+            className="absolute w-[60%] h-[20px] bg-white/30 blur-xl rounded-full -translate-x-full"
+            style={{
+              top: '20%',
+              left: '50%',
+              transform: `translateX(${isHovered ? '150%' : '-150%'}) rotate(-35deg)`,
+              transition: 'transform 0.8s ease-in-out',
+            }}
+          />
+          <div
+            className="absolute w-[25%] h-[140%] bg-white/20 blur-lg rounded-full -translate-x-full"
+            style={{
+              top: '-20%',
+              left: '60%',
+              transform: `translateX(${isHovered ? '50%' : '-50%'}) rotate(35deg)`,
+              transition: 'transform 0.5s ease-in-out',
+            }}
+          />
+        </div>
+        
         <div
           className="relative z-10 flex flex-col justify-between h-full p-1"
           style={{
-            transform: `translateZ(${isHovered ? '5px' : '0px'})`,
+            transform: `translateZ(${isHovered ? '15px' : '5px'})`,
             transition: 'transform 0.3s ease-out'
           }}
         >
