@@ -251,10 +251,10 @@ export async function sendEthereumTransaction(
       
       // Параметры для транзакции
       const transactionData = {
-        from: fromAddress,
-        to: toAddress,
+        from_address: fromAddress,
+        to_address: toAddress,
         value: valueInWei,
-        gas: "21000", // Стандартный газ для простой транзакции
+        gas_limit: "21000", // Стандартный газ для простой транзакции
         gas_price: "medium" // Средний приоритет транзакции
       };
       
@@ -272,9 +272,12 @@ export async function sendEthereumTransaction(
         }
       );
       
-      if (txResponse.data && txResponse.data.txhash) {
-        console.log(`✅ ETH транзакция успешно отправлена. TxID: ${txResponse.data.txhash}`);
-        return { txId: txResponse.data.txhash, status: 'pending' };
+      // BlockDaemon может возвращать txid или txhash в зависимости от API версии
+      const txId = txResponse.data?.txid || txResponse.data?.txhash || txResponse.data?.tx_hash;
+      
+      if (txId) {
+        console.log(`✅ ETH транзакция успешно отправлена. TxID: ${txId}`);
+        return { txId, status: 'pending' };
       } else {
         throw new Error('Неожиданный формат ответа API при отправке ETH транзакции');
       }
