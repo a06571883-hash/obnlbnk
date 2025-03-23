@@ -558,10 +558,10 @@ export default function VirtualCard({ card }: { card: Card }) {
                       </div>
                     </div>
 
-                    {recipientType === 'crypto_wallet' && card.type !== 'crypto' && (
+                    {recipientType === 'crypto_wallet' && (
                       <div className="space-y-2">
                         <label className="block text-sm font-medium">
-                          Выберите криптовалюту для получения
+                          Выберите криптовалюту {card.type === 'crypto' ? 'для отправки' : 'для получения'}
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                           <Button
