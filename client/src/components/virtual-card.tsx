@@ -28,44 +28,41 @@ const cardColors = {
   uah: "bg-gradient-to-tr from-blue-700 via-sky-500 to-blue-600 animate-gradient-slow backdrop-blur-md",
 } as const;
 
-// Utility functions для проверки криптоадресов
-function validateBtcAddress(address: string): boolean {
-  // Улучшенная регулярка для Legacy и P2SH адресов (начинаются с 1 или 3)
-  const legacyRegex = /^[13][a-km-zA-HJ-NP-Z0-9]{24,33}$/;
-
-  // Регулярка для SegWit адресов (bc1...)
-  const bech32Regex = /^bc1[a-zA-HJ-NP-Z0-9]{39,59}$/;
-
-  // Регулярка для Taproot адресов (начинаются с bc1p)
-  const taprootRegex = /^bc1p[a-km-zA-HJ-NP-Z0-9]{58,89}$/;
-
-  // Проверяем дополнительно, чтобы отсечь явно некорректные адреса
-  const hasInvalidPattern =
-    address.includes('BTC') ||
-    address.includes('btc') ||
-    /^1[0-9]{6,}$/.test(address); // Отсекаем адреса вида 10000000...
-
-  // Проверяем все допустимые форматы и отсутствие недопустимых паттернов
-  return (legacyRegex.test(address) || bech32Regex.test(address) || taprootRegex.test(address)) && !hasInvalidPattern;
-}
+// Простые и надежные функции для проверки криптоадресов
+// Оптимизированы для исключения всех возможных ошибок
+const validateBtcAddress = (address: string): boolean => {
+  if (!address || typeof address !== 'string') {
+    return false;
+  }
+  
+  // Упрощенные регулярные выражения для валидации BTC адреса
+  // Legacy адреса (начинаются с 1)
+  const legacyRegex = /^1[a-km-zA-HJ-NP-Z1-9]{25,34}$/;
+  
+  // P2SH адреса (начинаются с 3)
+  const p2shRegex = /^3[a-km-zA-HJ-NP-Z1-9]{25,34}$/;
+  
+  // SegWit адреса (bc1)
+  const segwitRegex = /^bc1[a-zA-HJ-NP-Z0-9]{25,90}$/;
+  
+  // Проверяем адрес на соответствие хотя бы одному из форматов
+  return legacyRegex.test(address) || p2shRegex.test(address) || segwitRegex.test(address);
+};
 
 /**
  * Проверяет валидность Ethereum-адреса
- * Использует стандартные правила проверки ETH адресов
+ * Использует простые правила для снижения вероятности ошибок
  * @param address Адрес для проверки
  * @returns true если адрес валидный
  */
-function validateEthAddress(address: string): boolean {
-  // Проверяем формат - должен быть 0x + 40 шестнадцатеричных символов
-  const formatRegex = /^0x[a-fA-F0-9]{40}$/i;
-
-  // Проверяем на явно некорректные паттерны
-  const hasInvalidPattern =
-    address.includes('ETH') ||
-    address.includes('eth');
-
-  return formatRegex.test(address) && !hasInvalidPattern;
-}
+const validateEthAddress = (address: string): boolean => {
+  if (!address || typeof address !== 'string') {
+    return false;
+  }
+  
+  // Простая проверка - адрес должен начинаться с 0x и содержать 42 символа
+  return /^0x[a-fA-F0-9]{40}$/i.test(address);
+};
 
 // Component
 export default function VirtualCard({ card }: { card: Card }) {
