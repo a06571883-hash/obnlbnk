@@ -4,6 +4,8 @@ import { db, client } from "./db";
 import { cards, users, transactions, exchangeRates } from "@shared/schema";
 import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import * as schema from "@shared/schema";
 import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
@@ -711,22 +713,18 @@ export class DatabaseStorage implements IStorage {
           console.log(`🔄 Начало транзакции: ${context}`);
         }
         
-        // Используем встроенный механизм транзакций postgres.js
-        const result = await client.transaction(async (tx) => {
+        return await client.begin(async (tx: any) => {
+          console.log(`✅ Транзакция начата: ${context}`);
+          
           // Создаем экземпляр Drizzle с транзакционным клиентом
           const txDb = drizzle(tx, { schema });
           
           // Выполняем операцию с транзакционным клиентом
-          return await operation(txDb);
-        });
-        
-        if (attempt > 0) {
-          console.log(`✅ Транзакция успешно завершена после ${attempt + 1} попыток: ${context}`);
-        } else {
+          const result = await operation(txDb);
+          
           console.log(`✅ Транзакция успешно завершена: ${context}`);
-        }
-        
-        return result;
+          return result;
+        });
       } catch (error: any) {
         // Определяем тип ошибки для решения о повторной попытке
         const isRetryable = 
