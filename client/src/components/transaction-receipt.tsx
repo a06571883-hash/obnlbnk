@@ -89,7 +89,7 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} forceMount>
       <DialogContent className="w-[calc(100%-2rem)] max-w-sm mx-auto relative bg-white border-2 border-primary/20 rounded-xl shadow-lg">
         {/* Декоративные элементы чека */}
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white border-2 border-primary/30 rounded-full p-1 shadow-md">
