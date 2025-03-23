@@ -654,25 +654,24 @@ export default function VirtualCard({ card }: { card: Card }) {
                       <p className="text-xs text-red-500">{transferError}</p>
                     )}
                     
-                    {/* Информация о симуляции при переводе на внешний адрес */}
+                    {/* Информация о блокчейн-транзакциях при переводе на внешний адрес */}
                     {recipientType === 'crypto_wallet' && (
-                      <div className="text-xs p-3 rounded my-2 border border-amber-200 bg-amber-50">
+                      <div className="text-xs p-3 rounded my-2 border border-green-200 bg-green-50">
                         <div className="flex items-start gap-2">
-                          <div className="text-amber-500 mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+                          <div className="text-green-500 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="lucide lucide-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                           </div>
                           <div>
-                            <span className="font-semibold text-amber-700">Режим симуляции</span>
-                            <p className="text-amber-700">
-                              Перевод {selectedWallet.toUpperCase()} на внешний адрес работает в режиме симуляции. 
-                              Средства списываются с вашей карты, но фактическая транзакция в блокчейне не выполняется.
+                            <span className="font-semibold text-green-700">Реальные блокчейн-транзакции</span>
+                            <p className="text-green-700">
+                              Переводы {selectedWallet.toUpperCase()} на внешний адрес будут выполнены как реальные транзакции в блокчейне. 
+                              API ключи BlockDaemon настроены, и система готова к работе с блокчейном.
                             </p>
-                            <p className="mt-1 text-amber-700">
-                              <span className="font-medium">Причина:</span> Для проведения реальных транзакций в блокчейне 
-                              требуется подключение к API блокчейн-сервисов.
+                            <p className="mt-1 text-green-700">
+                              <span className="font-medium">Доступные сети:</span> Bitcoin (BTC) и Ethereum (ETH) mainnet.
                             </p>
-                            <p className="mt-1 text-amber-600">
-                              Для переводов между картами внутри системы используйте опцию "Фиат карта".
+                            <p className="mt-1 text-green-600">
+                              Проверяйте правильность адреса получателя перед отправкой - блокчейн-транзакции необратимы.
                             </p>
                           </div>
                         </div>
