@@ -373,8 +373,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
-    return this.withTransaction(async () => {
+    return this.withTransaction(async (txDb) => {
       try {
+        console.log(`🔄 Начало крипто-транзакции: ${fromCardId} → ${recipientAddress} (${amount} ${cryptoType})`);
+        
         const fromCard = await this.getCardById(fromCardId);
         if (!fromCard) {
           throw new Error("Карта отправителя не найдена");
@@ -570,7 +572,7 @@ export class DatabaseStorage implements IStorage {
                           toCardNumber: fromCard.number,
                           wallet: null,
                           createdAt: new Date()
-                        });
+                        }, txDb);
                       } else {
                         console.log(`✅ BTC транзакция ${txId} в обработке (статус: ${status.status})`);
                       }
@@ -626,7 +628,7 @@ export class DatabaseStorage implements IStorage {
                         toCardNumber: fromCard.number,
                         wallet: null,
                         createdAt: new Date()
-                      });
+                      }, txDb);
                     } else {
                       console.log(`✅ ETH транзакция ${txId} в обработке (статус: ${status.status})`);
                     }
@@ -687,7 +689,7 @@ export class DatabaseStorage implements IStorage {
           toCardNumber: toCard?.number || recipientAddress,
           wallet: recipientAddress,
           createdAt: new Date()
-        });
+        }, txDb);
 
         // Создаем транзакцию комиссии
         await this.createTransaction({
@@ -704,7 +706,7 @@ export class DatabaseStorage implements IStorage {
           toCardNumber: "REGULATOR",
           wallet: null,
           createdAt: new Date()
-        });
+        }, txDb);
 
         return { success: true, transaction };
       } catch (error) {
