@@ -711,15 +711,15 @@ export class DatabaseStorage implements IStorage {
           console.log(`🔄 Начало транзакции: ${context}`);
         }
         
-        // Начинаем транзакцию
-        await client.unsafe('BEGIN');
+        // Используем встроенный механизм транзакций из postgres.js вместо unsafe
+        const tx = await client.begin();
         
         try {
-          // Выполняем операцию с обычным db (не транзакционным)
+          // Выполняем операцию с транзакционным клиентом
           const result = await operation(db);
           
           // Фиксируем транзакцию если все успешно
-          await client.unsafe('COMMIT');
+          await tx.commit();
           
           if (attempt > 0) {
             console.log(`✅ Транзакция успешно завершена после ${attempt + 1} попыток: ${context}`);
@@ -739,7 +739,7 @@ export class DatabaseStorage implements IStorage {
             txError.message?.includes('duplicate');
           
           // В случае ошибки откатываем транзакцию
-          await client.unsafe('ROLLBACK');
+          await tx.rollback();
           
           // Если ошибка может быть решена повторной попыткой и у нас есть еще попытки
           if (isRetryable && attempt < maxAttempts - 1) {
@@ -771,13 +771,6 @@ export class DatabaseStorage implements IStorage {
         console.error(`❌ Ошибка управления транзакцией (${context}):`);
         console.error(`   - Код: ${outerError.code || 'Неизвестно'}`);
         console.error(`   - Сообщение: ${outerError.message || 'Нет сообщения'}`);
-        
-        // Попытка отмены транзакции в любом случае
-        try {
-          await client.unsafe('ROLLBACK');
-        } catch (rollbackError: any) {
-          console.error('   - Ошибка при отмене транзакции:', rollbackError.message);
-        }
         
         lastError = outerError;
         
