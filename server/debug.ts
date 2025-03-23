@@ -48,19 +48,23 @@ export function setupDebugRoutes(app: express.Express) {
       const valueInWei = BigInt(Math.floor(amount * 1e18)).toString();
       console.log(`💱 [TEST ETH] Конвертация: ${amount} ETH = ${valueInWei} Wei`);
       
-      // Параметры для транзакции - используем обычный формат BlockDaemon для Ethereum
+      // Параметры для транзакции - используем Universal API формат
       const transactionData = {
-        from: fromAddress,
-        to: toAddress,
-        value: valueInWei,
-        gas_limit: "21000", // Стандартный газ для простой транзакции
-        fee_rate: "medium" // Средний приоритет транзакции
+        network_name: "eth", 
+        network_type: "mainnet",
+        transaction: {
+          from: fromAddress,
+          to: toAddress,
+          value: valueInWei,
+          gas_limit: "21000", // Стандартный газ для простой транзакции
+          gas_price: "medium" // Средний приоритет транзакции
+        }
       };
       
       console.log(`📤 [TEST ETH] Отправка транзакции через BlockDaemon API с параметрами:`);
       console.log(JSON.stringify(transactionData, null, 2));
       
-      const txURL = `https://svc.blockdaemon.com/ethereum/mainnet/tx/send`;
+      const txURL = `https://svc.blockdaemon.com/universal/v1/eth/mainnet/tx`;
       console.log(`🌐 [TEST ETH] URL запроса: ${txURL}`);
       
       try {
