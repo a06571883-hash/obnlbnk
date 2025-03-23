@@ -255,7 +255,8 @@ export async function sendEthereumTransaction(
         to_address: toAddress,
         value: valueInWei,
         gas_limit: "21000", // Стандартный газ для простой транзакции
-        gas_price: "medium" // Средний приоритет транзакции
+        gas_price: "medium", // Средний приоритет транзакции
+        chain_id: 1 // Mainnet Ethereum (1) - добавляем для большей надежности
       };
       
       console.log(`📤 Отправка ETH транзакции через BlockDaemon API: ${JSON.stringify(transactionData)}`);
@@ -268,7 +269,8 @@ export async function sendEthereumTransaction(
             'Authorization': `Bearer ${BLOCKDAEMON_API_KEY}`,
             'Content-Type': 'application/json',
             'Accept': 'application/json'
-          }
+          },
+          timeout: 15000 // Увеличиваем timeout до 15 секунд
         }
       );
       
