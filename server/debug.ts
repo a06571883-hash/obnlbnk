@@ -50,7 +50,7 @@ export function setupDebugRoutes(app: express.Express) {
       
       // Параметры для транзакции - используем Universal API формат
       const transactionData = {
-        network_name: "eth", 
+        network_name: "ethereum", 
         network_type: "mainnet",
         transaction: {
           from: fromAddress,
@@ -64,7 +64,7 @@ export function setupDebugRoutes(app: express.Express) {
       console.log(`📤 [TEST ETH] Отправка транзакции через BlockDaemon API с параметрами:`);
       console.log(JSON.stringify(transactionData, null, 2));
       
-      const txURL = `https://svc.blockdaemon.com/universal/v1/eth/mainnet/tx`;
+      const txURL = `https://svc.blockdaemon.com/universal/v1/ethereum/mainnet/tx`;
       console.log(`🌐 [TEST ETH] URL запроса: ${txURL}`);
       
       try {

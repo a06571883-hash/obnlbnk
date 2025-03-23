@@ -268,7 +268,7 @@ export async function sendEthereumTransaction(
       // Параметры для транзакции - используем Universal API формат
       // https://docs.blockdaemon.com/reference/universal-post-tx
       const transactionData = {
-        network_name: "eth", 
+        network_name: "ethereum", 
         network_type: "mainnet",
         transaction: {
           from: fromAddress,
@@ -282,9 +282,9 @@ export async function sendEthereumTransaction(
       console.log(`📤 [ETH] Отправка транзакции через BlockDaemon API с параметрами:`);
       console.log(JSON.stringify(transactionData, null, 2));
       
-      // Используем обновленный URL для отправки Ethereum транзакций
-      // BlockDaemon мог обновить свое API, проверяем альтернативный URL для Universal API
-      const txURL = `https://svc.blockdaemon.com/universal/v1/eth/mainnet/tx`;
+      // Пробуем другой формат URL для BlockDaemon API
+      // Возможно, нам нужно использовать нативный API для Ethereum вместо Universal API
+      const txURL = `https://svc.blockdaemon.com/ethereum/mainnet/tx/send`;
       console.log(`🌐 [ETH] URL запроса: ${txURL}`);
       
       const txResponse = await axios.post(
@@ -399,7 +399,7 @@ export async function checkTransactionStatus(
         // Проверка статуса ETH транзакции через BlockDaemon API
         console.log(`🔍 Запрос статуса ETH транзакции: ${txId}`);
         
-        const txURL = `https://svc.blockdaemon.com/universal/v1/eth/mainnet/tx/${txId}`;
+        const txURL = `https://svc.blockdaemon.com/universal/v1/ethereum/mainnet/tx/${txId}`;
         console.log(`🌐 [ETH] URL запроса статуса: ${txURL}`);
         
         const response = await axios.get(
