@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import Logo from "@/components/logo";
 import { format } from "date-fns";
-import { Bitcoin, DollarSign, Coins, RefreshCw, ArrowUpRight, Banknote } from "lucide-react";
+import { Bitcoin, DollarSign, Coins, RefreshCw, ArrowUpRight, Banknote, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 interface ReceiptProps {
   transaction: {
@@ -167,15 +167,41 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
             {transaction.wallet && (
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Адрес</span>
-                <span className="font-mono text-[9px] sm:text-[10px]">{formatAddress(transaction.wallet)}</span>
+                <div className="flex items-center gap-1">
+                  {transaction.wallet.startsWith('0x') ? (
+                    <div className="w-3 h-3 rounded-full bg-blue-400 flex items-center justify-center">
+                      <span className="text-white text-[6px] font-bold">E</span>
+                    </div>
+                  ) : (
+                    <div className="w-3 h-3 rounded-full bg-orange-400 flex items-center justify-center">
+                      <span className="text-white text-[6px] font-bold">B</span>
+                    </div>
+                  )}
+                  <span className="font-mono text-[9px] sm:text-[10px]">{formatAddress(transaction.wallet)}</span>
+                </div>
               </div>
             )}
 
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Статус</span>
-              <span className={transaction.status === 'completed' ? 'text-emerald-500' : 'text-amber-500'}>
-                {transaction.status === 'completed' ? 'Выполнено' : 'В обработке'}
-              </span>
+              <div className="flex items-center gap-1.5">
+                {transaction.status === 'completed' ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    <span className="text-emerald-500 font-medium">Выполнено ✓</span>
+                  </>
+                ) : transaction.status === 'failed' ? (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                    <span className="text-red-500 font-medium">Ошибка ⚠️</span>
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+                    <span className="text-amber-500 font-medium">В обработке...</span>
+                  </>
+                )}
+              </div>
             </div>
             
             {/* Индикатор режима симуляции для крипто-переводов */}
@@ -189,6 +215,54 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
                     <span className="text-[9px] text-amber-700 font-semibold">Режим симуляции</span>
                     <p className="text-[8px] text-amber-700 mt-0.5">
                       Средства списаны с вашей карты, но блокчейн-транзакция не выполнена из-за отсутствия API ключей для блокчейн-операций.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Информация о подтверждениях блокчейн транзакции */}
+            {transaction.wallet && !transaction.description?.includes('СИМУЛЯЦИЯ') && transaction.status === 'pending' && (
+              <div className="border border-blue-100 bg-blue-50 p-2 rounded mt-2 mb-2">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-blue-700 font-semibold">
+                      Подтверждения блокчейна
+                    </span>
+                    <span className="text-[9px] text-blue-700">
+                      {transaction.wallet.startsWith('0x') ? '0/12' : '0/3'}
+                    </span>
+                  </div>
+                  
+                  <div className="w-full h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-blue-400 rounded-full animate-pulse" 
+                      style={{ width: '8%' }}
+                    ></div>
+                  </div>
+
+                  <p className="text-[8px] text-blue-700">
+                    Транзакция находится в блокчейне и ожидает подтверждений
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Успешная блокчейн транзакция */}
+            {transaction.wallet && !transaction.description?.includes('СИМУЛЯЦИЯ') && transaction.status === 'completed' && (
+              <div className="border border-emerald-100 bg-emerald-50 p-2 rounded mt-2 mb-2">
+                <div className="flex items-start gap-2">
+                  <div className="text-emerald-500 mt-0.5">
+                    <CheckCircle2 size={14} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-emerald-700 font-semibold">
+                      Транзакция подтверждена блокчейном
+                    </span>
+                    <p className="text-[8px] text-emerald-700 mt-0.5">
+                      {transaction.wallet.startsWith('0x') 
+                        ? 'Ethereum транзакция успешно выполнена (12+ подтверждений)'
+                        : 'Bitcoin транзакция успешно выполнена (3+ подтверждений)'}
                     </p>
                   </div>
                 </div>
