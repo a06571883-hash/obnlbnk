@@ -64,6 +64,7 @@
     "eas-cli": "^15.0.10",
     "ecpair": "^3.0.0-rc.0",
     "embla-carousel-react": "^8.3.0",
+    "ethereumjs-wallet": "^1.0.2",
     "ethers": "^6.13.5",
     "expo": "^49.0.23",
     "expo-cli": "^6.3.12",

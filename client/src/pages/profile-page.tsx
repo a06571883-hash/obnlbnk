@@ -175,6 +175,12 @@ export default function ProfilePage() {
       )
     },
     {
+      icon: Key,
+      title: "Криптовалюты и Seed-фразы",
+      description: "Управление криптокошельком и ключами восстановления",
+      content: <SeedPhraseDisplay />
+    },
+    {
       icon: Shield,
       title: "Безопасность",
       description: "Настройки безопасности и аутентификации",

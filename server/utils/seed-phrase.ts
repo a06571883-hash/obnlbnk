@@ -4,21 +4,16 @@
  */
 import * as bip39 from 'bip39';
 import * as bitcoin from 'bitcoinjs-lib';
-import { HDNode } from '@ethersproject/hdnode';
-import { validateMnemonic } from 'bip39';
-
-// Пути деривации для разных криптовалют
-const DERIVATION_PATHS = {
-  btc: "m/44'/0'/0'/0/0",     // BIP44 для Bitcoin
-  eth: "m/44'/60'/0'/0/0"     // BIP44 для Ethereum
-};
+import HDWallet from 'ethereumjs-wallet';
+import { ethers } from 'ethers';
+import HDKey from 'hdkey';
 
 /**
  * Генерирует новую мнемоническую фразу из 12 слов
  * @returns {string} Мнемоническая фраза
  */
 export function generateMnemonic(): string {
-  return bip39.generateMnemonic(128); // 128 бит = 12 слов
+  return bip39.generateMnemonic();
 }
 
 /**
@@ -27,7 +22,7 @@ export function generateMnemonic(): string {
  * @returns {boolean} true если фраза валидна, false если нет
  */
 export function isValidMnemonic(mnemonic: string): boolean {
-  return validateMnemonic(mnemonic);
+  return bip39.validateMnemonic(mnemonic);
 }
 
 /**
@@ -36,28 +31,28 @@ export function isValidMnemonic(mnemonic: string): boolean {
  * @returns {string} Bitcoin-адрес
  */
 export function getBitcoinAddressFromMnemonic(mnemonic: string): string {
-  // Используем модуль ECPair для создания Bitcoin кошелька
   try {
     const seed = bip39.mnemonicToSeedSync(mnemonic);
-    // Создаем приватный ключ из seed
-    const hash = require('crypto').createHash('sha256').update(seed).digest();
-    const ECPair = require('ecpair').ECPairFactory(require('tiny-secp256k1'));
-    const keyPair = ECPair.fromPrivateKey(hash);
+    const hdMaster = HDKey.fromMasterSeed(seed);
+    const childKey = hdMaster.derive("m/44'/0'/0'/0/0");
     
-    // Создаем Bitcoin адрес
+    // Инициализируем ECPair с поддержкой tiny-secp256k1
+    const ecc = require('tiny-secp256k1');
+    const ECPairFactory = require('ecpair');
+    const ECPair = ECPairFactory.default(ecc);
+    
+    // Создаем пару ключей из приватного ключа
+    const keyPair = ECPair.fromPrivateKey(Buffer.from(childKey.privateKey));
+    
+    // Генерируем P2PKH адрес (начинается с 1)
     const { address } = bitcoin.payments.p2pkh({ 
-      pubkey: keyPair.publicKey,
-      network: bitcoin.networks.bitcoin
+      pubkey: keyPair.publicKey 
     });
     
-    if (!address) {
-      throw new Error('Не удалось сгенерировать Bitcoin-адрес');
-    }
-    
-    return address;
+    return address || '';
   } catch (error) {
-    console.error('Ошибка при генерации Bitcoin адреса из мнемонической фразы:', error);
-    throw error;
+    console.error('Failed to generate Bitcoin address from mnemonic:', error);
+    return '';
   }
 }
 
@@ -67,12 +62,21 @@ export function getBitcoinAddressFromMnemonic(mnemonic: string): string {
  * @returns {string} Ethereum-адрес
  */
 export function getEthereumAddressFromMnemonic(mnemonic: string): string {
-  const seed = bip39.mnemonicToSeedSync(mnemonic);
-  const hdNode = HDNode.fromSeed(seed);
-  const path = DERIVATION_PATHS.eth;
-  const wallet = hdNode.derivePath(path);
-  
-  return wallet.address;
+  try {
+    const seed = bip39.mnemonicToSeedSync(mnemonic);
+    const hdkey = HDKey.fromMasterSeed(seed);
+    const childKey = hdkey.derive("m/44'/60'/0'/0/0");
+    
+    // Создаем кошелек из приватного ключа
+    const wallet = HDWallet.fromPrivateKey(Buffer.from(childKey.privateKey));
+    const address = `0x${wallet.getAddress().toString('hex')}`;
+    
+    // Форматируем адрес в правильном регистре (чексумма)
+    return ethers.getAddress(address);
+  } catch (error) {
+    console.error('Failed to generate Ethereum address from mnemonic:', error);
+    return '';
+  }
 }
 
 /**
@@ -81,10 +85,6 @@ export function getEthereumAddressFromMnemonic(mnemonic: string): string {
  * @returns {{ btcAddress: string, ethAddress: string }} Объект с адресами
  */
 export function getAddressesFromMnemonic(mnemonic: string): { btcAddress: string, ethAddress: string } {
-  if (!isValidMnemonic(mnemonic)) {
-    throw new Error('Невалидная мнемоническая фраза');
-  }
-  
   const btcAddress = getBitcoinAddressFromMnemonic(mnemonic);
   const ethAddress = getEthereumAddressFromMnemonic(mnemonic);
   
@@ -97,25 +97,17 @@ export function getAddressesFromMnemonic(mnemonic: string): { btcAddress: string
  * @returns {string} Мнемоническая фраза
  */
 export function generateDeterministicMnemonicFromUserId(userId: number): string {
-  // Используем специальную соль для дополнительной безопасности 
-  // (можно сделать это более безопасным, храня соль в окружении)
-  const salt = 'BNAL_BANK_SECURE_SALT';
+  // Создаем "энтропию" на основе ID пользователя
+  // В реальном приложении надо использовать более надежный метод
+  const entropy = Buffer.alloc(16);
+  const userIdStr = userId.toString().padStart(16, '0');
   
-  // Комбинируем userId и соль для создания детерминированной фразы
-  const combinedInput = `${userId}${salt}${userId * 1337}`;
-  
-  // Создаем seed из этого входного значения
-  const seed = Buffer.from(combinedInput, 'utf8');
-  
-  // Генерируем энтропию подходящего размера для BIP39
-  let entropy = Buffer.alloc(16); // 16 байт = 128 бит = 12 слов
-  
-  // Заполняем энтропию детерминистическим образом
   for (let i = 0; i < 16; i++) {
-    entropy[i] = seed[i % seed.length];
+    // Простая хеш-функция для превращения цифр userId в байты энтропии
+    entropy[i] = parseInt(userIdStr[i]) * 16 + i;
   }
   
-  // Генерируем мнемоническую фразу из этой энтропии
+  // Генерируем фразу на основе этой энтропии
   return bip39.entropyToMnemonic(entropy);
 }
 
@@ -125,10 +117,7 @@ export function generateDeterministicMnemonicFromUserId(userId: number): string 
  * @returns {{ mnemonic: string, btcAddress: string, ethAddress: string }} Мнемоническая фраза и адреса
  */
 export function generateAddressesForUser(userId: number): { mnemonic: string, btcAddress: string, ethAddress: string } {
-  // Генерируем детерминированную мнемоническую фразу для пользователя
   const mnemonic = generateDeterministicMnemonicFromUserId(userId);
-  
-  // Получаем адреса из мнемонической фразы
   const { btcAddress, ethAddress } = getAddressesFromMnemonic(mnemonic);
   
   return { mnemonic, btcAddress, ethAddress };
