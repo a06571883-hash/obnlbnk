@@ -2,7 +2,7 @@ import { Telegraf } from 'telegraf';
 
 // Используем токен из переменных окружения или задаем новый
 // ИЗМЕНИТЬ ЗДЕСЬ, если нужно поменять токен бота
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7464154474:AAGxQmjQAqrT1WuH4ksuhExRiAc6UWX1ak4';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8026692414:AAHPv3spA0mVAPX91Tuw6g37FaXyLMHVB08';
 
 // Определяем, откуда запущено приложение (Replit или Render)
 const IS_RENDER = process.env.RENDER === 'true';

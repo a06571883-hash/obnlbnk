@@ -309,7 +309,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <h2 className="text-xl font-semibold">{user?.username}</h2>
-                <p className="text-sm text-muted-foreground">Участник с 2024</p>
+                <p className="text-sm text-muted-foreground">Участник с 2025</p>
               </div>
             </div>
           </CardContent>

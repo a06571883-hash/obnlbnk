@@ -124,5 +124,14 @@
     "regulator_balance": "1000000.42764340",
     "last_nft_generation": null,
     "nft_generation_count": 0
+  },
+  {
+    "id": 19,
+    "username": "vitaminOlef",
+    "password": "Gjdnd d7268",
+    "is_regulator": false,
+    "regulator_balance": "0",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
   }
 ]

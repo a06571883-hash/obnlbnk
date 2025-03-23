@@ -4,6 +4,7 @@ import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
 import { randomBytes, createHash } from 'crypto';
 import * as Bip39 from 'bip39';
+import { generateAddressesForUser, generateMnemonic, getAddressesFromMnemonic } from './seed-phrase';
 
 // Корректная инициализация ECPair с поддержкой tiny-secp256k1
 const ECPair = ECPairFactory(ecc);
@@ -20,25 +21,35 @@ const network = bitcoin.networks.bitcoin;
  */
 export function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
   try {
+    // Используем детерминированную генерацию из seed фразы на основе userId
+    const { mnemonic, btcAddress, ethAddress } = generateAddressesForUser(userId);
+    
+    // Сохраняем seed фразу в логи (в реальном приложении её нужно показать пользователю)
+    console.log(`✅ Generated mnemonic phrase for user ${userId}: ${mnemonic}`);
+    
+    if (type === 'btc') {
+      console.log(`✅ Generated REAL BTC address: ${btcAddress} for user: ${userId}`);
+      return btcAddress;
+    } else {
+      console.log(`✅ Generated REAL ETH address: ${ethAddress} for user: ${userId}`);
+      return ethAddress;
+    }
+  } catch (error) {
+    console.error(`Critical error generating ${type} address:`, error);
+    
+    // Запасной вариант в случае ошибки - старый метод генерации
     if (type === 'btc') {
       try {
         // Создаем пару ключей с использованием ECPair
         const keyPair = ECPair.makeRandom();
-
-        // Конвертируем публичный ключ в Buffer для bitcoinjs-lib
         const pubKeyBuffer = Buffer.from(keyPair.publicKey);
-
-        // Создаем Legacy адрес (P2PKH)
-        const { address } = bitcoin.payments.p2pkh({ 
-          pubkey: pubKeyBuffer,
-          network: network
-        });
+        const { address } = bitcoin.payments.p2pkh({ pubkey: pubKeyBuffer, network: network });
 
         if (!address) {
           throw new Error("Failed to generate BTC address");
         }
 
-        console.log(`✅ Generated REAL BTC address: ${address} for user: ${userId}`);
+        console.log(`✅ Generated REAL BTC address (fallback): ${address} for user: ${userId}`);
         return address;
       } catch (btcError) {
         console.error("Error generating BTC address:", btcError);
@@ -48,17 +59,24 @@ export function generateValidAddress(type: 'btc' | 'eth', userId: number): strin
       try {
         // Создаем случайный ETH кошелек через ethers.js
         const wallet = ethers.Wallet.createRandom();
-        console.log(`✅ Generated REAL ETH address: ${wallet.address} for user: ${userId}`);
+        console.log(`✅ Generated REAL ETH address (fallback): ${wallet.address} for user: ${userId}`);
         return wallet.address;
       } catch (ethError) {
         console.error("Error creating ETH wallet:", ethError);
         throw ethError;
       }
     }
-  } catch (error) {
-    console.error(`Critical error generating ${type} address:`, error);
-    throw error;
   }
+}
+
+/**
+ * Получает seed фразу для пользователя
+ * @param userId ID пользователя
+ * @returns Мнемоническая фраза
+ */
+export function getSeedPhraseForUser(userId: number): string {
+  const { mnemonic } = generateAddressesForUser(userId);
+  return mnemonic;
 }
 
 /**
