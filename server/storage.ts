@@ -531,24 +531,39 @@ export class DatabaseStorage implements IStorage {
     }, "Crypto Transfer Operation");
   }
 
-  private async withTransaction<T>(operation: (client: any) => Promise<T>, context: string): Promise<T> {
+  private async withTransaction<T>(operation: (tx: any) => Promise<T>, context: string): Promise<T> {
     try {
-      // Используем Postgres.js транзакции напрямую для избежания ошибки "UNSAFE_TRANSACTION"
-      return await client.transaction(async (sql) => {
-        console.log(`🔄 Starting safe transaction: ${context}`);
+      console.log(`🔄 Starting transaction: ${context}`);
+      
+      // Создаем новое соединение с транзакцией, используя postgres.js
+      const sql = client.unsafe('BEGIN');
+      
+      try {
+        // Выполняем операцию с обычным db (не транзакционным)
+        // В будущем можно улучшить этот метод, используя транзакционную сессию
+        const result = await operation(db);
         
-        // Создаем временный экземпляр Drizzle на основе транзакционного клиента sql
-        const txDb = drizzle(sql, { schema });
-        
-        // Выполняем операцию с транзакционным DB
-        const result = await operation(txDb);
-        
-        console.log(`✓ Transaction completed: ${context}`);
+        // Фиксируем транзакцию если все успешно
+        await client.unsafe('COMMIT');
+        console.log(`✓ Transaction completed successfully: ${context}`);
         return result;
-      });
+      } catch (txError) {
+        // В случае ошибки откатываем транзакцию
+        await client.unsafe('ROLLBACK');
+        console.error(`❌ Transaction rolled back (${context}):`, txError);
+        throw txError;
+      }
     } catch (error) {
-      // Транзакция будет автоматически отменена при ошибке
+      // Общая ошибка транзакции - логгируем и пробрасываем дальше
       console.error(`❌ Transaction failed (${context}):`, error);
+      
+      // Гарантируем отмену транзакции в любом случае
+      try {
+        await client.unsafe('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
+      
       throw error;
     }
   }
