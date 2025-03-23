@@ -212,26 +212,35 @@ export async function sendEthereumTransaction(
   amountEth: number
 ): Promise<{ txId: string; status: string }> {
   try {
+    console.log(`🔄 [ETH] Начало отправки ETH транзакции с подробной диагностикой`);
+    console.log(`🔑 [ETH] API Key статус: ${BLOCKDAEMON_API_KEY ? 'Настроен (длина: ' + BLOCKDAEMON_API_KEY.length + ')' : 'НЕ НАСТРОЕН!'}`);
+    
     if (!validateCryptoAddress(fromAddress, 'eth')) {
+      console.error(`❌ [ETH] Неверный адрес отправителя: ${fromAddress}`);
       throw new Error(`Недействительный исходящий Ethereum адрес: ${fromAddress}`);
     }
     
     if (!validateCryptoAddress(toAddress, 'eth')) {
+      console.error(`❌ [ETH] Неверный адрес получателя: ${toAddress}`);
       throw new Error(`Недействительный целевой Ethereum адрес: ${toAddress}`);
     }
 
     if (!BLOCKDAEMON_API_KEY) {
+      console.error(`❌ [ETH] API ключ BlockDaemon не настроен!`);
       throw new Error('Не настроен API ключ для доступа к BlockDaemon API');
     }
 
-    console.log(`⚡ Отправка ${amountEth} ETH с ${fromAddress} на ${toAddress}`);
-    console.log(`🔑 Используем BlockDaemon API Key: ${BLOCKDAEMON_API_KEY ? 'Настроен' : 'Не настроен'}`);
+    console.log(`⚡ [ETH] Отправка ${amountEth} ETH с ${fromAddress} на ${toAddress}`);
 
     // Проверяем валидность адреса получателя через BlockDaemon API
     try {
-      console.log(`🔍 Проверка адреса получателя ETH через BlockDaemon API: ${toAddress}`);
+      console.log(`🔍 [ETH] Проверка адреса получателя через BlockDaemon API: ${toAddress}`);
+      
+      const checkURL = `https://svc.blockdaemon.com/ethereum/mainnet/account/${toAddress}`;
+      console.log(`🌐 [ETH] URL запроса: ${checkURL}`);
+      
       const checkResponse = await axios.get(
-        `https://svc.blockdaemon.com/ethereum/mainnet/account/${toAddress}`,
+        checkURL,
         {
           headers: {
             'Authorization': `Bearer ${BLOCKDAEMON_API_KEY}`,
@@ -239,9 +248,14 @@ export async function sendEthereumTransaction(
           }
         }
       );
-      console.log(`✅ Адрес ETH подтвержден через API: ${JSON.stringify(checkResponse.data)}`);
+      
+      console.log(`✅ [ETH] Адрес ETH подтвержден через API. Статус: ${checkResponse.status}`);
+      console.log(`📊 [ETH] Ответ API: ${JSON.stringify(checkResponse.data)}`);
     } catch (apiError: any) {
-      console.warn(`⚠️ Предупреждение при проверке ETH адреса через API:`, apiError?.message || 'Неизвестная ошибка');
+      console.warn(`⚠️ [ETH] Ошибка при проверке ETH адреса:`);
+      console.warn(`   - Сообщение: ${apiError?.message || 'Неизвестная ошибка'}`);
+      console.warn(`   - Статус: ${apiError?.response?.status || 'Неизвестно'}`);
+      console.warn(`   - Данные: ${JSON.stringify(apiError?.response?.data || {})}`);
       // Продолжаем выполнение даже при ошибке проверки
     }
     
@@ -249,21 +263,31 @@ export async function sendEthereumTransaction(
     try {
       // Преобразуем ETH в Wei для отправки
       const valueInWei = BigInt(Math.floor(amountEth * 1e18)).toString();
+      console.log(`💱 [ETH] Конвертация: ${amountEth} ETH = ${valueInWei} Wei`);
       
-      // Параметры для транзакции
+      // Параметры для транзакции - используем Universal API формат
+      // https://docs.blockdaemon.com/reference/universal-post-tx
       const transactionData = {
-        from_address: fromAddress,
-        to_address: toAddress,
-        value: valueInWei,
-        gas_limit: "21000", // Стандартный газ для простой транзакции
-        gas_price: "medium", // Средний приоритет транзакции
-        chain_id: 1 // Mainnet Ethereum (1) - добавляем для большей надежности
+        network_name: "ethereum", 
+        network_type: "mainnet",
+        transaction: {
+          from: fromAddress,
+          to: toAddress,
+          value: valueInWei,
+          gas_limit: "21000", // Стандартный газ для простой транзакции
+          gas_price: "medium" // Средний приоритет транзакции
+        }
       };
       
-      console.log(`📤 Отправка ETH транзакции через BlockDaemon API: ${JSON.stringify(transactionData)}`);
+      console.log(`📤 [ETH] Отправка транзакции через BlockDaemon API с параметрами:`);
+      console.log(JSON.stringify(transactionData, null, 2));
+      
+      // Исправляем URL для Ethereum транзакций - должен содержать v1 в URL
+      const txURL = `https://svc.blockdaemon.com/universal/v1/ethereum/mainnet/tx`;
+      console.log(`🌐 [ETH] URL запроса: ${txURL}`);
       
       const txResponse = await axios.post(
-        `https://svc.blockdaemon.com/ethereum/mainnet/tx/send`,
+        txURL,
         transactionData,
         {
           headers: {
@@ -271,28 +295,40 @@ export async function sendEthereumTransaction(
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          timeout: 15000 // Увеличиваем timeout до 15 секунд
+          timeout: 20000 // Увеличиваем timeout до 20 секунд для большей надежности
         }
       );
       
-      // BlockDaemon может возвращать txid или txhash в зависимости от API версии
-      const txId = txResponse.data?.txid || txResponse.data?.txhash || txResponse.data?.tx_hash;
+      console.log(`📥 [ETH] Получен ответ от API. Статус: ${txResponse.status}`);
+      console.log(`📊 [ETH] Данные ответа: ${JSON.stringify(txResponse.data)}`);
+      
+      // BlockDaemon Universal API возвращает hash в transaction_hash
+      // https://docs.blockdaemon.com/reference/universal-post-tx
+      const txId = txResponse.data?.transaction_hash || txResponse.data?.txid || txResponse.data?.txhash || txResponse.data?.tx_hash;
       
       if (txId) {
-        console.log(`✅ ETH транзакция успешно отправлена. TxID: ${txId}`);
+        console.log(`✅ [ETH] Транзакция успешно отправлена. TxID: ${txId}`);
         return { txId, status: 'pending' };
       } else {
+        console.error(`❌ [ETH] Не удалось получить TxID из ответа API:`);
+        console.error(JSON.stringify(txResponse.data));
         throw new Error('Неожиданный формат ответа API при отправке ETH транзакции');
       }
     } catch (txError: any) {
-      console.error(`❌ Ошибка при отправке ETH транзакции через API:`, txError?.response?.data || txError?.message || 'Неизвестная ошибка');
+      console.error(`❌ [ETH] Ошибка при отправке транзакции через API:`);
+      console.error(`   - Сообщение: ${txError?.message || 'Неизвестная ошибка'}`);
+      console.error(`   - Статус: ${txError?.response?.status || 'Неизвестно'}`);
+      console.error(`   - Данные: ${JSON.stringify(txError?.response?.data || {})}`);
       
       // Если не удалось отправить транзакцию через API, возвращаем транзакцию с пометкой "error"
       const errorTxId = `eth_err_${Date.now()}`;
+      console.warn(`⚠️ [ETH] Возвращаем error TxID: ${errorTxId}`);
       return { txId: errorTxId, status: 'failed' };
     }
-  } catch (error) {
-    console.error(`❌ Ошибка при отправке ETH транзакции:`, error);
+  } catch (error: any) {
+    console.error(`❌ [ETH] Критическая ошибка при отправке ETH транзакции:`);
+    console.error(`   - Сообщение: ${error?.message || 'Неизвестная ошибка'}`);
+    console.error(`   - Стек: ${error?.stack || 'Нет информации о стеке'}`);
     throw error;
   }
 }
@@ -359,11 +395,14 @@ export async function checkTransactionStatus(
       }
     } else if (cryptoType === 'eth') {
       try {
-        // Проверка статуса ETH транзакции через BlockDaemon API
+        // Проверка статуса ETH транзакции через BlockDaemon API (Universal API)
         console.log(`🔍 Запрос статуса ETH транзакции: ${txId}`);
         
+        const txURL = `https://svc.blockdaemon.com/universal/v1/ethereum/mainnet/tx/${txId}`;
+        console.log(`🌐 [ETH] URL запроса статуса: ${txURL}`);
+        
         const response = await axios.get(
-          `https://svc.blockdaemon.com/ethereum/mainnet/tx/${txId}`,
+          txURL,
           {
             headers: {
               'Authorization': `Bearer ${BLOCKDAEMON_API_KEY}`,
