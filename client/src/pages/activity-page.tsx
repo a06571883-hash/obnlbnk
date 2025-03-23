@@ -257,7 +257,10 @@ function TransactionList({
                 </span>
                 {/* Индикатор симуляции в списке транзакций */}
                 {tx.description && tx.description.includes('СИМУЛЯЦИЯ') && (
-                  <span className="text-[7px] text-amber-600 bg-amber-50 px-1 rounded-sm ml-1">сим</span>
+                  <span className="text-[7px] text-amber-600 bg-amber-50 border border-amber-200 px-1 rounded-sm ml-1 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-0.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+                    <span>симуляция</span>
+                  </span>
                 )}
               </div>
               <div className="flex items-center gap-1 text-[8px] text-muted-foreground">

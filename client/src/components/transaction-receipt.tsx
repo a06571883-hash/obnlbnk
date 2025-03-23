@@ -180,9 +180,18 @@ export default function TransactionReceipt({ transaction, open, onOpenChange }: 
             
             {/* Индикатор режима симуляции для крипто-переводов */}
             {transaction.description && transaction.description.includes('СИМУЛЯЦИЯ') && (
-              <div className="flex items-center justify-between bg-yellow-50 p-1.5 rounded-sm mt-1 mb-1">
-                <span className="text-[9px] text-amber-600 font-medium">Режим симуляции</span>
-                <span className="text-[8px] text-amber-600">Внешняя транзакция не выполнена</span>
+              <div className="border border-amber-200 bg-amber-50 p-2 rounded mt-2 mb-2">
+                <div className="flex items-start gap-2">
+                  <div className="text-amber-500 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-amber-700 font-semibold">Режим симуляции</span>
+                    <p className="text-[8px] text-amber-700 mt-0.5">
+                      Средства списаны с вашей карты, но блокчейн-транзакция не выполнена из-за отсутствия API ключей для блокчейн-операций.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 

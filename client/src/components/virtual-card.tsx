@@ -656,10 +656,26 @@ export default function VirtualCard({ card }: { card: Card }) {
                     
                     {/* Информация о симуляции при переводе на внешний адрес */}
                     {recipientType === 'crypto_wallet' && (
-                      <div className="text-xs text-muted-foreground bg-gray-100 p-2 rounded my-2">
-                        <span className="font-medium">Важно!</span> Перевод {selectedWallet.toUpperCase()} на внешний адрес 
-                        работает в режиме симуляции. Средства списываются с вашей карты, но фактическая транзакция в блокчейне 
-                        не выполняется. Для реальных переводов используйте внутренние карты.
+                      <div className="text-xs p-3 rounded my-2 border border-amber-200 bg-amber-50">
+                        <div className="flex items-start gap-2">
+                          <div className="text-amber-500 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-amber-700">Режим симуляции</span>
+                            <p className="text-amber-700">
+                              Перевод {selectedWallet.toUpperCase()} на внешний адрес работает в режиме симуляции. 
+                              Средства списываются с вашей карты, но фактическая транзакция в блокчейне не выполняется.
+                            </p>
+                            <p className="mt-1 text-amber-700">
+                              <span className="font-medium">Причина:</span> Для проведения реальных транзакций в блокчейне 
+                              требуется подключение к API блокчейн-сервисов.
+                            </p>
+                            <p className="mt-1 text-amber-600">
+                              Для переводов между картами внутри системы используйте опцию "Фиат карта".
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     )}
 
