@@ -496,9 +496,9 @@ export class DatabaseStorage implements IStorage {
           // transactionMode = apiStatus.available ? 'blockchain' : 'simulated';
           
           // Проверка доступности API ключей для выполнения реальных транзакций
-          if (apiStatus.available) {
-            // Отправка реальной криптотранзакции через блокчейн
-            let txResult;
+          // ВАЖНО: убираем проверку доступности API ключей, т.к. мы форсируем режим блокчейна
+          // Отправка реальной криптотранзакции через блокчейн
+          let txResult;
             
             try {
               if (cryptoType === 'btc') {
@@ -623,9 +623,11 @@ export class DatabaseStorage implements IStorage {
               console.log(`⚠️ Продолжаем в режиме симуляции...`);
               transactionMode = 'simulated';
             }
-          } else {
+          // Убираем проверку на else, т.к. мы всегда выполняем основной блок кода
+          // независимо от наличия API ключей
+          /*} else {
             console.log(`ℹ️ ${apiStatus.reason || 'API ключи для блокчейнов не настроены'}. Работа в режиме симуляции.`);
-          }
+          }*/
         }
 
         // Зачисляем комиссию регулятору
