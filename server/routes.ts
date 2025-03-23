@@ -9,8 +9,9 @@ import fetch from 'node-fetch';
 import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
 import { getNews } from './news-service';
 import { seaTableManager } from './utils/seatable';
-import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
+import { generateValidAddress, validateCryptoAddress, getSeedPhraseForUser } from './utils/crypto';
 import { hasBlockchainApiKeys } from './utils/blockchain';
+import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase';
 import { Telegraf } from 'telegraf';
 
 // Auth middleware to ensure session is valid
@@ -432,6 +433,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Эндпоинт для получения seed-фразы пользователя
+  app.get("/api/crypto/seed-phrase", ensureAuthenticated, async (req, res) => {
+    try {
+      // В middleware ensureAuthenticated мы уже проверили что req.user существует
+      const userId = req.user!.id;
+      
+      // Получаем seed-фразу по ID пользователя
+      const seedPhrase = getSeedPhraseForUser(userId);
+      
+      // Возвращаем seed-фразу и генерируемые из нее адреса
+      const { btcAddress, ethAddress } = generateAddressesForUser(userId);
+      
+      res.json({
+        seedPhrase,
+        addresses: {
+          btc: btcAddress,
+          eth: ethAddress
+        },
+        message: "Сохраните эту seed-фразу в надежном месте. С ее помощью вы можете восстановить доступ к своим криптовалютным средствам."
+      });
+    } catch (error) {
+      console.error("Error fetching seed phrase:", error);
+      res.status(500).json({ message: "Ошибка при получении seed-фразы" });
+    }
+  });
+  
+  // Эндпоинт для проверки seed-фразы и получения адресов
+  app.post("/api/crypto/verify-seed-phrase", ensureAuthenticated, async (req, res) => {
+    try {
+      const { seedPhrase } = req.body;
+      
+      if (!seedPhrase) {
+        return res.status(400).json({ message: "Необходимо указать seed-фразу" });
+      }
+      
+      // Проверяем валидность seed-фразы
+      if (!isValidMnemonic(seedPhrase)) {
+        return res.status(400).json({ message: "Невалидная seed-фраза. Проверьте правильность ввода." });
+      }
+      
+      // Получаем адреса из seed-фразы
+      const { btcAddress, ethAddress } = getAddressesFromMnemonic(seedPhrase);
+      
+      res.json({
+        valid: true,
+        addresses: {
+          btc: btcAddress,
+          eth: ethAddress
+        },
+        message: "Seed-фраза валидна. Адреса успешно получены."
+      });
+    } catch (error) {
+      console.error("Error verifying seed phrase:", error);
+      res.status(500).json({ message: "Ошибка при проверке seed-фразы" });
+    }
+  });
+  
   // Эндпоинт для проверки подключения к Render.com
   app.get("/api/render-status", (req, res) => {
     const isRender = process.env.RENDER === 'true';

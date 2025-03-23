@@ -27,10 +27,12 @@ import {
   Sun,
   Globe,
   Volume2,
-  MessageSquare
+  MessageSquare,
+  Key
 } from "lucide-react";
 import AnimatedBackground from "@/components/animated-background";
 import { useToast } from "@/hooks/use-toast";
+import { SeedPhraseDisplay } from "@/components/seed-phrase";
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
