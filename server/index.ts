@@ -5,6 +5,7 @@ import { db } from "./database/connection";
 import { scheduleBackups } from "./database/backup";
 import { startBot } from "./telegram-bot";
 import * as NodeJS from 'node:process';
+import { setupDebugRoutes } from "./debug";
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
@@ -28,6 +29,9 @@ app.use((req, res, next) => {
     console.log('Database initialized successfully');
 
     const server = await registerRoutes(app);
+    
+    // Регистрируем отладочные эндпоинты
+    setupDebugRoutes(app);
 
     // Минимальная частота бэкапов
     scheduleBackups();

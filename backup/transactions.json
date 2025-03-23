@@ -838,5 +838,47 @@
     "description": "Возврат средств: 1.00000000 ETH (транзакция не прошла)",
     "fromCardNumber": "SYSTEM",
     "toCardNumber": "4000101461947771"
+  },
+  {
+    "id": 85,
+    "fromCardId": 13,
+    "toCardId": null,
+    "amount": "1",
+    "convertedAmount": "0.0235904873752202",
+    "type": "crypto_transfer",
+    "wallet": "0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D",
+    "status": "completed",
+    "createdAt": "2025-03-23T15:40:01.337Z",
+    "description": "Отправка 1.00000000 ETH на адрес 0x9A28cD7272f0D3ED3272ECEA195c8762dE75708D (блокчейн)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": ""
+  },
+  {
+    "id": 86,
+    "fromCardId": 13,
+    "toCardId": 5,
+    "amount": "0.01",
+    "convertedAmount": "0.000235904873752202",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T15:40:01.407Z",
+    "description": "Комиссия за перевод ETH (0.01000000 ETH ~ 0.00023590 BTC)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 87,
+    "fromCardId": 5,
+    "toCardId": 13,
+    "amount": "1.01",
+    "convertedAmount": "0",
+    "type": "refund",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-23T15:40:06.336Z",
+    "description": "Возврат средств: 1.00000000 ETH (транзакция не прошла)",
+    "fromCardNumber": "SYSTEM",
+    "toCardNumber": "4000101461947771"
   }
 ]
