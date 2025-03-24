@@ -142,50 +142,95 @@ export function SeedPhraseDisplay() {
         ) : data ? (
           <Card className="bg-muted/50">
             <CardContent className="p-4">
-              <div className="relative">
-                <div className={`bg-black/5 p-3 rounded-md font-mono text-sm break-all relative ${showPhrase ? '' : 'blur-sm select-none'}`}>
-                  {data.seedPhrase}
-                </div>
-                <div className="absolute top-2 right-2 space-x-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 rounded-full" 
-                    onClick={() => setShowPhrase(!showPhrase)}
-                  >
-                    {showPhrase ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 rounded-full" 
-                    onClick={() => copyToClipboard(data.seedPhrase)}
-                    disabled={!showPhrase || copied}
-                  >
-                    {copied ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
+              {/* Переместили кнопки перед фразой для лучшей доступности на мобильных устройствах */}
+              <div className="flex justify-end mb-2 space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center" 
+                  onClick={() => setShowPhrase(!showPhrase)}
+                >
+                  {showPhrase ? (
+                    <>
+                      <EyeOff className="h-4 w-4 mr-1" />
+                      <span>Скрыть</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4 mr-1" />
+                      <span>Показать</span>
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center" 
+                  onClick={() => copyToClipboard(data.seedPhrase)}
+                  disabled={!showPhrase || copied}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4 mr-1 text-green-500" />
+                      <span>Скопировано</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-1" />
+                      <span>Копировать</span>
+                    </>
+                  )}
+                </Button>
               </div>
               
-              <p className="text-sm text-muted-foreground mt-4">
+              <div className={`bg-black/5 p-3 rounded-md font-mono text-sm break-all mb-4 ${showPhrase ? '' : 'blur-sm select-none'}`}>
+                {data.seedPhrase}
+              </div>
+              
+              <p className="text-sm text-muted-foreground">
                 Связанные адреса:
               </p>
-              <div className="space-y-2 mt-2">
-                <div className="text-xs">
-                  <span className="font-semibold">BTC:</span> 
-                  <span className="font-mono ml-2">{data.addresses.btc}</span>
+              <div className="space-y-3 mt-2">
+                <div className="flex flex-col space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm">BTC</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-6 px-2 flex items-center"
+                      onClick={() => {
+                        navigator.clipboard.writeText(data.addresses.btc);
+                        toast({ title: "Скопировано", description: "Bitcoin-адрес скопирован" });
+                      }}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      <span className="text-xs">Копировать</span>
+                    </Button>
+                  </div>
+                  <div className="bg-black/5 rounded p-2 text-xs font-mono break-all">
+                    {data.addresses.btc}
+                  </div>
                 </div>
-                <div className="text-xs">
-                  <span className="font-semibold">ETH:</span> 
-                  <span className="font-mono ml-2">{data.addresses.eth}</span>
+                
+                <div className="flex flex-col space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm">ETH</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-6 px-2 flex items-center"
+                      onClick={() => {
+                        navigator.clipboard.writeText(data.addresses.eth);
+                        toast({ title: "Скопировано", description: "Ethereum-адрес скопирован" });
+                      }}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      <span className="text-xs">Копировать</span>
+                    </Button>
+                  </div>
+                  <div className="bg-black/5 rounded p-2 text-xs font-mono break-all">
+                    {data.addresses.eth}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -231,14 +276,47 @@ export function SeedPhraseDisplay() {
                   <p className="text-sm text-muted-foreground mt-2">
                     Связанные адреса:
                   </p>
-                  <div className="space-y-2 mt-2">
-                    <div className="text-xs">
-                      <span className="font-semibold">BTC:</span> 
-                      <span className="font-mono ml-2">{validationResult.addresses?.btc}</span>
+                  <div className="space-y-3 mt-2">
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-sm">BTC</span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-6 px-2 flex items-center"
+                          onClick={() => {
+                            navigator.clipboard.writeText(validationResult.addresses?.btc || "");
+                            toast({ title: "Скопировано", description: "Bitcoin-адрес скопирован" });
+                          }}
+                        >
+                          <Copy className="h-3 w-3 mr-1" />
+                          <span className="text-xs">Копировать</span>
+                        </Button>
+                      </div>
+                      <div className="bg-black/5 rounded p-2 text-xs font-mono break-all">
+                        {validationResult.addresses?.btc}
+                      </div>
                     </div>
-                    <div className="text-xs">
-                      <span className="font-semibold">ETH:</span> 
-                      <span className="font-mono ml-2">{validationResult.addresses?.eth}</span>
+                    
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-sm">ETH</span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-6 px-2 flex items-center"
+                          onClick={() => {
+                            navigator.clipboard.writeText(validationResult.addresses?.eth || "");
+                            toast({ title: "Скопировано", description: "Ethereum-адрес скопирован" });
+                          }}
+                        >
+                          <Copy className="h-3 w-3 mr-1" />
+                          <span className="text-xs">Копировать</span>
+                        </Button>
+                      </div>
+                      <div className="bg-black/5 rounded p-2 text-xs font-mono break-all">
+                        {validationResult.addresses?.eth}
+                      </div>
                     </div>
                   </div>
                 </>

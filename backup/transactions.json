@@ -1146,5 +1146,33 @@
     "description": "Комиссия за перевод BTC (0.01000000 BTC)",
     "fromCardNumber": "4000101461947771",
     "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 107,
+    "fromCardId": 13,
+    "toCardId": 94,
+    "amount": "2",
+    "convertedAmount": "2",
+    "type": "crypto_transfer",
+    "wallet": "1MhprVFAKXW5URUYK7xKLq7fk4ry8Cq851",
+    "status": "completed",
+    "createdAt": "2025-03-24T13:56:48.394Z",
+    "description": "Отправка 2.00000000 BTC на адрес 1MhprVFAKXW5URUYK7xKLq7fk4ry8Cq851 (внутренний перевод)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "4111151178490202"
+  },
+  {
+    "id": 108,
+    "fromCardId": 13,
+    "toCardId": 5,
+    "amount": "0.02",
+    "convertedAmount": "0.02",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-24T13:56:48.467Z",
+    "description": "Комиссия за перевод BTC (0.02000000 BTC)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "REGULATOR"
   }
 ]
