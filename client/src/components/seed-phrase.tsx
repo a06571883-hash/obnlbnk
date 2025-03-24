@@ -116,24 +116,24 @@ export function SeedPhraseDisplay() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <h3 className="font-medium">Ваша Seed-фраза</h3>
-        <p className="text-sm text-muted-foreground">
-          Это ваша личная seed-фраза для восстановления доступа к криптовалютным средствам. 
-          Храните её в надежном месте и никому не сообщайте.
+    <div className="space-y-4 max-w-full overflow-x-hidden">
+      <div className="space-y-2">
+        <h3 className="font-medium text-sm sm:text-base">Ваша Seed-фраза</h3>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Это ваша seed-фраза для восстановления доступа к криптовалютным средствам. 
+          Храните её в надёжном месте.
         </p>
 
         {loading ? (
           <Card className="bg-muted/50">
-            <CardContent className="p-4 flex justify-center items-center h-20">
-              <RefreshCw className="animate-spin h-6 w-6 text-primary" />
+            <CardContent className="p-2 sm:p-3 flex justify-center items-center h-16">
+              <RefreshCw className="animate-spin h-5 w-5 text-primary" />
             </CardContent>
           </Card>
         ) : error ? (
           <Card className="bg-destructive/10">
-            <CardContent className="p-4">
-              <p className="text-sm text-destructive">{error}</p>
+            <CardContent className="p-2 sm:p-3">
+              <p className="text-xs sm:text-sm text-destructive">{error}</p>
               <Button onClick={fetchSeedPhrase} variant="outline" className="mt-2" size="sm">
                 Повторить попытку
               </Button>
@@ -141,7 +141,7 @@ export function SeedPhraseDisplay() {
           </Card>
         ) : data ? (
           <Card className="bg-muted/50">
-            <CardContent className="p-4">
+            <CardContent className="p-2 sm:p-3">
               {/* Переместили кнопки перед фразой для лучшей доступности на мобильных устройствах */}
               <div className="flex justify-end mb-2 space-x-2">
                 <Button 
@@ -238,19 +238,20 @@ export function SeedPhraseDisplay() {
         ) : null}
       </div>
 
-      <div className="space-y-4 pt-4 border-t">
-        <h3 className="font-medium">Проверить seed-фразу</h3>
-        <p className="text-sm text-muted-foreground">
-          Введите seed-фразу для проверки её валидности и получения связанных криптоадресов.
+      <div className="space-y-3 pt-3 border-t">
+        <h3 className="font-medium text-sm sm:text-base">Проверить seed-фразу</h3>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Введите seed-фразу для проверки валидности и получения связанных криптоадресов.
         </p>
         
-        <div className="space-y-2">
-          <Label htmlFor="seed-phrase">Введите seed-фразу</Label>
+        <div className="space-y-1">
+          <Label htmlFor="seed-phrase" className="text-xs sm:text-sm">Введите seed-фразу</Label>
           <Input 
             id="seed-phrase" 
             value={userSeedPhrase}
             onChange={(e) => setUserSeedPhrase(e.target.value)}
-            placeholder="Введите 12 слов, разделенных пробелами"
+            placeholder="Введите 12 слов через пробел"
+            className="text-xs sm:text-sm py-1"
           />
         </div>
         
@@ -269,11 +270,11 @@ export function SeedPhraseDisplay() {
         
         {validationResult && (
           <Card className={`${validationResult.valid ? 'bg-green-50' : 'bg-destructive/10'}`}>
-            <CardContent className="p-4">
+            <CardContent className="p-2 sm:p-3">
               {validationResult.valid ? (
                 <>
-                  <h4 className="font-medium text-green-700">Seed-фраза валидна</h4>
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <h4 className="font-medium text-green-700 text-sm">Seed-фраза валидна</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     Связанные адреса:
                   </p>
                   <div className="space-y-3 mt-2">
