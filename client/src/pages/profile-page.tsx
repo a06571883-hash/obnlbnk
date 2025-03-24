@@ -345,10 +345,10 @@ export default function ProfilePage() {
                 </Card>
               </DialogTrigger>
 
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{item.title}</DialogTitle>
-                  <DialogDescription>
+              <DialogContent className="max-h-[95vh] overflow-y-auto w-[95vw] max-w-md p-4 pt-10 rounded-t-lg">
+                <DialogHeader className="pb-2">
+                  <DialogTitle className="text-base">{item.title}</DialogTitle>
+                  <DialogDescription className="text-xs">
                     {item.description}
                   </DialogDescription>
                 </DialogHeader>
