@@ -39,18 +39,7 @@ export function SeedPhraseDisplay() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/crypto/seed-phrase', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+      const response = await apiRequest('GET', '/api/crypto/seed-phrase');
       const data = await response.json();
       setData(data as SeedPhraseData);
     } catch (err) {
@@ -58,7 +47,7 @@ export function SeedPhraseDisplay() {
       setError('Не удалось получить seed-фразу. Пожалуйста, попробуйте позже.');
       toast({
         title: "Ошибка",
-        description: "Не удалось получить seed-фразу",
+        description: err instanceof Error ? err.message : "Не удалось получить seed-фразу",
         variant: "destructive"
       });
     } finally {
@@ -89,16 +78,9 @@ export function SeedPhraseDisplay() {
 
     setValidating(true);
     try {
-      const response = await fetch('/api/crypto/verify-seed-phrase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ seedPhrase: userSeedPhrase })
+      const response = await apiRequest('POST', '/api/crypto/verify-seed-phrase', { 
+        seedPhrase: userSeedPhrase 
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
       
       const data = await response.json();
       const typedResponse = data as {
@@ -124,7 +106,7 @@ export function SeedPhraseDisplay() {
       console.error('Failed to validate seed phrase:', err);
       toast({
         title: "Ошибка",
-        description: "Не удалось проверить seed-фразу",
+        description: err instanceof Error ? err.message : "Не удалось проверить seed-фразу",
         variant: "destructive"
       });
       setValidationResult(null);
