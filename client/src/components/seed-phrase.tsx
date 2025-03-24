@@ -39,8 +39,20 @@ export function SeedPhraseDisplay() {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiRequest('/api/crypto/seed-phrase');
-      setData(response as SeedPhraseData);
+      const response = await fetch('/api/crypto/seed-phrase', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setData(data as SeedPhraseData);
     } catch (err) {
       console.error('Failed to fetch seed phrase:', err);
       setError('Не удалось получить seed-фразу. Пожалуйста, попробуйте позже.');
@@ -77,13 +89,19 @@ export function SeedPhraseDisplay() {
 
     setValidating(true);
     try {
-      const response = await apiRequest('/api/crypto/verify-seed-phrase', {
+      const response = await fetch('/api/crypto/verify-seed-phrase', {
         method: 'POST',
-        body: JSON.stringify({ seedPhrase: userSeedPhrase }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ seedPhrase: userSeedPhrase })
       });
       
-      const typedResponse = response as {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const typedResponse = data as {
         valid: boolean;
         addresses?: { btc: string; eth: string };
         message?: string;
