@@ -1,45 +1,19 @@
 /**
- * Утилита для генерации NFT изображений в пиксельном стиле
+ * Утилита для генерации реалистичных NFT изображений с элементами роскоши
  */
-import * as fs from 'fs';
-import * as path from 'path';
-import * as crypto from 'crypto';
-import { generateBlondeCharacter } from './blonde-character-generator';
-
-// Путь до директории с публичными файлами
-const PUBLIC_DIR = path.join(process.cwd(), 'client', 'public');
+import * as ModernNFTGenerator from './modern-nft-generator';
 
 // Типы редкости NFT
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 /**
- * Создает SVG-изображение NFT в пиксельном стиле в зависимости от редкости
+ * Создает SVG-изображение NFT в реалистичном стиле в зависимости от редкости
  * @param rarity Редкость NFT
  * @returns Путь к созданному файлу
  */
 export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
-  // Создаем директорию для NFT, если она еще не существует
-  const nftDir = path.join(PUBLIC_DIR, 'assets', 'nft');
-  if (!fs.existsSync(nftDir)) {
-    fs.mkdirSync(nftDir, { recursive: true });
-  }
-
-  // Определяем цвета и стили в зависимости от редкости
-  const styles = getRarityStyles(rarity);
-  
-  // Генерируем уникальное имя файла с использованием хеша для уникальности
-  const uniqueId = crypto.randomBytes(8).toString('hex');
-  const fileName = `${rarity}_${Date.now()}_${uniqueId}.svg`;
-  const filePath = path.join(nftDir, fileName);
-  
-  // Генерируем SVG-контент в пиксельном стиле
-  const svgContent = generatePixelArtSVG(styles);
-  
-  // Записываем файл
-  fs.writeFileSync(filePath, svgContent);
-  
-  // Возвращаем публичный путь к файлу
-  return `/assets/nft/${fileName}`;
+  // Используем новый современный генератор изображений
+  return await ModernNFTGenerator.generateNFTImage(rarity);
 }
 
 /**
@@ -106,7 +80,7 @@ function generatePixelArtSVG(styles: {
       pixelArt = generatePixelJet(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
       break;
     case 'character':
-      pixelArt = generateBlondeCharacter(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
+      pixelArt = generatePixelCharacter(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
       break;
   }
   
