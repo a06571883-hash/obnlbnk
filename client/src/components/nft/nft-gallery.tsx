@@ -94,9 +94,16 @@ export const NFTGallery: React.FC = () => {
         <Button
           variant="outline"
           onClick={() => {
-            document.querySelector('[value="collections"]')?.dispatchEvent(
-              new MouseEvent('click', { bubbles: true })
-            );
+            // Запускаем клик на табе "collections"
+            const collectionsTab = document.querySelector('button[value="collections"]');
+            if (collectionsTab) {
+              collectionsTab.dispatchEvent(
+                new MouseEvent('click', { bubbles: true })
+              );
+              console.log('Клик по табу collections');
+            } else {
+              console.error('Не найден таб collections');
+            }
             playSoundIfEnabled('click');
           }}
         >

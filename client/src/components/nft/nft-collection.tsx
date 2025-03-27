@@ -177,7 +177,10 @@ export const NFTCollectionView: React.FC = () => {
             </Alert>
           ) : (
             <Button 
-              onClick={() => setOpenDialog(true)}
+              onClick={() => {
+                console.log('Открытие диалога генерации NFT');
+                setOpenDialog(true);
+              }}
               disabled={!dailyLimit?.canGenerate}
               className="w-full"
             >
@@ -274,7 +277,10 @@ export const NFTCollectionView: React.FC = () => {
               </Button>
               <Button 
                 size="sm"
-                onClick={() => setOpenDialog(true)}
+                onClick={() => {
+                  console.log('Открытие диалога создания NFT из списка коллекций');
+                  setOpenDialog(true);
+                }}
                 disabled={!dailyLimit?.canGenerate}
               >
                 Создать NFT
@@ -323,7 +329,10 @@ export const NFTCollectionView: React.FC = () => {
               Отмена
             </Button>
             <Button
-              onClick={() => generateNFT.mutate(selectedRarity)}
+              onClick={() => {
+                console.log('Отправка запроса на генерацию NFT с редкостью:', selectedRarity);
+                generateNFT.mutate(selectedRarity);
+              }}
               disabled={isGenerating}
             >
               {isGenerating ? (
