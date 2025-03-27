@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,129 +10,143 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { LoadingSpinner } from '../../components/ui/loading-spinner';
+import { NFTTabNavigation } from '../../pages/nft-page';
 
-// Helper function for sound playback simulation
+// Импортируем сервис для звука
+import { playSoundEffect } from '../../lib/sound-service';
+
+// Helper function for sound playback
 const playSoundIfEnabled = (sound: string) => {
   console.log(`Playing sound: ${sound}`);
+  playSoundEffect(sound);
 };
 
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
+type NFTAttributes = {
+  power: number;
+  agility: number;
+  wisdom: number;
+  luck: number;
+};
+
 type NFT = {
   id: number;
+  collectionId: number;
   name: string;
   description: string;
   imagePath: string;
   rarity: NFTRarity;
-  attributes: {
-    power: number;
-    agility: number;
-    wisdom: number;
-    luck: number;
-  };
+  mintedAt: string;
+  tokenId: string;
+  attributes: NFTAttributes;
 };
 
 type NFTCollection = {
   id: number;
   name: string;
   description: string;
+  imageUrl: string;
   nfts: NFT[];
 };
 
-export const NFTCollectionView: React.FC = () => {
-  const [selectedCollection, setSelectedCollection] = useState<number | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedRarity, setSelectedRarity] = useState<NFTRarity>('common');
+type DailyLimitResponse = {
+  canGenerate: boolean;
+  nextAvailableAt?: string;
+  remainingTime?: string;
+};
+
+interface NFTCollectionViewProps {
+  navigation: NFTTabNavigation;
+}
+
+export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation }) => {
   const { toast } = useToast();
+  const [selectedRarity, setSelectedRarity] = useState<NFTRarity>('common');
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState<number | null>(null);
 
   const { 
     data: collections = [], 
     isLoading: isLoadingCollections,
-    isError: isErrorCollections,
-    error: errorCollections
-  } = useQuery<any[]>({
+    isError: isErrorCollections
+  } = useQuery<NFTCollection[]>({
     queryKey: ['/api/nft/collections'],
     retry: 1
   });
 
   const { 
-    data: nftStatus = {}, 
-    isLoading: isLoadingStatus,
-    refetch: refetchStatus
-  } = useQuery<Record<string, any>>({
-    queryKey: ['/api/nft/status'],
-    retry: 1
-  });
-
-  const { 
-    data: dailyLimit = { canGenerate: false }, 
-    isLoading: isLoadingLimit,
-    refetch: refetchLimit
-  } = useQuery<{ canGenerate: boolean }>({
+    data: dailyLimit, 
+    isLoading: isLoadingLimit
+  } = useQuery<DailyLimitResponse>({
     queryKey: ['/api/nft/daily-limit'],
     retry: 1
   });
 
+  useEffect(() => {
+    console.log('NFTCollectionView компонент инициализирован');
+  }, []);
+
+  // Обработчик для навигации на вкладку галереи
+  const handleNavigateToGallery = () => {
+    console.log('Переход к галерее из компонента NFTCollectionView');
+    navigation.switchToGallery(); // Используем функцию из переданного пропс
+    playSoundIfEnabled('click');
+  };
+
   const generateNFT = useMutation({
     mutationFn: async (rarity: NFTRarity) => {
-      return fetch('/api/nft/generate', {
+      console.log('Отправка запроса для генерации NFT с редкостью:', rarity);
+      const response = await fetch('/api/nft/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ rarity }),
-      }).then(res => res.json());
-    },
-    onMutate: () => {
-      setIsGenerating(true);
-      toast({
-        title: 'Создаем NFT...',
-        description: 'Пожалуйста, подождите...',
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Не удалось создать NFT');
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
-      setIsGenerating(false);
-      if (data.nft) {
-        toast({
-          title: 'NFT создан',
-          description: `${data.nft.name} добавлен в вашу коллекцию`
-        });
-        playSoundIfEnabled('success');
-        
-        // Refresh queries
-        queryClient.invalidateQueries({ queryKey: ['/api/nft/collections'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/nft/status'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/nft/daily-limit'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/nft/gallery'] });
-        
-        // Close dialog
-        setOpenDialog(false);
-      }
-    },
-    onError: (error) => {
-      setIsGenerating(false);
+      console.log('NFT успешно создан:', data);
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось создать NFT. Пожалуйста, попробуйте позже.',
-        variant: 'destructive'
+        title: "NFT успешно создан!",
+        description: `Ваш новый NFT "${data.name}" добавлен в коллекцию.`,
+        variant: "default",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/collections'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/gallery'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/daily-limit'] });
+      setOpenDialog(false);
+      playSoundIfEnabled('success');
+      // После успешного создания NFT переключаемся на вкладку галереи для просмотра нового NFT
+      setTimeout(() => {
+        handleNavigateToGallery();
+      }, 1000); // Небольшая задержка для анимации уведомления
+    },
+    onError: (error: Error) => {
+      console.error('Ошибка при создании NFT:', error);
+      toast({
+        title: "Ошибка при создании NFT",
+        description: error.message,
+        variant: "destructive",
       });
       playSoundIfEnabled('error');
     }
   });
 
-  const getCollectionById = (id: number) => {
-    if (!collections) return null;
-    return collections.filter((nft: any) => nft.id === id)[0];
+  const isGenerating = generateNFT.isPending;
+
+  const getCollectionById = (id: number): NFTCollection | undefined => {
+    return collections.find(collection => collection.id === id);
   };
 
-  const rarityColors = {
-    common: 'bg-slate-500',
-    uncommon: 'bg-green-500',
-    rare: 'bg-blue-500',
-    epic: 'bg-purple-500',
-    legendary: 'bg-yellow-500',
-  };
-
-  const rarityLabels = {
+  const rarityLabels: {[key in NFTRarity]: string} = {
     common: 'Обычный',
     uncommon: 'Необычный',
     rare: 'Редкий',
@@ -140,7 +154,20 @@ export const NFTCollectionView: React.FC = () => {
     legendary: 'Легендарный',
   };
 
-  if (isLoadingCollections || isLoadingStatus || isLoadingLimit) {
+  const rarityColors: {[key in NFTRarity]: string} = {
+    common: 'bg-slate-500',
+    uncommon: 'bg-green-500',
+    rare: 'bg-blue-500',
+    epic: 'bg-purple-500',
+    legendary: 'bg-yellow-500',
+  };
+
+  const formatTimeRemaining = (time?: string) => {
+    if (!time) return '';
+    return time;
+  };
+
+  if (isLoadingCollections || isLoadingLimit) {
     return (
       <div className="flex justify-center items-center h-[300px]">
         <LoadingSpinner size="lg" />
@@ -159,116 +186,60 @@ export const NFTCollectionView: React.FC = () => {
     );
   }
 
-  if (collections && collections.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="border rounded-lg p-6 space-y-4">
-          <h3 className="text-lg font-semibold">У вас пока нет NFT коллекций</h3>
-          <p className="text-muted-foreground">
-            Создайте свой первый NFT, нажав на кнопку ниже. Коллекция будет создана автоматически.
-          </p>
-          
-          {!dailyLimit?.canGenerate ? (
-            <Alert className="mt-4">
-              <AlertTitle>Лимит достигнут</AlertTitle>
-              <AlertDescription>
-                Вы можете создавать новые NFT раз в 24 часа. Пожалуйста, попробуйте позже.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <Button 
-              onClick={() => {
-                console.log('Открытие диалога генерации NFT');
-                setOpenDialog(true);
-              }}
-              disabled={!dailyLimit?.canGenerate}
-              className="w-full"
-            >
-              Создать мой первый NFT
-            </Button>
-          )}
-        </div>
-        
-        {!dailyLimit?.canGenerate && (
-          <Alert>
-            <AlertTitle>Лимит достигнут</AlertTitle>
-            <AlertDescription>
-              Вы можете создавать новые NFT раз в 24 часа. Пожалуйста, попробуйте позже.
-            </AlertDescription>
-          </Alert>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {!dailyLimit?.canGenerate && (
-        <Alert>
-          <AlertTitle>Лимит достигнут</AlertTitle>
-          <AlertDescription>
-            Вы можете создавать новые NFT раз в 24 часа. Пожалуйста, попробуйте позже.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {collections && collections.map((collection: any) => (
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold">Доступные коллекции</h2>
+          <p className="text-muted-foreground">
+            Выберите коллекцию для просмотра или создайте новый NFT
+          </p>
+        </div>
+        <div>
+          {!dailyLimit?.canGenerate && dailyLimit?.remainingTime && (
+            <Alert className="mb-4">
+              <AlertTitle>Лимит исчерпан</AlertTitle>
+              <AlertDescription>
+                Вы сможете создать новый NFT через {formatTimeRemaining(dailyLimit.remainingTime)}
+              </AlertDescription>
+            </Alert>
+          )}
+          <Button 
+            onClick={() => {
+              console.log('Открытие диалога генерации NFT');
+              setOpenDialog(true);
+            }}
+            disabled={!dailyLimit?.canGenerate}
+          >
+            Создать новый NFT
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {collections.map((collection: NFTCollection) => (
           <Card key={collection.id} className="overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle>{collection.name}</CardTitle>
-              <CardDescription>{collection.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="grid grid-cols-2 gap-2">
-                {collection.nfts.slice(0, 4).map((nft: any) => (
-                  <div 
-                    key={nft.id} 
-                    className="relative rounded-md overflow-hidden aspect-square border"
-                    onClick={() => {
-                      setSelectedCollection(collection.id);
-                      playSoundIfEnabled('click');
-                    }}
-                  >
-                    <div className="w-full h-full relative">
-                      {nft.imagePath.endsWith('.svg') ? (
-                        <object
-                          data={nft.imagePath}
-                          type="image/svg+xml"
-                          className="w-full h-full"
-                          aria-label={nft.name}
-                        >
-                          <img 
-                            src="/assets/nft/fallback-nft.svg" 
-                            alt={nft.name} 
-                            className="w-full h-full object-cover"
-                          />
-                        </object>
-                      ) : (
-                        <img 
-                          src={nft.imagePath} 
-                          alt={nft.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                    <Badge className={`absolute top-1 right-1 ${rarityColors[nft.rarity as NFTRarity]}`}>
-                      {rarityLabels[nft.rarity as NFTRarity]}
-                    </Badge>
-                  </div>
-                ))}
-                {Array(Math.max(0, 4 - collection.nfts.length)).fill(0).map((_, i) => (
-                  <div key={i} className="rounded-md border border-dashed aspect-square flex items-center justify-center bg-muted">
-                    <span className="text-xs text-muted-foreground">Empty</span>
-                  </div>
-                ))}
+            <div className="aspect-video relative">
+              <img 
+                src={collection.imageUrl} 
+                alt={collection.name} 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <h3 className="text-white text-xl font-bold">{collection.name}</h3>
+                <p className="text-white/80 text-sm">{collection.nfts.length} NFTs</p>
               </div>
+            </div>
+            <CardContent className="pt-4">
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {collection.description}
+              </p>
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button 
-                variant="outline" 
-                size="sm"
+                variant="outline"
                 onClick={() => {
+                  console.log('Открытие просмотра коллекции:', collection.id);
                   setSelectedCollection(collection.id);
                   playSoundIfEnabled('click');
                 }}
@@ -304,7 +275,10 @@ export const NFTCollectionView: React.FC = () => {
               <label className="text-sm font-medium">Редкость</label>
               <Select 
                 value={selectedRarity} 
-                onValueChange={(value) => setSelectedRarity(value as NFTRarity)}
+                onValueChange={(value) => {
+                  console.log('Выбор редкости:', value);
+                  setSelectedRarity(value as NFTRarity);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Выберите редкость" />
@@ -323,7 +297,10 @@ export const NFTCollectionView: React.FC = () => {
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => setOpenDialog(false)}
+              onClick={() => {
+                console.log('Закрытие диалога создания NFT');
+                setOpenDialog(false);
+              }}
               disabled={isGenerating}
             >
               Отмена
@@ -349,7 +326,12 @@ export const NFTCollectionView: React.FC = () => {
       </Dialog>
 
       {selectedCollection && (
-        <Dialog open={!!selectedCollection} onOpenChange={(open) => !open && setSelectedCollection(null)}>
+        <Dialog open={!!selectedCollection} onOpenChange={(open) => {
+          if (!open) {
+            console.log('Закрытие просмотра коллекции');
+            setSelectedCollection(null);
+          }
+        }}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>{getCollectionById(selectedCollection)?.name}</DialogTitle>
@@ -406,7 +388,10 @@ export const NFTCollectionView: React.FC = () => {
             </ScrollArea>
             
             <DialogFooter>
-              <Button onClick={() => setSelectedCollection(null)}>
+              <Button onClick={() => {
+                console.log('Закрытие просмотра коллекции');
+                setSelectedCollection(null);
+              }}>
                 Закрыть
               </Button>
             </DialogFooter>

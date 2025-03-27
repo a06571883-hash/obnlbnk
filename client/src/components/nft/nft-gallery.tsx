@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,10 +6,15 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '../../components/ui/loading-spinner';
+import { NFTTabNavigation } from '../../pages/nft-page';
 
-// Helper function for sound playback simulation
+// Импортируем сервис для звука
+import { playSoundEffect } from '../../lib/sound-service';
+
+// Helper function for sound playback
 const playSoundIfEnabled = (sound: string) => {
   console.log(`Playing sound: ${sound}`);
+  playSoundEffect(sound);
 };
 
 type NFT = {
@@ -29,7 +34,11 @@ type NFT = {
   };
 };
 
-export const NFTGallery: React.FC = () => {
+interface NFTGalleryProps {
+  navigation: NFTTabNavigation;
+}
+
+export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
 
   const { 
@@ -65,6 +74,17 @@ export const NFTGallery: React.FC = () => {
     }).format(date);
   };
 
+  // Обработчик для навигации на вкладку коллекций
+  const handleNavigateToCollections = () => {
+    console.log('Переход к коллекциям из компонента NFTGallery');
+    navigation.switchToCollections(); // Используем функцию из переданного пропс
+    playSoundIfEnabled('click');
+  };
+
+  useEffect(() => {
+    console.log('NFTGallery компонент инициализирован');
+  }, []);
+
   if (isLoadingNFTs) {
     return (
       <div className="flex justify-center items-center h-[300px]">
@@ -93,19 +113,7 @@ export const NFTGallery: React.FC = () => {
         </p>
         <Button
           variant="outline"
-          onClick={() => {
-            // Запускаем клик на табе "collections"
-            const collectionsTab = document.querySelector('button[value="collections"]');
-            if (collectionsTab) {
-              collectionsTab.dispatchEvent(
-                new MouseEvent('click', { bubbles: true })
-              );
-              console.log('Клик по табу collections');
-            } else {
-              console.error('Не найден таб collections');
-            }
-            playSoundIfEnabled('click');
-          }}
+          onClick={handleNavigateToCollections}
         >
           Перейти к Коллекциям
         </Button>
