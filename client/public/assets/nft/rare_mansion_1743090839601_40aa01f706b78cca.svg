@@ -1,0 +1,147 @@
+
+  <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      
+    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E1624" />
+      <stop offset="50%" stop-color="#58A6FF" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#0E1624" />
+    </linearGradient>
+  
+      
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  
+      
+    <filter id="metal" x="-10%" y="-10%" width="120%" height="120%">
+      <feSpecularLighting result="specOut" specularExponent="20" lighting-color="#ffffff">
+        <fePointLight x="50" y="50" z="200" />
+      </feSpecularLighting>
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+    </filter>
+  
+      
+    <filter id="shimmer" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="2" seed="60">
+        <animate attributeName="baseFrequency" from="0.01" to="0.02" dur="30s" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="5" />
+      <feGaussianBlur stdDeviation="1" />
+      <feComposite in="SourceGraphic" operator="over" />
+    </filter>
+  
+      
+    <filter id="diamond" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
+      <feSpecularLighting in="blur" surfaceScale="5" specularConstant="1" specularExponent="20" result="specOut">
+        <fePointLight x="50" y="50" z="90" />
+      </feSpecularLighting>
+      <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut" />
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+    </filter>
+  
+    </defs>
+    
+    <!-- Фон с градиентом -->
+    <rect width="256" height="256" fill="url(#backgroundGradient)" />
+    
+    <!-- Декоративные элементы для создания глубины -->
+    <circle cx="153.3912037037037" cy="73.2838220164609" r="38.90534979423868" 
+            fill="#1F6FEB" opacity="0.2666538065843621" filter="url(#shimmer)" />
+    <circle cx="116.9894547325103" cy="50.61664094650206" r="11.707561728395062" 
+            fill="#58A6FF" opacity="0.16935270919067216" filter="url(#glow)" />
+    
+    <!-- Основное содержимое - роскошный предмет -->
+    <g transform="translate(0, 0)">
+      
+    <g>
+      
+    <!-- Эффекты освещения и атмосферы -->
+    <defs>
+      <radialGradient id="sunlight" cx="0.5" cy="0.3" r="0.8">
+        <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.3" />
+        <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+    
+    <!-- Солнечное освещение -->
+    <circle cx="180" cy="80" r="150" fill="url(#sunlight)" opacity="0.3" />
+    
+    <!-- Эффект легкого тумана для создания атмосферы -->
+    <rect x="0" y="200" width="256" height="56" fill="white" opacity="0.1" />
+  
+      
+        <!-- Роскошный пентхаус -->
+        <g transform="translate(28, 70)">
+          <!-- Здание небоскреба (фон) -->
+          <rect x="10" y="30" width="200" height="150" fill="#B0BEC5" stroke="#90A4AE" stroke-width="1" />
+          <rect x="20" y="40" width="180" height="130" fill="#ECEFF1" stroke="#CFD8DC" stroke-width="1" />
+          
+          <!-- Горизонтальные линии (этажи) -->
+          <line x1="10" y1="60" x2="210" y2="60" stroke="#90A4AE" stroke-width="0.5" />
+          <line x1="10" y1="90" x2="210" y2="90" stroke="#90A4AE" stroke-width="0.5" />
+          <line x1="10" y1="120" x2="210" y2="120" stroke="#90A4AE" stroke-width="0.5" />
+          <line x1="10" y1="150" x2="210" y2="150" stroke="#90A4AE" stroke-width="0.5" />
+          
+          <!-- Пентхаус на крыше -->
+          <rect x="30" y="10" width="160" height="60" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="1" />
+          <rect x="20" y="5" width="180" height="5" fill="#BDBDBD" />
+          
+          <!-- Большие панорамные окна пентхауса -->
+          <rect x="40" y="20" width="40" height="40" fill="#388BFD" opacity="0.7" />
+          <line x1="60" y1="20" x2="60" y2="60" stroke="#FFFFFF" stroke-width="0.5" />
+          <line x1="40" y1="40" x2="80" y2="40" stroke="#FFFFFF" stroke-width="0.5" />
+          
+          <rect x="90" y="20" width="40" height="40" fill="#388BFD" opacity="0.7" />
+          <line x1="110" y1="20" x2="110" y2="60" stroke="#FFFFFF" stroke-width="0.5" />
+          <line x1="90" y1="40" x2="130" y2="40" stroke="#FFFFFF" stroke-width="0.5" />
+          
+          <rect x="140" y="20" width="40" height="40" fill="#388BFD" opacity="0.7" />
+          <line x1="160" y1="20" x2="160" y2="60" stroke="#FFFFFF" stroke-width="0.5" />
+          <line x1="140" y1="40" x2="180" y2="40" stroke="#FFFFFF" stroke-width="0.5" />
+          
+          <!-- Терраса пентхауса -->
+          <rect x="50" y="70" width="120" height="20" fill="#E0E0E0" stroke="#BDBDBD" stroke-width="1" />
+          
+          <!-- Мебель на террасе -->
+          <rect x="60" y="75" width="20" height="10" fill="#58A6FF" opacity="0.8" /> <!-- Шезлонг -->
+          <rect x="140" y="75" width="20" height="10" fill="#58A6FF" opacity="0.8" /> <!-- Шезлонг -->
+          <circle cx="110" cy="80" r="5" fill="#58A6FF" opacity="0.8" /> <!-- Стол -->
+          
+          <!-- Бассейн на террасе -->
+          <rect x="90" y="75" width="40" height="10" rx="2" ry="2" fill="#1F6FEB" opacity="0.7" />
+          
+          <!-- Реалистичные окна здания -->
+          <rect x="30" y="100" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="55" y="100" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="80" y="100" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="105" y="100" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="130" y="100" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="155" y="100" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="180" y="100" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          
+          <rect x="30" y="130" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="55" y="130" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="80" y="130" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="105" y="130" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="130" y="130" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="155" y="130" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          <rect x="180" y="130" width="15" height="20" fill="#388BFD" opacity="0.5" />
+          
+          <!-- Улица внизу -->
+          <rect x="0" y="180" width="220" height="3" fill="#424242" />
+          <rect x="0" y="183" width="220" height="30" fill="#616161" opacity="0.7" />
+          <rect x="100" y="183" width="20" height="30" fill="#424242" opacity="0.5" /> <!-- Дорога -->
+        </g>
+      
+    </g>
+  
+    </g>
+    
+    <!-- Добавляем декоративную рамку с эффектом шиммера -->
+    <rect x="8" y="8" width="240" height="240" fill="none" stroke="#58A6FF" stroke-width="1" 
+          opacity="0.5" stroke-dasharray="2,2" filter="url(#shimmer)" />
+  </svg>
+  

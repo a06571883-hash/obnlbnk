@@ -1,0 +1,114 @@
+
+  <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      
+    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E1624" />
+      <stop offset="50%" stop-color="#58A6FF" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#0E1624" />
+    </linearGradient>
+  
+      
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  
+      
+    <filter id="metal" x="-10%" y="-10%" width="120%" height="120%">
+      <feSpecularLighting result="specOut" specularExponent="20" lighting-color="#ffffff">
+        <fePointLight x="50" y="50" z="200" />
+      </feSpecularLighting>
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+    </filter>
+  
+      
+    <filter id="shimmer" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="2" seed="17">
+        <animate attributeName="baseFrequency" from="0.01" to="0.02" dur="30s" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="5" />
+      <feGaussianBlur stdDeviation="1" />
+      <feComposite in="SourceGraphic" operator="over" />
+    </filter>
+  
+      
+    <filter id="diamond" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
+      <feSpecularLighting in="blur" surfaceScale="5" specularConstant="1" specularExponent="20" result="specOut">
+        <fePointLight x="50" y="50" z="90" />
+      </feSpecularLighting>
+      <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut" />
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+    </filter>
+  
+    </defs>
+    
+    <!-- Фон с градиентом -->
+    <rect width="256" height="256" fill="url(#backgroundGradient)" />
+    
+    <!-- Декоративные элементы для создания глубины -->
+    <circle cx="172.57394547325103" cy="141.96502057613168" r="29.67091049382716" 
+            fill="#1F6FEB" opacity="0.2698542524005487" filter="url(#shimmer)" />
+    <circle cx="92.49935699588477" cy="118.2175925925926" r="7.352687757201647" 
+            fill="#58A6FF" opacity="0.10691529492455419" filter="url(#glow)" />
+    
+    <!-- Основное содержимое - роскошный предмет -->
+    <g transform="translate(0, 0)">
+      
+    <g>
+      
+    <!-- Дорога или фон -->
+    <rect x="0" y="180" width="256" height="76" fill="#333" />
+    <line x1="20" y1="210" x2="80" y2="210" stroke="white" stroke-width="4" stroke-dasharray="10,10" />
+    <line x1="120" y1="210" x2="180" y2="210" stroke="white" stroke-width="4" stroke-dasharray="10,10" />
+    <line x1="220" y1="210" x2="240" y2="210" stroke="white" stroke-width="4" stroke-dasharray="10,10" />
+  
+      
+        <!-- Гелендваген или Рендж Ровер в реалистичном стиле -->
+        <g transform="translate(28, 80)">
+          <!-- Корпус -->
+          <path d="M10,60 L30,30 L170,30 L190,60 L190,100 L10,100 Z" fill="#58A6FF" stroke="#000" stroke-width="1" />
+          
+          <!-- Крыша -->
+          <path d="M40,30 L60,10 L140,10 L160,30" fill="none" stroke="#000" stroke-width="1" />
+          <path d="M40,30 L60,10 L140,10 L160,30 L160,30 L40,30 Z" fill="#58A6FF" stroke="#000" stroke-width="1" />
+          
+          <!-- Окна -->
+          <path d="M45,30 L60,15 L140,15 L155,30" fill="none" stroke="#000" stroke-width="1" />
+          <rect x="45" y="30" width="110" height="25" fill="#388BFD" opacity="0.7" />
+          
+          <!-- Колеса -->
+          <circle cx="50" cy="100" r="20" fill="#000" />
+          <circle cx="50" cy="100" r="10" fill="#333" />
+          <circle cx="150" cy="100" r="20" fill="#000" />
+          <circle cx="150" cy="100" r="10" fill="#333" />
+          
+          <!-- Фары -->
+          <rect x="15" y="60" width="20" height="10" fill="#1F6FEB" filter="url(#glow)" />
+          <rect x="165" y="60" width="20" height="10" fill="#1F6FEB" filter="url(#glow)" />
+          
+          <!-- Решетка радиатора -->
+          <rect x="80" y="70" width="40" height="15" fill="#111" />
+          <line x1="85" y1="70" x2="85" y2="85" stroke="#222" stroke-width="2" />
+          <line x1="95" y1="70" x2="95" y2="85" stroke="#222" stroke-width="2" />
+          <line x1="105" y1="70" x2="105" y2="85" stroke="#222" stroke-width="2" />
+          <line x1="115" y1="70" x2="115" y2="85" stroke="#222" stroke-width="2" />
+        </g>
+      
+      
+    <!-- Блики и отражения для реалистичности -->
+    <ellipse cx="155.31147119341563" cy="46.44855967078189" rx="47.37975823045268" ry="10" 
+             fill="white" opacity="0.22735468106995885" filter="url(#shimmer)" />
+    <ellipse cx="82.52893518518519" cy="99.315329218107" rx="22.14446159122085" ry="5" 
+             fill="white" opacity="0.14931841563786008" />
+  
+    </g>
+  
+    </g>
+    
+    <!-- Добавляем декоративную рамку с эффектом шиммера -->
+    <rect x="8" y="8" width="240" height="240" fill="none" stroke="#58A6FF" stroke-width="1" 
+          opacity="0.5" stroke-dasharray="2,2" filter="url(#shimmer)" />
+  </svg>
+  

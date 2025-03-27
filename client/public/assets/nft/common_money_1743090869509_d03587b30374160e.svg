@@ -1,0 +1,125 @@
+
+  <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      
+    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D1117" />
+      <stop offset="50%" stop-color="#C9D1D9" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#0D1117" />
+    </linearGradient>
+  
+      
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  
+      
+    <filter id="metal" x="-10%" y="-10%" width="120%" height="120%">
+      <feSpecularLighting result="specOut" specularExponent="20" lighting-color="#ffffff">
+        <fePointLight x="50" y="50" z="200" />
+      </feSpecularLighting>
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+    </filter>
+  
+      
+    <filter id="shimmer" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="2" seed="61">
+        <animate attributeName="baseFrequency" from="0.01" to="0.02" dur="30s" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="5" />
+      <feGaussianBlur stdDeviation="1" />
+      <feComposite in="SourceGraphic" operator="over" />
+    </filter>
+  
+      
+    <filter id="diamond" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
+      <feSpecularLighting in="blur" surfaceScale="5" specularConstant="1" specularExponent="20" result="specOut">
+        <fePointLight x="50" y="50" z="90" />
+      </feSpecularLighting>
+      <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut" />
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+    </filter>
+  
+    </defs>
+    
+    <!-- Фон с градиентом -->
+    <rect width="256" height="256" fill="url(#backgroundGradient)" />
+    
+    <!-- Декоративные элементы для создания глубины -->
+    <circle cx="138.022762345679" cy="81.41075102880659" r="36.61869855967078" 
+            fill="#79C0FF" opacity="0.2790329218106996" filter="url(#shimmer)" />
+    <circle cx="70.60249485596708" cy="155.502829218107" r="6.351273148148148" 
+            fill="#79C0FF" opacity="0.11815157750342936" filter="url(#glow)" />
+    
+    <!-- Основное содержимое - роскошный предмет -->
+    <g transform="translate(0, 0)">
+      
+    <g>
+      
+    <!-- Роскошный стол или поверхность -->
+    <rect x="0" y="190" width="256" height="66" fill="#79C0FF" opacity="0.3" />
+    <rect x="20" y="190" width="216" height="2" fill="#C9D1D9" opacity="0.5" />
+    <rect x="40" y="130" width="176" height="60" rx="5" ry="5" fill="#111" opacity="0.2" />
+  
+      
+        <!-- Золотые монеты и слитки -->
+        <g transform="translate(0, 0)">
+          <!-- Золотой слиток 1 -->
+          <rect x="80" y="140" width="100" height="40" rx="5" ry="10" fill="#FFD700" stroke="#AA8C00" stroke-width="1" filter="url(#metal)" />
+          <rect x="95" y="150" width="70" height="20" rx="2" ry="2" fill="#AA8C00" opacity="0.5" />
+          <text x="130" y="165" font-family="Arial" font-size="10" text-anchor="middle" fill="#553500">999.9</text>
+          
+          <!-- Золотой слиток 2 -->
+          <rect x="110" y="110" width="80" height="30" rx="4" ry="8" fill="#FFD700" stroke="#AA8C00" stroke-width="1" filter="url(#metal)" />
+          <rect x="120" y="117" width="60" height="15" rx="2" ry="2" fill="#AA8C00" opacity="0.5" />
+          <text x="150" y="128" font-family="Arial" font-size="8" text-anchor="middle" fill="#553500">GOLD</text>
+          
+          <!-- Монета 1 -->
+          <circle cx="70" cy="110" r="25" fill="#FFD700" stroke="#AA8C00" stroke-width="1" filter="url(#metal)" />
+          <circle cx="70" cy="110" r="20" fill="none" stroke="#AA8C00" stroke-width="0.5" />
+          <text x="70" y="115" font-family="Arial" font-size="10" text-anchor="middle" fill="#553500">$</text>
+          
+          <!-- Монета 2 -->
+          <circle cx="60" cy="150" r="20" fill="#FFD700" stroke="#AA8C00" stroke-width="1" filter="url(#metal)" />
+          <circle cx="60" cy="150" r="15" fill="none" stroke="#AA8C00" stroke-width="0.5" />
+          <text x="60" y="155" font-family="Arial" font-size="8" text-anchor="middle" fill="#553500">$</text>
+          
+          <!-- Монета 3 -->
+          <circle cx="200" cy="125" r="22" fill="#FFD700" stroke="#AA8C00" stroke-width="1" filter="url(#metal)" />
+          <circle cx="200" cy="125" r="17" fill="none" stroke="#AA8C00" stroke-width="0.5" />
+          <text x="200" y="130" font-family="Arial" font-size="9" text-anchor="middle" fill="#553500">$</text>
+          
+          <!-- Монета 4 -->
+          <circle cx="180" cy="160" r="18" fill="#FFD700" stroke="#AA8C00" stroke-width="1" filter="url(#metal)" />
+          <circle cx="180" cy="160" r="13" fill="none" stroke="#AA8C00" stroke-width="0.5" />
+          <text x="180" y="165" font-family="Arial" font-size="7" text-anchor="middle" fill="#553500">$</text>
+          
+          <!-- Монета 5 -->
+          <circle cx="100" cy="85" r="15" fill="#FFD700" stroke="#AA8C00" stroke-width="1" filter="url(#metal)" />
+          <circle cx="100" cy="85" r="10" fill="none" stroke="#AA8C00" stroke-width="0.5" />
+          <text x="100" y="90" font-family="Arial" font-size="6" text-anchor="middle" fill="#553500">$</text>
+          
+          <!-- Разбросанные монеты -->
+          <circle cx="114.19495884773661" cy="145.11385459533608" r="12" fill="#FFD700" stroke="#AA8C00" stroke-width="0.5" filter="url(#metal)" />
+          <circle cx="176.30092592592592" cy="123.51371742112482" r="10" fill="#FFD700" stroke="#AA8C00" stroke-width="0.5" filter="url(#metal)" />
+          <circle cx="141.98713991769546" cy="155.16460905349794" r="8" fill="#FFD700" stroke="#AA8C00" stroke-width="0.5" filter="url(#metal)" />
+        </g>
+      
+      
+    <!-- Эффекты блеска и отражения -->
+    <ellipse cx="124.7008744855967" cy="92.92738340192044" rx="29.2636316872428" ry="5" 
+             fill="white" opacity="0.2526474622770919" filter="url(#shimmer)" />
+    <ellipse cx="114.07771776406035" cy="139.9351851851852" rx="18.353845164609055" ry="3" 
+             fill="white" opacity="0.1728369341563786" />
+  
+    </g>
+  
+    </g>
+    
+    <!-- Добавляем декоративную рамку с эффектом шиммера -->
+    <rect x="8" y="8" width="240" height="240" fill="none" stroke="#79C0FF" stroke-width="1" 
+          opacity="0.5" stroke-dasharray="2,2" filter="url(#shimmer)" />
+  </svg>
+  

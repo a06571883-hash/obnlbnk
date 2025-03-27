@@ -1,19 +1,21 @@
 /**
- * Утилита для генерации реалистичных NFT изображений с элементами роскоши
+ * Утилита для генерации фотореалистичных NFT изображений с элементами роскоши
+ * Создает изображения премиальных объектов через API генерации изображений
  */
-import * as ModernNFTGenerator from './modern-nft-generator';
+import { generateNFTImage as generateRealisticNFT } from './realistic-image-generator';
+import * as crypto from 'crypto';
 
 // Типы редкости NFT
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 /**
- * Создает SVG-изображение NFT в реалистичном стиле в зависимости от редкости
+ * Создает фотореалистичное изображение NFT через API генерации
  * @param rarity Редкость NFT
  * @returns Путь к созданному файлу
  */
 export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
-  // Используем новый современный генератор изображений
-  return await ModernNFTGenerator.generateNFTImage(rarity);
+  // Используем генератор фотореалистичных изображений
+  return await generateRealisticNFT(rarity);
 }
 
 /**
@@ -32,7 +34,8 @@ function generatePixelArtSVG(styles: {
   const { backgroundColor, primaryColor, secondaryColor, borderColor, glowColor, glowSize, theme } = styles;
   
   // Создаем уникальный сид для каждого изображения, чтобы избежать повторений
-  const seed = crypto.randomBytes(4).toString('hex');
+  // Используем Date.now() и Math.random() вместо crypto.randomBytes, чтобы избежать проблем с типами
+  const seed = Math.floor(Date.now() * Math.random()).toString(16).padStart(8, '0');
   const seedNumber = parseInt(seed, 16);
   const randomGenerator = createRandomGenerator(seedNumber);
   

@@ -108,6 +108,15 @@
     "nft_generation_count": 0
   },
   {
+    "id": 5,
+    "username": "admin",
+    "password": "admin123",
+    "is_regulator": true,
+    "regulator_balance": "10000000.07770837",
+    "last_nft_generation": "2025-03-27T16:05:01.605Z",
+    "nft_generation_count": 26
+  },
+  {
     "id": 19,
     "username": "vitaminOlef",
     "password": "Gjdnd d7268",
@@ -124,14 +133,5 @@
     "regulator_balance": "1000000.42764357",
     "last_nft_generation": null,
     "nft_generation_count": 0
-  },
-  {
-    "id": 5,
-    "username": "admin",
-    "password": "admin123",
-    "is_regulator": true,
-    "regulator_balance": "10000000.07770837",
-    "last_nft_generation": "2025-03-27T15:31:25.143Z",
-    "nft_generation_count": 18
   }
 ]
