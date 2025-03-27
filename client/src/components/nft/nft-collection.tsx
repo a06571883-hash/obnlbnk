@@ -416,53 +416,77 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
             
             <ScrollArea className="h-[400px] px-1">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-2">
-                {getCollectionById(selectedCollection)?.nfts && getCollectionById(selectedCollection)?.nfts.length > 0 ? getCollectionById(selectedCollection)?.nfts.map((nft: NFT) => (
-                  <Card key={nft.id} className="overflow-hidden">
-                    <div className="relative aspect-square">
-                      <div className="w-full h-full relative">
-                        {nft.imagePath.endsWith('.svg') ? (
-                          <object
-                            data={nft.imagePath}
-                            type="image/svg+xml"
-                            className="w-full h-full"
-                            aria-label={nft.name}
-                          >
-                            <img 
-                              src="/assets/nft/fallback-nft.svg" 
-                              alt={nft.name} 
-                              className="w-full h-full object-cover"
-                            />
-                          </object>
-                        ) : (
-                          <img 
-                            src={nft.imagePath} 
-                            alt={nft.name} 
-                            className="w-full h-full object-cover"
-                          />
-                        )}
+                {(() => {
+                  const collection = getCollectionById(selectedCollection);
+                  
+                  // Если коллекция не найдена или не содержит NFT
+                  if (!collection || !collection.nfts || collection.nfts.length === 0) {
+                    return (
+                      <div className="col-span-full text-center p-4">
+                        <p className="text-muted-foreground">В этой коллекции пока нет NFT</p>
                       </div>
-                      <Badge className={`absolute top-2 right-2 ${rarityColors[nft.rarity]}`}>
-                        {rarityLabels[nft.rarity]}
-                      </Badge>
-                    </div>
-                    <CardHeader className="py-2">
-                      <CardTitle className="text-base">{nft.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-0 space-y-1">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>Сила: {nft.attributes.power}</div>
-                        <div>Ловкость: {nft.attributes.agility}</div>
-                        <div>Мудрость: {nft.attributes.wisdom}</div>
-                        <div>Удача: {nft.attributes.luck}</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )) : (
-                  <div className="col-span-full text-center p-6">
-                    <p className="text-muted-foreground">В этой коллекции пока нет NFT.</p>
-                    <p className="text-sm text-muted-foreground">Создайте NFT, чтобы добавить его в коллекцию.</p>
-                  </div>
-                )}
+                    );
+                  }
+                  
+                  // Отображаем NFT из коллекции
+                  return collection.nfts.map((nft: NFT) => {
+                    // Безопасная обработка отсутствующих атрибутов
+                    const attributes = nft.attributes || {
+                      power: 0,
+                      agility: 0,
+                      wisdom: 0,
+                      luck: 0
+                    };
+                    
+                    return (
+                      <Card key={nft.id} className="overflow-hidden">
+                        <div className="relative aspect-square">
+                          <div className="w-full h-full relative">
+                            {nft.imagePath && nft.imagePath.endsWith('.svg') ? (
+                              <object
+                                data={nft.imagePath}
+                                type="image/svg+xml"
+                                className="w-full h-full"
+                                aria-label={nft.name}
+                              >
+                                <img 
+                                  src="/assets/nft/fallback-nft.svg" 
+                                  alt={nft.name} 
+                                  className="w-full h-full object-cover"
+                                />
+                              </object>
+                            ) : (
+                              <img 
+                                src={nft.imagePath || "/assets/nft/fallback-nft.svg"} 
+                                alt={nft.name} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = "/assets/nft/fallback-nft.svg";
+                                  console.error("Failed to load NFT image:", nft.imagePath);
+                                }}
+                              />
+                            )}
+                          </div>
+                          <Badge className={`absolute top-2 right-2 ${rarityColors[nft.rarity]}`}>
+                            {rarityLabels[nft.rarity]}
+                          </Badge>
+                        </div>
+                        <CardHeader className="py-2">
+                          <CardTitle className="text-base">{nft.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="py-0 space-y-1">
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>Сила: {attributes.power}</div>
+                            <div>Ловкость: {attributes.agility}</div>
+                            <div>Мудрость: {attributes.wisdom}</div>
+                            <div>Удача: {attributes.luck}</div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  });
+                })()}
               </div>
             </ScrollArea>
             

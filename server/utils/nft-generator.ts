@@ -1,8 +1,9 @@
 /**
- * Утилита для генерации NFT изображений
+ * Утилита для генерации NFT изображений в пиксельном стиле
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 // Путь до директории с публичными файлами
 const PUBLIC_DIR = path.join(process.cwd(), 'client', 'public');
@@ -11,7 +12,7 @@ const PUBLIC_DIR = path.join(process.cwd(), 'client', 'public');
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 /**
- * Создает SVG-изображение NFT в зависимости от редкости
+ * Создает SVG-изображение NFT в пиксельном стиле в зависимости от редкости
  * @param rarity Редкость NFT
  * @returns Путь к созданному файлу
  */
@@ -25,18 +26,569 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
   // Определяем цвета и стили в зависимости от редкости
   const styles = getRarityStyles(rarity);
   
-  // Генерируем уникальное имя файла
-  const fileName = `${rarity}_${Date.now()}.svg`;
+  // Генерируем уникальное имя файла с использованием хеша для уникальности
+  const uniqueId = crypto.randomBytes(8).toString('hex');
+  const fileName = `${rarity}_${Date.now()}_${uniqueId}.svg`;
   const filePath = path.join(nftDir, fileName);
   
-  // Генерируем SVG-контент
-  const svgContent = generateSVGContent(styles);
+  // Генерируем SVG-контент в пиксельном стиле
+  const svgContent = generatePixelArtSVG(styles);
   
   // Записываем файл
   fs.writeFileSync(filePath, svgContent);
   
   // Возвращаем публичный путь к файлу
   return `/assets/nft/${fileName}`;
+}
+
+/**
+ * Генерирует SVG-изображение в пиксельном стиле с роскошными объектами
+ */
+function generatePixelArtSVG(styles: {
+  backgroundColor: string;
+  primaryColor: string;
+  secondaryColor: string;
+  borderColor: string;
+  glowColor: string;
+  glowSize: number;
+  complexity: number;
+  theme: 'car' | 'yacht' | 'mansion' | 'jet' | 'character';
+}): string {
+  const { backgroundColor, primaryColor, secondaryColor, borderColor, glowColor, glowSize, theme } = styles;
+  
+  // Создаем уникальный сид для каждого изображения, чтобы избежать повторений
+  const seed = crypto.randomBytes(4).toString('hex');
+  const seedNumber = parseInt(seed, 16);
+  const randomGenerator = createRandomGenerator(seedNumber);
+  
+  // Базовые настройки для пиксельной сетки
+  const pixelSize = 8; // Размер одного пикселя
+  const gridWidth = 32; // Ширина сетки в пикселях
+  const gridHeight = 32; // Высота сетки в пикселях
+  
+  // Создаем фильтр для эффекта шиммера (переливания)
+  const shimmerFilter = `
+    <filter id="shimmer" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="1" seed="${seedNumber % 100}">
+        <animate attributeName="baseFrequency" from="0.01" to="0.02" dur="30s" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="5" />
+      <feGaussianBlur stdDeviation="${glowSize/2}" />
+      <feComposite in="SourceGraphic" operator="over" />
+    </filter>
+  `;
+  
+  // Фильтр для металлического блеска
+  const metalFilter = `
+    <filter id="metal">
+      <feSpecularLighting result="specOut" specularExponent="20" lighting-color="#ffffff">
+        <fePointLight x="50%" y="50%" z="200" />
+      </feSpecularLighting>
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+    </filter>
+  `;
+  
+  // Функция для создания пиксельного объекта в зависимости от темы
+  let pixelArt = '';
+  
+  switch(theme) {
+    case 'car':
+      pixelArt = generatePixelCar(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
+      break;
+    case 'yacht':
+      pixelArt = generatePixelYacht(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
+      break;
+    case 'mansion':
+      pixelArt = generatePixelMansion(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
+      break;
+    case 'jet':
+      pixelArt = generatePixelJet(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
+      break;
+    case 'character':
+      pixelArt = generatePixelCharacter(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
+      break;
+  }
+  
+  // Финальный SVG с пиксельным искусством
+  return `
+  <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      ${shimmerFilter}
+      ${metalFilter}
+    </defs>
+    
+    <!-- Темный фон с градиентом -->
+    <rect width="256" height="256" fill="${backgroundColor}" />
+    <rect width="256" height="256" fill="url(#bgGradient)" />
+    
+    <!-- Градиент фона -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${backgroundColor}" />
+      <stop offset="50%" stop-color="${adjustColor(backgroundColor, -20)}" />
+      <stop offset="100%" stop-color="${backgroundColor}" />
+    </linearGradient>
+    
+    <!-- Рамка с эффектом шиммера -->
+    <rect x="8" y="8" width="240" height="240" fill="none" stroke="${glowColor}" stroke-width="2" filter="url(#shimmer)" />
+    
+    <!-- Пиксельное искусство по центру -->
+    <g transform="translate(0, 0)">
+      ${pixelArt}
+    </g>
+    
+    <!-- Добавляем небольшие блестящие эффекты -->
+    ${generateShimmerEffects(randomGenerator, pixelSize, gridWidth, gridHeight, glowColor)}
+  </svg>
+  `;
+}
+
+/**
+ * Создает генератор случайных чисел с фиксированным семенем для повторяемости
+ */
+function createRandomGenerator(seed: number) {
+  let currentSeed = seed;
+  return () => {
+    currentSeed = (currentSeed * 9301 + 49297) % 233280;
+    return currentSeed / 233280;
+  };
+}
+
+/**
+ * Изменяет яркость цвета на заданную величину
+ */
+function adjustColor(color: string, amount: number): string {
+  const hex = color.replace('#', '');
+  const r = Math.max(0, Math.min(255, parseInt(hex.substring(0, 2), 16) + amount));
+  const g = Math.max(0, Math.min(255, parseInt(hex.substring(2, 4), 16) + amount));
+  const b = Math.max(0, Math.min(255, parseInt(hex.substring(4, 6), 16) + amount));
+  
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/**
+ * Генерирует эффекты шиммера для пиксельного искусства
+ */
+function generateShimmerEffects(randomGenerator: () => number, pixelSize: number, gridWidth: number, gridHeight: number, glowColor: string): string {
+  let effects = '';
+  
+  // Добавляем случайные блестящие эффекты
+  const numEffects = Math.floor(randomGenerator() * 15) + 5;
+  
+  for (let i = 0; i < numEffects; i++) {
+    const x = Math.floor(randomGenerator() * gridWidth) * pixelSize;
+    const y = Math.floor(randomGenerator() * gridHeight) * pixelSize;
+    const opacity = randomGenerator() * 0.5 + 0.2;
+    const size = Math.floor(randomGenerator() * 2) + 1;
+    
+    effects += `<rect x="${x}" y="${y}" width="${pixelSize * size}" height="${pixelSize * size}" fill="${glowColor}" opacity="${opacity}" filter="url(#shimmer)" />`;
+  }
+  
+  return effects;
+}
+
+/**
+ * Генерирует пиксельное изображение автомобиля премиум-класса
+ */
+function generatePixelCar(randomGenerator: () => number, pixelSize: number, primaryColor: string, secondaryColor: string, borderColor: string): string {
+  let pixels = '';
+  
+  // Создаем пиксельный массив для машины (1 = основной цвет, 2 = вторичный цвет, 3 = контур)
+  const model = [
+    "       11111111111        ",
+    "      1111111111111       ",
+    "     111111111111111      ",
+    "    11111111111111111     ",
+    "   1111111111111111111    ",
+    "  111111111111111111111   ",
+    " 11111111111111111111111  ",
+    "11111111111111111111111113",
+    "1111111111111111111111111 ",
+    "1111111111111111111111111 ",
+    "1111111111111111111111111 ",
+    "1111222222222222222211111 ",
+    "1112222222222222222221111 ",
+    "1122222222222222222222111 ",
+    "1111111111111111111111111 ",
+    "1111111111111111111111111 ",
+    "1111111111111111111111111 ",
+    "1111111111111111111111111 ",
+    "1111111111111111111111111 ",
+    "11222211       11222211   ",
+    "12222221       12222221   ",
+    "12222221       12222221   ",
+    "11222211       11222211   "
+  ];
+  
+  // Для каждого элемента добавляем случайные вариации, чтобы машины не были одинаковыми
+  const variation = Math.floor(randomGenerator() * 3);
+  const variantColor = adjustColor(primaryColor, 20 + Math.floor(randomGenerator() * 30));
+  
+  // Рисуем пиксели машины
+  for (let y = 0; y < model.length; y++) {
+    for (let x = 0; x < model[y].length; x++) {
+      const code = model[y][x];
+      
+      if (code === ' ') continue;
+      
+      const pixelX = (x + 4) * pixelSize;
+      const pixelY = (y + 3) * pixelSize;
+      
+      let pixelColor;
+      
+      if (code === '1') {
+        // Основной цвет с вариациями
+        pixelColor = variation === 0 && randomGenerator() > 0.8 ? variantColor : primaryColor;
+      } else if (code === '2') {
+        // Вторичный цвет (окна, детали)
+        pixelColor = secondaryColor;
+      } else if (code === '3') {
+        // Контур
+        pixelColor = borderColor;
+      }
+      
+      // Добавляем небольшие вариации в размере пикселей для эффекта пиксельного искусства
+      const variance = 0.9 + randomGenerator() * 0.2;
+      const actualSize = pixelSize * variance;
+      const offset = (pixelSize - actualSize) / 2;
+      
+      pixels += `<rect x="${pixelX + offset}" y="${pixelY + offset}" width="${actualSize}" height="${actualSize}" fill="${pixelColor}" />`;
+    }
+  }
+  
+  // Добавляем блестящие пиксели
+  for (let i = 0; i < 10; i++) {
+    const x = (4 + Math.floor(randomGenerator() * 24)) * pixelSize;
+    const y = (3 + Math.floor(randomGenerator() * 20)) * pixelSize;
+    pixels += `<rect x="${x}" y="${y}" width="${pixelSize}" height="${pixelSize}" fill="white" opacity="0.5" filter="url(#metal)" />`;
+  }
+  
+  return pixels;
+}
+
+/**
+ * Генерирует пиксельное изображение яхты
+ */
+function generatePixelYacht(randomGenerator: () => number, pixelSize: number, primaryColor: string, secondaryColor: string, borderColor: string): string {
+  let pixels = '';
+  
+  // Базовая модель яхты в пикселях
+  const model = [
+    "                          ",
+    "                          ",
+    "            1             ",
+    "           111            ",
+    "          11111           ",
+    "         1111111          ",
+    "        111111111         ",
+    "       11111111111        ",
+    "      1111111111111       ",
+    "     111111111111111      ",
+    "    11111111111111111     ",
+    "   1111111111111111111    ",
+    "  111111111111111111111   ",
+    " 11111111111111111111111  ",
+    "11111111111111111111111113",
+    "1111111111111111111111111 ",
+    "1111111111111111111111111 ",
+    "1111111111111111111111111 ",
+    "2221111222111122211112221 ",
+    "2221111222111122211112221 ",
+    "1111111111111111111111111 ",
+    "1111111111111111111111111 ",
+    "1111111111111111111111111 "
+  ];
+  
+  // Рисуем пиксели яхты
+  for (let y = 0; y < model.length; y++) {
+    for (let x = 0; x < model[y].length; x++) {
+      const code = model[y][x];
+      
+      if (code === ' ') continue;
+      
+      const pixelX = (x + 4) * pixelSize;
+      const pixelY = (y + 3) * pixelSize;
+      
+      let pixelColor;
+      
+      if (code === '1') {
+        // Основной цвет яхты
+        pixelColor = primaryColor;
+      } else if (code === '2') {
+        // Окна, детали
+        pixelColor = secondaryColor;
+      } else if (code === '3') {
+        // Контур
+        pixelColor = borderColor;
+      }
+      
+      pixels += `<rect x="${pixelX}" y="${pixelY}" width="${pixelSize}" height="${pixelSize}" fill="${pixelColor}" />`;
+    }
+  }
+  
+  // Добавляем эффект воды под яхтой
+  const waterBlue = '#3A7CA5';
+  for (let x = 0; x < 28; x++) {
+    for (let y = 22; y < 26; y++) {
+      if (randomGenerator() > 0.3) {
+        const pixelX = (x + 4) * pixelSize;
+        const pixelY = (y + 3) * pixelSize;
+        const opacity = 0.2 + randomGenerator() * 0.3;
+        pixels += `<rect x="${pixelX}" y="${pixelY}" width="${pixelSize}" height="${pixelSize}" fill="${waterBlue}" opacity="${opacity}" />`;
+      }
+    }
+  }
+  
+  return pixels;
+}
+
+/**
+ * Генерирует пиксельное изображение особняка
+ */
+function generatePixelMansion(randomGenerator: () => number, pixelSize: number, primaryColor: string, secondaryColor: string, borderColor: string): string {
+  let pixels = '';
+  
+  // Модель особняка в пикселях
+  const model = [
+    "           11            ",
+    "          1111           ",
+    "         111111          ",
+    "        11111111         ",
+    "       1111111111        ",
+    "      111111111111       ",
+    "     11111111111111      ",
+    "    1111111111111111     ",
+    "   111111111111111111    ",
+    "  11111111111111111111   ",
+    " 1111111111111111111111  ",
+    "111111111111111111111111 ",
+    "111111111111111111111111 ",
+    "111111111111111111111111 ",
+    "111222111222111222111222 ",
+    "111222111222111222111222 ",
+    "111222111222111222111222 ",
+    "111222111222111222111222 ",
+    "111111111111111111111111 ",
+    "111111111111111111111111 ",
+    "111111111111122111111111 ",
+    "111111111111122111111111 ",
+    "111111111111122111111111 "
+  ];
+  
+  // Рисуем пиксели особняка
+  for (let y = 0; y < model.length; y++) {
+    for (let x = 0; x < model[y].length; x++) {
+      const code = model[y][x];
+      
+      if (code === ' ') continue;
+      
+      const pixelX = (x + 4) * pixelSize;
+      const pixelY = (y + 3) * pixelSize;
+      
+      let pixelColor;
+      
+      if (code === '1') {
+        // Основной цвет особняка
+        pixelColor = primaryColor;
+      } else if (code === '2') {
+        // Окна, детали
+        pixelColor = secondaryColor;
+      } else if (code === '3') {
+        // Контур
+        pixelColor = borderColor;
+      }
+      
+      pixels += `<rect x="${pixelX}" y="${pixelY}" width="${pixelSize}" height="${pixelSize}" fill="${pixelColor}" />`;
+    }
+  }
+  
+  // Добавляем элементы ландшафта
+  const greenColor = '#2E7D32';
+  for (let i = 0; i < 20; i++) {
+    const x = (4 + Math.floor(randomGenerator() * 24)) * pixelSize;
+    const y = (26 + Math.floor(randomGenerator() * 3)) * pixelSize;
+    pixels += `<rect x="${x}" y="${y}" width="${pixelSize}" height="${pixelSize}" fill="${greenColor}" opacity="0.8" />`;
+  }
+  
+  return pixels;
+}
+
+/**
+ * Генерирует пиксельное изображение частного самолета
+ */
+function generatePixelJet(randomGenerator: () => number, pixelSize: number, primaryColor: string, secondaryColor: string, borderColor: string): string {
+  let pixels = '';
+  
+  // Модель самолета в пикселях
+  const model = [
+    "                          ",
+    "                  1       ",
+    "                 111      ",
+    "                11111     ",
+    "               1111111    ",
+    "              111111111   ",
+    "             11111111111  ",
+    "            1111111111111 ",
+    "           111111111111111",
+    "          111111111111111 ",
+    "      111111111111111111  ",
+    "     1111111111111111111  ",
+    "    11111111111111111111  ",
+    "111111111111111111111111  ",
+    "111111111111111111111111  ",
+    "    11111111111111111111  ",
+    "      11111111111111111   ",
+    "        1111111111111     ",
+    "                          ",
+    "                          ",
+    "                          ",
+    "                          ",
+    "                          "
+  ];
+  
+  // Рисуем пиксели самолета
+  for (let y = 0; y < model.length; y++) {
+    for (let x = 0; x < model[y].length; x++) {
+      const code = model[y][x];
+      
+      if (code === ' ') continue;
+      
+      const pixelX = (x + 4) * pixelSize;
+      const pixelY = (y + 3) * pixelSize;
+      
+      let pixelColor = primaryColor;
+      
+      // Добавляем окна по бокам самолета
+      if (y >= 10 && y <= 14 && x >= 12 && x <= 24 && x % 3 === 0) {
+        pixelColor = secondaryColor;
+      }
+      
+      pixels += `<rect x="${pixelX}" y="${pixelY}" width="${pixelSize}" height="${pixelSize}" fill="${pixelColor}" />`;
+    }
+  }
+  
+  // Добавляем облака
+  const cloudColor = '#FFFFFF';
+  for (let i = 0; i < 15; i++) {
+    const x = (4 + Math.floor(randomGenerator() * 24)) * pixelSize;
+    const y = (20 + Math.floor(randomGenerator() * 6)) * pixelSize;
+    const opacity = 0.2 + randomGenerator() * 0.3;
+    const size = 1 + Math.floor(randomGenerator() * 2);
+    
+    for (let dx = 0; dx < size; dx++) {
+      for (let dy = 0; dy < size; dy++) {
+        pixels += `<rect x="${x + dx * pixelSize}" y="${y + dy * pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="${cloudColor}" opacity="${opacity}" />`;
+      }
+    }
+  }
+  
+  return pixels;
+}
+
+/**
+ * Генерирует пиксельное изображение персонажа-блондина
+ */
+function generatePixelCharacter(randomGenerator: () => number, pixelSize: number, primaryColor: string, secondaryColor: string, borderColor: string): string {
+  let pixels = '';
+  
+  // Основные цвета
+  const hairColor = '#FFD700'; // Золотистый блонд
+  const skinColor = '#FFE0B2'; // Светлый тон кожи
+  
+  // Модель персонажа в пикселях
+  const model = [
+    "       33333333        ",
+    "      3333333333       ",
+    "     333333333333      ",
+    "    33333333333333     ",
+    "    33322222222333     ",
+    "    33222222222233     ",
+    "    32222222222223     ",
+    "    32222222222223     ",
+    "    32222222222223     ",
+    "    32222222222223     ",
+    "    33222222222233     ",
+    "    33322222222333     ",
+    "     333333333333      ",
+    "      33333333333      ",
+    "      31111111113      ",
+    "     3111111111113     ",
+    "    311111111111113    ",
+    "   31111111111111113   ",
+    "   31111111111111113   ",
+    "   31111111111111113   ",
+    "   31111111111111113   ",
+    "   31111111111111113   ",
+    "   31111111111111113   "
+  ];
+  
+  // Генерируем уникальные вариации для блондина
+  const hairstyle = Math.floor(randomGenerator() * 3); // 3 варианта прически
+  
+  // Рисуем пиксели персонажа
+  for (let y = 0; y < model.length; y++) {
+    for (let x = 0; x < model[y].length; x++) {
+      const code = model[y][x];
+      
+      if (code === ' ') continue;
+      
+      const pixelX = (x + 6) * pixelSize;
+      const pixelY = (y + 3) * pixelSize;
+      
+      let pixelColor;
+      
+      if (code === '1') {
+        // Тело/одежда
+        pixelColor = primaryColor;
+      } else if (code === '2') {
+        // Лицо
+        pixelColor = skinColor;
+      } else if (code === '3') {
+        // Волосы
+        pixelColor = hairColor;
+        
+        // Вариации причесок
+        if (hairstyle === 1 && y < 5 && (x < 10 || x > 18)) {
+          continue; // Более короткие волосы по бокам
+        } else if (hairstyle === 2 && y < 4 && x > 15) {
+          continue; // Асимметричная прическа
+        }
+      }
+      
+      pixels += `<rect x="${pixelX}" y="${pixelY}" width="${pixelSize}" height="${pixelSize}" fill="${pixelColor}" />`;
+    }
+  }
+  
+  // Добавляем детали лица
+  // Глаза
+  pixels += `<rect x="${(12 + 6) * pixelSize}" y="${(6 + 3) * pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="#000000" />`;
+  pixels += `<rect x="${(16 + 6) * pixelSize}" y="${(6 + 3) * pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="#000000" />`;
+  
+  // Рот
+  pixels += `<rect x="${(13 + 6) * pixelSize}" y="${(9 + 3) * pixelSize}" width="${3 * pixelSize}" height="${pixelSize}" fill="#d95157" opacity="0.8" />`;
+  
+  // Добавляем аксессуары в зависимости от рандома
+  const accessory = Math.floor(randomGenerator() * 5);
+  
+  if (accessory === 0) {
+    // Солнцезащитные очки
+    for (let i = 11; i <= 17; i++) {
+      pixels += `<rect x="${(i + 6) * pixelSize}" y="${(6 + 3) * pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="#000000" opacity="0.7" />`;
+    }
+  } else if (accessory === 1) {
+    // Золотая цепочка
+    for (let i = 10; i <= 19; i++) {
+      pixels += `<rect x="${(i + 6) * pixelSize}" y="${(15 + 3) * pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="${hairColor}" opacity="0.9" />`;
+    }
+  }
+  
+  // Добавляем эффект шиммера в волосах
+  for (let i = 0; i < 8; i++) {
+    const x = (8 + Math.floor(randomGenerator() * 12)) * pixelSize;
+    const y = (2 + Math.floor(randomGenerator() * 5)) * pixelSize;
+    pixels += `<rect x="${x}" y="${y}" width="${pixelSize}" height="${pixelSize}" fill="white" opacity="0.5" filter="url(#metal)" />`;
+  }
+  
+  return pixels;
 }
 
 /**

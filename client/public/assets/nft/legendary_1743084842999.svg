@@ -1,0 +1,177 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+      <defs>
+        
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="7" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  
+        
+    <filter id="luxury">
+      <feSpecularLighting result="specOut" specularExponent="20" lighting-color="#cccccc">
+        <fePointLight x="100" y="100" z="200"/>
+      </feSpecularLighting>
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+    </filter>
+  
+        
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#000000" />
+          <stop offset="100%" stop-color="#B9F2FF" />
+        </linearGradient>
+        
+        <linearGradient id="metalgrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#333" stop-opacity="0.1" />
+          <stop offset="50%" stop-color="#FFF" stop-opacity="0.3" />
+          <stop offset="100%" stop-color="#333" stop-opacity="0.1" />
+        </linearGradient>
+        
+        <pattern id="pattern1" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="10" cy="10" r="1" fill="#FFD700" opacity="0.3" />
+        </pattern>
+        
+        <filter id="blur">
+          <feGaussianBlur stdDeviation="1" />
+        </filter>
+      </defs>
+      
+      <!-- Фон -->
+      <rect width="400" height="400" fill="url(#grad1)" />
+      <rect width="400" height="400" fill="url(#pattern1)" />
+      
+      <!-- Декоративные элементы роскоши -->
+      
+        <g filter="url(#luxury)">
+          <circle cx="94.33392657990241" cy="109.39933676290354" r="30.406379902117685" fill="#FFD700" opacity="0.9" stroke="#E0E0E0" stroke-width="0.5" />
+          <circle cx="94.33392657990241" cy="109.39933676290354" r="28.406379902117685" fill="#FFD700" opacity="0.8" />
+          <text x="94.33392657990241" y="114.39933676290354" font-family="Arial" font-size="15.203189951058842" font-weight="bold" text-anchor="middle" fill="#222">$</text>
+        </g>
+      
+        <g transform="translate(33.23294814880598, 230.09503175088005) scale(0.7885702761908208)">
+          <ellipse cx="0" cy="0" rx="20" ry="5" fill="#FFD700" opacity="0.2" filter="url(#glow)" />
+          <ellipse cx="0" cy="0" rx="10" ry="2" fill="white" opacity="0.4" />
+        </g>
+      
+        <g filter="url(#luxury)">
+          <circle cx="354.60704174658986" cy="256.4977930053767" r="36.91681387746473" fill="#FFD700" opacity="0.9" stroke="#E0E0E0" stroke-width="0.5" />
+          <circle cx="354.60704174658986" cy="256.4977930053767" r="34.91681387746473" fill="#FFD700" opacity="0.8" />
+          <text x="354.60704174658986" y="261.4977930053767" font-family="Arial" font-size="18.458406938732367" font-weight="bold" text-anchor="middle" fill="#222">$</text>
+        </g>
+      
+        <g transform="translate(369.20895242342607, 279.3742596484382) scale(0.4159264016138498)">
+          <ellipse cx="0" cy="0" rx="20" ry="5" fill="#FFD700" opacity="0.2" filter="url(#glow)" />
+          <ellipse cx="0" cy="0" rx="10" ry="2" fill="white" opacity="0.4" />
+        </g>
+      
+        <g filter="url(#luxury)">
+          <polygon points="268.9493685099921,321.74969543390836 284.25795350496054,339.6097112613715 289.36081516995,347.2640037588557 284.25795350496054,354.91829625633994 268.9493685099921,372.7783120838031 253.64078351502366,354.91829625633994 248.5379218500342,347.2640037588557 253.64078351502366,339.6097112613715" 
+                  fill="#B9F2FF" opacity="0.7" filter="url(#glow)" />
+          <line x1="258.7436451800131" y1="337.05828042887674" x2="279.1550918399711" y2="357.4697270888347" 
+                stroke="white" opacity="0.8" stroke-width="1" />
+          <line x1="279.1550918399711" y1="337.05828042887674" x2="258.7436451800131" y2="357.4697270888347" 
+                stroke="white" opacity="0.8" stroke-width="1" />
+        </g>
+      
+        <g filter="url(#luxury)">
+          <polygon points="82.01029804942908,333.10447047321486 77.7538777591476,338.09913253418995 77.23186199693501,344.64063559807863 70.69035893304631,345.16265136029125 65.69569687207124,349.41907165057273 60.70103481109617,345.16265136029125 54.159531747207474,344.64063559807863 53.63751598499488,338.09913253418995 49.381095694713395,333.10447047321486 53.63751598499488,328.1098084122398 54.159531747207474,321.5683053483511 60.701034811096164,321.0462895861385 65.69569687207124,316.789869295857 70.69035893304631,321.0462895861385 77.231861996935,321.5683053483511 77.7538777591476,328.1098084122398" fill="#E0F7FA" stroke="#B2EBF2" stroke-width="0.5" filter="url(#glow)" opacity="0.7" />
+          <polygon points="82.01029804942908,333.10447047321486 77.7538777591476,338.09913253418995 77.23186199693501,344.64063559807863 70.69035893304631,345.16265136029125 65.69569687207124,349.41907165057273 60.70103481109617,345.16265136029125 54.159531747207474,344.64063559807863 53.63751598499488,338.09913253418995 49.381095694713395,333.10447047321486 53.63751598499488,328.1098084122398 54.159531747207474,321.5683053483511 60.701034811096164,321.0462895861385 65.69569687207124,316.789869295857 70.69035893304631,321.0462895861385 77.231861996935,321.5683053483511 77.7538777591476,328.1098084122398" fill="none" stroke="#FFFFFF" stroke-width="1" opacity="0.5" />
+        </g>
+      
+        <g filter="url(#luxury)">
+          <polygon points="361.6718558353811,103.41086254702556 356.586018167191,109.37879774073431 355.9622810252289,117.19499548907882 348.1460832768844,117.81873263104094 342.17814808317564,122.90457029923104 336.2102128894669,117.81873263104094 328.3940151411224,117.19499548907882 327.77027799916027,109.37879774073431 322.6844403309702,103.41086254702556 327.77027799916027,97.4429273533168 328.3940151411224,89.6267296049723 336.2102128894669,89.00299246301017 342.17814808317564,83.91715479482008 348.1460832768844,89.00299246301017 355.9622810252289,89.6267296049723 356.586018167191,97.44292735331679" fill="#E0F7FA" stroke="#B2EBF2" stroke-width="0.5" filter="url(#glow)" opacity="0.7" />
+          <polygon points="361.6718558353811,103.41086254702556 356.586018167191,109.37879774073431 355.9622810252289,117.19499548907882 348.1460832768844,117.81873263104094 342.17814808317564,122.90457029923104 336.2102128894669,117.81873263104094 328.3940151411224,117.19499548907882 327.77027799916027,109.37879774073431 322.6844403309702,103.41086254702556 327.77027799916027,97.4429273533168 328.3940151411224,89.6267296049723 336.2102128894669,89.00299246301017 342.17814808317564,83.91715479482008 348.1460832768844,89.00299246301017 355.9622810252289,89.6267296049723 356.586018167191,97.44292735331679" fill="none" stroke="#FFFFFF" stroke-width="1" opacity="0.5" />
+        </g>
+      
+      
+      <!-- Основной роскошный элемент в зависимости от темы -->
+      
+      <g transform="translate(100, 100) scale(1.2)">
+        <!-- Роскошный персонаж-блондин в реалистичном стиле -->
+        
+        <!-- Силуэт фигуры -->
+        <path d="M80,140 C80,170 120,170 120,140 L115,100 L85,100 Z" 
+              fill="#B9F2FF" stroke="#E0E0E0" stroke-width="1" filter="url(#luxury)" />
+              
+        <!-- Голова и шея -->
+        <ellipse cx="100" cy="70" rx="35" ry="40" fill="#FFE0B2" stroke="#CCC" stroke-width="0.5" />
+        <path d="M85,100 C90,110 110,110 115,100" fill="#FFE0B2" />
+        
+        <!-- Стильная блондинистая прическа -->
+        <path d="M65,70 C65,40 135,40 135,70" fill="#FFD700" stroke="#E6C200" stroke-width="0.5" />
+        <path d="M70,90 C60,75 60,60 65,45" fill="#FFD700" stroke="#E6C200" stroke-width="0.5" />
+        <path d="M130,90 C140,75 140,60 135,45" fill="#FFD700" stroke="#E6C200" stroke-width="0.5" />
+        
+        <!-- Эффект шиммера на волосах -->
+        <path d="M70,55 C85,45 115,45 130,55" fill="none" stroke="#FFF" stroke-width="1.5" opacity="0.5" />
+        <path d="M75,65 C85,60 115,60 125,65" fill="none" stroke="#FFF" stroke-width="1" opacity="0.4" />
+        <path d="M80,75 C85,70 115,70 120,75" fill="none" stroke="#FFF" stroke-width="0.5" opacity="0.3" />
+        
+        <!-- Лицо с чертами фотомодели -->
+        <!-- Глаза - выразительные голубые -->
+        <ellipse cx="85" cy="65" rx="5" ry="3" fill="white" stroke="#888" stroke-width="0.5" />
+        <ellipse cx="115" cy="65" rx="5" ry="3" fill="white" stroke="#888" stroke-width="0.5" />
+        
+        <ellipse cx="85" cy="65" rx="3" ry="2" fill="#1E88E5" />
+        <ellipse cx="115" cy="65" rx="3" ry="2" fill="#1E88E5" />
+        
+        <circle cx="86" cy="64" r="1" fill="white" opacity="0.8" /> <!-- Блик в глазу -->
+        <circle cx="116" cy="64" r="1" fill="white" opacity="0.8" /> <!-- Блик в глазу -->
+        
+        <!-- Брови - ухоженные -->
+        <path d="M78,57 Q85,54 92,57" fill="none" stroke="#D7A100" stroke-width="1.5" />
+        <path d="M108,57 Q115,54 122,57" fill="none" stroke="#D7A100" stroke-width="1.5" />
+        
+        <!-- Нос - изысканный -->
+        <path d="M100,65 L100,75" fill="none" stroke="#DBAC97" stroke-width="0.8" />
+        <path d="M97,75 C100,77 103,77 103,75" fill="none" stroke="#DBAC97" stroke-width="0.8" />
+        
+        <!-- Губы - ухоженные -->
+        <path d="M90,85 C100,90 110,85 110,85" fill="none" stroke="#E57373" stroke-width="1.5" />
+        <path d="M90,85 C100,83 110,85 110,85" fill="none" stroke="#E57373" stroke-width="1" />
+        
+        <!-- Высокие скулы и контур лица -->
+        <path d="M70,70 C75,90 125,90 130,70" fill="none" stroke="#DBAC97" stroke-width="0.5" opacity="0.3" />
+        
+        <!-- Дизайнерская одежда -->
+        <!-- Пиджак/блейзер высокого класса -->
+        <path d="M70,120 L85,100 L115,100 L130,120" 
+              fill="#FFD700" stroke="#222" stroke-width="1" />
+        <path d="M70,120 L70,180 L85,180 L85,140 C85,130 115,130 115,140 L115,180 L130,180 L130,120" 
+              fill="#FFD700" stroke="#222" stroke-width="1" />
+              
+        <!-- Рубашка/блузка под пиджаком -->
+        <path d="M85,100 L115,100 L115,140 C115,130 85,130 85,140 Z" 
+              fill="white" stroke="#DDD" stroke-width="0.5" />
+              
+        <!-- Галстук/шарф/аксессуар на шее -->
+        <path d="M95,100 L105,100 L102,130 L98,130 Z" 
+              fill="#FFD700" stroke="#222" stroke-width="0.5" />
+              
+        <!-- Элитные аксессуары -->
+        <!-- Дизайнерские золотые наручные часы -->
+        <path d="M130,130 L140,130 L140,137 L130,137 Z" 
+              fill="#FFD700" stroke="#222" stroke-width="0.5" filter="url(#glow)" />
+              
+        <!-- Золотая цепь с подвеской -->
+        <path d="M90,110 C95,115 105,115 110,110" 
+              fill="none" stroke="#FFD700" stroke-width="2" opacity="0.8" />
+        <circle cx="100" cy="115" r="5" fill="#FFD700" stroke="#222" stroke-width="0.5" opacity="0.9" />
+        <text x="100" y="118" font-family="Arial" font-size="7" font-weight="bold" text-anchor="middle" fill="#222">$</text>
+        
+        <!-- Солнечные очки премиум-класса -->
+        <path d="M65,45 Q100,40 135,45" fill="none" stroke="#222" stroke-width="1" />
+        <path d="M75,45 C75,43 85,43 85,45" fill="#222" opacity="0.7" />
+        <path d="M115,45 C115,43 125,43 125,45" fill="#222" opacity="0.7" />
+      </g>
+    
+      
+      <!-- Рамка -->
+      <rect width="390" height="390" x="5" y="5" stroke="#E0E0E0" stroke-width="2" fill="none" rx="10" ry="10" />
+      <rect width="396" height="396" x="2" y="2" stroke="#E0E0E0" stroke-width="1" fill="none" rx="12" ry="12" opacity="0.5" />
+      
+      <!-- Премиальная надпись -->
+      <text x="200" y="380" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#FFD700" filter="url(#blur)" opacity="0.8">Bnalbank Luxury NFT</text>
+      <text x="200" y="380" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Bnalbank Luxury NFT</text>
+    </svg>
+  

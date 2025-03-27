@@ -1,0 +1,180 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+      <defs>
+        
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="7" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  
+        
+    <filter id="luxury">
+      <feSpecularLighting result="specOut" specularExponent="20" lighting-color="#cccccc">
+        <fePointLight x="100" y="100" z="200"/>
+      </feSpecularLighting>
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+    </filter>
+  
+        
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#000000" />
+          <stop offset="100%" stop-color="#B9F2FF" />
+        </linearGradient>
+        
+        <linearGradient id="metalgrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#333" stop-opacity="0.1" />
+          <stop offset="50%" stop-color="#FFF" stop-opacity="0.3" />
+          <stop offset="100%" stop-color="#333" stop-opacity="0.1" />
+        </linearGradient>
+        
+        <pattern id="pattern1" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="10" cy="10" r="1" fill="#FFD700" opacity="0.3" />
+        </pattern>
+        
+        <filter id="blur">
+          <feGaussianBlur stdDeviation="1" />
+        </filter>
+      </defs>
+      
+      <!-- Фон -->
+      <rect width="400" height="400" fill="url(#grad1)" />
+      <rect width="400" height="400" fill="url(#pattern1)" />
+      
+      <!-- Декоративные элементы роскоши -->
+      
+        <g transform="translate(44.961966097898376, 379.2919040890648) scale(0.9547479779764607)">
+          <ellipse cx="0" cy="0" rx="20" ry="5" fill="#FFD700" opacity="0.2" filter="url(#glow)" />
+          <ellipse cx="0" cy="0" rx="10" ry="2" fill="white" opacity="0.4" />
+        </g>
+      
+        <g filter="url(#luxury)">
+          <polygon points="74.78939511018089,97.77663603138254 64.84267828022783,109.44853067375662 63.62279335031235,124.73519744567643 48.33612657839253,125.95508237559191 36.664231936018446,135.901799205545 24.992337293644365,125.95508237559191 9.70567052172455,124.73519744567643 8.48578559180907,109.44853067375662 -1.460931238143992,97.77663603138254 8.485785591809066,86.10474138900845 9.705670521724542,70.81807461708864 24.992337293644347,69.59818968717317 36.66423193601844,59.6514728572201 48.33612657839254,69.59818968717316 63.622793350312335,70.81807461708863 64.84267828022782,86.10474138900844" fill="#E0F7FA" stroke="#B2EBF2" stroke-width="0.5" filter="url(#glow)" opacity="0.7" />
+          <polygon points="74.78939511018089,97.77663603138254 64.84267828022783,109.44853067375662 63.62279335031235,124.73519744567643 48.33612657839253,125.95508237559191 36.664231936018446,135.901799205545 24.992337293644365,125.95508237559191 9.70567052172455,124.73519744567643 8.48578559180907,109.44853067375662 -1.460931238143992,97.77663603138254 8.485785591809066,86.10474138900845 9.705670521724542,70.81807461708864 24.992337293644347,69.59818968717317 36.66423193601844,59.6514728572201 48.33612657839254,69.59818968717316 63.622793350312335,70.81807461708863 64.84267828022782,86.10474138900844" fill="none" stroke="#FFFFFF" stroke-width="1" opacity="0.5" />
+        </g>
+      
+        <g filter="url(#luxury)">
+          <circle cx="298.3055706936207" cy="206.50202978202603" r="15.830626957536115" fill="#FFD700" opacity="0.9" stroke="#E0E0E0" stroke-width="0.5" />
+          <circle cx="298.3055706936207" cy="206.50202978202603" r="13.830626957536115" fill="#FFD700" opacity="0.8" />
+          <text x="298.3055706936207" y="211.50202978202603" font-family="Arial" font-size="7.9153134787680575" font-weight="bold" text-anchor="middle" fill="#222">$</text>
+        </g>
+      
+        <g filter="url(#luxury)">
+          <polygon points="355.5057653540613,330.99512415549157 373.83636717001076,352.38082627409926 379.94656777532725,361.54612718207403 373.83636717001076,370.7114280900488 355.5057653540613,392.0971302086565 337.1751635381118,370.7114280900488 331.0649629327953,361.54612718207403 337.1751635381118,352.38082627409926" 
+                  fill="#B9F2FF" opacity="0.7" filter="url(#glow)" />
+          <line x1="343.2853641434283" y1="349.32572597144105" x2="367.72616656469427" y2="373.766528392707" 
+                stroke="white" opacity="0.8" stroke-width="1" />
+          <line x1="367.72616656469427" y1="349.32572597144105" x2="343.2853641434283" y2="373.766528392707" 
+                stroke="white" opacity="0.8" stroke-width="1" />
+        </g>
+      
+        <g filter="url(#luxury)">
+          <circle cx="191.8647603008842" cy="261.9971917790109" r="31.93165412492331" fill="#FFD700" opacity="0.9" stroke="#E0E0E0" stroke-width="0.5" />
+          <circle cx="191.8647603008842" cy="261.9971917790109" r="29.93165412492331" fill="#FFD700" opacity="0.8" />
+          <text x="191.8647603008842" y="266.9971917790109" font-family="Arial" font-size="15.965827062461655" font-weight="bold" text-anchor="middle" fill="#222">$</text>
+        </g>
+      
+        <g filter="url(#luxury)">
+          <polygon points="134.77526187509645,155.90380025099398 154.30978486911863,178.69407707735317 160.82129253379267,188.46133857436425 154.30978486911863,198.22860007137533 134.77526187509645,221.01887689773451 115.24073888107428,198.22860007137533 108.72923121640022,188.46133857436425 115.24073888107428,178.69407707735317" 
+                  fill="#B9F2FF" opacity="0.7" filter="url(#glow)" />
+          <line x1="121.75224654574833" y1="175.43832324501614" x2="147.79827720444456" y2="201.48435390371236" 
+                stroke="white" opacity="0.8" stroke-width="1" />
+          <line x1="147.79827720444456" y1="175.43832324501614" x2="121.75224654574833" y2="201.48435390371236" 
+                stroke="white" opacity="0.8" stroke-width="1" />
+        </g>
+      
+        <g filter="url(#luxury)">
+          <polygon points="89.72762904851324,66.1090673590682 103.94634467964087,82.6975689287171 108.68591655668341,89.80692674428091 103.94634467964087,96.91628455984473 89.72762904851324,113.50478612949362 75.5089134173856,96.91628455984473 70.76934154034306,89.80692674428091 75.5089134173856,82.6975689287171" 
+                  fill="#B9F2FF" opacity="0.7" filter="url(#glow)" />
+          <line x1="80.24848529442815" y1="80.32778299019583" x2="99.20677280259832" y2="99.286070498366" 
+                stroke="white" opacity="0.8" stroke-width="1" />
+          <line x1="99.20677280259832" y1="80.32778299019583" x2="80.24848529442815" y2="99.286070498366" 
+                stroke="white" opacity="0.8" stroke-width="1" />
+        </g>
+      
+      
+      <!-- Основной роскошный элемент в зависимости от темы -->
+      
+      <g transform="translate(100, 180) scale(1.5)">
+        <!-- Премиальный спорткар в реалистичном стиле -->
+        
+        <!-- Кузов машины - обтекаемый спорткар -->
+        <path d="M0,65 C10,60 25,55 50,55 L90,55 C115,55 130,60 140,65 L140,75 C140,78 138,80 135,80 L5,80 C2,80 0,78 0,75 Z" 
+              fill="#FFD700" stroke="#E0E0E0" stroke-width="1" filter="url(#luxury)" />
+        
+        <!-- Верхняя часть (крыша) с аэродинамическими линиями -->
+        <path d="M40,55 C45,30 85,30 100,55" 
+              fill="#FFD700" stroke="#E0E0E0" stroke-width="1" />
+        
+        <!-- Дополнительные контуры для дизайна -->
+        <path d="M20,65 C30,62 40,60 50,58" fill="none" stroke="#E0E0E0" stroke-width="0.7" />
+        <path d="M80,58 C90,60 100,62 110,65" fill="none" stroke="#E0E0E0" stroke-width="0.7" />
+        
+        <!-- Колеса с литыми дисками -->
+        <circle cx="30" cy="80" r="15" fill="#222" stroke="#E0E0E0" stroke-width="1" />
+        <circle cx="30" cy="80" r="9" fill="#444" />
+        <circle cx="30" cy="80" r="7" fill="#666" />
+        
+        <!-- Детали дисков -->
+        <path d="M26,74 L34,86" stroke="#999" stroke-width="1" />
+        <path d="M34,74 L26,86" stroke="#999" stroke-width="1" />
+        <path d="M23,80 L37,80" stroke="#999" stroke-width="1" />
+        <path d="M30,73 L30,87" stroke="#999" stroke-width="1" />
+        
+        <!-- Заднее колесо -->
+        <circle cx="110" cy="80" r="15" fill="#222" stroke="#E0E0E0" stroke-width="1" />
+        <circle cx="110" cy="80" r="9" fill="#444" />
+        <circle cx="110" cy="80" r="7" fill="#666" />
+        
+        <!-- Детали заднего диска -->
+        <path d="M106,74 L114,86" stroke="#999" stroke-width="1" />
+        <path d="M114,74 L106,86" stroke="#999" stroke-width="1" />
+        <path d="M103,80 L117,80" stroke="#999" stroke-width="1" />
+        <path d="M110,73 L110,87" stroke="#999" stroke-width="1" />
+        
+        <!-- Тонированные окна -->
+        <path d="M45,55 C50,35 80,35 95,55" 
+              fill="#222" stroke="#E0E0E0" stroke-width="0.7" opacity="0.8" />
+        
+        <!-- Детали салона, видимые сквозь стекло -->
+        <path d="M50,50 L90,50" stroke="#444" stroke-width="0.5" opacity="0.5" />
+        <circle cx="70" cy="45" r="3" fill="#111" /> <!-- Рулевое колесо -->
+        
+        <!-- Современные LED фары -->
+        <path d="M10,60 L20,60 L20,65 L10,65 Z" fill="#FFFFFF" opacity="0.9" />
+        <path d="M10,60 L20,60 L20,65 L10,65 Z" fill="#FFFF88" opacity="0.3" filter="url(#glow)" />
+        
+        <path d="M120,60 L130,60 L130,65 L120,65 Z" fill="#ff3333" opacity="0.9" /> <!-- Задние фонари -->
+        <path d="M120,60 L130,60 L130,65 L120,65 Z" fill="#ff0000" opacity="0.3" filter="url(#glow)" />
+        
+        <!-- Детали кузова и стильные линии -->
+        <path d="M40,57 C60,54 80,54 100,57" fill="none" stroke="#E0E0E0" stroke-width="0.7" />
+        <path d="M30,70 L110,70" fill="none" stroke="#E0E0E0" stroke-width="0.5" />
+        
+        <!-- Воздухозаборники -->
+        <path d="M60,65 L80,65 L80,70 L60,70 Z" fill="#111" />
+        <path d="M62,66 L78,66" stroke="#222" stroke-width="0.5" />
+        <path d="M62,67 L78,67" stroke="#222" stroke-width="0.5" />
+        <path d="M62,68 L78,68" stroke="#222" stroke-width="0.5" />
+        <path d="M62,69 L78,69" stroke="#222" stroke-width="0.5" />
+        
+        <!-- Эффект металлического блеска -->
+        <path d="M30,55 C60,48 80,48 110,55" 
+              fill="none" stroke="#FFF" stroke-width="1" opacity="0.2" />
+        <path d="M30,52 C60,45 80,45 110,52" 
+              fill="none" stroke="#FFF" stroke-width="0.5" opacity="0.1" />
+        
+        <!-- Логотип премиального бренда -->
+        <circle cx="70" cy="62" r="4" fill="#FFD700" stroke="#E0E0E0" stroke-width="0.5" filter="url(#glow)" />
+        <path d="M68,62 L72,62 M70,60 L70,64" stroke="#111" stroke-width="0.8" />
+      </g>
+    
+      
+      <!-- Рамка -->
+      <rect width="390" height="390" x="5" y="5" stroke="#E0E0E0" stroke-width="2" fill="none" rx="10" ry="10" />
+      <rect width="396" height="396" x="2" y="2" stroke="#E0E0E0" stroke-width="1" fill="none" rx="12" ry="12" opacity="0.5" />
+      
+      <!-- Премиальная надпись -->
+      <text x="200" y="380" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#FFD700" filter="url(#blur)" opacity="0.8">Bnalbank Luxury NFT</text>
+      <text x="200" y="380" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Bnalbank Luxury NFT</text>
+    </svg>
+  
