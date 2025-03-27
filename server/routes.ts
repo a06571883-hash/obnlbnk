@@ -12,6 +12,7 @@ import { seaTableManager } from './utils/seatable';
 import { generateValidAddress, validateCryptoAddress, getSeedPhraseForUser } from './utils/crypto';
 import { hasBlockchainApiKeys } from './utils/blockchain';
 import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase';
+import { generateNFTImage } from './utils/nft-generator';
 import { Telegraf } from 'telegraf';
 
 // Вспомогательные функции для генерации NFT
@@ -651,9 +652,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Используем первую доступную коллекцию
         defaultCollection = collections[0];
       }
-      
-      // Импортируем генератор NFT-изображений
-      const { generateNFTImage } = require('./utils/nft-generator');
       
       // Генерируем случайное имя и описание для NFT
       const nftName = generateNFTName(rarity);
