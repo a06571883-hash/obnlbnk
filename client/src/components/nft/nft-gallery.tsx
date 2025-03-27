@@ -9,12 +9,12 @@ import { LoadingSpinner } from '../../components/ui/loading-spinner';
 import { NFTTabNavigation } from '../../pages/nft-page';
 
 // Импортируем сервис для звука
-import { playSoundEffect } from '../../lib/sound-service';
+import { playSound } from '../../lib/sound-service';
 
 // Helper function for sound playback
-const playSoundIfEnabled = (sound: string) => {
+const playSoundWithLog = (sound: string) => {
   console.log(`Playing sound: ${sound}`);
-  playSoundEffect(sound);
+  playSound(sound as any);
 };
 
 type NFT = {
@@ -78,7 +78,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
   const handleNavigateToCollections = () => {
     console.log('Переход к коллекциям из компонента NFTGallery');
     navigation.switchToCollections(); // Используем функцию из переданного пропс
-    playSoundIfEnabled('click');
+    playSoundWithLog('click');
   };
 
   useEffect(() => {
@@ -130,7 +130,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
             className="overflow-hidden cursor-pointer transform transition-transform hover:scale-[1.02]"
             onClick={() => {
               setSelectedNFT(nft);
-              playSoundIfEnabled('click');
+              playSoundWithLog('click');
             }}
           >
             <div className="relative aspect-square">

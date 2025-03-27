@@ -13,12 +13,12 @@ import { LoadingSpinner } from '../../components/ui/loading-spinner';
 import { NFTTabNavigation } from '../../pages/nft-page';
 
 // Импортируем сервис для звука
-import { playSoundEffect } from '../../lib/sound-service';
+import { playSound } from '../../lib/sound-service';
 
 // Helper function for sound playback
-const playSoundIfEnabled = (sound: string) => {
+const playSoundWithLog = (sound: string) => {
   console.log(`Playing sound: ${sound}`);
-  playSoundEffect(sound);
+  playSound(sound as any);
 };
 
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -91,7 +91,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
   const handleNavigateToGallery = () => {
     console.log('Переход к галерее из компонента NFTCollectionView');
     navigation.switchToGallery(); // Используем функцию из переданного пропс
-    playSoundIfEnabled('click');
+    playSoundWithLog('click');
   };
 
   const generateNFT = useMutation({
@@ -123,7 +123,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
       queryClient.invalidateQueries({ queryKey: ['/api/nft/gallery'] });
       queryClient.invalidateQueries({ queryKey: ['/api/nft/daily-limit'] });
       setOpenDialog(false);
-      playSoundIfEnabled('success');
+      playSoundWithLog('success');
       // После успешного создания NFT переключаемся на вкладку галереи для просмотра нового NFT
       setTimeout(() => {
         handleNavigateToGallery();
@@ -136,7 +136,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
         description: error.message,
         variant: "destructive",
       });
-      playSoundIfEnabled('error');
+      playSoundWithLog('error');
     }
   });
 
@@ -241,7 +241,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
                 onClick={() => {
                   console.log('Открытие просмотра коллекции:', collection.id);
                   setSelectedCollection(collection.id);
-                  playSoundIfEnabled('click');
+                  playSoundWithLog('click');
                 }}
               >
                 Просмотр коллекции
