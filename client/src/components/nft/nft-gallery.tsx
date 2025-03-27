@@ -123,7 +123,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {nfts.map((nft: NFT) => (
           <Card 
             key={nft.id} 
@@ -160,7 +160,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
                 {nft.rarity}
               </Badge>
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                <h3 className="text-white font-semibold text-lg">{nft.name}</h3>
+                <h3 className="text-white font-semibold text-lg truncate">{nft.name}</h3>
                 <div className="flex items-center text-white/80 text-sm">
                   <span>Сила: {calculatePower(nft)}</span>
                 </div>

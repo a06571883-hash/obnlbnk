@@ -57,6 +57,7 @@ export interface IStorage {
   getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
   createDefaultCardsForUser(userId: number): Promise<void>;
   deleteUser(userId: number): Promise<void>;
+  executeRawQuery(query: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1120,3 +1121,13 @@ function generateCardNumber(type: 'crypto' | 'usd' | 'uah'): string {
   const suffix = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
   return `${prefixes[type]}${suffix}`;
 }
+  // Метод для выполнения произвольных SQL-запросов
+    return this.withRetry(async () => {
+      console.log(`[DB] Executing raw query: ${query}`);
+      const result = await client.unsafe(query);
+      return result;
+    }, 'Execute raw query');
+  }
+}
+
+export const storage = new DatabaseStorage();

@@ -53,9 +53,9 @@ function getRarityStyles(rarity: NFTRarity): {
   complexity: number;
   theme: 'car' | 'yacht' | 'mansion' | 'jet' | 'character';
 } {
-  // Выбираем случайную тему из доступных роскошных тем
+  // Преимущественно выбираем машины и персонажей-блондинов
   const luxuryThemes: ('car' | 'yacht' | 'mansion' | 'jet' | 'character')[] = 
-    ['car', 'yacht', 'mansion', 'jet', 'character'];
+    ['car', 'car', 'character', 'character', 'car', 'jet', 'character', 'yacht', 'car', 'character'];
   const randomTheme = luxuryThemes[Math.floor(Math.random() * luxuryThemes.length)];
   
   switch (rarity) {
@@ -156,25 +156,51 @@ function generateSVGContent(styles: {
   const luxuryElements = {
     car: `
       <g transform="translate(100, 180) scale(1.5)">
-        <!-- Кузов машины -->
-        <rect x="10" y="40" width="120" height="30" rx="10" fill="${primaryColor}" />
-        <rect x="20" y="20" width="80" height="30" rx="10" fill="${primaryColor}" />
+        <!-- Супер-роскошная спортивная машина в стиле мультфильма -->
+        <!-- Кузов машины - обтекаемый спорткар -->
+        <path d="M0,60 C10,50 30,45 50,45 L100,45 C120,45 135,50 140,60 L140,70 C140,75 135,80 130,80 L10,80 C5,80 0,75 0,70 Z" 
+              fill="${primaryColor}" stroke="${borderColor}" stroke-width="2" />
         
-        <!-- Колеса -->
-        <circle cx="30" cy="75" r="15" fill="${secondaryColor}" stroke="black" stroke-width="2" />
-        <circle cx="30" cy="75" r="7" fill="black" />
-        <circle cx="110" cy="75" r="15" fill="${secondaryColor}" stroke="black" stroke-width="2" />
-        <circle cx="110" cy="75" r="7" fill="black" />
+        <!-- Верхняя часть (крыша) -->
+        <path d="M35,45 C40,25 80,25 105,45" 
+              fill="none" stroke="${borderColor}" stroke-width="2" />
         
-        <!-- Окна -->
-        <rect x="25" y="25" width="70" height="20" rx="5" fill="#88CCFF" />
+        <!-- Передняя часть (капот) -->
+        <path d="M0,60 C5,55 15,52 25,50" 
+              fill="none" stroke="${borderColor}" stroke-width="2" />
         
-        <!-- Фары -->
-        <circle cx="15" cy="45" r="5" fill="#FFFF88" />
-        <circle cx="125" cy="45" r="5" fill="#FFFF88" />
+        <!-- Колеса с блестящими дисками -->
+        <circle cx="30" cy="80" r="15" fill="#333" stroke="black" stroke-width="2" />
+        <circle cx="30" cy="80" r="10" fill="#777" />
+        <circle cx="30" cy="80" r="5" fill="#DDD" />
+        <circle cx="30" cy="80" r="3" fill="#FFF" />
         
-        <!-- Блики -->
-        <ellipse cx="60" cy="35" rx="25" ry="10" fill="white" opacity="0.3" />
+        <circle cx="110" cy="80" r="15" fill="#333" stroke="black" stroke-width="2" />
+        <circle cx="110" cy="80" r="10" fill="#777" />
+        <circle cx="110" cy="80" r="5" fill="#DDD" />
+        <circle cx="110" cy="80" r="3" fill="#FFF" />
+        
+        <!-- Окна тонированные -->
+        <path d="M40,45 C45,30 75,30 100,45" 
+              fill="#88CCFF" stroke="${borderColor}" stroke-width="1" />
+        
+        <!-- Фары супер-яркие -->
+        <circle cx="15" cy="55" r="7" fill="#FFFF88" />
+        <circle cx="15" cy="55" r="5" fill="#FFFFFF" />
+        <circle cx="125" cy="55" r="7" fill="#FFFF88" />
+        <circle cx="125" cy="55" r="5" fill="#FFFFFF" />
+        
+        <!-- Металлические детали и блики -->
+        <rect x="55" y="35" width="30" height="3" rx="1" fill="#DDD" />
+        <path d="M15,65 L125,65" stroke="#FFF" stroke-width="1" opacity="0.5" />
+        
+        <!-- Эффект переливающейся краски -->
+        <path d="M20,50 C40,40 100,40 120,50" 
+              fill="none" stroke="#FFF" stroke-width="2" opacity="0.3" />
+              
+        <!-- Значок роскошного бренда -->
+        <circle cx="70" cy="60" r="5" fill="gold" />
+        <text x="70" y="63" font-family="Arial" font-size="6" font-weight="bold" text-anchor="middle" fill="#222">$</text>
       </g>
     `,
     
@@ -256,40 +282,72 @@ function generateSVGContent(styles: {
     
     character: `
       <g transform="translate(100, 100) scale(1.3)">
-        <!-- Голова с блондинистыми волосами -->
-        <circle cx="100" cy="70" r="40" fill="#FFD700" />
-        <circle cx="100" cy="60" r="35" fill="#FFF9C4" /> <!-- Лицо -->
-        <path d="M60,70 Q100,120 140,70" fill="#FFD700" /> <!-- Волосы -->
+        <!-- Роскошный мультяшный персонаж-блондин в стиле DuckTales -->
         
-        <!-- Глаза -->
-        <ellipse cx="85" cy="55" rx="5" ry="7" fill="white" />
-        <circle cx="85" cy="55" r="3" fill="#3498DB" />
-        <ellipse cx="115" cy="55" rx="5" ry="7" fill="white" />
-        <circle cx="115" cy="55" r="3" fill="#3498DB" />
+        <!-- Голова с шикарной блондинистой прической -->
+        <circle cx="100" cy="70" r="40" fill="#FFF9C4" /> <!-- Лицо -->
+        
+        <!-- Роскошная блондинистая прическа -->
+        <path d="M60,50 C75,20 125,20 140,50" fill="#FFD700" stroke="#E6C200" stroke-width="1" /> <!-- Верхняя часть волос -->
+        <path d="M60,50 C75,90 125,90 140,50" fill="#FFD700" /> <!-- Боковые волосы -->
+        <path d="M60,50 Q100,95 140,50" fill="#FFD700" /> <!-- Нижняя часть волос -->
+        
+        <!-- Блики на волосах -->
+        <path d="M80,40 Q100,30 120,40" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.7" />
+        <path d="M70,60 Q90,50 110,60" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.5" />
+        
+        <!-- Выразительные голубые глаза -->
+        <ellipse cx="85" cy="65" rx="6" ry="8" fill="white" stroke="#333" stroke-width="1" />
+        <circle cx="85" cy="65" r="4" fill="#3498DB" />
+        <circle cx="83" cy="63" r="2" fill="white" opacity="0.7" /> <!-- Блик в глазу -->
+        
+        <ellipse cx="115" cy="65" rx="6" ry="8" fill="white" stroke="#333" stroke-width="1" />
+        <circle cx="115" cy="65" r="4" fill="#3498DB" />
+        <circle cx="113" cy="63" r="2" fill="white" opacity="0.7" /> <!-- Блик в глазу -->
+        
+        <!-- Брови -->
+        <path d="M75,55 Q85,50 95,55" fill="none" stroke="#333" stroke-width="2" />
+        <path d="M105,55 Q115,50 125,55" fill="none" stroke="#333" stroke-width="2" />
         
         <!-- Улыбка -->
-        <path d="M85,75 Q100,90 115,75" fill="none" stroke="#E74C3C" stroke-width="3" />
+        <path d="M85,80 Q100,95 115,80" fill="none" stroke="#E74C3C" stroke-width="3" />
         
-        <!-- Тело -->
-        <rect x="80" y="110" width="40" height="60" fill="${primaryColor}" />
+        <!-- Модный костюм -->
+        <rect x="80" y="110" width="40" height="60" rx="5" fill="${primaryColor}" stroke="#333" stroke-width="1" />
+        <rect x="90" y="110" width="20" height="60" fill="${secondaryColor}" opacity="0.7" />
+        <circle cx="100" cy="120" r="5" fill="gold" /> <!-- Золотая пуговица на костюме -->
+        <circle cx="100" cy="135" r="5" fill="gold" /> <!-- Вторая золотая пуговица -->
+        
+        <!-- Галстук/бабочка -->
+        <path d="M95,110 L105,110 L105,120 L100,125 L95,120 Z" fill="#E74C3C" />
         
         <!-- Руки с золотыми часами и браслетами -->
-        <rect x="50" y="115" width="30" height="10" fill="#FFF9C4" />
-        <rect x="120" y="115" width="30" height="10" fill="#FFF9C4" />
-        <circle cx="50" cy="120" r="5" fill="#FFD700" /> <!-- Золотые часы -->
-        <rect x="120" y="115" width="5" height="10" fill="#FFD700" /> <!-- Браслет -->
+        <path d="M80,115 C50,100 40,130 50,150" fill="#FFF9C4" stroke="#333" stroke-width="1" /> <!-- Левая рука -->
+        <path d="M120,115 C150,100 160,130 150,150" fill="#FFF9C4" stroke="#333" stroke-width="1" /> <!-- Правая рука -->
         
-        <!-- Ноги -->
-        <rect x="85" y="170" width="10" height="30" fill="#3498DB" />
-        <rect x="105" y="170" width="10" height="30" fill="#3498DB" />
+        <!-- Золотые аксессуары на руках -->
+        <circle cx="45" cy="135" r="8" fill="gold" stroke="#333" stroke-width="1" /> <!-- Шикарные золотые часы -->
+        <rect x="43" y="135" width="4" height="2" fill="#333" /> <!-- Циферблат часов -->
+        <rect x="150" y="125" width="10" height="5" rx="2" fill="gold" stroke="#333" stroke-width="1" /> <!-- Золотой браслет -->
+        <circle cx="155" cy="127" r="1" fill="#F50" /> <!-- Рубин на браслете -->
         
-        <!-- Аксессуары: солнечные очки на голове -->
-        <path d="M70,35 Q100,20 130,35" fill="none" stroke="#8E44AD" stroke-width="3" />
-        <ellipse cx="80" cy="35" rx="10" ry="5" fill="#8E44AD" opacity="0.5" />
-        <ellipse cx="120" cy="35" rx="10" ry="5" fill="#8E44AD" opacity="0.5" />
+        <!-- Роскошные брюки -->
+        <path d="M80,170 L90,170 L90,200 L80,200 Z" fill="#333" /> <!-- Левая штанина -->
+        <path d="M110,170 L120,170 L120,200 L110,200 Z" fill="#333" /> <!-- Правая штанина -->
         
-        <!-- Значок доллара, символизирующий богатство -->
-        <text x="100" y="140" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#FFD700">$</text>
+        <!-- Шикарные туфли -->
+        <path d="M75,200 L90,200 L92,205 L75,205 Z" fill="#8B4513" stroke="#333" stroke-width="1" /> <!-- Левый ботинок -->
+        <path d="M110,200 L125,200 L127,205 L110,205 Z" fill="#8B4513" stroke="#333" stroke-width="1" /> <!-- Правый ботинок -->
+        
+        <!-- Стильные солнечные очки на макушке -->
+        <path d="M70,35 Q100,25 130,35" fill="none" stroke="#333" stroke-width="2" />
+        <ellipse cx="80" cy="35" rx="10" ry="5" fill="#8E44AD" opacity="0.7" stroke="#333" stroke-width="1" />
+        <ellipse cx="120" cy="35" rx="10" ry="5" fill="#8E44AD" opacity="0.7" stroke="#333" stroke-width="1" />
+        
+        <!-- Золотая цепь с долларом - символ богатства -->
+        <path d="M85,125 Q100,135 115,125" fill="none" stroke="gold" stroke-width="3" />
+        <circle cx="100" cy="135" r="10" fill="gold" stroke="#333" stroke-width="1" />
+        <text x="100" y="140" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">$</text>
       </g>
     `
   };

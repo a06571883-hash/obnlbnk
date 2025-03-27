@@ -1,0 +1,93 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+      <defs>
+        
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="7" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  
+        
+    <filter id="cartoon">
+      <feColorMatrix type="matrix" values="1 0 0 0 0
+                                          0 1 0 0 0
+                                          0 0 1 0 0
+                                          0 0 0 20 -10" />
+      <feGaussianBlur stdDeviation="0.5" />
+    </filter>
+  
+        
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#F4ECF7" />
+          <stop offset="100%" stop-color="#9B59B6" />
+        </linearGradient>
+        
+        <pattern id="pattern1" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="10" cy="10" r="2" fill="#F1C40F" opacity="0.3" />
+        </pattern>
+      </defs>
+      
+      <!-- Фон -->
+      <rect width="400" height="400" fill="url(#grad1)" />
+      <rect width="400" height="400" fill="url(#pattern1)" />
+      
+      <!-- Декоративные элементы -->
+      
+        <g transform="translate(143.731144612043, 151.6536592165327) scale(1.0695447001682838)">
+          <ellipse cx="0" cy="0" rx="15" ry="10" fill="white" opacity="0.7" />
+          <ellipse cx="10" cy="-5" rx="10" ry="8" fill="white" opacity="0.7" />
+          <ellipse cx="-10" cy="-3" rx="12" ry="7" fill="white" opacity="0.7" />
+        </g>
+      
+        <g transform="translate(70.31683627039538, 175.94296469888042) scale(0.7481685069118895)">
+          <ellipse cx="0" cy="0" rx="15" ry="10" fill="white" opacity="0.7" />
+          <ellipse cx="10" cy="-5" rx="10" ry="8" fill="white" opacity="0.7" />
+          <ellipse cx="-10" cy="-3" rx="12" ry="7" fill="white" opacity="0.7" />
+        </g>
+      
+        <g transform="translate(319.090295323273, 196.61162697493774) scale(1.0259035493625157)">
+          <ellipse cx="0" cy="0" rx="15" ry="10" fill="white" opacity="0.7" />
+          <ellipse cx="10" cy="-5" rx="10" ry="8" fill="white" opacity="0.7" />
+          <ellipse cx="-10" cy="-3" rx="12" ry="7" fill="white" opacity="0.7" />
+        </g>
+      
+        <polygon points="296.70915594566947,93.3923634461815 305.61938111526376,111.21281378537007 296.70915594566947,129.03326412455863 287.79893077607517,111.21281378537007" 
+                fill="#5DADE2" opacity="0.8" filter="url(#glow)" />
+        <line x1="292.25404336087234" y1="106.75770120057294" x2="301.1642685304666" y2="115.66792637016721" 
+              stroke="white" opacity="0.8" stroke-width="2" />
+      <polygon points="404.58840402336114,171.2574610794648 380.99445247118825,182.90177229143882 377.21098640935224,208.93924371257572 358.8456563593551,190.09835239602026 332.9133941856858,194.54608350341286 345.1569475523506,171.2574610794648 332.9133941856858,147.96883865551678 358.845656359355,152.41656976290935 377.21098640935224,133.5756784463539 380.99445247118825,159.6131498674908" fill="#FFD700" filter="url(#glow)" /><polygon points="70.12543541167402,219.4556602728142 58.526403256191344,225.18012486186248 56.666411960821755,237.98041681776482 47.63782455676092,228.71803854528952 34.88925456196089,230.90458945091075 40.90831283133478,219.4556602728142 34.88925456196089,208.00673109471768 47.63782455676091,210.1932820003389 56.66641196082175,200.9309037278636 58.526403256191344,213.73119568376595" fill="#FFD700" filter="url(#glow)" />
+        <circle cx="284.0722302336306" cy="80.05846996559964" r="25.45820751069475" fill="#FFD700" filter="url(#glow)" />
+        <text x="284.0722302336306" y="85.05846996559964" font-family="Arial" font-size="12.729103755347374" font-weight="bold" text-anchor="middle" fill="#F1C40F">$</text>
+      
+      
+      <!-- Основной роскошный элемент в зависимости от темы -->
+      
+      <g transform="translate(50, 150) scale(1.2)">
+        <!-- Корпус яхты -->
+        <path d="M50,100 L20,150 L280,150 L250,100 Z" fill="#F1C40F" />
+        
+        <!-- Палуба -->
+        <rect x="70" y="80" width="160" height="30" rx="5" fill="#9B59B6" />
+        
+        <!-- Мачта и парус -->
+        <rect x="150" y="30" width="5" height="80" fill="#8B4513" />
+        <path d="M155,35 Q200,50 180,90 L155,90 Z" fill="white" />
+        
+        <!-- Окна -->
+        <circle cx="100" cy="95" r="5" fill="#88CCFF" />
+        <circle cx="120" cy="95" r="5" fill="#88CCFF" />
+        <circle cx="180" cy="95" r="5" fill="#88CCFF" />
+        <circle cx="200" cy="95" r="5" fill="#88CCFF" />
+        
+        <!-- Вода -->
+        <path d="M0,150 Q100,170 150,150 Q200,130 300,150 L300,200 L0,200 Z" fill="#3498DB" opacity="0.5" />
+      </g>
+    
+      
+      <!-- Рамка -->
+      <rect width="390" height="390" x="5" y="5" stroke="#8E44AD" stroke-width="3" fill="none" rx="15" ry="15" />
+      
+      <!-- Надпись Bnalbank -->
+      <text x="200" y="380" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="white">Bnalbank Luxury NFT</text>
+    </svg>
+  

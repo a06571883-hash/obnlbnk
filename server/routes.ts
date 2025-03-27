@@ -14,6 +14,9 @@ import { hasBlockchainApiKeys } from './utils/blockchain';
 import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase';
 import { generateNFTImage } from './utils/nft-generator';
 import { Telegraf } from 'telegraf';
+import { db } from './db';
+import { eq } from 'drizzle-orm';
+import { nfts } from '@shared/schema';
 
 // Вспомогательные функции для генерации NFT
 function generateNFTRarity(): string {
@@ -765,6 +768,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating NFT collection:", error);
       return res.status(500).json({ error: "Не удалось создать коллекцию NFT" });
+    }
+  });
+  
+  // API для удаления всех NFT пользователя и создания новых в роскошном стиле
+  app.post("/api/nft/clear-all", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Получаем коллекции пользователя
+      const collections = await storage.getNFTCollectionsByUserId(userId);
+      
+      if (collections.length > 0) {
+        // Получаем ID всех коллекций пользователя
+        const collectionIds = collections.map(col => col.id);
+        
+        // Удаляем все NFT в этих коллекциях по одному
+        for (const collectionId of collectionIds) {
+          // Используем стандартные методы drizzle для удаления
+          await db.delete(nfts).where(eq(nfts.collectionId, collectionId));
+        }
+        
+        console.log(`Удалены все NFT для пользователя ${userId}`);
+      }
+      
+      return res.json({ 
+        success: true, 
+        message: 'Все NFT успешно удалены. Теперь вы можете создать новые NFT в роскошном стиле.'
+      });
+    } catch (error) {
+      console.error('Error clearing NFTs:', error);
+      return res.status(500).json({ error: "Не удалось удалить NFT" });
     }
   });
 

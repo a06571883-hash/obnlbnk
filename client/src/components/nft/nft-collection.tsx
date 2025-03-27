@@ -140,6 +140,46 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
       playSoundWithLog('error');
     }
   });
+  
+  const clearAllNFTs = useMutation({
+    mutationFn: async () => {
+      console.log('Отправка запроса на очистку всех NFT');
+      const response = await fetch('/api/nft/clear-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Не удалось очистить NFT');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      console.log('NFT успешно очищены:', data);
+      toast({
+        title: "NFT успешно удалены!",
+        description: "Все NFT были удалены. Теперь вы можете создать новые в роскошном стиле.",
+        variant: "default",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/collections'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/gallery'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/daily-limit'] });
+      playSoundWithLog('success');
+    },
+    onError: (error: Error) => {
+      console.error('Ошибка при очистке NFT:', error);
+      toast({
+        title: "Ошибка при удалении NFT",
+        description: error.message,
+        variant: "destructive",
+      });
+      playSoundWithLog('error');
+    }
+  });
 
   const isGenerating = generateNFT.isPending;
 
@@ -196,7 +236,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
             Выберите коллекцию для просмотра или создайте новый NFT
           </p>
         </div>
-        <div>
+        <div className="space-x-2 flex">
           {dailyLimit?.message && (
             <Alert className="mb-4" variant="default">
               <AlertTitle>Создание NFT</AlertTitle>
@@ -205,6 +245,25 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
               </AlertDescription>
             </Alert>
           )}
+          <Button 
+            variant="outline"
+            onClick={() => {
+              console.log('Запрос на очистку всех NFT');
+              if (window.confirm('Вы уверены, что хотите удалить все NFT? Это действие нельзя отменить.')) {
+                clearAllNFTs.mutate();
+              }
+            }}
+            disabled={clearAllNFTs.isPending || collections.length === 0}
+          >
+            {clearAllNFTs.isPending ? (
+              <>
+                <LoadingSpinner size="sm" className="mr-2" />
+                Удаление...
+              </>
+            ) : (
+              'Очистить все NFT'
+            )}
+          </Button>
           <Button 
             onClick={() => {
               console.log('Открытие диалога генерации NFT');
