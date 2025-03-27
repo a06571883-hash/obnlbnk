@@ -48,10 +48,10 @@ export interface IStorage {
   transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   getLatestExchangeRates(): Promise<ExchangeRate | undefined>;
   updateExchangeRates(rates: { usdToUah: number; btcToUsd: number; ethToUsd: number }): Promise<ExchangeRate>;
-  createNFTCollection(userId: number, name: string, description: string): Promise<any>;
-  createNFT(data: Omit<any, "id">): Promise<any>;
-  getNFTsByUserId(userId: number): Promise<any[]>;
-  getNFTCollectionsByUserId(userId: number): Promise<any[]>;
+  createNFTCollection(userId: number, name: string, description: string): Promise<NftCollection>;
+  createNFT(data: InsertNft): Promise<Nft>;
+  getNFTsByUserId(userId: number): Promise<Nft[]>;
+  getNFTCollectionsByUserId(userId: number): Promise<NftCollection[]>;
   canGenerateNFT(userId: number): Promise<boolean>;
   updateUserNFTGeneration(userId: number): Promise<void>;
   getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;

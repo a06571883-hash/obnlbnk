@@ -600,7 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // NFT API маршруты
   
   // Проверка, может ли пользователь сгенерировать NFT (раз в 24 часа)
-  app.get("/api/nft/can-generate", ensureAuthenticated, async (req, res) => {
+  app.get("/api/nft/daily-limit", ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -662,6 +662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: nftName,
         description: nftDescription,
         imagePath: imagePath,
+        tokenId: `NFT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
         rarity: rarity,
         attributes: {
           power: Math.floor(Math.random() * 100),
@@ -681,8 +682,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Получение всех NFT пользователя
-  app.get("/api/nft/all", ensureAuthenticated, async (req, res) => {
+  // Получение всех NFT пользователя для галереи
+  app.get("/api/nft/gallery", ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -694,6 +695,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting user NFTs:", error);
       return res.status(500).json({ error: "Не удалось получить NFT пользователя" });
+    }
+  });
+  
+  // Получение статуса NFT пользователя
+  app.get("/api/nft/status", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      return res.json({
+        generationCount: user.nft_generation_count || 0,
+        lastGeneration: user.last_nft_generation || null
+      });
+    } catch (error) {
+      console.error("Error getting NFT status:", error);
+      return res.status(500).json({ error: "Не удалось получить статус NFT" });
     }
   });
   
