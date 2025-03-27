@@ -217,7 +217,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {collections.map((collection: NFTCollection) => (
+        {collections && collections.length > 0 ? collections.map((collection: NFTCollection) => (
           <Card key={collection.id} className="overflow-hidden">
             <div className="aspect-video relative">
               <img 
@@ -227,7 +227,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
               />
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
                 <h3 className="text-white text-xl font-bold">{collection.name}</h3>
-                <p className="text-white/80 text-sm">{collection.nfts.length} NFTs</p>
+                <p className="text-white/80 text-sm">{collection.nfts && collection.nfts.length ? collection.nfts.length : 0} NFTs</p>
               </div>
             </div>
             <CardContent className="pt-4">
@@ -258,7 +258,23 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
               </Button>
             </CardFooter>
           </Card>
-        ))}
+        )) : (
+          <div className="col-span-full text-center p-6 border rounded-lg">
+            <h3 className="text-lg font-semibold mb-2">Пока нет коллекций</h3>
+            <p className="text-muted-foreground mb-4">
+              Создайте свой первый NFT, чтобы начать коллекцию.
+            </p>
+            <Button 
+              onClick={() => {
+                setOpenDialog(true);
+                playSoundWithLog('click');
+              }}
+              disabled={!dailyLimit?.canGenerate}
+            >
+              Создать NFT
+            </Button>
+          </div>
+        )}
       </div>
 
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
@@ -342,7 +358,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
             
             <ScrollArea className="h-[400px] px-1">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-2">
-                {getCollectionById(selectedCollection)?.nfts.map((nft: NFT) => (
+                {getCollectionById(selectedCollection)?.nfts && getCollectionById(selectedCollection)?.nfts.length > 0 ? getCollectionById(selectedCollection)?.nfts.map((nft: NFT) => (
                   <Card key={nft.id} className="overflow-hidden">
                     <div className="relative aspect-square">
                       <div className="w-full h-full relative">
@@ -383,7 +399,12 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                )) : (
+                  <div className="col-span-full text-center p-6">
+                    <p className="text-muted-foreground">В этой коллекции пока нет NFT.</p>
+                    <p className="text-sm text-muted-foreground">Создайте NFT, чтобы добавить его в коллекцию.</p>
+                  </div>
+                )}
               </div>
             </ScrollArea>
             
