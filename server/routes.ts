@@ -779,25 +779,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Unauthorized" });
       }
       
-      // Получаем коллекции пользователя
-      const collections = await storage.getNFTCollectionsByUserId(userId);
-      
-      if (collections.length > 0) {
-        // Получаем ID всех коллекций пользователя
-        const collectionIds = collections.map(col => col.id);
-        
-        // Удаляем все NFT в этих коллекциях по одному
-        for (const collectionId of collectionIds) {
-          // Используем стандартные методы drizzle для удаления
-          await db.delete(nfts).where(eq(nfts.collectionId, collectionId));
-        }
-        
-        console.log(`Удалены все NFT для пользователя ${userId}`);
-      }
+      // Используем новый метод из storage для атомарного удаления всех NFT пользователя
+      const result = await storage.clearAllUserNFTs(userId);
       
       return res.json({ 
-        success: true, 
-        message: 'Все NFT успешно удалены. Теперь вы можете создать новые NFT в роскошном стиле.'
+        success: result.success, 
+        message: `Все NFT успешно удалены (${result.count} шт.). Теперь вы можете создать новые NFT в роскошном стиле.`
       });
     } catch (error) {
       console.error('Error clearing NFTs:', error);

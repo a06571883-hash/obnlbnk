@@ -57,6 +57,7 @@ export interface IStorage {
   getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
   createDefaultCardsForUser(userId: number): Promise<void>;
   deleteUser(userId: number): Promise<void>;
+  clearAllUserNFTs(userId: number): Promise<{ success: boolean; count: number }>;
   executeRawQuery(query: string): Promise<any>;
 }
 
@@ -1105,6 +1106,54 @@ export class DatabaseStorage implements IStorage {
       }
     }, 'Delete user');
   }
+  
+  async clearAllUserNFTs(userId: number): Promise<{ success: boolean; count: number }> {
+    return this.withTransaction(async () => {
+      try {
+        console.log(`Очистка всех NFT для пользователя ${userId}`);
+        
+        // Получаем коллекции NFT пользователя
+        const collections = await this.getNFTCollectionsByUserId(userId);
+        if (!collections || collections.length === 0) {
+          console.log(`У пользователя ${userId} нет коллекций NFT`);
+          return { success: true, count: 0 };
+        }
+        
+        // Получаем идентификаторы коллекций
+        const collectionIds = collections.map(collection => collection.id);
+        
+        // Получаем все NFT в этих коллекциях
+        const allNfts = await db.select().from(nfts).where(inArray(nfts.collectionId, collectionIds));
+        const nftCount = allNfts.length;
+        
+        console.log(`Удаление ${nftCount} NFT из ${collections.length} коллекций для пользователя ${userId}`);
+        
+        // Удаляем все NFT
+        if (nftCount > 0) {
+          await db.delete(nfts).where(inArray(nfts.collectionId, collectionIds));
+        }
+        
+        // Удаляем пустые коллекции
+        await db.delete(nftCollections).where(inArray(nftCollections.id, collectionIds));
+        
+        console.log(`Успешно удалено ${nftCount} NFT и ${collections.length} коллекций для пользователя ${userId}`);
+        
+        return { success: true, count: nftCount };
+      } catch (error) {
+        console.error(`Ошибка при очистке NFT для пользователя ${userId}:`, error);
+        throw error;
+      }
+    }, 'Clear all user NFTs');
+  }
+  
+  // Метод для выполнения произвольных SQL-запросов
+  async executeRawQuery(query: string): Promise<any> {
+    return this.withRetry(async () => {
+      console.log(`[DB] Executing raw query: ${query}`);
+      const result = await client.unsafe(query);
+      return result;
+    }, 'Execute raw query');
+  }
 }
 
 export const storage = new DatabaseStorage();
@@ -1121,13 +1170,3 @@ function generateCardNumber(type: 'crypto' | 'usd' | 'uah'): string {
   const suffix = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
   return `${prefixes[type]}${suffix}`;
 }
-  // Метод для выполнения произвольных SQL-запросов
-    return this.withRetry(async () => {
-      console.log(`[DB] Executing raw query: ${query}`);
-      const result = await client.unsafe(query);
-      return result;
-    }, 'Execute raw query');
-  }
-}
-
-export const storage = new DatabaseStorage();
