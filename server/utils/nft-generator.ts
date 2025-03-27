@@ -4,6 +4,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import { generateBlondeCharacter } from './blonde-character-generator';
 
 // Путь до директории с публичными файлами
 const PUBLIC_DIR = path.join(process.cwd(), 'client', 'public');
@@ -105,7 +106,7 @@ function generatePixelArtSVG(styles: {
       pixelArt = generatePixelJet(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
       break;
     case 'character':
-      pixelArt = generatePixelCharacter(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
+      pixelArt = generateBlondeCharacter(randomGenerator, pixelSize, primaryColor, secondaryColor, borderColor);
       break;
   }
   
@@ -605,9 +606,9 @@ function getRarityStyles(rarity: NFTRarity): {
   complexity: number;
   theme: 'car' | 'yacht' | 'mansion' | 'jet' | 'character';
 } {
-  // Преимущественно выбираем премиальные машины и персонажей-блондинов
+  // Преимущественно выбираем персонажей-блондинов в ретро-стиле
   const luxuryThemes: ('car' | 'yacht' | 'mansion' | 'jet' | 'character')[] = 
-    ['car', 'car', 'character', 'character', 'car', 'jet', 'character', 'yacht', 'car', 'character'];
+    ['character', 'character', 'character', 'character', 'character', 'character', 'car', 'yacht', 'mansion', 'jet'];
   const randomTheme = luxuryThemes[Math.floor(Math.random() * luxuryThemes.length)];
   
   switch (rarity) {
