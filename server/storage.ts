@@ -1,8 +1,11 @@
 import session from "express-session";
 import { MemoryStore } from 'express-session';
 import { db, client } from "./db";
-import { cards, users, transactions, exchangeRates } from "@shared/schema";
-import type { User, Card, InsertUser, Transaction, ExchangeRate } from "@shared/schema";
+import { cards, users, transactions, exchangeRates, nftCollections, nfts } from "@shared/schema";
+import type { 
+  User, Card, InsertUser, Transaction, ExchangeRate,
+  NftCollection, Nft, InsertNftCollection, InsertNft
+} from "@shared/schema";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
 import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
@@ -860,23 +863,116 @@ export class DatabaseStorage implements IStorage {
   }
 
 
-  async createNFTCollection(userId: number, name: string, description: string): Promise<any> {
-    throw new Error("Method not implemented.");
+  async createNFTCollection(userId: number, name: string, description: string): Promise<NftCollection> {
+    return this.withRetry(async () => {
+      const [collection] = await db.insert(nftCollections).values({
+        userId,
+        name,
+        description,
+        createdAt: new Date()
+      }).returning();
+      
+      console.log(`Created NFT collection ${collection.id} for user ${userId}: ${name}`);
+      return collection;
+    }, 'Create NFT collection');
   }
-  async createNFT(data: Omit<any, "id">): Promise<any> {
-    throw new Error("Method not implemented.");
+  
+  async createNFT(data: InsertNft): Promise<Nft> {
+    return this.withRetry(async () => {
+      const [nft] = await db.insert(nfts).values({
+        ...data,
+        mintedAt: new Date(),
+        tokenId: `NFT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`
+      }).returning();
+      
+      console.log(`Created NFT ${nft.id} in collection ${nft.collectionId}: ${nft.name}`);
+      return nft;
+    }, 'Create NFT');
   }
-  async getNFTsByUserId(userId: number): Promise<any[]> {
-    throw new Error("Method not implemented.");
+  
+  async getNFTsByUserId(userId: number): Promise<Nft[]> {
+    return this.withRetry(async () => {
+      // Сначала получаем все коллекции пользователя
+      const collections = await db
+        .select()
+        .from(nftCollections)
+        .where(eq(nftCollections.userId, userId));
+      
+      if (collections.length === 0) {
+        return [];
+      }
+      
+      // Получаем все NFT из этих коллекций
+      const collectionIds = collections.map(c => c.id);
+      return db
+        .select()
+        .from(nfts)
+        .where(inArray(nfts.collectionId, collectionIds))
+        .orderBy(desc(nfts.mintedAt));
+    }, 'Get NFTs by user ID');
   }
-  async getNFTCollectionsByUserId(userId: number): Promise<any[]> {
-    throw new Error("Method not implemented.");
+  
+  async getNFTCollectionsByUserId(userId: number): Promise<NftCollection[]> {
+    return this.withRetry(async () => {
+      return db
+        .select()
+        .from(nftCollections)
+        .where(eq(nftCollections.userId, userId))
+        .orderBy(desc(nftCollections.createdAt));
+    }, 'Get NFT collections by user ID');
   }
+  
   async canGenerateNFT(userId: number): Promise<boolean> {
-    throw new Error("Method not implemented.");
+    return this.withRetry(async () => {
+      // Получаем пользователя с данными о последней генерации NFT
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+      
+      if (!user) {
+        return false;
+      }
+      
+      // Если пользователь никогда не генерировал NFT или нет информации о последней генерации
+      if (!user.last_nft_generation) {
+        return true;
+      }
+      
+      // Проверяем суточный лимит
+      const lastGeneration = new Date(user.last_nft_generation);
+      const now = new Date();
+      const hoursSinceLastGeneration = (now.getTime() - lastGeneration.getTime()) / (1000 * 60 * 60);
+      
+      // Разрешаем генерацию раз в 24 часа
+      return hoursSinceLastGeneration >= 24;
+    }, 'Check if user can generate NFT');
   }
+  
   async updateUserNFTGeneration(userId: number): Promise<void> {
-    throw new Error("Method not implemented.");
+    await this.withRetry(async () => {
+      // Получаем текущие данные пользователя
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+      
+      if (!user) {
+        throw new Error(`User ${userId} not found`);
+      }
+      
+      // Обновляем дату последней генерации и счетчик
+      const generationCount = (user.nft_generation_count || 0) + 1;
+      await db
+        .update(users)
+        .set({ 
+          last_nft_generation: new Date(),
+          nft_generation_count: generationCount
+        })
+        .where(eq(users.id, userId));
+      
+      console.log(`Updated NFT generation data for user ${userId}. Total generations: ${generationCount}`);
+    }, 'Update user NFT generation data');
   }
   async getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]> {
     return this.withRetry(async () => {

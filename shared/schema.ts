@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, decimal, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, decimal, serial, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
@@ -51,6 +51,29 @@ export const exchangeRates = pgTable("exchange_rates", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// NFT коллекции
+export const nftCollections = pgTable("nft_collections", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  coverImage: text("cover_image"),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+// NFT
+export const nfts = pgTable("nfts", {
+  id: serial("id").primaryKey(),
+  collectionId: integer("collection_id").notNull().references(() => nftCollections.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  imagePath: text("image_path").notNull(),
+  attributes: jsonb("attributes"),
+  rarity: text("rarity").notNull().default("common"),
+  mintedAt: timestamp("minted_at").notNull().defaultNow(),
+  tokenId: text("token_id").notNull()
+});
+
 // Базовые схемы
 export const insertUserSchema = createInsertSchema(users, {
   id: undefined,
@@ -98,14 +121,30 @@ export const insertTransactionSchema = z.object({
   createdAt: z.date().optional(),
 });
 
+export const insertNftCollectionSchema = createInsertSchema(nftCollections, {
+  id: undefined,
+  createdAt: undefined,
+});
+
+export const insertNftSchema = createInsertSchema(nfts, {
+  id: undefined,
+  mintedAt: undefined,
+});
+
 // Экспорт типов
 export type User = typeof users.$inferSelect;
 export type Card = typeof cards.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;
+export type NftCollection = typeof nftCollections.$inferSelect;
+export type Nft = typeof nfts.$inferSelect;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertCard = z.infer<typeof insertCardSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type InsertNftCollection = z.infer<typeof insertNftCollectionSchema>;
+export type InsertNft = z.infer<typeof insertNftSchema>;
+
 export type ExchangeRateResponse = {
   usdToUah: string;
   btcToUsd: string;

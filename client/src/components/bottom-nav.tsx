@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Home, Activity, User, Newspaper, BarChart3 } from "lucide-react";
+import { Home, Activity, User, Newspaper, BarChart3, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { playSoundIfEnabled } from "@/lib/sound-service"; // Added import
@@ -13,6 +13,7 @@ export default function BottomNav() {
     { icon: Home, label: "Home", path: "/" },
     { icon: Newspaper, label: "News", path: "/news" },
     { icon: Activity, label: "Activity", path: "/activity" },
+    { icon: Gift, label: "NFT", path: "/nft" },
     { icon: User, label: "Profile", path: "/profile" },
   ];
 

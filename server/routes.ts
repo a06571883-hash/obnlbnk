@@ -14,6 +14,90 @@ import { hasBlockchainApiKeys } from './utils/blockchain';
 import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase';
 import { Telegraf } from 'telegraf';
 
+// Вспомогательные функции для генерации NFT
+function generateNFTRarity(): string {
+  const rarities = [
+    { type: 'common', chance: 0.70 },
+    { type: 'uncommon', chance: 0.20 },
+    { type: 'rare', chance: 0.08 },
+    { type: 'epic', chance: 0.017 },
+    { type: 'legendary', chance: 0.003 }
+  ];
+  
+  const randomValue = Math.random();
+  let cumulativeChance = 0;
+  
+  for (const rarity of rarities) {
+    cumulativeChance += rarity.chance;
+    if (randomValue <= cumulativeChance) {
+      return rarity.type;
+    }
+  }
+  
+  return 'common'; // Значение по умолчанию
+}
+
+function generateNFTName(rarity: string): string {
+  const prefixes: Record<string, string[]> = {
+    common: ['Обычный', 'Простой', 'Базовый', 'Стандартный'],
+    uncommon: ['Необычный', 'Улучшенный', 'Улучшенный', 'Нестандартный'],
+    rare: ['Редкий', 'Ценный', 'Особый', 'Уникальный'],
+    epic: ['Эпический', 'Легендарный', 'Мощный', 'Выдающийся'],
+    legendary: ['Легендарный', 'Мифический', 'Божественный', 'Невероятный']
+  };
+  
+  const nouns = [
+    'Токен', 'Артефакт', 'Амулет', 'Талисман', 'Кристалл', 
+    'Медальон', 'Символ', 'Знак', 'Драгоценность', 'Эмблема',
+    'Сокровище', 'Жетон', 'Реликвия', 'Коллекционный предмет', 'Сувенир'
+  ];
+  
+  const adjectives = [
+    'Цифровой', 'Криптографический', 'Финансовый', 'Виртуальный', 'Блокчейн',
+    'Зачарованный', 'Мистический', 'Сверкающий', 'Магический', 'Защищенный',
+    'Безопасный', 'Шифрованный', 'Децентрализованный', 'Ценный', 'Уникальный'
+  ];
+  
+  const randomPrefix = prefixes[rarity][Math.floor(Math.random() * prefixes[rarity].length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  
+  return `${randomPrefix} ${randomAdjective} ${randomNoun} Bnalbank`;
+}
+
+function generateNFTDescription(rarity: string): string {
+  const descriptions: Record<string, string[]> = {
+    common: [
+      'Обычный цифровой актив, созданный в экосистеме Bnalbank.',
+      'Стандартный NFT-токен, представляющий базовое цифровое имущество.',
+      'Простой коллекционный предмет из банковской системы Bnalbank.'
+    ],
+    uncommon: [
+      'Необычный цифровой актив с интересными свойствами, созданный в Bnalbank.',
+      'Улучшенный NFT-токен, обладающий особыми характеристиками.',
+      'Нестандартный коллекционный предмет, выделяющийся среди обычных.'
+    ],
+    rare: [
+      'Редкий цифровой актив, обладающий уникальными свойствами и ограниченной эмиссией.',
+      'Ценный NFT-токен, созданный на платформе Bnalbank с повышенными характеристиками.',
+      'Особый коллекционный предмет, который встречается редко в экосистеме Bnalbank.'
+    ],
+    epic: [
+      'Эпический цифровой актив исключительной ценности с множеством уникальных атрибутов.',
+      'Выдающийся NFT-токен с необычными свойствами и высокой эстетической ценностью.',
+      'Мощный коллекционный предмет, обладающий впечатляющими характеристиками и историей.'
+    ],
+    legendary: [
+      'Легендарный цифровой актив невероятной редкости и ценности, созданный в Bnalbank.',
+      'Мифический NFT-токен, обладающий уникальными свойствами и являющийся символом статуса.',
+      'Божественный коллекционный предмет исключительной редкости, гордость любой коллекции.'
+    ]
+  };
+  
+  const randomDescription = descriptions[rarity][Math.floor(Math.random() * descriptions[rarity].length)];
+  return `${randomDescription} Дата создания: ${new Date().toLocaleDateString()}`;
+}
+
 // Auth middleware to ensure session is valid
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (req.isAuthenticated()) {
@@ -511,6 +595,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
         webhook_url: isRender ? `${renderUrl}/webhook/${process.env.TELEGRAM_BOT_TOKEN}` : 'Not available'
       }
     });
+  });
+  
+  // NFT API маршруты
+  
+  // Проверка, может ли пользователь сгенерировать NFT (раз в 24 часа)
+  app.get("/api/nft/can-generate", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const canGenerate = await storage.canGenerateNFT(userId);
+      return res.json({ canGenerate });
+    } catch (error) {
+      console.error("Error checking NFT generation ability:", error);
+      return res.status(500).json({ error: "Не удалось проверить возможность генерации NFT" });
+    }
+  });
+  
+  // Генерация нового NFT
+  app.post("/api/nft/generate", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Проверяем, может ли пользователь сгенерировать NFT
+      const canGenerate = await storage.canGenerateNFT(userId);
+      if (!canGenerate) {
+        return res.status(403).json({ 
+          error: "Лимит генерации NFT исчерпан", 
+          message: "Вы можете сгенерировать только один NFT в сутки" 
+        });
+      }
+      
+      // Получаем или создаем коллекцию по умолчанию
+      let collections = await storage.getNFTCollectionsByUserId(userId);
+      let defaultCollection;
+      
+      if (collections.length === 0) {
+        // Создаем коллекцию по умолчанию, если у пользователя еще нет коллекций
+        defaultCollection = await storage.createNFTCollection(
+          userId, 
+          "Моя коллекция NFT", 
+          "Автоматически сгенерированные NFT в Bnalbank"
+        );
+      } else {
+        // Используем первую доступную коллекцию
+        defaultCollection = collections[0];
+      }
+      
+      // Генерируем случайное имя и описание для NFT
+      const rarity = generateNFTRarity();
+      const nftName = generateNFTName(rarity);
+      const nftDescription = generateNFTDescription(rarity);
+      
+      // Генерируем изображение для NFT
+      const imagePath = `/assets/nft/${rarity}_${Date.now()}.png`;
+      
+      // Создаем запись NFT в базе данных
+      const nft = await storage.createNFT({
+        collectionId: defaultCollection.id,
+        name: nftName,
+        description: nftDescription,
+        imagePath: imagePath,
+        rarity: rarity,
+        attributes: {
+          power: Math.floor(Math.random() * 100),
+          agility: Math.floor(Math.random() * 100),
+          wisdom: Math.floor(Math.random() * 100),
+          luck: Math.floor(Math.random() * 100)
+        }
+      });
+      
+      // Обновляем данные о последней генерации NFT для пользователя
+      await storage.updateUserNFTGeneration(userId);
+      
+      return res.json({ success: true, nft });
+    } catch (error) {
+      console.error("Error generating NFT:", error);
+      return res.status(500).json({ error: "Не удалось сгенерировать NFT" });
+    }
+  });
+  
+  // Получение всех NFT пользователя
+  app.get("/api/nft/all", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const nfts = await storage.getNFTsByUserId(userId);
+      return res.json(nfts);
+    } catch (error) {
+      console.error("Error getting user NFTs:", error);
+      return res.status(500).json({ error: "Не удалось получить NFT пользователя" });
+    }
+  });
+  
+  // Получение коллекций NFT пользователя
+  app.get("/api/nft/collections", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const collections = await storage.getNFTCollectionsByUserId(userId);
+      return res.json(collections);
+    } catch (error) {
+      console.error("Error getting user NFT collections:", error);
+      return res.status(500).json({ error: "Не удалось получить коллекции NFT пользователя" });
+    }
+  });
+  
+  // Создание новой коллекции NFT
+  app.post("/api/nft/collections", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { name, description } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ error: "Название коллекции обязательно" });
+      }
+      
+      const collection = await storage.createNFTCollection(userId, name, description || "");
+      return res.json(collection);
+    } catch (error) {
+      console.error("Error creating NFT collection:", error);
+      return res.status(500).json({ error: "Не удалось создать коллекцию NFT" });
+    }
   });
 
   app.use(express.static('dist/client'));

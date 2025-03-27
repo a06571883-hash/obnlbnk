@@ -9,6 +9,7 @@ import NewsPage from "@/pages/news-page";
 import ActivityPage from "@/pages/activity-page";
 import ProfilePage from "@/pages/profile-page";
 import StatisticsPage from "./pages/statistics-page"; // Added import for StatisticsPage
+import NFTPage from "@/pages/nft-page"; // Added import for NFT page
 
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./components/auth-provider";
@@ -31,6 +32,7 @@ function Router() {
         <ProtectedRoute path="/news" component={NewsPage} />
         <ProtectedRoute path="/activity" component={ActivityPage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
+        <ProtectedRoute path="/nft" component={NFTPage} />
         <Route path="/stats" component={StatisticsPage} /> {/* Added route for statistics page */}
         <Route component={NotFound} />
       </Switch>
