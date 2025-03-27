@@ -119,11 +119,28 @@ export const NFTGallery: React.FC = () => {
             }}
           >
             <div className="relative aspect-square">
-              <img 
-                src={nft.imagePath} 
-                alt={nft.name} 
-                className="w-full h-full object-cover"
-              />
+              <div className="w-full h-full relative">
+                {nft.imagePath.endsWith('.svg') ? (
+                  <object
+                    data={nft.imagePath}
+                    type="image/svg+xml"
+                    className="w-full h-full"
+                    aria-label={nft.name}
+                  >
+                    <img 
+                      src="/assets/nft/fallback-nft.svg" 
+                      alt={nft.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  </object>
+                ) : (
+                  <img 
+                    src={nft.imagePath} 
+                    alt={nft.name} 
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
               <Badge className={`absolute top-2 right-2 ${rarityColors[nft.rarity]}`}>
                 {nft.rarity}
               </Badge>
@@ -150,11 +167,28 @@ export const NFTGallery: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative aspect-square rounded-md overflow-hidden">
-                <img 
-                  src={selectedNFT.imagePath} 
-                  alt={selectedNFT.name} 
-                  className="w-full h-full object-cover"
-                />
+                <div className="w-full h-full relative">
+                  {selectedNFT.imagePath.endsWith('.svg') ? (
+                    <object
+                      data={selectedNFT.imagePath}
+                      type="image/svg+xml"
+                      className="w-full h-full"
+                      aria-label={selectedNFT.name}
+                    >
+                      <img 
+                        src="/assets/nft/fallback-nft.svg" 
+                        alt={selectedNFT.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    </object>
+                  ) : (
+                    <img 
+                      src={selectedNFT.imagePath} 
+                      alt={selectedNFT.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
                 <Badge className={`absolute top-2 right-2 ${rarityColors[selectedNFT.rarity]}`}>
                   {selectedNFT.rarity}
                 </Badge>

@@ -632,6 +632,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Получаем редкость NFT из запроса или генерируем случайно
+      const requestedRarity = req.body.rarity;
+      const rarity = requestedRarity || generateNFTRarity();
+      
       // Получаем или создаем коллекцию по умолчанию
       let collections = await storage.getNFTCollectionsByUserId(userId);
       let defaultCollection;
@@ -648,13 +652,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         defaultCollection = collections[0];
       }
       
+      // Импортируем генератор NFT-изображений
+      const { generateNFTImage } = require('./utils/nft-generator');
+      
       // Генерируем случайное имя и описание для NFT
-      const rarity = generateNFTRarity();
       const nftName = generateNFTName(rarity);
       const nftDescription = generateNFTDescription(rarity);
       
       // Генерируем изображение для NFT
-      const imagePath = `/assets/nft/${rarity}_${Date.now()}.png`;
+      const imagePath = await generateNFTImage(rarity);
+      console.log(`Сгенерировано NFT изображение: ${imagePath}`);
       
       // Создаем запись NFT в базе данных
       const nft = await storage.createNFT({
