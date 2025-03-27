@@ -117,15 +117,6 @@
     "nft_generation_count": 0
   },
   {
-    "id": 5,
-    "username": "admin",
-    "password": "admin123",
-    "is_regulator": true,
-    "regulator_balance": "10000000.07770837",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
     "id": 2,
     "username": "regulator",
     "password": "$2b$10$pvacunM0bEDs8FAM2Pro/uD6.WF28c3RHBNs3hCFo9MVxgBAAqs4G",
@@ -133,5 +124,14 @@
     "regulator_balance": "1000000.42764357",
     "last_nft_generation": null,
     "nft_generation_count": 0
+  },
+  {
+    "id": 5,
+    "username": "admin",
+    "password": "admin123",
+    "is_regulator": true,
+    "regulator_balance": "10000000.07770837",
+    "last_nft_generation": "2025-03-27T13:26:03.596Z",
+    "nft_generation_count": 1
   }
 ]

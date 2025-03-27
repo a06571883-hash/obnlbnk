@@ -54,6 +54,7 @@ type DailyLimitResponse = {
   canGenerate: boolean;
   nextAvailableAt?: string;
   remainingTime?: string;
+  message?: string;
 };
 
 interface NFTCollectionViewProps {
@@ -196,11 +197,11 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
           </p>
         </div>
         <div>
-          {!dailyLimit?.canGenerate && dailyLimit?.remainingTime && (
-            <Alert className="mb-4">
-              <AlertTitle>Лимит исчерпан</AlertTitle>
+          {dailyLimit?.message && (
+            <Alert className="mb-4" variant="default">
+              <AlertTitle>Создание NFT</AlertTitle>
               <AlertDescription>
-                Вы сможете создать новый NFT через {formatTimeRemaining(dailyLimit.remainingTime)}
+                {dailyLimit.message}
               </AlertDescription>
             </Alert>
           )}
@@ -209,7 +210,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
               console.log('Открытие диалога генерации NFT');
               setOpenDialog(true);
             }}
-            disabled={!dailyLimit?.canGenerate}
+            // NFT всегда можно создать, так как мы отключили лимит
           >
             Создать новый NFT
           </Button>
@@ -252,7 +253,6 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
                   console.log('Открытие диалога создания NFT из списка коллекций');
                   setOpenDialog(true);
                 }}
-                disabled={!dailyLimit?.canGenerate}
               >
                 Создать NFT
               </Button>
@@ -269,7 +269,6 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
                 setOpenDialog(true);
                 playSoundWithLog('click');
               }}
-              disabled={!dailyLimit?.canGenerate}
             >
               Создать NFT
             </Button>

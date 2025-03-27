@@ -600,7 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // NFT API маршруты
   
-  // Проверка, может ли пользователь сгенерировать NFT (раз в 24 часа)
+  // Проверка, может ли пользователь сгенерировать NFT (ограничение отключено)
   app.get("/api/nft/daily-limit", ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
@@ -608,8 +608,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Unauthorized" });
       }
       
-      const canGenerate = await storage.canGenerateNFT(userId);
-      return res.json({ canGenerate });
+      // Всегда разрешаем генерацию NFT, лимит отключен
+      return res.json({ 
+        canGenerate: true,
+        message: "Вы можете создавать неограниченное количество NFT"
+      });
     } catch (error) {
       console.error("Error checking NFT generation ability:", error);
       return res.status(500).json({ error: "Не удалось проверить возможность генерации NFT" });
@@ -625,11 +628,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Проверяем, может ли пользователь сгенерировать NFT
+      // Лимит отключен, теперь пользователи могут создавать несколько NFT в день
       const canGenerate = await storage.canGenerateNFT(userId);
       if (!canGenerate) {
         return res.status(403).json({ 
-          error: "Лимит генерации NFT исчерпан", 
-          message: "Вы можете сгенерировать только один NFT в сутки" 
+          error: "Не удалось создать NFT", 
+          message: "Произошла ошибка при создании NFT, пожалуйста, попробуйте снова" 
         });
       }
       

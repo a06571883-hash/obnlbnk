@@ -934,6 +934,11 @@ export class DatabaseStorage implements IStorage {
         return false;
       }
       
+      // Всегда разрешаем генерацию, не учитывая лимит по времени
+      return true;
+      
+      // Старый код лимита (раз в 24 часа) - отключен:
+      /*
       // Если пользователь никогда не генерировал NFT или нет информации о последней генерации
       if (!user.last_nft_generation) {
         return true;
@@ -946,6 +951,7 @@ export class DatabaseStorage implements IStorage {
       
       // Разрешаем генерацию раз в 24 часа
       return hoursSinceLastGeneration >= 24;
+      */
     }, 'Check if user can generate NFT');
   }
   
