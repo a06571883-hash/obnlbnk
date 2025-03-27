@@ -47,29 +47,29 @@ export const NFTCollectionView: React.FC = () => {
   const { toast } = useToast();
 
   const { 
-    data: collections, 
+    data: collections = [], 
     isLoading: isLoadingCollections,
     isError: isErrorCollections,
     error: errorCollections
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: ['/api/nft/collections'],
     retry: 1
   });
 
   const { 
-    data: nftStatus, 
+    data: nftStatus = {}, 
     isLoading: isLoadingStatus,
     refetch: refetchStatus
-  } = useQuery({
+  } = useQuery<Record<string, any>>({
     queryKey: ['/api/nft/status'],
     retry: 1
   });
 
   const { 
-    data: dailyLimit, 
+    data: dailyLimit = { canGenerate: false }, 
     isLoading: isLoadingLimit,
     refetch: refetchLimit
-  } = useQuery({
+  } = useQuery<{ canGenerate: boolean }>({
     queryKey: ['/api/nft/daily-limit'],
     retry: 1
   });
@@ -94,8 +94,7 @@ export const NFTCollectionView: React.FC = () => {
       if (data.nft) {
         toast({
           title: 'NFT создан',
-          description: `${data.nft.name} добавлен в вашу коллекцию`,
-          variant: 'success'
+          description: `${data.nft.name} добавлен в вашу коллекцию`
         });
         playSoundIfEnabled('success');
         
@@ -202,7 +201,7 @@ export const NFTCollectionView: React.FC = () => {
   return (
     <div className="space-y-6">
       {!dailyLimit?.canGenerate && (
-        <Alert variant="warning">
+        <Alert>
           <AlertTitle>Лимит достигнут</AlertTitle>
           <AlertDescription>
             Вы можете создавать новые NFT раз в 24 часа. Пожалуйста, попробуйте позже.

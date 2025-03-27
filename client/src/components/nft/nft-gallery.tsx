@@ -33,10 +33,10 @@ export const NFTGallery: React.FC = () => {
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
 
   const { 
-    data: nfts, 
+    data: nfts = [], 
     isLoading: isLoadingNFTs,
     isError: isErrorNFTs
-  } = useQuery({
+  } = useQuery<NFT[]>({
     queryKey: ['/api/nft/gallery'],
     retry: 1
   });

@@ -9,7 +9,7 @@ import NewsPage from "@/pages/news-page";
 import ActivityPage from "@/pages/activity-page";
 import ProfilePage from "@/pages/profile-page";
 import StatisticsPage from "./pages/statistics-page"; // Added import for StatisticsPage
-import NFTPage from "@/pages/nft-page"; // Added import for NFT page
+import NFTPage from "./pages/nft-page"; // Fix: direct import instead of alias
 
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./components/auth-provider";
@@ -17,7 +17,7 @@ import BottomNav from "@/components/bottom-nav";
 import { useLocation } from "wouter";
 import React, { useEffect } from 'react';
 import './App.css';
-import { preloadSounds } from './lib/sound-service'; // Added import for sound service
+import { preloadSounds, playSoundIfEnabled } from './lib/sound-service'; // Fix: added playSoundIfEnabled import
 
 
 function Router() {
@@ -32,7 +32,7 @@ function Router() {
         <ProtectedRoute path="/news" component={NewsPage} />
         <ProtectedRoute path="/activity" component={ActivityPage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
-        <ProtectedRoute path="/nft" component={NFTPage} />
+        <ProtectedRoute path="/nft" component={() => <NFTPage />} />
         <Route path="/stats" component={StatisticsPage} /> {/* Added route for statistics page */}
         <Route component={NotFound} />
       </Switch>
