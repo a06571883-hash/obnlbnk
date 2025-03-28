@@ -244,20 +244,12 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold">Доступные коллекции</h2>
+          <h2 className="text-2xl font-bold">Моя коллекция NFT</h2>
           <p className="text-muted-foreground">
-            Выберите коллекцию для просмотра или создайте новый NFT
+            Создавайте и управляйте вашими NFT активами
           </p>
         </div>
         <div className="space-x-2 flex">
-          {dailyLimit?.message && (
-            <Alert className="mb-4" variant="default">
-              <AlertTitle>Создание NFT</AlertTitle>
-              <AlertDescription>
-                {dailyLimit.message}
-              </AlertDescription>
-            </Alert>
-          )}
           <Button 
             variant="outline"
             onClick={() => {
@@ -266,7 +258,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
                 clearAllNFTs.mutate();
               }
             }}
-            disabled={clearAllNFTs.isPending || collections.length === 0}
+            disabled={clearAllNFTs.isPending}
           >
             {clearAllNFTs.isPending ? (
               <>
@@ -282,79 +274,45 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
               console.log('Открытие диалога генерации NFT');
               setOpenDialog(true);
             }}
-            // NFT всегда можно создать, так как мы отключили лимит
           >
             Создать новый NFT
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {collections && collections.length > 0 ? collections.map((collection: NFTCollection) => (
-          <Card key={collection.id} className="overflow-hidden">
-            <div className="aspect-video relative">
-              <img 
-                src={collection.imageUrl} 
-                alt={collection.name} 
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                <h3 className="text-white text-xl font-bold">{collection.name}</h3>
-                <p className="text-white/80 text-sm">{collection.nfts && collection.nfts.length ? collection.nfts.length : 0} NFTs</p>
-              </div>
-            </div>
-            <CardContent className="pt-4">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {collection.description}
-              </p>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  console.log('Открытие просмотра коллекции:', collection.id);
-                  setSelectedCollection(collection.id);
-                  playSoundWithLog('click');
-                }}
-              >
-                Просмотр коллекции
-              </Button>
-              <Button 
-                size="sm"
-                onClick={() => {
-                  console.log('Открытие диалога создания NFT из списка коллекций');
-                  setOpenDialog(true);
-                }}
-              >
-                Создать NFT
-              </Button>
-            </CardFooter>
-          </Card>
-        )) : (
-          <div className="col-span-full text-center p-6 border rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">Пока нет коллекций</h3>
-            <p className="text-muted-foreground mb-4">
-              Создайте свой первый NFT, чтобы начать коллекцию, 
-              или купите NFT на маркетплейсе.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button 
-                onClick={() => {
-                  setOpenDialog(true);
-                  playSoundWithLog('click');
-                }}
-              >
-                Создать NFT
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={handleNavigateToMarketplace}
-              >
-                Перейти на Маркетплейс
-              </Button>
-            </div>
-          </div>
-        )}
+      <div className="flex flex-col items-center justify-center p-8 rounded-lg border bg-card text-card-foreground shadow-sm">
+        <img 
+          src="/assets/images/nft-hero.png" 
+          alt="NFT Collection" 
+          className="w-20 h-20 mb-4 opacity-50"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+          }}
+        />
+        <h3 className="text-2xl font-bold text-center mb-2">Моя коллекция NFT</h3>
+        <p className="text-muted-foreground text-center mb-6">
+          {collections.length > 0 
+            ? "Для просмотра ваших NFT, перейдите во вкладку 'Галерея'" 
+            : "У вас пока нет NFT. Создайте свой первый NFT, нажав кнопку ниже."}
+        </p>
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <Button 
+            variant="default"
+            onClick={() => {
+              setOpenDialog(true);
+              playSoundWithLog('click');
+            }}
+          >
+            Создать NFT
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={handleNavigateToGallery}
+          >
+            Перейти в Галерею
+          </Button>
+        </div>
       </div>
 
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
