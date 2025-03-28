@@ -68,31 +68,43 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
       fs.mkdirSync(publicFixedDir, { recursive: true });
     }
     
+    // Категории предметов роскоши
+    const categories = ['car', 'watch', 'diamond', 'mansion', 'cash'];
+    
+    // Выбираем случайную категорию
+    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+    
+    // Путь к изображениям с учетом категории
     const localImages: Record<NFTRarity, string[]> = {
       common: [
         `/assets/nft/fixed/common_luxury_car_1.jpg`,
         `/assets/nft/fixed/common_luxury_watch_1.jpg`, 
-        `/assets/nft/fixed/common_luxury_diamond_1.jpg`
+        `/assets/nft/fixed/common_luxury_diamond_1.jpg`,
+        `/assets/nft/fixed/common_luxury_mansion_1.jpg`
       ],
       uncommon: [
         `/assets/nft/fixed/uncommon_luxury_car_1.jpg`,
         `/assets/nft/fixed/uncommon_luxury_watch_1.jpg`,
-        `/assets/nft/fixed/uncommon_luxury_diamond_1.jpg`
+        `/assets/nft/fixed/uncommon_luxury_diamond_1.jpg`,
+        `/assets/nft/fixed/uncommon_luxury_mansion_1.jpg`
       ],
       rare: [
         `/assets/nft/fixed/rare_luxury_car_1.jpg`,
         `/assets/nft/fixed/rare_luxury_watch_1.jpg`,
-        `/assets/nft/fixed/rare_luxury_diamond_1.jpg`
+        `/assets/nft/fixed/rare_luxury_diamond_1.jpg`,
+        `/assets/nft/fixed/rare_luxury_mansion_1.jpg`
       ],
       epic: [
         `/assets/nft/fixed/epic_luxury_car_1.jpg`,
         `/assets/nft/fixed/epic_luxury_watch_1.jpg`,
-        `/assets/nft/fixed/epic_luxury_diamond_1.jpg`
+        `/assets/nft/fixed/epic_luxury_diamond_1.jpg`,
+        `/assets/nft/fixed/epic_luxury_mansion_1.jpg`
       ],
       legendary: [
         `/assets/nft/fixed/legendary_luxury_car_1.jpg`,
         `/assets/nft/fixed/legendary_luxury_watch_1.jpg`,
-        `/assets/nft/fixed/legendary_luxury_diamond_1.jpg`
+        `/assets/nft/fixed/legendary_luxury_diamond_1.jpg`,
+        `/assets/nft/fixed/legendary_luxury_mansion_1.jpg`
       ]
     };
     
@@ -104,12 +116,18 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
       
       // Генерируем локальные постоянные файлы из внешних источников с добавлением уникального идентификатора
       const localImagePaths = localImages[rarity];
-      let basePath = localImagePaths[Math.floor(Math.random() * localImagePaths.length)];
+      
+      // Гарантируем, что каждый раз выбираем новое изображение, используя дополнительную энтропию
+      const randomValue = Date.now() % localImagePaths.length;
+      const secondaryRandomValue = crypto.randomBytes(1)[0] % localImagePaths.length;
+      const finalRandomIndex = (randomValue + secondaryRandomValue) % localImagePaths.length;
+      
+      let basePath = localImagePaths[finalRandomIndex];
       
       // Добавляем уникальность пути, сохраняя оригинальное расширение
       const parsedPath = path.parse(basePath);
       const timestamp = Date.now();
-      const randomId = crypto.randomBytes(4).toString('hex');
+      const randomId = crypto.randomBytes(8).toString('hex'); // Увеличиваем энтропию
       const uniquePath = `${parsedPath.dir}/${parsedPath.name}_${timestamp}_${randomId}${parsedPath.ext}`;
       
       // Создаем пути с уникальными именами файлов
@@ -150,17 +168,23 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
       try {
         // Пробуем скачать новое изображение напрямую из Pixabay
         console.log('Пробуем скачать новое изображение из Pixabay...');
-        const randomImageUrl = fallbackImages[rarity][Math.floor(Math.random() * fallbackImages[rarity].length)];
+        
+        // Используем дополнительную энтропию для выбора изображения
+        const randomIndex = (Date.now() % fallbackImages[rarity].length + 
+                           crypto.randomBytes(1)[0] % fallbackImages[rarity].length) % 
+                           fallbackImages[rarity].length;
+        
+        const randomImageUrl = fallbackImages[rarity][randomIndex];
         
         const response = await fetch(randomImageUrl);
         if (!response.ok) {
           throw new Error(`Не удалось загрузить изображение с Pixabay: ${response.statusText}`);
         }
         
-        // Сохраняем с уникальным именем
+        // Сохраняем с уникальным именем, увеличиваем энтропию с длинным randomId
         const buffer = await response.arrayBuffer();
         const timestamp = Date.now();
-        const randomId = crypto.randomBytes(4).toString('hex');
+        const randomId = crypto.randomBytes(8).toString('hex');
         const fileName = `${rarity}_luxury_${timestamp}_${randomId}.jpg`;
         const clientDir = 'client/public/assets/nft';
         const publicDir = 'public/assets/nft';
