@@ -102,15 +102,23 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
         fs.mkdirSync(fixedDir, { recursive: true });
       }
       
-      // Генерируем локальные постоянные файлы из внешних источников, если они не существуют
+      // Генерируем локальные постоянные файлы из внешних источников с добавлением уникального идентификатора
       const localImagePaths = localImages[rarity];
-      const selectedLocalPath = localImagePaths[Math.floor(Math.random() * localImagePaths.length)];
-      const clientFilePath = path.join(process.cwd(), 'client/public', selectedLocalPath);
-      const publicFilePath = path.join(process.cwd(), 'public', selectedLocalPath);
+      let basePath = localImagePaths[Math.floor(Math.random() * localImagePaths.length)];
+      
+      // Добавляем уникальность пути, сохраняя оригинальное расширение
+      const parsedPath = path.parse(basePath);
+      const timestamp = Date.now();
+      const randomId = crypto.randomBytes(4).toString('hex');
+      const uniquePath = `${parsedPath.dir}/${parsedPath.name}_${timestamp}_${randomId}${parsedPath.ext}`;
+      
+      // Создаем пути с уникальными именами файлов
+      const clientFilePath = path.join(process.cwd(), 'client/public', uniquePath);
+      const publicFilePath = path.join(process.cwd(), 'public', uniquePath);
       
       // Если файла нет, создаем его
       if (!fs.existsSync(clientFilePath) || !fs.existsSync(publicFilePath)) {
-        console.log(`Создаю локальное изображение для ${rarity}: ${selectedLocalPath}`);
+        console.log(`Создаю локальное изображение для ${rarity}: ${uniquePath}`);
         
         // Используем Pixabay изображения как источники
         const randomImageUrl = fallbackImages[rarity][Math.floor(Math.random() * fallbackImages[rarity].length)];
@@ -130,12 +138,12 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
         // И также в директорию public для доступа к файлам через веб-сервер
         fs.writeFileSync(publicFilePath, Buffer.from(buffer));
         
-        console.log(`Изображение успешно сохранено локально: ${selectedLocalPath}`);
+        console.log(`Изображение успешно сохранено локально: ${uniquePath}`);
       } else {
-        console.log(`Используем имеющееся локальное изображение: ${selectedLocalPath}`);
+        console.log(`Используем имеющееся локальное изображение: ${uniquePath}`);
       }
       
-      return selectedLocalPath;
+      return uniquePath;
     } catch (fallbackError) {
       console.error('Ошибка при работе с локальными изображениями:', fallbackError);
       
