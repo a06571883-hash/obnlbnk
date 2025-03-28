@@ -134,45 +134,29 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
       const clientFilePath = path.join(process.cwd(), 'client/public', uniquePath);
       const publicFilePath = path.join(process.cwd(), 'public', uniquePath);
       
-      // Всегда создаем новый файл с уникальным содержимым для каждого NFT
+      // Всегда создаем новый файл с уникальным именем для каждого NFT
       console.log(`Создаю уникальное изображение для NFT (${rarity}): ${uniquePath}`);
       
       let buffer;
-      // Основной источник: копируем из исходного файла с небольшими модификациями
       try {
         // Получаем путь к оригинальному файлу
         const origFilePath = path.join(process.cwd(), 'public', basePath);
         
         if (fs.existsSync(origFilePath)) {
-          // Считываем содержимое исходного файла
+          // Просто копируем исходный файл без модификаций, чтобы избежать повреждения
           buffer = fs.readFileSync(origFilePath);
-          
-          // Создаем небольшие случайные изменения в файле для уникальности
-          // Сначала конвертируем в массив байтов
-          const byteArray = [...buffer];
-          
-          // Добавляем метаданные в конец файла
-          const metadata = Buffer.from(`BnalbankNFT:${timestamp}:${randomId}:${rarity}`);
-          
-          // Добавляем случайные изменения в некоторых пикселях (не затрагивая заголовок JPEG)
-          for (let i = 0; i < 100; i++) {
-            const position = 2000 + Math.floor(Math.random() * (byteArray.length - 4000));
-            byteArray[position] = (byteArray[position] + Math.floor(Math.random() * 5) - 2) % 256;
-          }
-          
-          // Комбинируем основной файл и метаданные
-          const combinedBuffer = Buffer.concat([Buffer.from(byteArray), metadata]);
-          buffer = combinedBuffer;
+          console.log(`Успешно прочитан исходный файл изображения: ${basePath}`);
         } else {
           // Если файл не найден, используем Pixabay как запасной вариант
           throw new Error("Исходный файл не найден");
         }
-      } catch (error) {
+      } catch (err) {
         // Если что-то пошло не так, используем Pixabay как запасной вариант
+        const error = err as Error;
         console.log(`Ошибка при работе с исходным файлом: ${error.message}`);
         console.log('Используем Pixabay в качестве запасного источника');
         
-        // Используем Pixabay изображения как источники
+        // Выбираем случайное изображение из Pixabay с использованием энтропии
         const randomIndex = (Date.now() % fallbackImages[rarity].length + 
                           crypto.randomBytes(1)[0] % fallbackImages[rarity].length) % 
                           fallbackImages[rarity].length;
@@ -187,10 +171,6 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
         
         // Получаем изображение
         buffer = Buffer.from(await response.arrayBuffer());
-        
-        // Добавляем метаданные в конец файла
-        const metadata = Buffer.from(`BnalbankNFT:${timestamp}:${randomId}:${rarity}:pixabay`);
-        buffer = Buffer.concat([buffer, metadata]);
       }
       
       // Сохраняем изображение как постоянное в обеих директориях
