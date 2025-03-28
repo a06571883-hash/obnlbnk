@@ -242,78 +242,37 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold">Моя коллекция NFT</h2>
-          <p className="text-muted-foreground">
-            Создавайте и управляйте вашими NFT активами
-          </p>
-        </div>
-        <div className="space-x-2 flex">
-          <Button 
-            variant="outline"
-            onClick={() => {
-              console.log('Запрос на очистку всех NFT');
-              if (window.confirm('Вы уверены, что хотите удалить все NFT? Это действие нельзя отменить.')) {
-                clearAllNFTs.mutate();
-              }
-            }}
-            disabled={clearAllNFTs.isPending}
-          >
-            {clearAllNFTs.isPending ? (
-              <>
-                <LoadingSpinner size="sm" className="mr-2" />
-                Удаление...
-              </>
-            ) : (
-              'Очистить все NFT'
-            )}
-          </Button>
-          <Button 
-            onClick={() => {
-              console.log('Открытие диалога генерации NFT');
-              setOpenDialog(true);
-            }}
-          >
-            Создать новый NFT
-          </Button>
-        </div>
+      <div className="flex justify-end space-x-2 mb-6">
+        <Button 
+          variant="outline"
+          onClick={() => {
+            console.log('Запрос на очистку всех NFT');
+            if (window.confirm('Вы уверены, что хотите удалить все NFT? Это действие нельзя отменить.')) {
+              clearAllNFTs.mutate();
+            }
+          }}
+          disabled={clearAllNFTs.isPending}
+        >
+          {clearAllNFTs.isPending ? (
+            <>
+              <LoadingSpinner size="sm" className="mr-2" />
+              Удаление...
+            </>
+          ) : (
+            'Очистить все NFT'
+          )}
+        </Button>
+        <Button 
+          onClick={() => {
+            console.log('Открытие диалога генерации NFT');
+            setOpenDialog(true);
+          }}
+        >
+          Создать новый NFT
+        </Button>
       </div>
 
-      <div className="flex flex-col items-center justify-center p-8 rounded-lg border bg-card text-card-foreground shadow-sm">
-        <img 
-          src="/assets/images/nft-hero.png" 
-          alt="NFT Collection" 
-          className="w-20 h-20 mb-4 opacity-50"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-          }}
-        />
-        <h3 className="text-2xl font-bold text-center mb-2">Моя коллекция NFT</h3>
-        <p className="text-muted-foreground text-center mb-6">
-          {collections.length > 0 
-            ? "Для просмотра ваших NFT, перейдите во вкладку 'Галерея'" 
-            : "У вас пока нет NFT. Создайте свой первый NFT, нажав кнопку ниже."}
-        </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Button 
-            variant="default"
-            onClick={() => {
-              setOpenDialog(true);
-              playSoundWithLog('click');
-            }}
-          >
-            Создать NFT
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleNavigateToGallery}
-          >
-            Перейти в Галерею
-          </Button>
-        </div>
-      </div>
+
 
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent>
