@@ -170,7 +170,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
                     aria-label={nft.name}
                   >
                     <img 
-                      src="/assets/nft/fallback-nft.svg" 
+                      src={`/assets/nft/fallback/${nft.rarity.toLowerCase()}_nft.png`}
                       alt={nft.name} 
                       className="w-full h-full object-cover"
                     />
@@ -226,7 +226,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
                       aria-label={selectedNFT.name}
                     >
                       <img 
-                        src="/assets/nft/fallback-nft.svg" 
+                        src={`/assets/nft/fallback/${selectedNFT.rarity.toLowerCase()}_nft.png`}
                         alt={selectedNFT.name} 
                         className="w-full h-full object-cover"
                       />

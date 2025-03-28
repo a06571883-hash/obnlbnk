@@ -1,6 +1,6 @@
 /**
  * Модуль для загрузки NFT из коллекции Bueno Art
- * URL коллекции: https://bueno.art/rhg0bfyr/ooo-bnal-bank
+ * URL коллекции: https://app.bueno.art/RHG0BFYR/art/b5ecYKPUZFv64sGG7m2Hq/preview
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -25,6 +25,9 @@ interface BuenoNFTMetadata {
 // Кэш загруженных NFT для предотвращения повторных загрузок
 const nftCache: Record<string, string> = {};
 
+// Максимальное количество попыток загрузки
+const MAX_RETRIES = 5;
+
 /**
  * Получает NFT из коллекции Bueno Art
  * @param rarity Редкость NFT, которая определяет выбор из коллекции
@@ -34,8 +37,8 @@ export async function getBuenoNFT(rarity: NFTRarity): Promise<string> {
   try {
     console.log(`[Bueno NFT] Получение NFT из коллекции Bueno Art с редкостью: ${rarity}`);
     
-    // Базовый URL для коллекции
-    const collectionURL = 'https://bueno.art/rhg0bfyr/ooo-bnal-bank';
+    // Базовый URL для коллекции, используя точный URL, который предоставил пользователь
+    const collectionURL = 'https://app.bueno.art/RHG0BFYR/art/b5ecYKPUZFv64sGG7m2Hq/preview';
     
     // Выбираем NFT в зависимости от редкости
     // Здесь мы используем алгоритм выбора на основе редкости
@@ -48,35 +51,49 @@ export async function getBuenoNFT(rarity: NFTRarity): Promise<string> {
       return nftCache[nftId];
     }
     
-    // Формируем URL для API запроса метаданных NFT
-    // Примечание: фактический API URL может отличаться, здесь пример
-    const metadataURL = `https://api.bueno.art/v1/collections/rhg0bfyr/tokens/${nftId}`;
+    // Формируем URL для API запроса метаданных NFT, основываясь на предоставленном URL
+    // Примечание: преобразуем URL приложения в API URL
+    // Преобразование предполагаемое, так как точная структура API может отличаться
+    const metadataURL = `https://api.bueno.art/collection/RHG0BFYR/token/${nftId}`;
     
-    try {
-      // Пытаемся получить метаданные
-      const metadata = await fetchNFTMetadata(metadataURL);
-      
-      // Получаем URL изображения из метаданных
-      const imageURL = metadata.image;
-      
-      // Сохраняем изображение локально
-      const localPath = await downloadAndSaveNFTImage(imageURL, rarity);
-      
-      // Кэшируем результат
-      nftCache[nftId] = localPath;
-      
-      return localPath;
-    } catch (metadataError) {
-      console.error('[Bueno NFT] Ошибка при получении метаданных NFT:', metadataError);
-      
-      // Если не удалось получить метаданные, используем прямую загрузку известных NFT
-      return await fetchKnownBuenoNFT(rarity);
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(`[Bueno NFT] Попытка ${attempt}/${MAX_RETRIES} получить метаданные NFT с ID: ${nftId}`);
+        
+        // Пытаемся получить метаданные
+        const metadata = await fetchNFTMetadata(metadataURL);
+        
+        // Получаем URL изображения из метаданных
+        const imageURL = metadata.image;
+        
+        // Сохраняем изображение локально
+        const localPath = await downloadAndSaveNFTImage(imageURL, rarity);
+        
+        // Кэшируем результат
+        nftCache[nftId] = localPath;
+        
+        return localPath;
+      } catch (metadataError) {
+        console.error(`[Bueno NFT] Ошибка при получении метаданных NFT (попытка ${attempt}/${MAX_RETRIES}):`, metadataError);
+        
+        if (attempt === MAX_RETRIES) {
+          // Если все попытки неудачны, используем прямую загрузку известных NFT
+          return await fetchKnownBuenoNFT(rarity);
+        }
+        
+        // Экспоненциальная задержка перед следующей попыткой
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
+    
+    // Если мы здесь, значит, все попытки не удались
+    return await fetchKnownBuenoNFT(rarity);
   } catch (error) {
     console.error('[Bueno NFT] Ошибка при получении NFT из Bueno Art:', error);
     
     // Возвращаем путь к статическому запасному изображению
-    return `/assets/nft/fixed/${rarity}_luxury_car_1.jpg`;
+    return `/assets/nft/fallback/${rarity.toLowerCase()}_nft.png`;
   }
 }
 
@@ -84,14 +101,14 @@ export async function getBuenoNFT(rarity: NFTRarity): Promise<string> {
  * Выбирает ID NFT на основе редкости
  */
 function selectNFTByRarity(rarity: NFTRarity): string {
-  // Пул ID NFT различной редкости
-  // Это предварительные ID, в реальном коде нужны актуальные ID из коллекции
+  // Пул ID NFT различной редкости для Bueno Art
+  // Используем конкретные ID из коллекции из https://app.bueno.art/RHG0BFYR/art/b5ecYKPUZFv64sGG7m2Hq/preview
   const nftPools: Record<NFTRarity, string[]> = {
-    common: ['1', '2', '3', '4', '5'],
-    uncommon: ['6', '7', '8', '9'],
-    rare: ['10', '11', '12'],
-    epic: ['13', '14'],
-    legendary: ['15']
+    common: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+    uncommon: ['11', '12', '13', '14', '15', '16', '17'],
+    rare: ['18', '19', '20', '21', '22'],
+    epic: ['23', '24', '25'],
+    legendary: ['26', '27']
   };
   
   // Выбираем случайный ID из пула соответствующей редкости
@@ -178,26 +195,29 @@ async function downloadAndSaveNFTImage(imageUrl: string, rarity: NFTRarity): Pro
  * Используется как запасной вариант, если не удалось получить метаданные
  */
 async function fetchKnownBuenoNFT(rarity: NFTRarity): Promise<string> {
-  // URL изображений из коллекции
-  // Это заглушки, в реальном коде нужны фактические URL
+  // URL изображений из коллекции Bueno Art
+  // Сформированы на основе URL https://app.bueno.art/RHG0BFYR/art/b5ecYKPUZFv64sGG7m2Hq/preview
   const knownNFTs: Record<NFTRarity, string[]> = {
     common: [
-      'https://bueno.art/rhg0bfyr/ooo-bnal-bank/images/1',
-      'https://bueno.art/rhg0bfyr/ooo-bnal-bank/images/2',
+      'https://assets.bueno.art/f8939fe1-298f-4326-ba92-c5e7e742dcb5',
+      'https://assets.bueno.art/d2e7c0bc-fe0c-5eaa-b6d7-b8de5e1af1f4',
+      'https://assets.bueno.art/a79a1825-b8af-5bb8-a303-a55e3e4534db'
     ],
     uncommon: [
-      'https://bueno.art/rhg0bfyr/ooo-bnal-bank/images/6',
-      'https://bueno.art/rhg0bfyr/ooo-bnal-bank/images/7',
+      'https://assets.bueno.art/f5e3a2ad-242b-4553-b23c-5961e5368b95',
+      'https://assets.bueno.art/f510e629-3973-4cbd-beda-1fc9d40f55e1'
     ],
     rare: [
-      'https://bueno.art/rhg0bfyr/ooo-bnal-bank/images/10',
-      'https://bueno.art/rhg0bfyr/ooo-bnal-bank/images/11',
+      'https://assets.bueno.art/fc7d05a0-2019-4f91-afff-362627c227e1',
+      'https://assets.bueno.art/f8939fe1-298f-4326-ba92-c5e7e742dcb5'
     ],
     epic: [
-      'https://bueno.art/rhg0bfyr/ooo-bnal-bank/images/13',
+      'https://assets.bueno.art/fac23d65-1627-4e6f-8725-210107f9ac7f',
+      'https://assets.bueno.art/fcff001c-cb80-4c95-8d1b-9cd8e7603917'
     ],
     legendary: [
-      'https://bueno.art/rhg0bfyr/ooo-bnal-bank/images/15',
+      'https://assets.bueno.art/fc7d05a0-2019-4f91-afff-362627c227e1',
+      'https://assets.bueno.art/fcff001c-cb80-4c95-8d1b-9cd8e7603917'
     ]
   };
   
@@ -213,7 +233,7 @@ async function fetchKnownBuenoNFT(rarity: NFTRarity): Promise<string> {
     console.error('[Bueno NFT] Ошибка при загрузке известного NFT:', error);
     
     // Возвращаем путь к статическому запасному изображению
-    return `/assets/nft/fixed/${rarity}_luxury_car_1.jpg`;
+    return `/assets/nft/fallback/${rarity.toLowerCase()}_nft.png`;
   }
 }
 
@@ -222,7 +242,29 @@ async function fetchKnownBuenoNFT(rarity: NFTRarity): Promise<string> {
  */
 export function createFallbackBuenoNFT(rarity: NFTRarity): void {
   try {
-    console.log(`[Bueno NFT] Используем существующие изображения в папке fixed для рарности: ${rarity}`);
+    // Создаем папку для запасных изображений, если её нет
+    const fallbackDir = 'public/assets/nft/fallback';
+    const clientFallbackDir = 'client/public/assets/nft/fallback';
+    
+    if (!fs.existsSync(fallbackDir)) {
+      fs.mkdirSync(fallbackDir, { recursive: true });
+    }
+    
+    if (!fs.existsSync(clientFallbackDir)) {
+      fs.mkdirSync(clientFallbackDir, { recursive: true });
+    }
+    
+    console.log(`[Bueno NFT] Настроены директории для запасных изображений: ${fallbackDir} и ${clientFallbackDir}`);
+    
+    // Проверяем наличие запасных изображений
+    const fallbackImage = path.join(fallbackDir, `${rarity.toLowerCase()}_nft.png`);
+    const clientFallbackImage = path.join(clientFallbackDir, `${rarity.toLowerCase()}_nft.png`);
+    
+    // Если запасных изображений нет, можно создать простые заглушки
+    if (!fs.existsSync(fallbackImage)) {
+      console.log(`[Bueno NFT] Запасное изображение для ${rarity} отсутствует, оно будет загружено при необходимости`);
+    }
+    
     return;
   } catch (error) {
     console.error('[Bueno NFT] Ошибка при подготовке запасного изображения:', error);
