@@ -1,8 +1,9 @@
 /**
  * Утилита для генерации фотореалистичных NFT изображений с элементами роскоши
- * Создает изображения премиальных объектов через API генерации изображений
+ * Создает изображения премиальных объектов через OpenAI DALL-E API
+ * Поддерживает роскошные автомобили, часы, бриллианты и особняки в высоком качестве
  */
-import { generateNFTImage as generateRealisticNFT } from './realistic-image-generator';
+import { generateNFTImage as generateRealisticNFT } from './openai-image-generator';
 import * as crypto from 'crypto';
 
 // Типы редкости NFT

@@ -1,0 +1,24 @@
+
+    <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1024" height="1024" fill="#581C87" />
+      
+      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.8" />
+        <stop offset="100%" stop-color="#A78BFA" stop-opacity="0.8" />
+      </linearGradient>
+      
+      <rect x="50" y="50" width="924" height="924" rx="20" ry="20" fill="url(#grad)" opacity="0.3" />
+      
+      <text x="512" y="400" font-family="Arial" font-size="48" text-anchor="middle" fill="white">
+        Роскошный Особняк
+      </text>
+      
+      <text x="512" y="500" font-family="Arial" font-size="36" text-anchor="middle" fill="white">
+        EPIC
+      </text>
+      
+      <text x="512" y="624" font-family="Arial" font-size="24" text-anchor="middle" fill="white">
+        Изображение создается...
+      </text>
+    </svg>
+  
