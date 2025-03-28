@@ -1,9 +1,9 @@
 /**
  * Утилита для генерации фотореалистичных NFT изображений с элементами роскоши
- * Создает уникальные изображения премиальных объектов через Replicate AI API
- * Поддерживает миллионы вариантов роскошных автомобилей, часов, бриллиантов и особняков
+ * Создает миллионы уникальных вариаций изображений премиальных объектов
+ * с использованием алгоритмических модификаций базовых роскошных изображений
  */
-import { generateAIImage } from './replicate-ai-generator';
+import { generateUniqueImage } from './image-processor';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -12,15 +12,15 @@ import * as path from 'path';
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 /**
- * Создает фотореалистичное изображение NFT через Replicate AI API
- * Каждый раз создает абсолютно уникальное изображение с миллионами вариаций
+ * Создает фотореалистичное изображение NFT с уникальными модификациями
+ * Каждый раз создает новое изображение с миллионами вариаций
  * @param rarity Редкость NFT
  * @returns Путь к созданному файлу
  */
 export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
   try {
-    // Используем Replicate AI для генерации уникальных фотореалистичных изображений
-    return await generateAIImage(rarity);
+    // Используем процессор изображений для создания уникальных модификаций
+    return await generateUniqueImage(rarity);
   } catch (error) {
     // Если произошла ошибка, создаем запасное фотореалистичное изображение из статических файлов
     console.log('ГЕНЕРАЦИЯ NFT: Используем запасные фотореалистичные изображения');
