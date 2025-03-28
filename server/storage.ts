@@ -920,11 +920,36 @@ export class DatabaseStorage implements IStorage {
   
   async getNFTCollectionsByUserId(userId: number): Promise<NftCollection[]> {
     return this.withRetry(async () => {
-      return db
+      // Сначала получаем все коллекции пользователя
+      const collections = await db
         .select()
         .from(nftCollections)
         .where(eq(nftCollections.userId, userId))
         .orderBy(desc(nftCollections.createdAt));
+      
+      // Если коллекций нет, возвращаем пустой массив
+      if (collections.length === 0) {
+        return [];
+      }
+      
+      // Для каждой коллекции получаем связанные NFT
+      const collectionsWithNFTs = await Promise.all(collections.map(async (collection) => {
+        const nftItems = await db
+          .select()
+          .from(nfts)
+          .where(eq(nfts.collectionId, collection.id))
+          .orderBy(desc(nfts.mintedAt));
+        
+        // Возвращаем коллекцию с добавленными NFT
+        return {
+          ...collection,
+          nfts: nftItems
+        };
+      }));
+      
+      console.log(`Retrieved ${collections.length} NFT collections with a total of ${collectionsWithNFTs.reduce((sum, col) => sum + (col.nfts?.length || 0), 0)} NFTs for user ${userId}`);
+      
+      return collectionsWithNFTs;
     }, 'Get NFT collections by user ID');
   }
   
