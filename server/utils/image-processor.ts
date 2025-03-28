@@ -5,14 +5,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import * as JimpLib from 'jimp';
-const Jimp = JimpLib;
+import sharp from 'sharp';
 
 // Типы редкости NFT
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 /**
- * Генерирует уникальное изображение для NFT с помощью Jimp (без внешних API)
+ * Генерирует уникальное изображение для NFT с помощью sharp (без внешних API)
  * 
  * @param rarity Редкость NFT
  * @returns Путь к сгенерированному изображению
@@ -33,21 +32,24 @@ export async function generateUniqueImage(rarity: NFTRarity): Promise<string> {
     
     console.log(`[Image Processor] Загружено базовое изображение: ${basePath}`);
     
-    // Загружаем изображение с помощью Jimp
-    const image = await Jimp.read(baseImagePath);
+    // Загружаем изображение с помощью sharp
+    let sharpImage = sharp(baseImagePath);
+    
+    // Получаем метаданные изображения (размеры и т.д.)
+    const metadata = await sharpImage.metadata();
     
     // Создаем уникальный идентификатор для изображения
     const timestamp = Date.now();
     const randomId = crypto.randomBytes(8).toString('hex');
     
     // Применяем несколько эффектов в зависимости от редкости
-    await applyEffects(image, rarity, randomId);
+    sharpImage = await applyEffects(sharpImage, metadata, rarity, randomId);
     
     // Добавляем уникальную подпись-идентификатор
-    addWatermark(image, rarity, randomId);
+    sharpImage = await addWatermark(sharpImage, metadata, rarity, randomId);
     
     // Сохраняем модифицированное изображение
-    const outputPath = await saveGeneratedImage(image, rarity, timestamp, randomId);
+    const outputPath = await saveGeneratedImage(sharpImage, rarity, timestamp, randomId);
     
     console.log(`[Image Processor] Изображение успешно сохранено: ${outputPath}`);
     
@@ -78,7 +80,7 @@ function getRandomBasePath(rarity: NFTRarity): string {
 /**
  * Применяет несколько эффектов к изображению для создания уникального варианта
  */
-async function applyEffects(image: Jimp, rarity: NFTRarity, seed: string): Promise<void> {
+async function applyEffects(image: sharp.Sharp, metadata: sharp.Metadata, rarity: NFTRarity, seed: string): Promise<sharp.Sharp> {
   // Количество эффектов зависит от редкости
   const effectsCount = 1 + getRarityLevel(rarity);
   
@@ -92,10 +94,16 @@ async function applyEffects(image: Jimp, rarity: NFTRarity, seed: string): Promi
     'hue', 
     'blur', 
     'sepia', 
-    'overlay'
+    'tint'
   ];
   
   // Применяем несколько эффектов
+  let modifiedImage = image.clone();
+  
+  // Создаем объект с параметрами для sharp
+  let sharpParams: any = {};
+  
+  // Настройки для эффектов
   for (let i = 0; i < effectsCount; i++) {
     // Выбираем эффект на основе seed и порядкового номера
     const effectIndex = (seedNumber + i * 123) % effects.length;
@@ -109,113 +117,156 @@ async function applyEffects(image: Jimp, rarity: NFTRarity, seed: string): Promi
     switch (effect) {
       case 'brightness':
         // Изменяем яркость (значения от -0.1 до +0.1)
-        image.brightness(intensity - 0.05);
+        sharpParams.brightness = intensity * 2;
         break;
         
       case 'contrast':
         // Увеличиваем контраст (значения от 0 до 0.2)
-        image.contrast(intensity);
+        sharpParams.contrast = 1 + intensity;
         break;
         
       case 'hue':
-        // Изменяем оттенок (значения от 0 до 30 градусов)
+        // Изменяем оттенок
         const hue = Math.floor(seedNumber % 30) * (intensity * 10);
-        image.colour(hue, 0, 0);
+        sharpParams.hue = Math.floor(hue);
         break;
         
       case 'blur':
         // Небольшое размытие
-        const blurAmount = Math.max(1, Math.floor(intensity * 3));
-        image.blur(blurAmount);
+        const blurAmount = Math.max(0.3, intensity * 2);
+        modifiedImage = modifiedImage.blur(blurAmount);
         break;
         
       case 'sepia':
         // Эффект сепии
-        image.sepia();
+        modifiedImage = modifiedImage.tint({ r: 112, g: 66, b: 20 });
         break;
         
-      case 'overlay':
+      case 'tint':
         // Добавляем цветовой оттенок в зависимости от редкости
-        const color = getRarityColor(rarity);
-        const colorOverlay = new Jimp(image.getWidth(), image.getHeight(), color);
-        colorOverlay.opacity(intensity * 0.3); // Очень низкая непрозрачность
-        image.composite(colorOverlay, 0, 0, {
-          mode: Jimp.BLEND_OVERLAY,
-          opacitySource: intensity * 0.3,
-          opacityDest: 1
-        });
+        const color = getRarityColorRgb(rarity, seedNumber);
+        // Применяем тонирование с небольшой насыщенностью
+        modifiedImage = modifiedImage.tint(color);
         break;
     }
   }
   
-  // Добавляем небольшой эффект виньетки для более редких NFT
-  if (getRarityLevel(rarity) >= 3) {
-    addVignette(image, 0.15 + (getRarityLevel(rarity) - 3) * 0.05);
+  // Применяем изменения цвета и контраста
+  if (Object.keys(sharpParams).length > 0) {
+    modifiedImage = modifiedImage.modulate(sharpParams);
   }
+  
+  // Добавляем виньетку для более редких NFT
+  if (getRarityLevel(rarity) >= 3) {
+    const vignetteIntensity = 0.2 + (getRarityLevel(rarity) - 3) * 0.05;
+    modifiedImage = await addVignette(modifiedImage, metadata, vignetteIntensity);
+  }
+  
+  return modifiedImage;
 }
 
 /**
  * Добавляет эффект виньетки (затемнение по краям)
  */
-function addVignette(image: Jimp, intensity: number): void {
-  const width = image.getWidth();
-  const height = image.getHeight();
+async function addVignette(image: sharp.Sharp, metadata: sharp.Metadata, intensity: number): Promise<sharp.Sharp> {
+  const width = metadata.width || 800;
+  const height = metadata.height || 600;
+  
+  // Создаем овальную маску для виньетки
+  const mask = Buffer.alloc(width * height);
   const centerX = width / 2;
   const centerY = height / 2;
   const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);
   
-  // Для каждого пикселя
-  image.scan(0, 0, width, height, function(this: any, x: number, y: number, idx: number) {
-    // Вычисляем расстояние от центра
-    const distX = x - centerX;
-    const distY = y - centerY;
-    const distance = Math.sqrt(distX * distX + distY * distY);
-    
-    // Вычисляем фактор затемнения (чем дальше от центра, тем темнее)
-    const factor = 1 - (distance / maxDistance) * intensity * 2;
-    
-    // Не затемняем центральную область
-    if (factor < 1) {
-      // Затемняем пиксель
-      const red = this.bitmap.data[idx + 0];
-      const green = this.bitmap.data[idx + 1];
-      const blue = this.bitmap.data[idx + 2];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const dx = x - centerX;
+      const dy = y - centerY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
       
-      this.bitmap.data[idx + 0] = Math.max(0, Math.min(255, Math.floor(red * factor)));
-      this.bitmap.data[idx + 1] = Math.max(0, Math.min(255, Math.floor(green * factor)));
-      this.bitmap.data[idx + 2] = Math.max(0, Math.min(255, Math.floor(blue * factor)));
+      // Вычисляем значение прозрачности (0-255)
+      // Чем дальше от центра, тем темнее
+      let alpha = 255 - (distance / maxDistance) * 255 * intensity * 2;
+      alpha = Math.max(0, Math.min(255, alpha));
+      
+      // Записываем значение в буфер маски
+      mask[y * width + x] = Math.floor(alpha);
     }
-  });
+  }
+  
+  // Применяем виньетку через композицию
+  return image.composite([
+    {
+      input: {
+        create: {
+          width,
+          height,
+          channels: 1,
+          background: { r: 0, g: 0, b: 0 }
+        }
+      },
+      blend: 'multiply',
+      gravity: 'centre',
+      tile: false,
+      raw: {
+        width,
+        height,
+        channels: 1
+      },
+      density: mask
+    }
+  ]);
 }
 
 /**
  * Добавляет водяной знак с идентификатором NFT
  */
-function addWatermark(image: Jimp, rarity: NFTRarity, id: string): void {
+async function addWatermark(image: sharp.Sharp, metadata: sharp.Metadata, rarity: NFTRarity, id: string): Promise<sharp.Sharp> {
   // Формируем короткий идентификатор
   const shortId = id.substring(0, 8);
   
-  // Загружаем шрифт (будет использован встроенный шрифт Jimp)
-  Jimp.loadFont(Jimp.FONT_SANS_16_WHITE).then(font => {
-    // Формируем текст водяного знака
-    const watermarkText = `Bnalbank NFT ${shortId}`;
-    
-    // Определяем положение текста (в правом нижнем углу)
-    const textWidth = Jimp.measureText(font, watermarkText);
-    const x = image.getWidth() - textWidth - 20;
-    const y = image.getHeight() - 30;
-    
-    // Добавляем текст на изображение
-    image.print(font, x, y, watermarkText);
-  }).catch(e => {
-    console.error('[Image Processor] Ошибка при добавлении водяного знака:', e);
-  });
+  // Формируем текст водяного знака
+  const watermarkText = `Bnalbank NFT ${shortId}`;
+  
+  // Создаем наложение с текстом (в простой версии используем SVG для текста)
+  const width = metadata.width || 800;
+  const height = metadata.height || 600;
+  
+  // Определяем цвет в зависимости от редкости
+  const textColor = getTextColorByRarity(rarity);
+  
+  // Создаем SVG с текстом
+  const svgText = `
+    <svg width="${width}" height="${height}">
+      <style>
+        .watermark { 
+          font-family: Arial; 
+          font-size: 14px; 
+          fill: ${textColor}; 
+          fill-opacity: 0.8;
+        }
+      </style>
+      <text 
+        x="${width - 150}" 
+        y="${height - 20}" 
+        class="watermark"
+      >${watermarkText}</text>
+    </svg>
+  `;
+  
+  // Применяем водяной знак через композицию
+  return image.composite([
+    {
+      input: Buffer.from(svgText),
+      gravity: 'southeast',
+    }
+  ]);
 }
 
 /**
  * Сохраняет сгенерированное изображение
  */
-async function saveGeneratedImage(image: Jimp, rarity: NFTRarity, timestamp: number, randomId: string): Promise<string> {
+async function saveGeneratedImage(image: sharp.Sharp, rarity: NFTRarity, timestamp: number, randomId: string): Promise<string> {
   // Создаем уникальное имя файла
   const fileName = `${rarity}_enhanced_${timestamp}_${randomId}.jpg`;
   
@@ -235,9 +286,12 @@ async function saveGeneratedImage(image: Jimp, rarity: NFTRarity, timestamp: num
   const clientFilePath = path.join(process.cwd(), clientDir, fileName);
   const publicFilePath = path.join(process.cwd(), publicDir, fileName);
   
+  // Задаем параметры для сохранения JPEG (качество 90%)
+  const outputOptions = { quality: 90 };
+  
   // Сохраняем изображение в обе директории
-  await image.writeAsync(clientFilePath);
-  await image.writeAsync(publicFilePath);
+  await image.clone().jpeg(outputOptions).toFile(clientFilePath);
+  await image.clone().jpeg(outputOptions).toFile(publicFilePath);
   
   // Возвращаем относительный путь к изображению
   return `/assets/nft/enhanced/${fileName}`;
@@ -259,21 +313,64 @@ function getRarityLevel(rarity: NFTRarity): number {
 }
 
 /**
- * Получает цвет в формате Jimp в зависимости от редкости
+ * Получает цвет в формате RGB объекта в зависимости от редкости
  */
-function getRarityColor(rarity: NFTRarity): number {
+function getRarityColorRgb(rarity: NFTRarity, seedNumber: number): { r: number, g: number, b: number } {
+  // Добавляем небольшую вариацию к цветам для большей уникальности
+  const variation = seedNumber % 30 - 15;
+  
   switch (rarity) {
     case 'common':
-      return Jimp.rgbaToInt(200, 200, 200, 255);
+      return { 
+        r: Math.max(0, Math.min(255, 200 + variation)), 
+        g: Math.max(0, Math.min(255, 200 + variation)), 
+        b: Math.max(0, Math.min(255, 200 + variation)) 
+      };
     case 'uncommon':
-      return Jimp.rgbaToInt(100, 200, 100, 255);
+      return { 
+        r: Math.max(0, Math.min(255, 100 + variation)), 
+        g: Math.max(0, Math.min(255, 200 + variation)), 
+        b: Math.max(0, Math.min(255, 100 + variation)) 
+      };
     case 'rare':
-      return Jimp.rgbaToInt(100, 100, 220, 255);
+      return { 
+        r: Math.max(0, Math.min(255, 100 + variation)), 
+        g: Math.max(0, Math.min(255, 100 + variation)), 
+        b: Math.max(0, Math.min(255, 220 + variation)) 
+      };
     case 'epic':
-      return Jimp.rgbaToInt(200, 100, 200, 255);
+      return { 
+        r: Math.max(0, Math.min(255, 200 + variation)), 
+        g: Math.max(0, Math.min(255, 100 + variation)), 
+        b: Math.max(0, Math.min(255, 200 + variation)) 
+      };
     case 'legendary':
-      return Jimp.rgbaToInt(220, 200, 100, 255);
+      return { 
+        r: Math.max(0, Math.min(255, 220 + variation)), 
+        g: Math.max(0, Math.min(255, 200 + variation)), 
+        b: Math.max(0, Math.min(255, 100 + variation)) 
+      };
     default:
-      return Jimp.rgbaToInt(200, 200, 200, 255);
+      return { r: 200, g: 200, b: 200 };
+  }
+}
+
+/**
+ * Получает цвет текста в зависимости от редкости
+ */
+function getTextColorByRarity(rarity: NFTRarity): string {
+  switch (rarity) {
+    case 'common':
+      return 'rgba(255, 255, 255, 0.8)';
+    case 'uncommon':
+      return 'rgba(100, 255, 100, 0.8)';
+    case 'rare':
+      return 'rgba(100, 150, 255, 0.8)';
+    case 'epic':
+      return 'rgba(255, 100, 255, 0.8)';
+    case 'legendary':
+      return 'rgba(255, 215, 0, 0.8)'; // Gold
+    default:
+      return 'rgba(255, 255, 255, 0.8)';
   }
 }
