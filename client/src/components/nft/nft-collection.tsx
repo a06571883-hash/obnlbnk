@@ -286,63 +286,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
         </div>
       </div>
 
-      {/* Отображение всех NFT из всех коллекций */}
-      {collections && collections.length > 0 && collections.some(col => col.nfts && col.nfts.length > 0) ? (
-        <div className="p-6 rounded-lg border bg-card shadow-sm">
-          <h3 className="text-xl font-semibold mb-4">Мои NFT</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {collections.flatMap(collection => 
-              collection.nfts ? collection.nfts.map((nft: NFT) => {
-                // Безопасная обработка отсутствующих атрибутов
-                const attributes = nft.attributes || {
-                  power: 0,
-                  agility: 0,
-                  wisdom: 0,
-                  luck: 0
-                };
-                
-                return (
-                  <Card key={nft.id} className="overflow-hidden">
-                    <div className="relative aspect-square">
-                      <div className="w-full h-full relative">
-                        <img 
-                          src={nft.imagePath || "/assets/nft/fallback-nft.svg"} 
-                          alt={nft.name} 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "/assets/nft/fallback-nft.svg";
-                            console.error("Failed to load NFT image:", nft.imagePath);
-                          }}
-                        />
-                      </div>
-                      <Badge className={`absolute top-2 right-2 ${rarityColors[nft.rarity]}`}>
-                        {rarityLabels[nft.rarity]}
-                      </Badge>
-                    </div>
-                    <CardHeader className="py-2">
-                      <CardTitle className="text-base truncate">{nft.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-0 space-y-1">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>Сила: {attributes.power}</div>
-                        <div>Ловкость: {attributes.agility}</div>
-                        <div>Мудрость: {attributes.wisdom}</div>
-                        <div>Удача: {attributes.luck}</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              }) : []
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="p-6 rounded-lg border bg-card shadow-sm text-center">
-          <p className="text-muted-foreground">У вас пока нет NFT в коллекции</p>
-          <p className="text-sm">Нажмите "Создать новый NFT" чтобы добавить первый NFT</p>
-        </div>
-      )}
+
 
 
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
