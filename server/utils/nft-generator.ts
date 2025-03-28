@@ -134,12 +134,50 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
       const clientFilePath = path.join(process.cwd(), 'client/public', uniquePath);
       const publicFilePath = path.join(process.cwd(), 'public', uniquePath);
       
-      // Если файла нет, создаем его
-      if (!fs.existsSync(clientFilePath) || !fs.existsSync(publicFilePath)) {
-        console.log(`Создаю локальное изображение для ${rarity}: ${uniquePath}`);
+      // Всегда создаем новый файл с уникальным содержимым для каждого NFT
+      console.log(`Создаю уникальное изображение для NFT (${rarity}): ${uniquePath}`);
+      
+      let buffer;
+      // Основной источник: копируем из исходного файла с небольшими модификациями
+      try {
+        // Получаем путь к оригинальному файлу
+        const origFilePath = path.join(process.cwd(), 'public', basePath);
+        
+        if (fs.existsSync(origFilePath)) {
+          // Считываем содержимое исходного файла
+          buffer = fs.readFileSync(origFilePath);
+          
+          // Создаем небольшие случайные изменения в файле для уникальности
+          // Сначала конвертируем в массив байтов
+          const byteArray = [...buffer];
+          
+          // Добавляем метаданные в конец файла
+          const metadata = Buffer.from(`BnalbankNFT:${timestamp}:${randomId}:${rarity}`);
+          
+          // Добавляем случайные изменения в некоторых пикселях (не затрагивая заголовок JPEG)
+          for (let i = 0; i < 100; i++) {
+            const position = 2000 + Math.floor(Math.random() * (byteArray.length - 4000));
+            byteArray[position] = (byteArray[position] + Math.floor(Math.random() * 5) - 2) % 256;
+          }
+          
+          // Комбинируем основной файл и метаданные
+          const combinedBuffer = Buffer.concat([Buffer.from(byteArray), metadata]);
+          buffer = combinedBuffer;
+        } else {
+          // Если файл не найден, используем Pixabay как запасной вариант
+          throw new Error("Исходный файл не найден");
+        }
+      } catch (error) {
+        // Если что-то пошло не так, используем Pixabay как запасной вариант
+        console.log(`Ошибка при работе с исходным файлом: ${error.message}`);
+        console.log('Используем Pixabay в качестве запасного источника');
         
         // Используем Pixabay изображения как источники
-        const randomImageUrl = fallbackImages[rarity][Math.floor(Math.random() * fallbackImages[rarity].length)];
+        const randomIndex = (Date.now() % fallbackImages[rarity].length + 
+                          crypto.randomBytes(1)[0] % fallbackImages[rarity].length) % 
+                          fallbackImages[rarity].length;
+        
+        const randomImageUrl = fallbackImages[rarity][randomIndex];
         
         // Загружаем изображение с Pixabay
         const response = await fetch(randomImageUrl);
@@ -147,19 +185,23 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
           throw new Error(`Ошибка при загрузке изображения: ${response.statusText}`);
         }
         
-        // Сохраняем изображение как постоянное в обеих директориях
-        const buffer = await response.arrayBuffer();
+        // Получаем изображение
+        buffer = Buffer.from(await response.arrayBuffer());
         
-        // Сохраняем в директорию client/public
-        fs.writeFileSync(clientFilePath, Buffer.from(buffer));
-        
-        // И также в директорию public для доступа к файлам через веб-сервер
-        fs.writeFileSync(publicFilePath, Buffer.from(buffer));
-        
-        console.log(`Изображение успешно сохранено локально: ${uniquePath}`);
-      } else {
-        console.log(`Используем имеющееся локальное изображение: ${uniquePath}`);
+        // Добавляем метаданные в конец файла
+        const metadata = Buffer.from(`BnalbankNFT:${timestamp}:${randomId}:${rarity}:pixabay`);
+        buffer = Buffer.concat([buffer, metadata]);
       }
+      
+      // Сохраняем изображение как постоянное в обеих директориях
+      
+      // Сохраняем в директорию client/public
+      fs.writeFileSync(clientFilePath, buffer);
+      
+      // И также в директорию public для доступа к файлам через веб-сервер
+      fs.writeFileSync(publicFilePath, buffer);
+      
+      console.log(`Изображение успешно сохранено как уникальное: ${uniquePath}`);
       
       return uniquePath;
     } catch (fallbackError) {
