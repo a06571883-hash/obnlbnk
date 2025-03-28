@@ -76,7 +76,7 @@ export async function getBuenoNFT(rarity: NFTRarity): Promise<string> {
     console.error('[Bueno NFT] Ошибка при получении NFT из Bueno Art:', error);
     
     // Возвращаем путь к статическому запасному изображению
-    return `/assets/nft/bueno-fallback/${rarity}.png`;
+    return `/assets/nft/fixed/${rarity}_luxury_car_1.jpg`;
   }
 }
 
@@ -213,7 +213,7 @@ async function fetchKnownBuenoNFT(rarity: NFTRarity): Promise<string> {
     console.error('[Bueno NFT] Ошибка при загрузке известного NFT:', error);
     
     // Возвращаем путь к статическому запасному изображению
-    return `/assets/nft/bueno-fallback/${rarity}.png`;
+    return `/assets/nft/fixed/${rarity}_luxury_car_1.jpg`;
   }
 }
 
@@ -222,49 +222,9 @@ async function fetchKnownBuenoNFT(rarity: NFTRarity): Promise<string> {
  */
 export function createFallbackBuenoNFT(rarity: NFTRarity): void {
   try {
-    // Директории для запасных изображений
-    const clientDir = 'client/public/assets/nft/bueno-fallback';
-    const publicDir = 'public/assets/nft/bueno-fallback';
-    
-    // Создаем директории, если они не существуют
-    if (!fs.existsSync(clientDir)) {
-      fs.mkdirSync(clientDir, { recursive: true });
-    }
-    if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir, { recursive: true });
-    }
-    
-    // Имя файла
-    const fileName = `${rarity}.png`;
-    
-    // Полные пути к файлам
-    const clientPath = path.join(process.cwd(), clientDir, fileName);
-    const publicPath = path.join(process.cwd(), publicDir, fileName);
-    
-    // Проверяем, существуют ли уже запасные файлы
-    if (fs.existsSync(publicPath)) {
-      console.log(`[Bueno NFT] Запасное изображение уже существует: ${publicPath}`);
-      return;
-    }
-    
-    // Создаем простое изображение-заглушку
-    // Здесь мог бы быть код для создания простого изображения через Canvas
-    // Для простоты используем базовое изображение из проекта
-    
-    // Путь к базовому изображению
-    const basePath = path.join(process.cwd(), 'public/assets/nft/fixed', `${rarity}_luxury_car_1.jpg`);
-    
-    if (fs.existsSync(basePath)) {
-      // Копируем базовое изображение
-      const buffer = fs.readFileSync(basePath);
-      fs.writeFileSync(clientPath, buffer);
-      fs.writeFileSync(publicPath, buffer);
-      
-      console.log(`[Bueno NFT] Запасное изображение создано: ${publicPath}`);
-    } else {
-      console.error(`[Bueno NFT] Не найдено базовое изображение: ${basePath}`);
-    }
+    console.log(`[Bueno NFT] Используем существующие изображения в папке fixed для рарности: ${rarity}`);
+    return;
   } catch (error) {
-    console.error('[Bueno NFT] Ошибка при создании запасного изображения:', error);
+    console.error('[Bueno NFT] Ошибка при подготовке запасного изображения:', error);
   }
 }
