@@ -1,8 +1,8 @@
 /**
- * Утилита для генерации пиксельных NFT изображений в ретро-стиле
- * Создает миллионы уникальных вариаций изображений в ярком неоновом пиксельном стиле
+ * Утилита для генерации NFT изображений из коллекции Bueno Art
+ * Использует NFT с https://bueno.art/rhg0bfyr/ooo-bnal-bank
  */
-import { generatePixelNFTImage } from './pixel-nft-generator';
+import { getBuenoNFT, createFallbackBuenoNFT } from './bueno-nft-fetcher';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -11,20 +11,22 @@ import * as path from 'path';
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 /**
- * Создает пиксельное изображение NFT в ретро-стиле
- * Каждый раз создает новое изображение с миллионами вариаций
+ * Получает NFT изображение из коллекции Bueno Art
  * @param rarity Редкость NFT
  * @returns Путь к созданному файлу
  */
 export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
   try {
-    // Используем генератор пиксельных NFT в ретро-стиле
-    console.log(`Генерируем пиксельное ретро-NFT с редкостью: ${rarity}`);
-    return await generatePixelNFTImage(rarity);
+    // Используем NFT из коллекции Bueno Art
+    console.log(`Получаем NFT из Bueno Art с редкостью: ${rarity}`);
+    return await getBuenoNFT(rarity);
   } catch (error) {
     // Если произошла ошибка, создаем запасное изображение из статических файлов
-    console.log('ГЕНЕРАЦИЯ NFT: Используем запасные пиксельные изображения');
+    console.log('ГЕНЕРАЦИЯ NFT: Используем запасные изображения');
     console.log(`Создание запасного изображения для редкости: ${rarity}`);
+    
+    // Создаем запасное изображение, если оно еще не создано
+    createFallbackBuenoNFT(rarity);
     
     // Статические пути к фотореалистичным изображениям для каждой редкости
     const fallbackImages: Record<NFTRarity, string[]> = {

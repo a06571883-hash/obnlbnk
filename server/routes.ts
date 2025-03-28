@@ -19,6 +19,7 @@ import { Telegraf } from 'telegraf';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
 import { nfts } from '@shared/schema';
+import nftRoutes from './controllers/nft-controller';
 
 // Вспомогательные функции для генерации NFT
 function generateNFTRarity(): string {
@@ -121,6 +122,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   setupAuth(app);
   startRateUpdates(httpServer, '/ws');
+  
+  // Регистрируем маршруты для NFT
+  app.use('/api/nft', nftRoutes);
 
   // Получение последних курсов валют
   app.get("/api/rates", async (req, res) => {
