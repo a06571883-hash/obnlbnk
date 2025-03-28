@@ -70,11 +70,17 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
   const { 
     data: collections = [], 
     isLoading: isLoadingCollections,
-    isError: isErrorCollections
+    isError: isErrorCollections,
+    refetch: refetchCollections
   } = useQuery<NFTCollection[]>({
     queryKey: ['/api/nft/collections'],
     retry: 1
   });
+  
+  // Выводим коллекции для отладки
+  useEffect(() => {
+    console.log('Загруженные коллекции NFT:', collections);
+  }, [collections]);
 
   const { 
     data: dailyLimit, 
