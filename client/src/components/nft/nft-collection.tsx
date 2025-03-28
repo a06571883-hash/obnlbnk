@@ -74,7 +74,7 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
     refetch: refetchCollections
   } = useQuery<NFTCollection[]>({
     queryKey: ['/api/nft/collections'],
-    retry: 1
+    retry: 3
   });
   
   // Выводим коллекции для отладки

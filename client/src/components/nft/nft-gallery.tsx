@@ -52,8 +52,8 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
     isLoading: isLoadingNFTs,
     isError: isErrorNFTs
   } = useQuery<NFT[]>({
-    queryKey: ['/api/nft/gallery'],
-    retry: 1
+    queryKey: ['/api/nft/user'],
+    retry: 3
   });
   
   // Получаем данные о текущем пользователе

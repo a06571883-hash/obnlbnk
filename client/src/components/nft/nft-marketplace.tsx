@@ -75,7 +75,7 @@ export const NFTMarketplace: React.FC = () => {
     isError: isErrorMarketplace
   } = useQuery<NFT[]>({
     queryKey: ['/api/nft/marketplace'],
-    retry: 1
+    retry: 3
   });
   
   // Мутация для выставления NFT на продажу
