@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import fs from 'fs';
+import path from 'path';
 import { storage } from "./storage";
 import { exportDatabase, importDatabase } from './database/backup';
 import { setupAuth } from './auth';
@@ -602,6 +604,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // NFT API маршруты
+  
+  // Тестовый маршрут для генерации NFT изображения
+  app.get("/api/test/nft-card", async (req, res) => {
+    try {
+      const { rarity = 'common' } = req.query;
+      const image = await generateNFTImage(rarity as any);
+      res.json({ success: true, image });
+    } catch (error) {
+      console.error('Ошибка при генерации NFT:', error);
+      res.status(500).json({ success: false, error: String(error) });
+    }
+  });
+  
+  // Маршрут для просмотра всех доступных предзагруженных NFT изображений
+  app.get("/api/test/nft-images", async (req, res) => {
+    try {
+      const publicDir = path.join(process.cwd(), 'public/assets/nft/fixed');
+      const clientDir = path.join(process.cwd(), 'client/public/assets/nft/fixed');
+      
+      let files: string[] = [];
+      
+      // Проверяем наличие директорий
+      const publicExists = fs.existsSync(publicDir);
+      const clientExists = fs.existsSync(clientDir);
+      
+      // Читаем файлы
+      if (publicExists) {
+        const publicFiles = fs.readdirSync(publicDir)
+          .filter(file => file.endsWith('.jpg'))
+          .map(file => `/assets/nft/fixed/${file}`);
+        files = [...files, ...publicFiles];
+      }
+      
+      if (clientExists && clientDir !== publicDir) {
+        const clientFiles = fs.readdirSync(clientDir)
+          .filter(file => file.endsWith('.jpg'))
+          .map(file => `/assets/nft/fixed/${file}`);
+        
+        // Объединяем уникальные файлы
+        const allFiles = new Set([...files, ...clientFiles]);
+        files = Array.from(allFiles);
+      }
+      
+      res.json({ 
+        success: true, 
+        images: files,
+        publicDirExists: publicExists,
+        clientDirExists: clientExists,
+        publicDirPath: publicDir,
+        clientDirPath: clientDir
+      });
+    } catch (error) {
+      console.error('Ошибка при чтении NFT изображений:', error);
+      res.status(500).json({ success: false, error: String(error) });
+    }
+  });
   
   // Проверка, может ли пользователь сгенерировать NFT (ограничение отключено)
   app.get("/api/nft/daily-limit", ensureAuthenticated, async (req, res) => {

@@ -57,7 +57,17 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
     
     // Предзагруженные локальные изображения в нашем проекте
     // Создаем и используем локальные файлы для надежности
-    const fixedDir = 'public/assets/nft/fixed';
+    const fixedDir = 'client/public/assets/nft/fixed';
+    const publicFixedDir = 'public/assets/nft/fixed';
+    
+    // Убедимся, что обе директории существуют
+    if (!fs.existsSync(fixedDir)) {
+      fs.mkdirSync(fixedDir, { recursive: true });
+    }
+    if (!fs.existsSync(publicFixedDir)) {
+      fs.mkdirSync(publicFixedDir, { recursive: true });
+    }
+    
     const localImages: Record<NFTRarity, string[]> = {
       common: [
         `/assets/nft/fixed/common_luxury_car_1.jpg`,
@@ -95,10 +105,11 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
       // Генерируем локальные постоянные файлы из внешних источников, если они не существуют
       const localImagePaths = localImages[rarity];
       const selectedLocalPath = localImagePaths[Math.floor(Math.random() * localImagePaths.length)];
-      const localFilePath = path.join(process.cwd(), 'public', selectedLocalPath);
+      const clientFilePath = path.join(process.cwd(), 'client/public', selectedLocalPath);
+      const publicFilePath = path.join(process.cwd(), 'public', selectedLocalPath);
       
       // Если файла нет, создаем его
-      if (!fs.existsSync(localFilePath)) {
+      if (!fs.existsSync(clientFilePath) || !fs.existsSync(publicFilePath)) {
         console.log(`Создаю локальное изображение для ${rarity}: ${selectedLocalPath}`);
         
         // Используем Pixabay изображения как источники
@@ -110,9 +121,15 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
           throw new Error(`Ошибка при загрузке изображения: ${response.statusText}`);
         }
         
-        // Сохраняем изображение как постоянное
+        // Сохраняем изображение как постоянное в обеих директориях
         const buffer = await response.arrayBuffer();
-        fs.writeFileSync(localFilePath, Buffer.from(buffer));
+        
+        // Сохраняем в директорию client/public
+        fs.writeFileSync(clientFilePath, Buffer.from(buffer));
+        
+        // И также в директорию public для доступа к файлам через веб-сервер
+        fs.writeFileSync(publicFilePath, Buffer.from(buffer));
+        
         console.log(`Изображение успешно сохранено локально: ${selectedLocalPath}`);
       } else {
         console.log(`Используем имеющееся локальное изображение: ${selectedLocalPath}`);
@@ -137,14 +154,23 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
         const timestamp = Date.now();
         const randomId = crypto.randomBytes(4).toString('hex');
         const fileName = `${rarity}_luxury_${timestamp}_${randomId}.jpg`;
-        const dir = 'public/assets/nft';
+        const clientDir = 'client/public/assets/nft';
+        const publicDir = 'public/assets/nft';
         
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
+        // Создаем обе директории, если они не существуют
+        if (!fs.existsSync(clientDir)) {
+          fs.mkdirSync(clientDir, { recursive: true });
+        }
+        if (!fs.existsSync(publicDir)) {
+          fs.mkdirSync(publicDir, { recursive: true });
         }
         
-        const filePath = path.join(process.cwd(), dir, fileName);
-        fs.writeFileSync(filePath, Buffer.from(buffer));
+        // Сохраняем в обеих директориях
+        const clientFilePath = path.join(process.cwd(), clientDir, fileName);
+        const publicFilePath = path.join(process.cwd(), publicDir, fileName);
+        
+        fs.writeFileSync(clientFilePath, Buffer.from(buffer));
+        fs.writeFileSync(publicFilePath, Buffer.from(buffer));
         
         console.log(`Успешно создано новое NFT изображение: /assets/nft/${fileName}`);
         return `/assets/nft/${fileName}`;
