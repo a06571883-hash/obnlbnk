@@ -665,6 +665,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nftDescription = generateNFTDescription(rarity);
       
       // Генерируем изображение для NFT
+      console.log(`Генерируем фотореалистичное NFT с редкостью: ${rarity}`);
+      console.log('Начинаем генерацию изображения через функцию generateNFTImage');
       const imagePath = await generateNFTImage(rarity);
       console.log(`Сгенерировано NFT изображение: ${imagePath}`);
       

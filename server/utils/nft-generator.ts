@@ -55,43 +55,107 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
       ]
     };
     
-    // Выбираем случайное изображение для данной редкости
-    const images = fallbackImages[rarity];
-    const randomImageUrl = images[Math.floor(Math.random() * images.length)];
+    // Предзагруженные локальные изображения в нашем проекте
+    // Создаем и используем локальные файлы для надежности
+    const fixedDir = 'public/assets/nft/fixed';
+    const localImages: Record<NFTRarity, string[]> = {
+      common: [
+        `/assets/nft/fixed/common_luxury_car_1.jpg`,
+        `/assets/nft/fixed/common_luxury_watch_1.jpg`, 
+        `/assets/nft/fixed/common_luxury_diamond_1.jpg`
+      ],
+      uncommon: [
+        `/assets/nft/fixed/uncommon_luxury_car_1.jpg`,
+        `/assets/nft/fixed/uncommon_luxury_watch_1.jpg`,
+        `/assets/nft/fixed/uncommon_luxury_diamond_1.jpg`
+      ],
+      rare: [
+        `/assets/nft/fixed/rare_luxury_car_1.jpg`,
+        `/assets/nft/fixed/rare_luxury_watch_1.jpg`,
+        `/assets/nft/fixed/rare_luxury_diamond_1.jpg`
+      ],
+      epic: [
+        `/assets/nft/fixed/epic_luxury_car_1.jpg`,
+        `/assets/nft/fixed/epic_luxury_watch_1.jpg`,
+        `/assets/nft/fixed/epic_luxury_diamond_1.jpg`
+      ],
+      legendary: [
+        `/assets/nft/fixed/legendary_luxury_car_1.jpg`,
+        `/assets/nft/fixed/legendary_luxury_watch_1.jpg`,
+        `/assets/nft/fixed/legendary_luxury_diamond_1.jpg`
+      ]
+    };
     
     try {
-      // Загружаем изображение
-      const response = await fetch(randomImageUrl);
-      if (!response.ok) {
-        throw new Error(`Ошибка при загрузке изображения: ${response.statusText}`);
+      // Создаем директорию для постоянных файлов, если она не существует
+      if (!fs.existsSync(fixedDir)) {
+        fs.mkdirSync(fixedDir, { recursive: true });
       }
       
-      // Сохраняем изображение в файл
-      const buffer = await response.arrayBuffer();
-      const timestamp = Date.now();
-      const randomId = crypto.randomBytes(8).toString('hex');
-      const fileName = `${rarity}_luxury_${timestamp}_${randomId}.jpg`;
-      const dir = 'client/public/assets/nft';
-      const filePath = `${dir}/${fileName}`;
+      // Генерируем локальные постоянные файлы из внешних источников, если они не существуют
+      const localImagePaths = localImages[rarity];
+      const selectedLocalPath = localImagePaths[Math.floor(Math.random() * localImagePaths.length)];
+      const localFilePath = path.join(process.cwd(), 'public', selectedLocalPath);
       
-      // Проверяем существование директории
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+      // Если файла нет, создаем его
+      if (!fs.existsSync(localFilePath)) {
+        console.log(`Создаю локальное изображение для ${rarity}: ${selectedLocalPath}`);
+        
+        // Используем Pixabay изображения как источники
+        const randomImageUrl = fallbackImages[rarity][Math.floor(Math.random() * fallbackImages[rarity].length)];
+        
+        // Загружаем изображение с Pixabay
+        const response = await fetch(randomImageUrl);
+        if (!response.ok) {
+          throw new Error(`Ошибка при загрузке изображения: ${response.statusText}`);
+        }
+        
+        // Сохраняем изображение как постоянное
+        const buffer = await response.arrayBuffer();
+        fs.writeFileSync(localFilePath, Buffer.from(buffer));
+        console.log(`Изображение успешно сохранено локально: ${selectedLocalPath}`);
+      } else {
+        console.log(`Используем имеющееся локальное изображение: ${selectedLocalPath}`);
       }
       
-      // Записываем файл
-      fs.writeFileSync(filePath, Buffer.from(buffer));
-      
-      console.log(`Сгенерировано запасное NFT изображение: /assets/nft/${fileName}`);
-      return `/assets/nft/${fileName}`;
+      return selectedLocalPath;
     } catch (fallbackError) {
-      // Если даже запасное изображение не удалось загрузить, используем еще один вариант
-      console.error('Ошибка при загрузке запасного изображения:', fallbackError);
+      console.error('Ошибка при работе с локальными изображениями:', fallbackError);
       
-      // Используем базовое изображение из локальных ресурсов (должно быть заранее размещено)
-      const baseImagePath = `/assets/nft/default_${rarity}.jpg`;
-      console.log(`Используем стандартное изображение: ${baseImagePath}`);
-      return baseImagePath;
+      try {
+        // Пробуем скачать новое изображение напрямую из Pixabay
+        console.log('Пробуем скачать новое изображение из Pixabay...');
+        const randomImageUrl = fallbackImages[rarity][Math.floor(Math.random() * fallbackImages[rarity].length)];
+        
+        const response = await fetch(randomImageUrl);
+        if (!response.ok) {
+          throw new Error(`Не удалось загрузить изображение с Pixabay: ${response.statusText}`);
+        }
+        
+        // Сохраняем с уникальным именем
+        const buffer = await response.arrayBuffer();
+        const timestamp = Date.now();
+        const randomId = crypto.randomBytes(4).toString('hex');
+        const fileName = `${rarity}_luxury_${timestamp}_${randomId}.jpg`;
+        const dir = 'public/assets/nft';
+        
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        
+        const filePath = path.join(process.cwd(), dir, fileName);
+        fs.writeFileSync(filePath, Buffer.from(buffer));
+        
+        console.log(`Успешно создано новое NFT изображение: /assets/nft/${fileName}`);
+        return `/assets/nft/${fileName}`;
+      } catch (finalError) {
+        // Если все попытки не удались, используем стандартное резервное изображение
+        console.error('Все попытки загрузки изображений не удались:', finalError);
+        
+        const baseImagePath = `/assets/nft/default_${rarity}.jpg`;
+        console.log(`Используем стандартное изображение: ${baseImagePath}`);
+        return baseImagePath;
+      }
     }
   }
 }
