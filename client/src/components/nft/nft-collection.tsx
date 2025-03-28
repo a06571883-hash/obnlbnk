@@ -242,34 +242,48 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end space-x-2 mb-6">
-        <Button 
-          variant="outline"
-          onClick={() => {
-            console.log('Запрос на очистку всех NFT');
-            if (window.confirm('Вы уверены, что хотите удалить все NFT? Это действие нельзя отменить.')) {
-              clearAllNFTs.mutate();
-            }
-          }}
-          disabled={clearAllNFTs.isPending}
-        >
-          {clearAllNFTs.isPending ? (
-            <>
-              <LoadingSpinner size="sm" className="mr-2" />
-              Удаление...
-            </>
-          ) : (
-            'Очистить все NFT'
-          )}
-        </Button>
-        <Button 
-          onClick={() => {
-            console.log('Открытие диалога генерации NFT');
-            setOpenDialog(true);
-          }}
-        >
-          Создать новый NFT
-        </Button>
+      <div className="p-6 rounded-lg border bg-card shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="text-xl font-semibold">Коллекция NFT</h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Создавайте уникальные фотореалистичные NFT премиум-класса с элитными автомобилями, часами, бриллиантами и пачками денег
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+            <Button 
+              variant="outline"
+              size="sm"
+              className="sm:w-auto w-full"
+              onClick={() => {
+                console.log('Запрос на очистку всех NFT');
+                if (window.confirm('Вы уверены, что хотите удалить все NFT? Это действие нельзя отменить.')) {
+                  clearAllNFTs.mutate();
+                }
+              }}
+              disabled={clearAllNFTs.isPending}
+            >
+              {clearAllNFTs.isPending ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Удаление...
+                </>
+              ) : (
+                'Очистить все NFT'
+              )}
+            </Button>
+            <Button 
+              size="sm"
+              className="sm:w-auto w-full"
+              onClick={() => {
+                console.log('Открытие диалога генерации NFT');
+                setOpenDialog(true);
+              }}
+            >
+              Создать новый NFT
+            </Button>
+          </div>
+        </div>
       </div>
 
 
