@@ -676,6 +676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imagePath: imagePath,
         tokenId: `NFT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
         rarity: rarity,
+        ownerId: userId, // Добавляем владельца NFT
         attributes: {
           power: Math.floor(Math.random() * 100),
           agility: Math.floor(Math.random() * 100),
@@ -789,6 +790,256 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error clearing NFTs:', error);
       return res.status(500).json({ error: "Не удалось удалить NFT" });
+    }
+  });
+
+  // Новые API для работы с продажей и дарением NFT
+  
+  // Получение доступных для покупки NFT
+  app.get("/api/nft/marketplace", async (req, res) => {
+    try {
+      const nftsForSale = await storage.getAvailableNFTsForSale();
+      
+      // Дополнительно получаем информацию о владельцах
+      const userIds = [...new Set(nftsForSale.map(nft => nft.ownerId))];
+      const users = await Promise.all(userIds.map(id => storage.getUser(id)));
+      const userMap = users.reduce((map, user) => {
+        if (user) map[user.id] = user;
+        return map;
+      }, {} as Record<number, any>);
+      
+      // Формируем ответ с информацией о владельцах
+      const enrichedNfts = nftsForSale.map(nft => ({
+        ...nft,
+        owner: userMap[nft.ownerId] ? {
+          id: userMap[nft.ownerId].id,
+          username: userMap[nft.ownerId].username
+        } : undefined
+      }));
+      
+      return res.json(enrichedNfts);
+    } catch (error) {
+      console.error('Error fetching NFTs for sale:', error);
+      return res.status(500).json({ error: "Не удалось получить доступные NFT" });
+    }
+  });
+  
+  // Получение конкретного NFT по ID
+  app.get("/api/nft/:id", async (req, res) => {
+    try {
+      const nftId = parseInt(req.params.id);
+      if (isNaN(nftId)) {
+        return res.status(400).json({ error: "Некорректный ID NFT" });
+      }
+      
+      const nft = await storage.getNFTById(nftId);
+      if (!nft) {
+        return res.status(404).json({ error: "NFT не найден" });
+      }
+      
+      // Получаем дополнительную информацию о владельце и истории передач
+      const owner = await storage.getUser(nft.ownerId);
+      const transferHistory = await storage.getNFTTransferHistory(nftId);
+      
+      // Обогащаем историю передач именами пользователей
+      const userIds = [...new Set([...transferHistory.map(t => t.fromUserId), ...transferHistory.map(t => t.toUserId)])];
+      const users = await Promise.all(userIds.map(id => storage.getUser(id)));
+      const userMap = users.reduce((map, user) => {
+        if (user) map[user.id] = user;
+        return map;
+      }, {} as Record<number, any>);
+      
+      const enrichedHistory = transferHistory.map(transfer => ({
+        ...transfer,
+        fromUser: userMap[transfer.fromUserId] ? {
+          id: userMap[transfer.fromUserId].id,
+          username: userMap[transfer.fromUserId].username
+        } : undefined,
+        toUser: userMap[transfer.toUserId] ? {
+          id: userMap[transfer.toUserId].id,
+          username: userMap[transfer.toUserId].username
+        } : undefined
+      }));
+      
+      return res.json({
+        nft,
+        owner: owner ? {
+          id: owner.id,
+          username: owner.username
+        } : undefined,
+        transferHistory: enrichedHistory
+      });
+    } catch (error) {
+      console.error('Error fetching NFT details:', error);
+      return res.status(500).json({ error: "Не удалось получить информацию об NFT" });
+    }
+  });
+  
+  // Выставление NFT на продажу
+  app.post("/api/nft/:id/sell", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const nftId = parseInt(req.params.id);
+      if (isNaN(nftId)) {
+        return res.status(400).json({ error: "Некорректный ID NFT" });
+      }
+      
+      const { price } = req.body;
+      if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+        return res.status(400).json({ error: "Необходимо указать корректную цену" });
+      }
+      
+      const nft = await storage.getNFTById(nftId);
+      if (!nft) {
+        return res.status(404).json({ error: "NFT не найден" });
+      }
+      
+      if (nft.ownerId !== userId) {
+        return res.status(403).json({ error: "Вы не являетесь владельцем этого NFT" });
+      }
+      
+      const updatedNft = await storage.updateNFTSaleStatus(nftId, true, price.toString());
+      
+      return res.json({
+        success: true,
+        nft: updatedNft,
+        message: `NFT выставлен на продажу за ${price} USD`
+      });
+    } catch (error) {
+      console.error('Error putting NFT for sale:', error);
+      return res.status(500).json({ error: "Не удалось выставить NFT на продажу" });
+    }
+  });
+  
+  // Снятие NFT с продажи
+  app.post("/api/nft/:id/cancel-sale", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const nftId = parseInt(req.params.id);
+      if (isNaN(nftId)) {
+        return res.status(400).json({ error: "Некорректный ID NFT" });
+      }
+      
+      const nft = await storage.getNFTById(nftId);
+      if (!nft) {
+        return res.status(404).json({ error: "NFT не найден" });
+      }
+      
+      if (nft.ownerId !== userId) {
+        return res.status(403).json({ error: "Вы не являетесь владельцем этого NFT" });
+      }
+      
+      const updatedNft = await storage.updateNFTSaleStatus(nftId, false);
+      
+      return res.json({
+        success: true,
+        nft: updatedNft,
+        message: "NFT снят с продажи"
+      });
+    } catch (error) {
+      console.error('Error removing NFT from sale:', error);
+      return res.status(500).json({ error: "Не удалось снять NFT с продажи" });
+    }
+  });
+  
+  // Покупка NFT
+  app.post("/api/nft/:id/buy", ensureAuthenticated, async (req, res) => {
+    try {
+      const buyerId = req.user?.id;
+      if (!buyerId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const nftId = parseInt(req.params.id);
+      if (isNaN(nftId)) {
+        return res.status(400).json({ error: "Некорректный ID NFT" });
+      }
+      
+      const nft = await storage.getNFTById(nftId);
+      if (!nft) {
+        return res.status(404).json({ error: "NFT не найден" });
+      }
+      
+      if (!nft.forSale) {
+        return res.status(400).json({ error: "Этот NFT не продается" });
+      }
+      
+      if (nft.ownerId === buyerId) {
+        return res.status(400).json({ error: "Вы уже являетесь владельцем этого NFT" });
+      }
+      
+      // TODO: В будущем добавить реальную оплату через карту
+      
+      // Передаем NFT новому владельцу
+      const result = await storage.transferNFT(nftId, nft.ownerId, buyerId, 'sale', nft.price);
+      
+      return res.json({
+        success: true,
+        nft: result.nft,
+        message: `Вы успешно приобрели NFT за ${nft.price} USD`
+      });
+    } catch (error) {
+      console.error('Error buying NFT:', error);
+      return res.status(500).json({ error: "Не удалось купить NFT" });
+    }
+  });
+  
+  // Дарение NFT
+  app.post("/api/nft/:id/gift", ensureAuthenticated, async (req, res) => {
+    try {
+      const senderId = req.user?.id;
+      if (!senderId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const nftId = parseInt(req.params.id);
+      if (isNaN(nftId)) {
+        return res.status(400).json({ error: "Некорректный ID NFT" });
+      }
+      
+      const { recipientUsername } = req.body;
+      if (!recipientUsername) {
+        return res.status(400).json({ error: "Необходимо указать имя получателя" });
+      }
+      
+      const nft = await storage.getNFTById(nftId);
+      if (!nft) {
+        return res.status(404).json({ error: "NFT не найден" });
+      }
+      
+      if (nft.ownerId !== senderId) {
+        return res.status(403).json({ error: "Вы не являетесь владельцем этого NFT" });
+      }
+      
+      // Находим получателя по имени пользователя
+      const recipient = await storage.getUserByUsername(recipientUsername);
+      if (!recipient) {
+        return res.status(404).json({ error: "Пользователь с таким именем не найден" });
+      }
+      
+      if (recipient.id === senderId) {
+        return res.status(400).json({ error: "Вы не можете подарить NFT самому себе" });
+      }
+      
+      // Передаем NFT новому владельцу
+      const result = await storage.transferNFT(nftId, senderId, recipient.id, 'gift');
+      
+      return res.json({
+        success: true,
+        nft: result.nft,
+        message: `Вы успешно подарили NFT пользователю ${recipientUsername}`
+      });
+    } catch (error) {
+      console.error('Error gifting NFT:', error);
+      return res.status(500).json({ error: "Не удалось подарить NFT" });
     }
   });
 

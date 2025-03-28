@@ -65,13 +65,27 @@ export const nftCollections = pgTable("nft_collections", {
 export const nfts = pgTable("nfts", {
   id: serial("id").primaryKey(),
   collectionId: integer("collection_id").notNull().references(() => nftCollections.id),
+  ownerId: integer("owner_id").notNull().references(() => users.id), // Текущий владелец NFT
   name: text("name").notNull(),
   description: text("description"),
   imagePath: text("image_path").notNull(),
   attributes: jsonb("attributes"),
   rarity: text("rarity").notNull().default("common"),
+  price: text("price").default("0"), // Цена для продажи, 0 - не продается
+  forSale: boolean("for_sale").notNull().default(false), // Выставлен ли на продажу
   mintedAt: timestamp("minted_at").notNull().defaultNow(),
   tokenId: text("token_id").notNull()
+});
+
+// История передачи NFT (продажи, дарения)
+export const nftTransfers = pgTable("nft_transfers", {
+  id: serial("id").primaryKey(),
+  nftId: integer("nft_id").notNull().references(() => nfts.id),
+  fromUserId: integer("from_user_id").notNull().references(() => users.id),
+  toUserId: integer("to_user_id").notNull().references(() => users.id),
+  transferType: text("transfer_type").notNull(), // gift, sale
+  price: text("price").default("0"), // Цена, если была продажа
+  transferredAt: timestamp("transferred_at").notNull().defaultNow(),
 });
 
 // Базовые схемы
@@ -131,6 +145,11 @@ export const insertNftSchema = createInsertSchema(nfts, {
   mintedAt: undefined,
 });
 
+export const insertNftTransferSchema = createInsertSchema(nftTransfers, {
+  id: undefined,
+  transferredAt: undefined,
+});
+
 // Экспорт типов
 export type User = typeof users.$inferSelect;
 export type Card = typeof cards.$inferSelect;
@@ -138,12 +157,14 @@ export type Transaction = typeof transactions.$inferSelect;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;
 export type NftCollection = typeof nftCollections.$inferSelect;
 export type Nft = typeof nfts.$inferSelect;
+export type NftTransfer = typeof nftTransfers.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertCard = z.infer<typeof insertCardSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertNftCollection = z.infer<typeof insertNftCollectionSchema>;
 export type InsertNft = z.infer<typeof insertNftSchema>;
+export type InsertNftTransfer = z.infer<typeof insertNftTransferSchema>;
 
 export type ExchangeRateResponse = {
   usdToUah: string;

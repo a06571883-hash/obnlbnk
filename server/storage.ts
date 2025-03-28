@@ -1,10 +1,11 @@
 import session from "express-session";
 import { MemoryStore } from 'express-session';
 import { db, client } from "./db";
-import { cards, users, transactions, exchangeRates, nftCollections, nfts } from "@shared/schema";
+import { cards, users, transactions, exchangeRates, nftCollections, nfts, nftTransfers } from "@shared/schema";
 import type { 
   User, Card, InsertUser, Transaction, ExchangeRate,
-  NftCollection, Nft, InsertNftCollection, InsertNft
+  NftCollection, Nft, InsertNftCollection, InsertNft,
+  NftTransfer, InsertNftTransfer
 } from "@shared/schema";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
 import { randomUUID, randomBytes } from 'crypto';
@@ -59,6 +60,12 @@ export interface IStorage {
   deleteUser(userId: number): Promise<void>;
   clearAllUserNFTs(userId: number): Promise<{ success: boolean; count: number }>;
   executeRawQuery(query: string): Promise<any>;
+  // Методы для работы с передачей NFT
+  getNFTById(nftId: number): Promise<Nft | undefined>;
+  updateNFTSaleStatus(nftId: number, forSale: boolean, price?: string): Promise<Nft>;
+  transferNFT(nftId: number, fromUserId: number, toUserId: number, transferType: 'gift' | 'sale', price?: string): Promise<{ success: boolean; error?: string; nft?: Nft }>;
+  getAvailableNFTsForSale(): Promise<Nft[]>;
+  getNFTTransferHistory(nftId: number): Promise<NftTransfer[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -881,35 +888,32 @@ export class DatabaseStorage implements IStorage {
   
   async createNFT(data: InsertNft): Promise<Nft> {
     return this.withRetry(async () => {
+      // Получаем информацию о коллекции, чтобы узнать userId
+      const [collection] = await db.select().from(nftCollections).where(eq(nftCollections.id, data.collectionId));
+      
+      if (!collection) {
+        throw new Error(`NFT collection with ID ${data.collectionId} not found`);
+      }
+      
       const [nft] = await db.insert(nfts).values({
         ...data,
+        ownerId: collection.userId, // Устанавливаем владельца как создателя коллекции
         mintedAt: new Date(),
         tokenId: `NFT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`
       }).returning();
       
-      console.log(`Created NFT ${nft.id} in collection ${nft.collectionId}: ${nft.name}`);
+      console.log(`Created NFT ${nft.id} in collection ${nft.collectionId} for owner ${nft.ownerId}: ${nft.name}`);
       return nft;
     }, 'Create NFT');
   }
   
   async getNFTsByUserId(userId: number): Promise<Nft[]> {
     return this.withRetry(async () => {
-      // Сначала получаем все коллекции пользователя
-      const collections = await db
-        .select()
-        .from(nftCollections)
-        .where(eq(nftCollections.userId, userId));
-      
-      if (collections.length === 0) {
-        return [];
-      }
-      
-      // Получаем все NFT из этих коллекций
-      const collectionIds = collections.map(c => c.id);
+      // Получаем все NFT, где пользователь является владельцем
       return db
         .select()
         .from(nfts)
-        .where(inArray(nfts.collectionId, collectionIds))
+        .where(eq(nfts.ownerId, userId))
         .orderBy(desc(nfts.mintedAt));
     }, 'Get NFTs by user ID');
   }
@@ -1112,31 +1116,47 @@ export class DatabaseStorage implements IStorage {
       try {
         console.log(`Очистка всех NFT для пользователя ${userId}`);
         
-        // Получаем коллекции NFT пользователя
-        const collections = await this.getNFTCollectionsByUserId(userId);
-        if (!collections || collections.length === 0) {
-          console.log(`У пользователя ${userId} нет коллекций NFT`);
+        // Получаем все NFT, принадлежащие пользователю
+        const userNfts = await db
+          .select()
+          .from(nfts)
+          .where(eq(nfts.ownerId, userId));
+        
+        const nftCount = userNfts.length;
+        
+        if (nftCount === 0) {
+          console.log(`У пользователя ${userId} нет NFT`);
           return { success: true, count: 0 };
         }
         
-        // Получаем идентификаторы коллекций
-        const collectionIds = collections.map(collection => collection.id);
+        console.log(`Удаление ${nftCount} NFT для пользователя ${userId}`);
         
-        // Получаем все NFT в этих коллекциях
-        const allNfts = await db.select().from(nfts).where(inArray(nfts.collectionId, collectionIds));
-        const nftCount = allNfts.length;
+        // Удаляем все NFT пользователя
+        await db.delete(nfts).where(eq(nfts.ownerId, userId));
         
-        console.log(`Удаление ${nftCount} NFT из ${collections.length} коллекций для пользователя ${userId}`);
-        
-        // Удаляем все NFT
-        if (nftCount > 0) {
-          await db.delete(nfts).where(inArray(nfts.collectionId, collectionIds));
-        }
+        // Получаем коллекции NFT пользователя
+        const collections = await this.getNFTCollectionsByUserId(userId);
         
         // Удаляем пустые коллекции
-        await db.delete(nftCollections).where(inArray(nftCollections.id, collectionIds));
+        if (collections && collections.length > 0) {
+          const collectionIds = collections.map(collection => collection.id);
+          
+          // Проверяем, есть ли NFT в каждой коллекции
+          for (const collectionId of collectionIds) {
+            const [remainingNft] = await db
+              .select({ count: sql`count(*)` })
+              .from(nfts)
+              .where(eq(nfts.collectionId, collectionId));
+            
+            // Если в коллекции не осталось NFT, удаляем ее
+            if (remainingNft.count === 0) {
+              await db.delete(nftCollections).where(eq(nftCollections.id, collectionId));
+              console.log(`Удалена пустая коллекция ${collectionId}`);
+            }
+          }
+        }
         
-        console.log(`Успешно удалено ${nftCount} NFT и ${collections.length} коллекций для пользователя ${userId}`);
+        console.log(`Успешно удалено ${nftCount} NFT для пользователя ${userId}`);
         
         return { success: true, count: nftCount };
       } catch (error) {
@@ -1153,6 +1173,116 @@ export class DatabaseStorage implements IStorage {
       const result = await client.unsafe(query);
       return result;
     }, 'Execute raw query');
+  }
+
+  // Получение NFT по ID
+  async getNFTById(nftId: number): Promise<Nft | undefined> {
+    return this.withRetry(async () => {
+      const [nft] = await db.select().from(nfts).where(eq(nfts.id, nftId));
+      return nft;
+    }, 'Get NFT by ID');
+  }
+
+  // Обновление статуса продажи NFT
+  async updateNFTSaleStatus(nftId: number, forSale: boolean, price?: string): Promise<Nft> {
+    return this.withRetry(async () => {
+      const [nft] = await db.select().from(nfts).where(eq(nfts.id, nftId));
+      
+      if (!nft) {
+        throw new Error(`NFT с ID ${nftId} не найден`);
+      }
+      
+      // Обновляем статус NFT
+      const updateData: any = { forSale };
+      if (price !== undefined) {
+        updateData.price = price;
+      }
+      
+      const [updatedNft] = await db.update(nfts)
+        .set(updateData)
+        .where(eq(nfts.id, nftId))
+        .returning();
+      
+      console.log(`NFT ${nftId} статус продажи изменён на ${forSale ? 'продаётся' : 'не продаётся'}${price ? ` с ценой ${price}` : ''}`);
+      return updatedNft;
+    }, 'Update NFT sale status');
+  }
+
+  // Передача NFT от одного пользователя другому
+  async transferNFT(nftId: number, fromUserId: number, toUserId: number, transferType: 'gift' | 'sale', price?: string): Promise<{ success: boolean; error?: string; nft?: Nft }> {
+    return this.withTransaction(async () => {
+      try {
+        // Получаем NFT
+        const [nft] = await db.select().from(nfts).where(eq(nfts.id, nftId));
+        
+        if (!nft) {
+          throw new Error(`NFT с ID ${nftId} не найден`);
+        }
+        
+        // Проверяем, что отправитель является владельцем NFT
+        if (nft.ownerId !== fromUserId) {
+          throw new Error(`Пользователь ${fromUserId} не является владельцем NFT ${nftId}`);
+        }
+        
+        // Получаем информацию о получателе
+        const [toUser] = await db.select().from(users).where(eq(users.id, toUserId));
+        
+        if (!toUser) {
+          throw new Error(`Пользователь с ID ${toUserId} не найден`);
+        }
+        
+        // Используемая цена
+        const transferPrice = transferType === 'sale' ? (price || nft.price || '0') : '0';
+        
+        // Обновляем владельца NFT
+        const [updatedNft] = await db.update(nfts)
+          .set({ 
+            ownerId: toUserId,
+            forSale: false // Снимаем с продажи при передаче
+          })
+          .where(eq(nfts.id, nftId))
+          .returning();
+        
+        // Создаём запись о передаче NFT
+        await db.insert(nftTransfers).values({
+          nftId,
+          fromUserId,
+          toUserId,
+          transferType,
+          price: transferPrice,
+          transferredAt: new Date()
+        });
+        
+        console.log(`NFT ${nftId} передан от пользователя ${fromUserId} пользователю ${toUserId} типом ${transferType}${transferPrice !== '0' ? ` за ${transferPrice}` : ''}`);
+        
+        return { success: true, nft: updatedNft };
+      } catch (error) {
+        console.error("Ошибка при передаче NFT:", error);
+        throw error;
+      }
+    }, 'Transfer NFT');
+  }
+
+  // Получение NFT, доступных для покупки
+  async getAvailableNFTsForSale(): Promise<Nft[]> {
+    return this.withRetry(async () => {
+      return db
+        .select()
+        .from(nfts)
+        .where(eq(nfts.forSale, true))
+        .orderBy(desc(nfts.mintedAt));
+    }, 'Get NFTs for sale');
+  }
+
+  // Получение истории передач NFT
+  async getNFTTransferHistory(nftId: number): Promise<NftTransfer[]> {
+    return this.withRetry(async () => {
+      return db
+        .select()
+        .from(nftTransfers)
+        .where(eq(nftTransfers.nftId, nftId))
+        .orderBy(desc(nftTransfers.transferredAt));
+    }, 'Get NFT transfer history');
   }
 }
 

@@ -94,6 +94,13 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
     navigation.switchToGallery(); // Используем функцию из переданного пропс
     playSoundWithLog('click');
   };
+  
+  // Обработчик для навигации на вкладку маркетплейса
+  const handleNavigateToMarketplace = () => {
+    console.log('Переход к маркетплейсу из компонента NFTCollectionView');
+    navigation.switchToMarketplace(); // Используем функцию из переданного пропс
+    playSoundWithLog('click');
+  };
 
   const generateNFT = useMutation({
     mutationFn: async (rarity: NFTRarity) => {
@@ -321,16 +328,25 @@ export const NFTCollectionView: React.FC<NFTCollectionViewProps> = ({ navigation
           <div className="col-span-full text-center p-6 border rounded-lg">
             <h3 className="text-lg font-semibold mb-2">Пока нет коллекций</h3>
             <p className="text-muted-foreground mb-4">
-              Создайте свой первый NFT, чтобы начать коллекцию.
+              Создайте свой первый NFT, чтобы начать коллекцию, 
+              или купите NFT на маркетплейсе.
             </p>
-            <Button 
-              onClick={() => {
-                setOpenDialog(true);
-                playSoundWithLog('click');
-              }}
-            >
-              Создать NFT
-            </Button>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Button 
+                onClick={() => {
+                  setOpenDialog(true);
+                  playSoundWithLog('click');
+                }}
+              >
+                Создать NFT
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={handleNavigateToMarketplace}
+              >
+                Перейти на Маркетплейс
+              </Button>
+            </div>
           </div>
         )}
       </div>

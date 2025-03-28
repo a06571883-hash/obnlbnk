@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '../../components/ui/loading-spinner';
 import { NFTTabNavigation } from '../../pages/nft-page';
+import { toast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 // Импортируем сервис для звука
 import { playSound } from '../../lib/sound-service';
@@ -20,12 +22,15 @@ const playSoundWithLog = (sound: string) => {
 type NFT = {
   id: number;
   collectionId: number;
+  ownerId: number;
   name: string;
   description: string;
   imagePath: string;
   rarity: string;
   mintedAt: string;
   tokenId: string;
+  price?: string;
+  forSale?: boolean;
   attributes: {
     power: number;
     agility: number;
@@ -40,6 +45,7 @@ interface NFTGalleryProps {
 
 export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+  const queryClient = useQueryClient();
 
   const { 
     data: nfts = [], 
@@ -47,6 +53,12 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
     isError: isErrorNFTs
   } = useQuery<NFT[]>({
     queryKey: ['/api/nft/gallery'],
+    retry: 1
+  });
+  
+  // Получаем данные о текущем пользователе
+  const { data: currentUser } = useQuery({
+    queryKey: ['/api/user'],
     retry: 1
   });
 
@@ -80,6 +92,13 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
     navigation.switchToCollections(); // Используем функцию из переданного пропс
     playSoundWithLog('click');
   };
+  
+  // Обработчик для навигации на вкладку маркетплейса
+  const handleNavigateToMarketplace = () => {
+    console.log('Переход к маркетплейсу из компонента NFTGallery');
+    navigation.switchToMarketplace(); // Используем функцию из переданного пропс
+    playSoundWithLog('click');
+  };
 
   useEffect(() => {
     console.log('NFTGallery компонент инициализирован');
@@ -109,14 +128,22 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
       <div className="border rounded-lg p-6 text-center">
         <h3 className="text-lg font-semibold mb-2">У вас пока нет NFT</h3>
         <p className="text-muted-foreground mb-4">
-          Создайте свой первый NFT во вкладке Коллекции.
+          Создайте свой первый NFT во вкладке Коллекции или купите на Маркетплейсе.
         </p>
-        <Button
-          variant="outline"
-          onClick={handleNavigateToCollections}
-        >
-          Перейти к Коллекциям
-        </Button>
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <Button
+            variant="outline"
+            onClick={handleNavigateToCollections}
+          >
+            Перейти к Коллекциям
+          </Button>
+          <Button
+            variant="default"
+            onClick={handleNavigateToMarketplace}
+          >
+            Перейти на Маркетплейс
+          </Button>
+        </div>
       </div>
     );
   }
@@ -159,10 +186,18 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
               <Badge className={`absolute top-2 right-2 ${rarityColors[nft.rarity]}`}>
                 {nft.rarity}
               </Badge>
+              {nft.forSale && (
+                <Badge className="absolute top-2 left-2 bg-amber-500">
+                  {nft.price} USD
+                </Badge>
+              )}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
                 <h3 className="text-white font-semibold text-lg truncate">{nft.name}</h3>
-                <div className="flex items-center text-white/80 text-sm">
+                <div className="flex items-center justify-between text-white/80 text-sm">
                   <span>Сила: {calculatePower(nft)}</span>
+                  {nft.forSale && (
+                    <span className="text-amber-300">В продаже</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -207,6 +242,11 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
                 <Badge className={`absolute top-2 right-2 ${rarityColors[selectedNFT.rarity]}`}>
                   {selectedNFT.rarity}
                 </Badge>
+                {selectedNFT.forSale && (
+                  <Badge className="absolute top-2 left-2 bg-amber-500">
+                    {selectedNFT.price} USD
+                  </Badge>
+                )}
               </div>
               
               <div className="space-y-4">
@@ -241,11 +281,31 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
                   <h4 className="text-sm font-medium mb-1">Дата создания</h4>
                   <p className="text-sm text-muted-foreground">{formatDate(selectedNFT.mintedAt)}</p>
                 </div>
+                
+                {selectedNFT.forSale && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Статус</h4>
+                    <p className="text-sm text-amber-500">
+                      Выставлен на продажу за {selectedNFT.price} USD
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             
             <DialogFooter>
-              <Button onClick={() => setSelectedNFT(null)}>
+              {selectedNFT.forSale ? (
+                <Button 
+                  variant="default" 
+                  onClick={() => {
+                    handleNavigateToMarketplace();
+                    setSelectedNFT(null);
+                  }}
+                >
+                  Перейти на Маркетплейс
+                </Button>
+              ) : null}
+              <Button variant="secondary" onClick={() => setSelectedNFT(null)}>
                 Закрыть
               </Button>
             </DialogFooter>

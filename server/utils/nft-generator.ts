@@ -13,7 +13,7 @@ type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 /**
  * Создает фотореалистичное изображение NFT через бесплатное API
- * Если API недоступен, создает запасное SVG-изображение
+ * Использует предустановленные высококачественные изображения в случае сбоя API
  * @param rarity Редкость NFT
  * @returns Путь к созданному файлу
  */
@@ -22,84 +22,77 @@ export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
     // Пытаемся использовать генератор фотореалистичных изображений
     return await generateRealisticNFT(rarity);
   } catch (error) {
-    // Если произошла ошибка, создаем запасное SVG-изображение
-    console.log('ГЕНЕРАЦИЯ NFT: Создаем запасное SVG изображение');
+    // Если произошла ошибка, создаем запасное фотореалистичное изображение из статических файлов
+    console.log('ГЕНЕРАЦИЯ NFT: Используем запасные фотореалистичные изображения');
     console.log(`Создание запасного изображения для редкости: ${rarity}`);
     
-    // Определяем стиль для разных редкостей
-    const styles: any = {
-      common: {
-        backgroundColor: '#1A2933',
-        primaryColor: '#4B6A88',
-        secondaryColor: '#86AEC8',
-        borderColor: '#AACAE0',
-        glowColor: '#47A6FF',
-        glowSize: 5,
-        complexity: 1,
-        theme: 'car'
-      },
-      uncommon: {
-        backgroundColor: '#1E3320',
-        primaryColor: '#54834C',
-        secondaryColor: '#8BBE62',
-        borderColor: '#A3D672',
-        glowColor: '#5BFF3B',
-        glowSize: 6,
-        complexity: 2,
-        theme: 'yacht'
-      },
-      rare: {
-        backgroundColor: '#2E1F33',
-        primaryColor: '#7C4F99',
-        secondaryColor: '#B47ADB',
-        borderColor: '#CDA0EE',
-        glowColor: '#B14FFF',
-        glowSize: 7,
-        complexity: 3,
-        theme: 'mansion'
-      },
-      epic: {
-        backgroundColor: '#332119',
-        primaryColor: '#9D5D3A',
-        secondaryColor: '#D88952',
-        borderColor: '#FFB77A',
-        glowColor: '#FF9039',
-        glowSize: 8,
-        complexity: 4,
-        theme: 'jet'
-      },
-      legendary: {
-        backgroundColor: '#33271A',
-        primaryColor: '#AC802C',
-        secondaryColor: '#E7B94D',
-        borderColor: '#FFD76B',
-        glowColor: '#FFBB2D',
-        glowSize: 10,
-        complexity: 5,
-        theme: 'character'
-      }
+    // Статические пути к фотореалистичным изображениям для каждой редкости
+    const fallbackImages: Record<NFTRarity, string[]> = {
+      common: [
+        'https://cdn.pixabay.com/photo/2015/06/25/17/21/smart-watch-821557_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/11/29/03/53/architecture-1867187_1280.jpg',
+        'https://cdn.pixabay.com/photo/2018/01/18/18/00/ferrari-3090880_1280.jpg'
+      ],
+      uncommon: [
+        'https://cdn.pixabay.com/photo/2016/11/18/12/52/automobile-1834274_1280.jpg',
+        'https://cdn.pixabay.com/photo/2015/12/19/22/32/watch-1100302_1280.jpg',
+        'https://cdn.pixabay.com/photo/2018/01/15/05/23/gem-3083113_1280.jpg'
+      ],
+      rare: [
+        'https://cdn.pixabay.com/photo/2017/03/05/15/29/aston-martin-2118857_1280.jpg',
+        'https://cdn.pixabay.com/photo/2018/01/15/05/23/crystal-3083116_1280.jpg',
+        'https://cdn.pixabay.com/photo/2014/07/10/17/18/large-home-389271_1280.jpg'
+      ],
+      epic: [
+        'https://cdn.pixabay.com/photo/2016/08/13/20/33/château-1591-1593034_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/01/19/16/45/car-1149997_1280.jpg',
+        'https://cdn.pixabay.com/photo/2015/06/25/17/22/smart-watch-821559_1280.jpg'
+      ],
+      legendary: [
+        'https://cdn.pixabay.com/photo/2016/08/25/14/55/diamond-1619951_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/07/22/22/22/porsche-1535893_1280.jpg',
+        'https://cdn.pixabay.com/photo/2018/01/04/19/43/bentley-3061642_1280.jpg'
+      ]
     };
     
-    // Генерируем SVG-изображение
-    const svgContent = generatePixelArtSVG(styles[rarity]);
+    // Выбираем случайное изображение для данной редкости
+    const images = fallbackImages[rarity];
+    const randomImageUrl = images[Math.floor(Math.random() * images.length)];
     
-    // Сохраняем SVG в файл
-    const timestamp = Date.now();
-    const randomId = crypto.randomBytes(8).toString('hex');
-    const fileName = `${rarity}_money_${timestamp}_${randomId}.svg`;
-    const filePath = `client/public/assets/nft/${fileName}`;
-    
-    // Проверяем существование директории
-    const dir = 'client/public/assets/nft';
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    try {
+      // Загружаем изображение
+      const response = await fetch(randomImageUrl);
+      if (!response.ok) {
+        throw new Error(`Ошибка при загрузке изображения: ${response.statusText}`);
+      }
+      
+      // Сохраняем изображение в файл
+      const buffer = await response.arrayBuffer();
+      const timestamp = Date.now();
+      const randomId = crypto.randomBytes(8).toString('hex');
+      const fileName = `${rarity}_luxury_${timestamp}_${randomId}.jpg`;
+      const dir = 'client/public/assets/nft';
+      const filePath = `${dir}/${fileName}`;
+      
+      // Проверяем существование директории
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      // Записываем файл
+      fs.writeFileSync(filePath, Buffer.from(buffer));
+      
+      console.log(`Сгенерировано запасное NFT изображение: /assets/nft/${fileName}`);
+      return `/assets/nft/${fileName}`;
+    } catch (fallbackError) {
+      // Если даже запасное изображение не удалось загрузить, используем еще один вариант
+      console.error('Ошибка при загрузке запасного изображения:', fallbackError);
+      
+      // Используем базовое изображение из локальных ресурсов (должно быть заранее размещено)
+      const baseImagePath = `/assets/nft/default_${rarity}.jpg`;
+      console.log(`Используем стандартное изображение: ${baseImagePath}`);
+      return baseImagePath;
     }
-    
-    // Записываем файл
-    fs.writeFileSync(filePath, svgContent);
-    
-    console.log(`Сгенерировано NFT изображение: /assets/nft/${fileName}`);
-    return `/assets/nft/${fileName}`;
   }
 }
 

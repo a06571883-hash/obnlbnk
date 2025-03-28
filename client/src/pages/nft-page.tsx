@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NFTCollectionView } from '../components/nft/nft-collection';
 import { NFTGallery } from '../components/nft/nft-gallery';
+import { NFTMarketplace } from '../components/nft/nft-marketplace';
 
 // Simple PageHeader component to avoid import issues
 const PageHeader: React.FC<{title: string; description: string}> = ({title, description}) => (
@@ -15,12 +16,14 @@ const PageHeader: React.FC<{title: string; description: string}> = ({title, desc
 export type NFTTabNavigation = {
   switchToCollections: () => void;
   switchToGallery: () => void;
+  switchToMarketplace: () => void;
 };
 
 export const NFTPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('gallery');
   const galleryTabRef = useRef<HTMLButtonElement>(null);
   const collectionsTabRef = useRef<HTMLButtonElement>(null);
+  const marketplaceTabRef = useRef<HTMLButtonElement>(null);
   
   // Функции для программного переключения между вкладками
   const switchToCollections = useCallback(() => {
@@ -43,10 +46,21 @@ export const NFTPage: React.FC = () => {
     }
   }, []);
   
+  const switchToMarketplace = useCallback(() => {
+    console.log('Переключение на вкладку маркетплейса');
+    setActiveTab('marketplace');
+    
+    // Дополнительно можно анимировать клик для визуальной обратной связи
+    if (marketplaceTabRef.current) {
+      marketplaceTabRef.current.click();
+    }
+  }, []);
+  
   // Объект навигации, который будет передан в дочерние компоненты
   const tabNavigation: NFTTabNavigation = {
     switchToCollections,
-    switchToGallery
+    switchToGallery,
+    switchToMarketplace
   };
 
   return (
@@ -62,7 +76,7 @@ export const NFTPage: React.FC = () => {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger 
             value="gallery" 
             ref={galleryTabRef}
@@ -77,12 +91,22 @@ export const NFTPage: React.FC = () => {
           >
             Коллекции
           </TabsTrigger>
+          <TabsTrigger 
+            value="marketplace" 
+            ref={marketplaceTabRef}
+            id="marketplace-tab"
+          >
+            Маркетплейс
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="gallery">
           <NFTGallery navigation={tabNavigation} />
         </TabsContent>
         <TabsContent value="collections">
           <NFTCollectionView navigation={tabNavigation} />
+        </TabsContent>
+        <TabsContent value="marketplace">
+          <NFTMarketplace />
         </TabsContent>
       </Tabs>
     </div>
