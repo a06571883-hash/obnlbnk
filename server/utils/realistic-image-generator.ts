@@ -40,74 +40,102 @@ const MODELS = {
  */
 export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
   try {
-    console.log(`Начинаем генерацию фотореалистичного NFT с редкостью: ${rarity}`);
+    console.log(`=== ГЕНЕРАЦИЯ NFT: Начинаем генерацию фотореалистичного NFT с редкостью: ${rarity} ===`);
+    console.log(`API токен Replicate ${process.env.REPLICATE_API_TOKEN ? 'присутствует' : 'отсутствует'}, длина: ${process.env.REPLICATE_API_TOKEN?.length || 0}`);
     
     // Создаем директорию для NFT, если она еще не существует
     const nftDir = path.join(PUBLIC_DIR, 'assets', 'nft');
     if (!fs.existsSync(nftDir)) {
       fs.mkdirSync(nftDir, { recursive: true });
+      console.log(`Создана директория для NFT: ${nftDir}`);
+    } else {
+      console.log(`Директория для NFT уже существует: ${nftDir}`);
     }
     
     // Выбираем тип роскошного предмета в зависимости от редкости
     const itemType = selectLuxuryType(rarity);
-    console.log(`Выбран тип предмета: ${itemType}`);
+    console.log(`ГЕНЕРАЦИЯ NFT: Выбран тип предмета: ${itemType}`);
     
     // Генерируем уникальное имя файла
     const uniqueId = crypto.randomBytes(8).toString('hex');
     const timestamp = Date.now();
     const fileName = `${rarity}_${itemType}_${timestamp}_${uniqueId}.png`;
     const filePath = path.join(nftDir, fileName);
+    console.log(`ГЕНЕРАЦИЯ NFT: Файл будет сохранен как: ${filePath}`);
     
     // Создаем промпт в зависимости от типа предмета и редкости
     const prompt = createPrompt(itemType, rarity);
-    console.log(`Создан промпт: ${prompt}`);
+    console.log(`ГЕНЕРАЦИЯ NFT: Создан промпт: ${prompt}`);
     
     // Негативный промпт для избегания нежелательных элементов
     const negativePrompt = "low quality, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, bad feet, bad drawing, text, signature, logo";
     
     // Вызываем Replicate API для генерации изображения
-    console.log(`Вызов Replicate API...`);
+    console.log(`ГЕНЕРАЦИЯ NFT: Вызов Replicate API...`);
     const model = "stability-ai/sdxl:2b017d9b67edd2ee1401238df49d75da53c523f36e363881e057f5dc3ed3c5b2";
-    const output = await replicate.run(
-      model,
-      {
-        input: {
-          prompt: prompt,
-          negative_prompt: negativePrompt,
-          width: 1024,
-          height: 1024,
-          num_outputs: 1,
-          num_inference_steps: 50,
-          guidance_scale: 7.5,
-          scheduler: "K_EULER",
-          seed: Math.floor(Math.random() * 100000)
+    console.log(`ГЕНЕРАЦИЯ NFT: Используем модель: ${model}`);
+    
+    try {
+      console.log(`ГЕНЕРАЦИЯ NFT: Начало запроса к Replicate API для модели ${model}`);
+      
+      const output = await replicate.run(
+        model,
+        {
+          input: {
+            prompt: prompt,
+            negative_prompt: negativePrompt,
+            width: 1024,
+            height: 1024,
+            num_outputs: 1,
+            num_inference_steps: 50,
+            guidance_scale: 7.5,
+            scheduler: "K_EULER",
+            seed: Math.floor(Math.random() * 100000)
+          }
         }
+      ) as string[];
+
+      console.log(`ГЕНЕРАЦИЯ NFT: Ответ от Replicate API получен:`, output);
+      
+      if (!output || output.length === 0) {
+        console.error(`ГЕНЕРАЦИЯ NFT: Пустой ответ от Replicate API`);
+        throw new Error('Не удалось получить изображение от Replicate API: пустой ответ');
       }
-    ) as string[];
 
-    if (!output || output.length === 0) {
-      throw new Error('Не удалось получить изображение от Replicate API');
+      // Получаем URL изображения из результата
+      const imageUrl = output[0];
+      console.log(`ГЕНЕРАЦИЯ NFT: Получен URL изображения: ${imageUrl}`);
+      
+      // Скачиваем изображение
+      console.log(`ГЕНЕРАЦИЯ NFT: Начинаем скачивание изображения с URL: ${imageUrl}`);
+      const response = await fetch(imageUrl);
+      
+      if (!response.ok) {
+        console.error(`ГЕНЕРАЦИЯ NFT: Ошибка при скачивании изображения: ${response.status} ${response.statusText}`);
+        throw new Error(`Ошибка при скачивании изображения: ${response.status} ${response.statusText}`);
+      }
+      
+      const buffer = await response.buffer();
+      console.log(`ГЕНЕРАЦИЯ NFT: Изображение успешно скачано, размер: ${buffer.length} байт`);
+      
+      // Сохраняем изображение
+      console.log(`ГЕНЕРАЦИЯ NFT: Сохраняем изображение в: ${filePath}`);
+      fs.writeFileSync(filePath, buffer);
+      console.log(`ГЕНЕРАЦИЯ NFT: Изображение успешно сохранено: ${filePath}`);
+      
+      // Возвращаем публичный путь к файлу
+      const publicPath = `/assets/nft/${fileName}`;
+      console.log(`ГЕНЕРАЦИЯ NFT: Возвращаем публичный путь: ${publicPath}`);
+      return publicPath;
+    } catch (error) {
+      console.error('ГЕНЕРАЦИЯ NFT: Ошибка при вызове Replicate API:', error);
+      throw error; // Перебрасываем ошибку для обработки в основном блоке try-catch
     }
-
-    // Получаем URL изображения из результата
-    const imageUrl = output[0];
-    console.log(`Получен URL изображения: ${imageUrl}`);
-    
-    // Скачиваем изображение
-    console.log(`Скачивание изображения...`);
-    const response = await fetch(imageUrl);
-    const buffer = await response.buffer();
-    
-    // Сохраняем изображение
-    fs.writeFileSync(filePath, buffer);
-    console.log(`Изображение сохранено: ${filePath}`);
-    
-    // Возвращаем публичный путь к файлу
-    return `/assets/nft/${fileName}`;
   } catch (error) {
-    console.error('Ошибка при генерации NFT изображения:', error);
+    console.error('ГЕНЕРАЦИЯ NFT: Ошибка при генерации NFT изображения:', error);
     
     // В случае ошибки, возвращаем запасное изображение
+    console.log('ГЕНЕРАЦИЯ NFT: Создаем запасное SVG изображение');
     return createFallbackImage(rarity);
   }
 }
