@@ -1,22 +1,106 @@
 /**
  * Утилита для генерации фотореалистичных NFT изображений с элементами роскоши
- * Создает изображения премиальных объектов через OpenAI DALL-E API
+ * Создает изображения премиальных объектов через бесплатное API Lexica
  * Поддерживает роскошные автомобили, часы, бриллианты и особняки в высоком качестве
  */
-import { generateNFTImage as generateRealisticNFT } from './openai-image-generator';
+import { generateNFTImage as generateRealisticNFT } from './lexica-image-generator';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Типы редкости NFT
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 /**
- * Создает фотореалистичное изображение NFT через API генерации
+ * Создает фотореалистичное изображение NFT через бесплатное API
+ * Если API недоступен, создает запасное SVG-изображение
  * @param rarity Редкость NFT
  * @returns Путь к созданному файлу
  */
 export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
-  // Используем генератор фотореалистичных изображений
-  return await generateRealisticNFT(rarity);
+  try {
+    // Пытаемся использовать генератор фотореалистичных изображений
+    return await generateRealisticNFT(rarity);
+  } catch (error) {
+    // Если произошла ошибка, создаем запасное SVG-изображение
+    console.log('ГЕНЕРАЦИЯ NFT: Создаем запасное SVG изображение');
+    console.log(`Создание запасного изображения для редкости: ${rarity}`);
+    
+    // Определяем стиль для разных редкостей
+    const styles: any = {
+      common: {
+        backgroundColor: '#1A2933',
+        primaryColor: '#4B6A88',
+        secondaryColor: '#86AEC8',
+        borderColor: '#AACAE0',
+        glowColor: '#47A6FF',
+        glowSize: 5,
+        complexity: 1,
+        theme: 'car'
+      },
+      uncommon: {
+        backgroundColor: '#1E3320',
+        primaryColor: '#54834C',
+        secondaryColor: '#8BBE62',
+        borderColor: '#A3D672',
+        glowColor: '#5BFF3B',
+        glowSize: 6,
+        complexity: 2,
+        theme: 'yacht'
+      },
+      rare: {
+        backgroundColor: '#2E1F33',
+        primaryColor: '#7C4F99',
+        secondaryColor: '#B47ADB',
+        borderColor: '#CDA0EE',
+        glowColor: '#B14FFF',
+        glowSize: 7,
+        complexity: 3,
+        theme: 'mansion'
+      },
+      epic: {
+        backgroundColor: '#332119',
+        primaryColor: '#9D5D3A',
+        secondaryColor: '#D88952',
+        borderColor: '#FFB77A',
+        glowColor: '#FF9039',
+        glowSize: 8,
+        complexity: 4,
+        theme: 'jet'
+      },
+      legendary: {
+        backgroundColor: '#33271A',
+        primaryColor: '#AC802C',
+        secondaryColor: '#E7B94D',
+        borderColor: '#FFD76B',
+        glowColor: '#FFBB2D',
+        glowSize: 10,
+        complexity: 5,
+        theme: 'character'
+      }
+    };
+    
+    // Генерируем SVG-изображение
+    const svgContent = generatePixelArtSVG(styles[rarity]);
+    
+    // Сохраняем SVG в файл
+    const timestamp = Date.now();
+    const randomId = crypto.randomBytes(8).toString('hex');
+    const fileName = `${rarity}_money_${timestamp}_${randomId}.svg`;
+    const filePath = `client/public/assets/nft/${fileName}`;
+    
+    // Проверяем существование директории
+    const dir = 'client/public/assets/nft';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    
+    // Записываем файл
+    fs.writeFileSync(filePath, svgContent);
+    
+    console.log(`Сгенерировано NFT изображение: /assets/nft/${fileName}`);
+    return `/assets/nft/${fileName}`;
+  }
 }
 
 /**
