@@ -44,7 +44,8 @@ const createNFTSchema = z.object({
 
 // Схема для выставления NFT на продажу (фиксированная цена $10)
 const listForSaleSchema = z.object({
-  nftId: z.number()
+  nftId: z.number(),
+  price: z.number().positive({ message: "Цена должна быть положительной" }).optional()
 });
 
 // Схема для покупки NFT
@@ -188,9 +189,10 @@ router.post('/list-for-sale', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Некорректные данные', details: result.error.format() });
     }
     
-    const { nftId } = result.data;
-    const FIXED_NFT_PRICE = 10; // Фиксированная цена $10 для всех NFT
-    log(`Выставляем NFT ${nftId} на продажу по фиксированной цене $${FIXED_NFT_PRICE}`);
+    const { nftId, price } = result.data;
+    // Цена может быть задана пользователем или использовать значение по умолчанию
+    const salePrice = price ?? 10;
+    log(`Выставляем NFT ${nftId} на продажу по цене $${salePrice}`);
     
     // Проверяем, что пользователь является владельцем NFT
     const nftInfo = await db.select()
@@ -207,8 +209,8 @@ router.post('/list-for-sale', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Вы не являетесь владельцем этого NFT' });
     }
     
-    // Выставляем NFT на продажу по фиксированной цене
-    const updatedNft = await boredApeNftService.listNFTForSale(nftId);
+    // Выставляем NFT на продажу с заданной ценой
+    const updatedNft = await boredApeNftService.listNFTForSale(nftId, salePrice);
     log('NFT успешно выставлен на продажу:', nftId);
     
     res.status(200).json({
@@ -528,12 +530,80 @@ router.post('/generate', async (req: Request, res: Response) => {
     
     log(`Генерация NFT с редкостью ${rarity} для пользователя ${userId}`);
     
-    // Создаем NFT с указанной редкостью
+    // Фиксированная стоимость создания NFT
+    const NFT_CREATION_COST = 10;
+    
+    // Получаем ID администратора (регулятора)
+    const adminUser = await db.select()
+      .from(users)
+      .where(eq(users.username, 'admin'))
+      .limit(1);
+      
+    if (adminUser.length === 0) {
+      return res.status(500).json({ error: 'Администратор не найден' });
+    }
+    
+    const adminUserId = adminUser[0].id;
+    
+    // Получаем карту пользователя
+    const userCards = await db.select()
+      .from(cards)
+      .where(and(
+        eq(cards.userId, userId),
+        eq(cards.type, 'fiat')
+      ))
+      .limit(1);
+    
+    if (userCards.length === 0) {
+      return res.status(400).json({ error: 'У вас нет карты для оплаты создания NFT' });
+    }
+    
+    const userCard = userCards[0];
+    
+    // Получаем карту администратора
+    const adminCards = await db.select()
+      .from(cards)
+      .where(and(
+        eq(cards.userId, adminUserId),
+        eq(cards.type, 'fiat')
+      ))
+      .limit(1);
+    
+    if (adminCards.length === 0) {
+      return res.status(500).json({ error: 'Карта администратора не найдена' });
+    }
+    
+    const adminCard = adminCards[0];
+    
+    // Проверяем баланс пользователя
+    if (parseFloat(userCard.balance) < NFT_CREATION_COST) {
+      return res.status(400).json({ 
+        error: `Недостаточно средств для создания NFT. Требуется: $${NFT_CREATION_COST}` 
+      });
+    }
+    
+    // Выполняем транзакцию перевода денег от пользователя администратору
+    const transferResult = await storage.transferMoney(
+      userCard.id,
+      adminCard.number,
+      NFT_CREATION_COST
+    );
+    
+    if (!transferResult.success) {
+      throw new Error(`Ошибка при переводе средств: ${transferResult.error}`);
+    }
+    
+    log(`Создание NFT: Оплата в размере $${NFT_CREATION_COST} переведена администратору, ID транзакции: ${transferResult.transaction?.id}`);
+    
+    // Создаем NFT с указанной редкостью (с ценой 0, не выставлен на продажу)
     const nft = await boredApeNftService.createBoredApeNFT(userId, rarity as NFTRarity);
     
     log('NFT успешно создан:', nft.id);
     
-    res.status(201).json(nft);
+    res.status(201).json({
+      ...nft,
+      transaction: transferResult.transaction
+    });
   } catch (error) {
     console.error('Ошибка при генерации NFT:', error);
     res.status(500).json({ error: 'Ошибка сервера при генерации NFT' });
