@@ -1308,11 +1308,32 @@ export class DatabaseStorage implements IStorage {
   // Получение NFT, доступных для покупки
   async getAvailableNFTsForSale(): Promise<Nft[]> {
     return this.withRetry(async () => {
-      return db
+      console.log('[Storage] Запрос NFT, доступных для продажи...');
+      
+      // Сначала попробуем использовать ORM
+      const nftItems = await db
         .select()
         .from(nfts)
         .where(eq(nfts.forSale, true))
         .orderBy(desc(nfts.mintedAt));
+      
+      console.log(`[Storage] Найдено ${nftItems.length} NFT через ORM`);
+      
+      // Если ORM не вернул результаты, попробуем прямой SQL-запрос
+      if (nftItems.length === 0) {
+        console.log('[Storage] Попытка получить NFT через прямой SQL...');
+        
+        const result = await client.query(`
+          SELECT * FROM nft 
+          WHERE for_sale = true 
+          ORDER BY id DESC
+        `);
+        
+        console.log(`[Storage] Найдено ${result.rows.length} NFT через прямой SQL`);
+        return result.rows;
+      }
+      
+      return nftItems;
     }, 'Get NFTs for sale');
   }
 

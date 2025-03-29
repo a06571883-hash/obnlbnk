@@ -144,22 +144,67 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     log(`Получаем NFT на продаже (кроме пользователя ${userId})`);
     
     // Получаем NFT на продаже (исключая NFT текущего пользователя)
-    const nftsForSale = await boredApeNftService.getNFTsForSale(userId);
-    log(`Найдено ${nftsForSale.length} NFT на продаже`);
-    
-    // Добавляем информацию о владельцах
-    const formattedNFTs = await Promise.all(nftsForSale.map(async (nft) => {
-      const owner = await storage.getUser(nft.ownerId);
-      return {
-        ...nft,
-        ownerUsername: owner ? owner.username : 'Unknown'
-      };
-    }));
-    
-    log(`Отправляем ${formattedNFTs.length} NFT клиенту`);
-    
-    // Клиент ожидает массив объектов, не обернутый в объект success/nfts
-    res.status(200).json(formattedNFTs);
+    try {
+      // Сначала пробуем получить через сервис
+      const nftsForSale = await boredApeNftService.getNFTsForSale(userId);
+      log(`Найдено ${nftsForSale.length} NFT на продаже через сервис`);
+      
+      // Если ничего не найдено, пробуем напрямую через SQL
+      if (nftsForSale.length === 0) {
+        log('Пробуем получить NFT напрямую из базы данных...');
+        
+        // Попробуем получить NFT напрямую из SQL
+        const nftsResult = await client.query(`
+          SELECT * FROM nft 
+          WHERE for_sale = true 
+          ORDER BY id DESC
+        `);
+        
+        const directNftsForSale = nftsResult.rows;
+        log(`Найдено ${directNftsForSale.length} NFT через прямой SQL запрос`);
+        
+        // Если нашли NFT через SQL, форматируем и отправляем
+        if (directNftsForSale.length > 0) {
+          const formattedDirectNFTs = await Promise.all(directNftsForSale.map(async (nft) => {
+            const owner = await storage.getUser(nft.owner_id);
+            return {
+              id: nft.id,
+              tokenId: nft.token_id,
+              collectionName: nft.collection_name,
+              name: nft.name,
+              description: nft.description,
+              imageUrl: nft.image_url,
+              price: nft.price,
+              forSale: nft.for_sale,
+              ownerId: nft.owner_id,
+              creatorId: nft.creator_id,
+              ownerUsername: owner ? owner.username : 'Unknown'
+            };
+          }));
+          
+          log(`Отправляем ${formattedDirectNFTs.length} NFT клиенту (из SQL)`);
+          return res.status(200).json(formattedDirectNFTs);
+        }
+      }
+      
+      // Если нашли NFT через сервис, продолжаем обычный процесс
+      // Добавляем информацию о владельцах
+      const formattedNFTs = await Promise.all(nftsForSale.map(async (nft) => {
+        const owner = await storage.getUser(nft.ownerId);
+        return {
+          ...nft,
+          ownerUsername: owner ? owner.username : 'Unknown'
+        };
+      }));
+      
+      log(`Отправляем ${formattedNFTs.length} NFT клиенту (из сервиса)`);
+      
+      // Клиент ожидает массив объектов, не обернутый в объект success/nfts
+      res.status(200).json(formattedNFTs);
+    } catch (innerError) {
+      console.error('Ошибка при обработке NFT для маркетплейса:', innerError);
+      res.status(500).json({ error: 'Ошибка сервера при получении NFT на продаже' });
+    }
   } catch (error) {
     console.error('Ошибка при получении NFT на продаже:', error);
     res.status(500).json({ error: 'Ошибка сервера при получении NFT на продаже' });
