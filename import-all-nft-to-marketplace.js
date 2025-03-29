@@ -112,8 +112,7 @@ async function importBoredApesToMarketplace() {
     // Проверяем, есть ли уже NFT в базе
     const existingNFTResult = await client.query(`
       SELECT COUNT(*) as count 
-      FROM nft 
-      WHERE collection_name = 'Bored Ape Yacht Club'
+      FROM nfts
     `);
     
     const existingCount = parseInt(existingNFTResult.rows[0].count);
@@ -155,8 +154,8 @@ async function importBoredApesToMarketplace() {
       try {
         // Проверяем, нет ли уже этого NFT в базе
         const checkResult = await client.query(`
-          SELECT id FROM nft WHERE token_id = $1 AND collection_name = $2
-        `, [id.toString(), 'Bored Ape Yacht Club']);
+          SELECT id FROM nfts WHERE token_id = $1
+        `, [id.toString()]);
         
         if (checkResult.rows.length > 0) {
           console.log(`NFT с token_id ${id} уже существует, пропускаем`);
@@ -164,32 +163,71 @@ async function importBoredApesToMarketplace() {
           continue;
         }
         
+        // Проверяем, существует ли коллекция для регулятора
+        const collectionResult = await client.query(`
+          SELECT id FROM nft_collections WHERE user_id = $1 LIMIT 1
+        `, [regulator.id]);
+        
+        let collectionId;
+        if (collectionResult.rows.length > 0) {
+          collectionId = collectionResult.rows[0].id;
+        } else {
+          // Создаем коллекцию для регулятора
+          const newCollectionResult = await client.query(`
+            INSERT INTO nft_collections (user_id, name, description, created_at)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+          `, [
+            regulator.id, 
+            'Bored Ape Yacht Club', 
+            'Official collection of Bored Ape Yacht Club NFTs',
+            new Date()
+          ]);
+          collectionId = newCollectionResult.rows[0].id;
+        }
+        
         // Определяем тип файла и относительный путь
         const fileExt = path.extname(file).toLowerCase();
-        const nftPath = `bored_ape_nft/${file}`;
+        const nftPath = `/bored_ape_nft/${file}`;
         
         // Генерируем цену для NFT
         const price = generateNFTPrice(id);
         const description = generateNFTDescription(id, price);
         
-        // Вставляем NFT в базу
+        // Генерируем атрибуты для NFT
+        const attributes = {
+          power: Math.floor(Math.random() * 100) + 1,
+          agility: Math.floor(Math.random() * 100) + 1,
+          wisdom: Math.floor(Math.random() * 100) + 1,
+          luck: Math.floor(Math.random() * 100) + 1
+        };
+        
+        // Определяем редкость на основе цены
+        let rarity = 'common';
+        if (price > 10000) rarity = 'legendary';
+        else if (price > 1000) rarity = 'epic';
+        else if (price > 100) rarity = 'rare';
+        else if (price > 50) rarity = 'uncommon';
+        
+        // Вставляем NFT в базу с использованием правильной структуры таблицы
         const result = await client.query(`
-          INSERT INTO nft (
-            token_id, collection_name, name, description, image_url, price, 
-            for_sale, creator_id, owner_id, regulator_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          INSERT INTO nfts (
+            collection_id, name, description, image_path, attributes, 
+            rarity, price, for_sale, owner_id, minted_at, token_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
           RETURNING id
         `, [
-          id.toString(),
-          'Bored Ape Yacht Club',
+          collectionId,
           `Bored Ape #${id}`,
           description,
           nftPath,
-          price,
+          attributes,
+          rarity,
+          price.toString(),
           true, // Выставляем сразу на продажу
-          regulator.id, // Создатель - регулятор
           regulator.id, // Владелец - регулятор
-          regulator.id  // Регулятор - admin
+          new Date(),
+          `BAYC-${id}`
         ]);
         
         if (result.rows.length > 0) {

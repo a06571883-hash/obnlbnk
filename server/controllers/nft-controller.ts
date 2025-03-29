@@ -143,9 +143,12 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     
     log(`Получаем NFT на продаже (кроме пользователя ${userId})`);
     
-    // Попробуем получить NFT на продаже с помощью Drizzle ORM
+    // Массив для результатов NFT
+    let combinedNFTs = [];
+    
+    // 1. Сначала пробуем получить NFT на продаже с помощью Drizzle ORM из таблицы nfts
     try {
-      log('Получаем NFT с помощью Drizzle ORM...');
+      log('Получаем NFT с помощью Drizzle ORM из таблицы nfts...');
       
       // Используем Drizzle для выборки NFT на продаже
       const nftsForSaleResult = await db.select()
@@ -159,7 +162,7 @@ router.get('/marketplace', async (req: Request, res: Response) => {
         .orderBy(nfts.id)
         .limit(100);
       
-      log(`Найдено ${nftsForSaleResult.length} NFT через Drizzle ORM`);
+      log(`Найдено ${nftsForSaleResult.length} NFT через Drizzle ORM из таблицы nfts`);
       
       if (nftsForSaleResult.length > 0) {
         // Форматируем NFT перед отправкой
@@ -192,43 +195,104 @@ router.get('/marketplace', async (req: Request, res: Response) => {
           };
         }));
         
-        log(`Отправляем ${formattedNFTs.length} NFT клиенту (из Drizzle)`);
-        return res.status(200).json(formattedNFTs);
+        // Добавляем результаты в общий массив
+        combinedNFTs = [...combinedNFTs, ...formattedNFTs];
+        log(`Добавлено ${formattedNFTs.length} NFT из таблицы nfts в общий результат`);
       }
+    } catch (drizzleError) {
+      console.error('Ошибка при получении NFT через Drizzle:', drizzleError);
+    }
+    
+    // 2. Теперь пробуем получить NFT на продаже из таблицы nft (старая таблица)
+    try {
+      log('Получаем NFT из таблицы nft (legacy)...');
       
-      // Запасной вариант: попробуем получить через сервис
-      log('Drizzle не вернул результатов, пробуем через сервис...');
-      const serviceNFTs = await boredApeNftService.getNFTsForSale(userId);
-      log(`Найдено ${serviceNFTs.length} NFT на продаже через сервис`);
+      // Используем прямой SQL запрос для получения NFT из таблицы nft
+      const legacyNFTResult = await client.query(`
+        SELECT * FROM nft 
+        WHERE for_sale = true 
+        AND owner_id != $1 
+        ORDER BY id 
+        LIMIT 100
+      `, [userId]);
       
-      if (serviceNFTs.length > 0) {
-        // Добавляем информацию о владельцах
-        const formattedServiceNFTs = await Promise.all(serviceNFTs.map(async (nft) => {
-          const owner = await storage.getUser(nft.ownerId);
+      log(`Найдено ${legacyNFTResult.rows.length} NFT из таблицы nft (legacy)`);
+      
+      if (legacyNFTResult.rows.length > 0) {
+        // Форматируем NFT перед отправкой
+        const formattedLegacyNFTs = await Promise.all(legacyNFTResult.rows.map(async (nft) => {
+          const owner = await storage.getUser(nft.owner_id);
+          
+          // Создаем объект NFT, который будет соответствовать формату, ожидаемому фронтендом
           return {
-            ...nft,
+            id: nft.id,
+            tokenId: nft.token_id.toString(),
+            collectionName: nft.collection_name || 'Bored Ape Yacht Club',
+            name: nft.name,
+            description: nft.description || '',
+            imagePath: nft.image_url,
+            imageUrl: nft.image_url, // Для совместимости с фронтендом
+            price: nft.price.toString() || "0",
+            forSale: nft.for_sale,
+            ownerId: nft.owner_id,
+            creatorId: nft.creator_id,
             ownerUsername: owner ? owner.username : 'Unknown',
-            // Добавляем базовые атрибуты для совместимости с фронтендом, если их нет
-            attributes: nft.attributes || {
+            // Генерируем базовые атрибуты
+            attributes: {
               power: 70, 
               agility: 65, 
               wisdom: 60, 
               luck: 75
-            }
+            },
+            // Добавляем редкость по умолчанию
+            rarity: 'common'
           };
         }));
         
-        log(`Отправляем ${formattedServiceNFTs.length} NFT клиенту (из сервиса)`);
-        return res.status(200).json(formattedServiceNFTs);
+        // Добавляем результаты в общий массив
+        combinedNFTs = [...combinedNFTs, ...formattedLegacyNFTs];
+        log(`Добавлено ${formattedLegacyNFTs.length} NFT из таблицы nft (legacy) в общий результат`);
       }
-      
-      // Если ничего не нашли, возвращаем пустой массив
-      log('NFT для маркетплейса не найдены ни через Drizzle, ни через сервис');
-      return res.status(200).json([]);
-    } catch (innerError) {
-      console.error('Ошибка при обработке NFT для маркетплейса:', innerError);
-      res.status(500).json({ error: 'Ошибка сервера при получении NFT на продаже' });
+    } catch (legacyError) {
+      console.error('Ошибка при получении NFT из legacy таблицы:', legacyError);
     }
+    
+    // 3. Запасной вариант: попробуем получить через сервис
+    if (combinedNFTs.length === 0) {
+      try {
+        log('Первые два метода не вернули результатов, пробуем через сервис...');
+        const serviceNFTs = await boredApeNftService.getNFTsForSale(userId);
+        log(`Найдено ${serviceNFTs.length} NFT на продаже через сервис`);
+        
+        if (serviceNFTs.length > 0) {
+          // Добавляем информацию о владельцах
+          const formattedServiceNFTs = await Promise.all(serviceNFTs.map(async (nft) => {
+            const owner = await storage.getUser(nft.ownerId);
+            return {
+              ...nft,
+              ownerUsername: owner ? owner.username : 'Unknown',
+              // Добавляем базовые атрибуты для совместимости с фронтендом, если их нет
+              attributes: nft.attributes || {
+                power: 70, 
+                agility: 65, 
+                wisdom: 60, 
+                luck: 75
+              }
+            };
+          }));
+          
+          // Добавляем результаты в общий массив
+          combinedNFTs = [...combinedNFTs, ...formattedServiceNFTs];
+          log(`Добавлено ${formattedServiceNFTs.length} NFT из сервиса в общий результат`);
+        }
+      } catch (serviceError) {
+        console.error('Ошибка при получении NFT через сервис:', serviceError);
+      }
+    }
+    
+    // Возвращаем все найденные NFT
+    log(`Отправляем итоговый список из ${combinedNFTs.length} NFT клиенту`);
+    return res.status(200).json(combinedNFTs);
   } catch (error) {
     console.error('Ошибка при получении NFT на продаже:', error);
     res.status(500).json({ error: 'Ошибка сервера при получении NFT на продаже' });
