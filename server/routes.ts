@@ -21,6 +21,8 @@ import { eq } from 'drizzle-orm';
 import { nfts, nftCollections } from '@shared/schema';
 import nftRoutes from './controllers/nft-controller';
 import nftImportRoutes from './controllers/nft-import-controller';
+// Импортируем маршрут для статических ресурсов
+import { staticAssetsRouter } from './routes/static-assets';
 
 // Вспомогательные функции для генерации NFT
 function generateNFTRarity(): string {
@@ -126,8 +128,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Делаем папку с NFT доступной как статический контент
   // Статические пути для NFT ресурсов
-  app.use('/bored_ape_nft', express.static(path.join(process.cwd(), 'bored_ape_nft')));
-  app.use('/public/assets/nft', express.static(path.join(process.cwd(), 'public/assets/nft')));
+  app.use('/bored_ape_nft', express.static(path.join(process.cwd(), 'bored_ape_nft'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (filePath.endsWith('.avif')) {
+        res.setHeader('Content-Type', 'image/avif');
+      }
+    }
+  }));
+  app.use('/public/assets/nft', express.static(path.join(process.cwd(), 'public/assets/nft'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (filePath.endsWith('.avif')) {
+        res.setHeader('Content-Type', 'image/avif');
+      }
+    }
+  }));
+  
+  // Новый маршрут для официальных BAYC NFT
+  app.use('/bayc_official', express.static(path.join(process.cwd(), 'public/bayc_official'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (filePath.endsWith('.avif')) {
+        res.setHeader('Content-Type', 'image/avif');
+      }
+    }
+  }));
+  
+  // Используем специализированный маршрутизатор для статических ресурсов
+  app.use(staticAssetsRouter);
+  
+  // Прокси для NFT изображений с локального сервера на порту 8080
+  app.use('/nft-proxy', (req, res) => {
+    const http = require('http');
+    
+    // Заменяем /nft-proxy на пустую строку в начале URL
+    const proxyUrl = req.url?.replace(/^\/nft-proxy/, '') || '';
+    const proxyOptions = {
+      hostname: 'localhost',
+      port: 8080,
+      path: proxyUrl,
+      method: req.method,
+      headers: req.headers
+    };
+    
+    console.log(`Proxying NFT request: ${req.url} -> http://localhost:8080${proxyUrl}`);
+    
+    // Создаем прокси-запрос на наш NFT сервер
+    const proxyReq = http.request(proxyOptions, (proxyRes: any) => {
+      // Копируем статус ответа
+      res.statusCode = proxyRes.statusCode || 200;
+      
+      // Копируем заголовки ответа
+      Object.keys(proxyRes.headers).forEach((key: string) => {
+        res.setHeader(key, proxyRes.headers[key] || '');
+      });
+      
+      // Перенаправляем тело ответа
+      proxyRes.pipe(res);
+    });
+    
+    // Обработка ошибок
+    proxyReq.on('error', (error: Error) => {
+      console.error('NFT proxy error:', error);
+      res.statusCode = 500;
+      res.end('Internal Server Error');
+    });
+    
+    // Если есть тело запроса, передаем его
+    if (req.readable) {
+      req.pipe(proxyReq);
+    } else {
+      proxyReq.end();
+    }
+  });
   
   // Регистрируем маршруты для NFT
   app.use('/api/nft', nftRoutes);

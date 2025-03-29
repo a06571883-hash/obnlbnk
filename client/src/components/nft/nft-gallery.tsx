@@ -10,8 +10,9 @@ import { NFTTabNavigation } from '../../pages/nft-page';
 import { toast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
-// Импортируем сервис для звука
+// Импортируем сервис для звука и утилиты для изображений
 import { playSound } from '../../lib/sound-service';
+import { getProxiedImageUrl } from '../../lib/image-utils';
 
 // Helper function for sound playback
 const playSoundWithLog = (sound: string) => {
@@ -158,7 +159,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
               <div className="w-full h-full relative">
                 {nft.imagePath.endsWith('.svg') ? (
                   <object
-                    data={nft.imagePath}
+                    data={getProxiedImageUrl(nft.imagePath)}
                     type="image/svg+xml"
                     className="w-full h-full"
                     aria-label={nft.name}
@@ -171,7 +172,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
                   </object>
                 ) : (
                   <img 
-                    src={nft.imagePath} 
+                    src={getProxiedImageUrl(nft.imagePath)} 
                     alt={nft.name} 
                     className="w-full h-full object-cover"
                   />
@@ -214,7 +215,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
                 <div className="w-full h-full relative">
                   {selectedNFT.imagePath.endsWith('.svg') ? (
                     <object
-                      data={selectedNFT.imagePath}
+                      data={getProxiedImageUrl(selectedNFT.imagePath)}
                       type="image/svg+xml"
                       className="w-full h-full"
                       aria-label={selectedNFT.name}
@@ -227,7 +228,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
                     </object>
                   ) : (
                     <img 
-                      src={selectedNFT.imagePath} 
+                      src={getProxiedImageUrl(selectedNFT.imagePath)} 
                       alt={selectedNFT.name} 
                       className="w-full h-full object-cover"
                     />

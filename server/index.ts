@@ -7,6 +7,22 @@ import { startBot } from "./telegram-bot";
 import * as NodeJS from 'node:process';
 import { setupDebugRoutes } from "./debug";
 import { setupGlobalErrorHandlers, logError, errorHandler, notFoundHandler } from "./utils/error-handler";
+import { spawn } from 'child_process';
+
+// Запускаем отдельный сервер для NFT изображений
+const nftImageServer = spawn('node', ['server/nft-image-server.js']);
+
+nftImageServer.stdout.on('data', (data) => {
+  console.log(`[NFT Image Server] ${data}`);
+});
+
+nftImageServer.stderr.on('data', (data) => {
+  console.error(`[NFT Image Server ERROR] ${data}`);
+});
+
+nftImageServer.on('close', (code) => {
+  console.log(`NFT Image Server exited with code ${code}`);
+});
 
 // Устанавливаем глобальные обработчики ошибок
 setupGlobalErrorHandlers();
@@ -42,6 +58,62 @@ const app = express();
 // Минимальная конфигурация для free tier
 app.use(express.json({ limit: '128kb' }));
 app.use(express.urlencoded({ extended: false, limit: '128kb' }));
+
+// Настраиваем статическую раздачу файлов из папки public
+// ВАЖНО: Это должно идти ДО других middleware для корректной обработки изображений
+app.use(express.static('public', {
+  index: false, // Не использовать index.html
+  etag: true,   // Включить ETag для кеширования
+  lastModified: true, // Включить Last-Modified для кеширования
+  setHeaders: (res, path) => {
+    // Устанавливаем правильные mime-типы для изображений
+    if (path.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (path.endsWith('.avif')) {
+      res.setHeader('Content-Type', 'image/avif');
+    }
+  }
+}));
+
+// Специальный обработчик для BAYC NFT изображений
+app.use('/bayc_official', (req, res, next) => {
+  const path = require('path');
+  const fs = require('fs');
+  
+  const requestedPath = req.path;
+  const filePath = path.join(process.cwd(), 'public', 'bayc_official', requestedPath);
+  
+  console.log(`BAYC request: ${req.path} -> ${filePath}`);
+  
+  // Проверяем существование файла
+  fs.stat(filePath, (err, stats) => {
+    if (err || !stats.isFile()) {
+      console.log(`File not found or error: ${filePath}`);
+      return next();
+    }
+    
+    // Определяем MIME-тип
+    let contentType = 'application/octet-stream';
+    if (filePath.endsWith('.png')) {
+      contentType = 'image/png';
+    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      contentType = 'image/jpeg';
+    } else if (filePath.endsWith('.avif')) {
+      contentType = 'image/avif';
+    }
+    
+    console.log(`Serving BAYC file: ${filePath} with content-type: ${contentType}`);
+    
+    // Устанавливаем заголовки и отправляем файл
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    
+    // Отправляем файл
+    fs.createReadStream(filePath).pipe(res);
+  });
+});
 
 // Минимальный CORS для Replit
 app.use((req, res, next) => {
