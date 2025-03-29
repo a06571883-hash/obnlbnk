@@ -10,6 +10,7 @@ import ActivityPage from "@/pages/activity-page";
 import ProfilePage from "@/pages/profile-page";
 import StatisticsPage from "./pages/statistics-page"; // Added import for StatisticsPage
 import NFTPage from "./pages/nft-page"; // Fix: direct import instead of alias
+import AdminPage from "./pages/admin-page"; // Admin panel page
 
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./components/auth-provider";
@@ -33,6 +34,7 @@ function Router() {
         <ProtectedRoute path="/activity" component={ActivityPage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
         <ProtectedRoute path="/nft" component={() => <NFTPage />} />
+        <ProtectedRoute path="/admin" component={AdminPage} /> {/* Admin panel route */}
         <Route path="/stats" component={StatisticsPage} /> {/* Added route for statistics page */}
         <Route component={NotFound} />
       </Switch>

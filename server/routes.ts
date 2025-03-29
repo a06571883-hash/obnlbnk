@@ -20,6 +20,7 @@ import { db } from './db';
 import { eq } from 'drizzle-orm';
 import { nfts, nftCollections } from '@shared/schema';
 import nftRoutes from './controllers/nft-controller';
+import nftImportRoutes from './controllers/nft-import-controller';
 
 // Вспомогательные функции для генерации NFT
 function generateNFTRarity(): string {
@@ -130,6 +131,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Регистрируем маршруты для NFT
   app.use('/api/nft', nftRoutes);
+  
+  // Регистрируем маршруты для импорта NFT
+  app.use('/api/nft-import', nftImportRoutes);
   
   // Добавляем синоним для /api/nft/collections для совместимости с рендер-версией
   app.get('/api/nft-collections', ensureAuthenticated, async (req, res) => {

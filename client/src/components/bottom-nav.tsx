@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Home, Activity, User, Newspaper, BarChart3, Gift } from "lucide-react";
+import { Home, Activity, User, Newspaper, BarChart3, Gift, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { playSoundIfEnabled } from "@/lib/sound-service"; // Added import
@@ -9,6 +9,7 @@ export default function BottomNav() {
   const [location] = useLocation();
   const { user } = useAuth();
 
+  // Базовые элементы навигации для всех пользователей
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: Newspaper, label: "News", path: "/news" },
@@ -16,6 +17,14 @@ export default function BottomNav() {
     { icon: Gift, label: "NFT", path: "/nft" },
     { icon: User, label: "Profile", path: "/profile" },
   ];
+  
+  // Проверяем, является ли пользователь администратором
+  const isAdmin = user?.username === 'admin';
+
+  // Добавляем пункт администратора, если пользователь - админ
+  if (isAdmin) {
+    navItems.push({ icon: ShieldCheck, label: "Admin", path: "/admin" });
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t z-50">
