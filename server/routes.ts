@@ -738,6 +738,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Эндпоинты для импорта NFT в маркетплейс (только для админа)
+  app.get("/api/nft-import/info", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const username = req.user?.username;
+      
+      // Проверяем, что пользователь - админ (регулятор)
+      if (username !== 'admin') {
+        return res.status(403).json({ 
+          success: false, 
+          error: "Только администратор может использовать этот функционал" 
+        });
+      }
+      
+      const { countBoredApeImages } = require('./utils/import-bored-apes-to-marketplace');
+      const imageInfo = await countBoredApeImages();
+      
+      // Получаем количество уже импортированных NFT
+      const client = await pool.connect();
+      try {
+        const result = await client.query(`
+          SELECT COUNT(*) as count 
+          FROM nft 
+          WHERE collection_name = 'Bored Ape Yacht Club'
+        `);
+        const importedCount = parseInt(result.rows[0].count);
+        
+        res.json({
+          success: true,
+          images: imageInfo,
+          imported: importedCount
+        });
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error("Ошибка при получении информации об импорте NFT:", error);
+      res.status(500).json({ success: false, error: String(error) });
+    }
+  });
+  
+  app.post("/api/nft-import/start", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const username = req.user?.username;
+      
+      // Проверяем, что пользователь - админ (регулятор)
+      if (username !== 'admin') {
+        return res.status(403).json({ 
+          success: false, 
+          error: "Только администратор может использовать этот функционал" 
+        });
+      }
+      
+      try {
+        // Добавляем доступ к БД чтобы работали эндпоинты в скрипте
+        const { Pool } = require('pg');
+        const pool = new Pool({
+          connectionString: process.env.DATABASE_URL
+        });
+        global.pool = pool;
+        
+        const { importBoredApesToMarketplace } = require('./utils/import-bored-apes-to-marketplace');
+        const result = await importBoredApesToMarketplace();
+        
+        res.json(result);
+      } catch (importError) {
+        console.error("Ошибка при импорте NFT:", importError);
+        res.status(500).json({ 
+          success: false, 
+          error: String(importError)
+        });
+      }
+    } catch (error) {
+      console.error("Ошибка при запуске импорта NFT:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: String(error) 
+      });
+    }
+  });
+  
+  // Эндпоинт для выполнения скриптов администратором
+  app.post("/api/admin/run-script", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const username = req.user?.username;
+      
+      // Проверяем, что пользователь - админ (регулятор)
+      if (username !== 'admin') {
+        return res.status(403).json({ 
+          success: false, 
+          error: "Только администратор может выполнять скрипты" 
+        });
+      }
+      
+      const { script } = req.body;
+      
+      if (!script) {
+        return res.status(400).json({
+          success: false,
+          error: "Не указан скрипт для выполнения"
+        });
+      }
+      
+      // Для безопасности, разрешаем только выполнение определенных скриптов
+      const allowedScripts = [
+        'node import-all-nft-to-marketplace.js',
+        'node scripts/import-nft.js',
+        'node neon-import.js'
+      ];
+      
+      if (!allowedScripts.includes(script)) {
+        return res.status(403).json({
+          success: false,
+          error: "Запрещено выполнение данного скрипта"
+        });
+      }
+      
+      console.log(`Администратор запустил скрипт: ${script}`);
+      
+      // Выполняем скрипт через child_process
+      const { exec } = require('child_process');
+      
+      exec(script, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Ошибка выполнения скрипта: ${error}`);
+          return res.status(500).json({
+            success: false,
+            error: String(error),
+            stderr
+          });
+        }
+        
+        return res.json({
+          success: true,
+          output: stdout,
+          warnings: stderr
+        });
+      });
+    } catch (error) {
+      console.error("Ошибка при выполнении скрипта:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: String(error) 
+      });
+    }
+  });
+  
   // Генерация нового NFT
   app.post("/api/nft/generate", ensureAuthenticated, async (req, res) => {
     try {

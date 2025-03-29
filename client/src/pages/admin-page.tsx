@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { useLocation } from 'wouter';
 import { NFTImportAdmin } from '@/components/admin/nft-import-admin';
+import { NFTAdmin } from '@/components/admin/nft-admin';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ShieldCheck } from 'lucide-react';
 
@@ -96,7 +97,7 @@ export default function AdminPage() {
         </TabsList>
         
         <TabsContent value="nft-import" className="space-y-6">
-          <NFTImportAdmin />
+          <NFTAdmin />
         </TabsContent>
         
         <TabsContent value="user-management">

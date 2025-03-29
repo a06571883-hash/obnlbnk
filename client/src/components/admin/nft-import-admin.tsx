@@ -84,15 +84,73 @@ export function NFTImportAdmin() {
         description: error.message,
         variant: 'destructive'
       });
+      // Предлагаем альтернативный способ импорта
+      runDirectImport();
     },
     onSettled: () => {
       setImportInProgress(false);
     }
   });
 
+  // Функция для запуска прямого импорта через скрипт
+  const runDirectImport = async () => {
+    try {
+      setImportInProgress(true);
+      toast({
+        title: 'Запуск прямого импорта',
+        description: 'Используем альтернативный метод импорта через Node.js скрипт...',
+        variant: 'default'
+      });
+      
+      // Выполняем Node.js скрипт напрямую через bash
+      const response = await fetch('/api/admin/run-script', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          script: 'node import-all-nft-to-marketplace.js'
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка при прямом импорте');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: 'Прямой импорт успешно завершен',
+          description: result.output || 'Скрипт выполнен успешно',
+          variant: 'default'
+        });
+        // Обновляем информацию и кэш
+        refetch();
+        queryClient.invalidateQueries({ queryKey: ['/api/nft/marketplace'] });
+      } else {
+        throw new Error(result.error || 'Неизвестная ошибка при выполнении прямого импорта');
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка прямого импорта',
+        description: error instanceof Error ? error.message : 'Неизвестная ошибка',
+        variant: 'destructive'
+      });
+    } finally {
+      setImportInProgress(false);
+    }
+  };
+
   // Функция для запуска импорта NFT
   const handleImportNFT = () => {
     importNFTMutation.mutate();
+  };
+  
+  // Функция для запуска прямого импорта из UI
+  const handleDirectImport = () => {
+    runDirectImport();
   };
 
   if (isLoadingInfo) {
@@ -149,7 +207,7 @@ export function NFTImportAdmin() {
           )}
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col sm:flex-row gap-2">
         <Button
           onClick={handleImportNFT}
           disabled={importInProgress || imageInfo.total === 0}
@@ -163,6 +221,15 @@ export function NFTImportAdmin() {
           ) : (
             'Начать импорт коллекции'
           )}
+        </Button>
+        
+        <Button
+          onClick={handleDirectImport}
+          variant="outline"
+          disabled={importInProgress || imageInfo.total === 0}
+          className="w-full"
+        >
+          Прямой импорт через скрипт
         </Button>
       </CardFooter>
     </Card>
