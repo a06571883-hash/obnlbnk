@@ -583,36 +583,64 @@ router.post('/generate', async (req: Request, res: Response) => {
     }
     
     // Выполняем транзакцию перевода денег от пользователя администратору
-    const transferResult = await storage.transferMoney(
-      userCard.id,
-      adminCard.number,
-      NFT_CREATION_COST
-    );
-    
-    if (!transferResult.success) {
-      throw new Error(`Ошибка при переводе средств: ${transferResult.error}`);
+    try {
+      console.log(`[NFT Controller] Начинаем перевод $${NFT_CREATION_COST} с карты ${userCard.id} на карту ${adminCard.number}`);
+      console.log(`[NFT Controller] Баланс пользователя: $${userCard.balance}, ID пользователя: ${userId}`);
+      console.log(`[NFT Controller] ID карты администратора: ${adminCard.id}, номер карты: ${adminCard.number}`);
+      
+      const transferResult = await storage.transferMoney(
+        userCard.id,
+        adminCard.number,
+        NFT_CREATION_COST
+      );
+      
+      if (!transferResult.success) {
+        console.error(`[NFT Controller] Ошибка при переводе средств:`, transferResult);
+        throw new Error(`Ошибка при переводе средств: ${transferResult.error}`);
+      }
+      
+      console.log(`[NFT Controller] Перевод успешно выполнен:`, transferResult);
+    } catch (transferError) {
+      console.error(`[NFT Controller] Исключение при переводе средств:`, transferError);
+      throw new Error(`Ошибка при переводе средств: ${transferError instanceof Error ? transferError.message : String(transferError)}`);
     }
     
-    log(`Создание NFT: Оплата в размере $${NFT_CREATION_COST} переведена администратору, ID транзакции: ${transferResult.transaction?.id}`);
+    log(`Создание NFT: Оплата в размере $${NFT_CREATION_COST} переведена администратору`);
     
     // Создаем NFT с указанной редкостью (с ценой 0, не выставлен на продажу)
     try {
       log(`Вызов createBoredApeNFT с параметрами: userId=${userId}, rarity=${rarity}`);
+      console.log(`[NFT Controller] Вызываем createBoredApeNFT - начало генерации NFT для пользователя ${userId}, редкость: ${rarity}`);
+      
       const nft = await boredApeNftService.createBoredApeNFT(userId, rarity as NFTRarity);
       
+      console.log(`[NFT Controller] NFT успешно создан, результат:`, nft);
       log('NFT успешно создан:', nft.id);
+      
+      // Преобразуем путь к изображению для корректного отображения
+      let imagePath = nft.imagePath || '';
+      if (imagePath.startsWith('/bored_ape_nft/')) {
+        console.log(`[NFT Controller] Путь к NFT изображению: ${imagePath}`);
+      } else {
+        console.log(`[NFT Controller] Внимание: получен некорректный путь к изображению: ${imagePath}`);
+      }
       
       res.status(201).json({
         ...nft,
-        transaction: transferResult.transaction
+        transaction: transferResult?.transaction
       });
     } catch (nftError) {
+      console.error(`[NFT Controller] Подробная ошибка при создании NFT:`, nftError);
       log('Ошибка при создании NFT в createBoredApeNFT:', nftError);
       throw new Error(`Не удалось создать NFT: ${nftError instanceof Error ? nftError.message : String(nftError)}`);
     }
   } catch (error) {
     console.error('Ошибка при генерации NFT:', error);
-    res.status(500).json({ error: 'Ошибка сервера при генерации NFT' });
+    // Детализируем ошибку в ответе для лучшей диагностики
+    const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+    res.status(500).json({ 
+      error: `Ошибка сервера при генерации NFT: ${errorMessage}` 
+    });
   }
 });
 
