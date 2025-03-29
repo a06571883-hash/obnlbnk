@@ -44,9 +44,11 @@ export async function createBoredApeNFT(userId: number, rarity: NFTRarity, price
     
     // Получаем изображение NFT из коллекции Bored Ape
     const imagePath = await getBoredApeNFT(rarity);
+    console.log(`[Bored Ape NFT Service] Получен путь к изображению: ${imagePath}`);
     
     // Генерируем атрибуты NFT в зависимости от редкости
     const attributes = generateNFTAttributes(rarity);
+    console.log(`[Bored Ape NFT Service] Сгенерированы атрибуты:`, attributes);
     
     // Формируем имя и описание NFT
     const name = generateNFTName(rarity);

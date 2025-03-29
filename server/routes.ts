@@ -124,7 +124,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   startRateUpdates(httpServer, '/ws');
   
   // Делаем папку с NFT доступной как статический контент
+  // Статические пути для NFT ресурсов
   app.use('/bored_ape_nft', express.static(path.join(process.cwd(), 'bored_ape_nft')));
+  app.use('/public/assets/nft', express.static(path.join(process.cwd(), 'public/assets/nft')));
   
   // Регистрируем маршруты для NFT
   app.use('/api/nft', nftRoutes);
