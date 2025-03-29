@@ -4,6 +4,7 @@
  */
 import express, { Request, Response } from 'express';
 import * as buenoNftService from '../services/bueno-nft-service';
+import * as boredApeNftService from '../services/bored-ape-nft-service';
 import { storage } from '../storage';
 import { z } from 'zod';
 import { db } from '../db';
@@ -60,14 +61,14 @@ router.post('/create', async (req: Request, res: Response) => {
     
     // Получаем ID пользователя
     const username = req.session.user;
-    const user = await Storage.getUserByUsername(username);
+    const user = await storage.getUserByUsername(username);
     
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
     
-    // Создаем NFT
-    const nft = await buenoNftService.createBuenoNFT(user.id, rarity as NFTRarity, price);
+    // Создаем NFT из коллекции Bored Ape вместо Bueno Art
+    const nft = await boredApeNftService.createBoredApeNFT(user.id, rarity as NFTRarity, price);
     
     res.status(201).json({
       success: true,
@@ -92,14 +93,14 @@ router.get('/user', async (req: Request, res: Response) => {
     
     // Получаем ID пользователя
     const username = req.session.user;
-    const user = await Storage.getUserByUsername(username);
+    const user = await storage.getUserByUsername(username);
     
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
     
     // Получаем NFT пользователя
-    const userNFTs = await buenoNftService.getUserNFTs(user.id);
+    const userNFTs = await boredApeNftService.getUserNFTs(user.id);
     
     res.status(200).json({
       success: true,
@@ -124,18 +125,18 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     
     // Получаем ID пользователя
     const username = req.session.user;
-    const user = await Storage.getUserByUsername(username);
+    const user = await storage.getUserByUsername(username);
     
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
     
     // Получаем NFT на продаже (исключая NFT текущего пользователя)
-    const nftsForSale = await buenoNftService.getNFTsForSale(user.id);
+    const nftsForSale = await boredApeNftService.getNFTsForSale(user.id);
     
     // Добавляем информацию о владельцах
     const nftsWithOwners = await Promise.all(nftsForSale.map(async (nft) => {
-      const owner = await storage.getUserById(nft.ownerId);
+      const owner = await storage.getUser(nft.ownerId);
       return {
         ...nft,
         ownerUsername: owner ? owner.username : 'Unknown'
@@ -174,7 +175,7 @@ router.post('/list-for-sale', async (req: Request, res: Response) => {
     
     // Получаем ID пользователя
     const username = req.session.user;
-    const user = await Storage.getUserByUsername(username);
+    const user = await storage.getUserByUsername(username);
     
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
@@ -194,7 +195,7 @@ router.post('/list-for-sale', async (req: Request, res: Response) => {
     }
     
     // Выставляем NFT на продажу
-    const updatedNft = await buenoNftService.listNFTForSale(nftId, price);
+    const updatedNft = await boredApeNftService.listNFTForSale(nftId, price);
     
     res.status(200).json({
       success: true,
@@ -226,7 +227,7 @@ router.post('/remove-from-sale', async (req: Request, res: Response) => {
     
     // Получаем ID пользователя
     const username = req.session.user;
-    const user = await Storage.getUserByUsername(username);
+    const user = await storage.getUserByUsername(username);
     
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
@@ -246,7 +247,7 @@ router.post('/remove-from-sale', async (req: Request, res: Response) => {
     }
     
     // Снимаем NFT с продажи
-    const updatedNft = await buenoNftService.removeNFTFromSale(nftId);
+    const updatedNft = await boredApeNftService.removeNFTFromSale(nftId);
     
     res.status(200).json({
       success: true,
@@ -280,14 +281,14 @@ router.post('/buy', async (req: Request, res: Response) => {
     
     // Получаем ID пользователя
     const username = req.session.user;
-    const user = await Storage.getUserByUsername(username);
+    const user = await storage.getUserByUsername(username);
     
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
     
     // Покупаем NFT
-    const boughtNft = await buenoNftService.buyNFT(nftId, user.id);
+    const boughtNft = await boredApeNftService.buyNFT(nftId, user.id);
     
     res.status(200).json({
       success: true,
@@ -335,7 +336,7 @@ router.post('/gift', async (req: Request, res: Response) => {
     }
     
     // Дарим NFT
-    const giftedNft = await buenoNftService.giftNFT(nftId, sender.id, receiver.id);
+    const giftedNft = await boredApeNftService.giftNFT(nftId, sender.id, receiver.id);
     
     res.status(200).json({
       success: true,
@@ -366,12 +367,12 @@ router.get('/:id/history', async (req: Request, res: Response) => {
     }
     
     // Получаем историю передач NFT
-    const history = await buenoNftService.getNFTTransferHistory(nftId);
+    const history = await boredApeNftService.getNFTTransferHistory(nftId);
     
     // Добавляем информацию о пользователях
     const historyWithUsernames = await Promise.all(history.map(async (transfer) => {
-      const from = await storage.getUserById(transfer.fromUserId);
-      const to = await storage.getUserById(transfer.toUserId);
+      const from = await storage.getUser(transfer.fromUserId);
+      const to = await storage.getUser(transfer.toUserId);
       
       return {
         ...transfer,
@@ -418,7 +419,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
     
     // Получаем информацию о владельце
-    const owner = await storage.getUserById(nftInfo[0].ownerId);
+    const owner = await storage.getUser(nftInfo[0].ownerId);
     
     // Получаем информацию о коллекции
     const collectionInfo = await db.select()

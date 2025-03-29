@@ -6,10 +6,19 @@ declare module 'better-sqlite3' {
 }
 
 declare module 'better-sqlite3-session-store' {
-  import { Store } from 'express-session';
+  import * as expressSession from 'express-session';
   import { Database } from 'better-sqlite3';
   
   export default function(session: any): {
-    new (options: { client: any, expired?: { clear: boolean, intervalMs: number } }): Store
+    new (options: { client: any, expired?: { clear: boolean, intervalMs: number } }): expressSession.Store
+  }
+}
+
+// Расширяем типы express-session для поддержки user в session
+declare module 'express-session' {
+  interface SessionData {
+    user: string;     // Имя пользователя
+    userId?: number;  // ID пользователя
+    isAdmin?: boolean; // Флаг администратора
   }
 }

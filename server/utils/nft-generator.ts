@@ -1,8 +1,9 @@
 /**
- * Утилита для генерации NFT изображений из коллекции Bueno Art
- * Использует NFT с https://bueno.art/rhg0bfyr/ooo-bnal-bank
+ * Утилита для генерации NFT изображений из коллекции Bored Ape Yacht Club
+ * Использует изображения из приложенного пользователем ZIP-архива
  */
-import { getBuenoNFT, createFallbackBuenoNFT } from './bueno-nft-fetcher';
+import { getBoredApeNFT, checkBoredApeNFTFiles } from './bored-ape-nft-loader';
+import { createFallbackBoredApeNFT } from './bored-ape-fallback';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -11,24 +12,31 @@ import * as path from 'path';
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 /**
- * Получает NFT изображение из коллекции Bueno Art
+ * Получает NFT изображение из коллекции Bored Ape Yacht Club
  * @param rarity Редкость NFT
  * @returns Путь к созданному файлу
  */
 export async function generateNFTImage(rarity: NFTRarity): Promise<string> {
   try {
-    // Используем NFT из коллекции Bueno Art
-    console.log(`Получаем NFT из Bueno Art с редкостью: ${rarity}`);
-    return await getBuenoNFT(rarity);
+    // Проверяем наличие файлов Bored Ape NFT
+    checkBoredApeNFTFiles();
+    
+    // Используем NFT из коллекции Bored Ape
+    console.log(`Получаем NFT из коллекции Bored Ape с редкостью: ${rarity}`);
+    return await getBoredApeNFT(rarity);
   } catch (error) {
     // Если произошла ошибка, создаем запасное изображение из статических файлов
     console.log('ГЕНЕРАЦИЯ NFT: Используем запасные изображения');
     console.log(`Создание запасного изображения для редкости: ${rarity}`);
     
-    // Создаем запасное изображение, если оно еще не создано
-    createFallbackBuenoNFT(rarity);
-    
-    // Статические пути к фотореалистичным изображениям для каждой редкости
+    // Создаем запасное изображение
+    return createFallbackBoredApeNFT(rarity);
+  }
+}
+
+/* Следующий код сохранен только для совместимости со старыми NFT:
+
+// Статические пути к фотореалистичным изображениям для каждой редкости
     const fallbackImages: Record<NFTRarity, string[]> = {
       common: [
         'https://cdn.pixabay.com/photo/2015/06/25/17/21/smart-watch-821557_1280.jpg',
