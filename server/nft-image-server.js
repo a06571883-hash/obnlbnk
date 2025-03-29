@@ -1,9 +1,13 @@
 /**
  * Простой сервер для обслуживания NFT изображений
  */
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
+import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Создаем Express приложение
 const app = express();

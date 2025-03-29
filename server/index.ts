@@ -79,40 +79,9 @@ app.use(express.static('public', {
 
 // Специальный обработчик для BAYC NFT изображений
 app.use('/bayc_official', (req, res, next) => {
-  const path = require('path');
-  const fs = require('fs');
-  
-  const requestedPath = req.path;
-  const filePath = path.join(process.cwd(), 'public', 'bayc_official', requestedPath);
-  
-  console.log(`BAYC request: ${req.path} -> ${filePath}`);
-  
-  // Проверяем существование файла
-  fs.stat(filePath, (err, stats) => {
-    if (err || !stats.isFile()) {
-      console.log(`File not found or error: ${filePath}`);
-      return next();
-    }
-    
-    // Определяем MIME-тип
-    let contentType = 'application/octet-stream';
-    if (filePath.endsWith('.png')) {
-      contentType = 'image/png';
-    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-      contentType = 'image/jpeg';
-    } else if (filePath.endsWith('.avif')) {
-      contentType = 'image/avif';
-    }
-    
-    console.log(`Serving BAYC file: ${filePath} with content-type: ${contentType}`);
-    
-    // Устанавливаем заголовки и отправляем файл
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    
-    // Отправляем файл
-    fs.createReadStream(filePath).pipe(res);
-  });
+  // Отправляем запрос к прокси NFT сервера
+  console.log(`BAYC request: ${req.path}, перенаправление на NFT прокси сервер`);
+  res.redirect(`/nft-proxy/bayc_official${req.path}`);
 });
 
 // Минимальный CORS для Replit

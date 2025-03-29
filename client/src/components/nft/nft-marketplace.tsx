@@ -83,22 +83,31 @@ export const NFTMarketplace: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12; // Показываем 12 NFT на страницу
   
-  // Удаляем дубликаты NFT на основе tokenId (чтобы избежать дублирования Bored Ape #1, #2, и т.д.)
+  // Фильтруем NFT, исключая те, которые принадлежат текущему пользователю,
+  // и удаляем дубликаты на основе tokenId
   const uniqueMarketplaceNfts = React.useMemo(() => {
     // Создаем Map для хранения уникальных NFT по tokenId
     const uniqueNfts = new Map();
     
-    // Добавляем только уникальные NFT в Map
+    // Добавляем только уникальные NFT в Map, которые НЕ принадлежат текущему пользователю
     rawMarketplaceNfts.forEach(nft => {
-      // Если NFT с таким tokenId еще нет в Map или текущий NFT имеет более высокий ID
-      if (!uniqueNfts.has(nft.tokenId) || uniqueNfts.get(nft.tokenId).id < nft.id) {
-        uniqueNfts.set(nft.tokenId, nft);
+      // Пропускаем NFT текущего пользователя (если не выставлен на продажу)
+      const isCurrentUserNft = nft.ownerId === (currentUser as any)?.id;
+      
+      // Добавляем в маркетплейс только если:
+      // 1. NFT НЕ принадлежит текущему пользователю ИЛИ
+      // 2. NFT принадлежит текущему пользователю, но выставлен на продажу
+      if (!isCurrentUserNft || (isCurrentUserNft && nft.forSale)) {
+        // Если NFT с таким tokenId еще нет в Map или текущий NFT имеет более высокий ID
+        if (!uniqueNfts.has(nft.tokenId) || uniqueNfts.get(nft.tokenId).id < nft.id) {
+          uniqueNfts.set(nft.tokenId, nft);
+        }
       }
     });
     
     // Преобразуем Map обратно в массив
     return Array.from(uniqueNfts.values());
-  }, [rawMarketplaceNfts]);
+  }, [rawMarketplaceNfts, currentUser]);
   
   // Получаем общее количество страниц
   const totalPages = Math.ceil(uniqueMarketplaceNfts.length / itemsPerPage);
