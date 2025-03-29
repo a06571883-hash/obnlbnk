@@ -142,8 +142,29 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     
     log(`Получаем все NFT на продаже${userId ? ` (кроме пользователя ${userId})` : ''}`);
     
+    // Определяем интерфейс для NFT с общими свойствами
+    interface CombinedNFT {
+      id: number;
+      tokenId: string;
+      collectionName: string;
+      name: string;
+      description: string;
+      imagePath: string;
+      imageUrl: string;
+      price: string;
+      forSale: boolean;
+      ownerId: number;
+      creatorId: number;
+      ownerUsername: string;
+      attributes: any;
+      rarity?: string;
+    }
+    
     // Массив для результатов NFT
-    let combinedNFTs = [];
+    let combinedNFTs: CombinedNFT[] = [];
+    
+    // Для отслеживания уникальных токенов, чтобы избежать дубликатов
+    const tokenTracker = new Set<string>();
     
     // 1. Сначала пробуем получить NFT на продаже с помощью Drizzle ORM из таблицы nfts
     try {
@@ -165,7 +186,24 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       
       if (nftsForSaleResult.length > 0) {
         // Форматируем NFT перед отправкой
-        const formattedNFTs = await Promise.all(nftsForSaleResult.map(async (nft) => {
+        // Фильтруем дубликаты на основе tokenId
+        const uniqueNFTs = nftsForSaleResult.filter(nft => {
+          // Создаем композитный ключ токена, объединяя id и коллекцию
+          const tokenKey = `${nft.tokenId}-${nft.collectionId}`;
+          
+          // Если этот токен уже был обработан, пропускаем его
+          if (tokenTracker.has(tokenKey)) {
+            return false;
+          }
+          
+          // Добавляем токен в трекер и включаем в результат
+          tokenTracker.add(tokenKey);
+          return true;
+        });
+        
+        log(`После дедупликации осталось ${uniqueNFTs.length} уникальных NFT из ${nftsForSaleResult.length} всего`);
+        
+        const formattedNFTs = await Promise.all(uniqueNFTs.map(async (nft) => {
           const owner = await storage.getUser(nft.ownerId);
           
           // Определяем номер коллекции
@@ -220,8 +258,28 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       log(`Найдено ${legacyNFTResult.length} NFT из таблицы nft (legacy)`);
       
       if (legacyNFTResult.length > 0) {
+        // Фильтруем дубликаты из legacy таблицы
+        const uniqueLegacyNFTs = legacyNFTResult.filter(nft => {
+          // Создаем композитный ключ токена для legacy NFTs
+          const legacyTokenId = nft.token_id.toString();
+          // Преобразуем в формат, совместимый с новым форматом для сравнения
+          const bayPrefix = legacyTokenId.startsWith('BAYC-') ? '' : 'BAYC-';
+          const tokenKey = `${bayPrefix}${legacyTokenId}-${nft.collection_id || '1'}`;
+          
+          // Если этот токен уже был обработан, пропускаем его
+          if (tokenTracker.has(tokenKey)) {
+            return false;
+          }
+          
+          // Добавляем токен в трекер и включаем в результат
+          tokenTracker.add(tokenKey);
+          return true;
+        });
+        
+        log(`После дедупликации осталось ${uniqueLegacyNFTs.length} уникальных legacy NFT из ${legacyNFTResult.length} всего`);
+        
         // Форматируем NFT перед отправкой
-        const formattedLegacyNFTs = await Promise.all(legacyNFTResult.map(async (nft) => {
+        const formattedLegacyNFTs = await Promise.all(uniqueLegacyNFTs.map(async (nft) => {
           const owner = await storage.getUser(nft.owner_id);
           
           // Создаем объект NFT, который будет соответствовать формату, ожидаемому фронтендом
@@ -258,7 +316,7 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       console.error('Ошибка при получении NFT из legacy таблицы:', legacyError);
     }
     
-    // 3. Запасной вариант - если у нас есть авторизованный пользователь
+    // 3. Запасной вариант - если у нас есть авторизованный пользователь и пока нет результатов
     if (combinedNFTs.length === 0 && userId) {
       try {
         log('Первые два метода не вернули результатов, пробуем через сервис...');
@@ -266,8 +324,26 @@ router.get('/marketplace', async (req: Request, res: Response) => {
         log(`Найдено ${serviceNFTs.length} NFT на продаже через сервис`);
         
         if (serviceNFTs.length > 0) {
+          // Фильтруем дубликаты из результатов сервиса
+          const uniqueServiceNFTs = serviceNFTs.filter(nft => {
+            // Для сервисных NFT также создаем уникальный ключ
+            const tokenIdStr = nft.tokenId?.toString() || '';
+            const collectionIdStr = nft.collectionId?.toString() || '1';
+            const tokenKey = `${tokenIdStr}-${collectionIdStr}`;
+            
+            // Пропускаем уже обработанные токены
+            if (tokenTracker.has(tokenKey)) {
+              return false;
+            }
+            
+            tokenTracker.add(tokenKey);
+            return true;
+          });
+          
+          log(`После дедупликации осталось ${uniqueServiceNFTs.length} уникальных service NFT из ${serviceNFTs.length} всего`);
+          
           // Добавляем информацию о владельцах
-          const formattedServiceNFTs = await Promise.all(serviceNFTs.map(async (nft) => {
+          const formattedServiceNFTs = await Promise.all(uniqueServiceNFTs.map(async (nft) => {
             const owner = await storage.getUser(nft.ownerId);
             return {
               ...nft,
@@ -760,8 +836,7 @@ router.post('/generate', ensureAuthenticated, async (req: Request, res: Response
       }
       
       res.status(201).json({
-        ...nft,
-        transaction: transferResult?.transaction
+        ...nft
       });
     } catch (nftError) {
       console.error(`[NFT Controller] Подробная ошибка при создании NFT:`, nftError);

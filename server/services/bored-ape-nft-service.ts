@@ -555,6 +555,9 @@ export async function getUserNFTs(userId: number) {
  */
 export async function getNFTsForSale(excludeUserId?: number) {
   try {
+    // Для отслеживания уникальных токенов, чтобы избежать дубликатов
+    const tokenTracker = new Set();
+    
     // Показываем все NFT на продаже, независимо от пользователя
     const query = db.select()
       .from(nfts)
@@ -563,6 +566,23 @@ export async function getNFTsForSale(excludeUserId?: number) {
     // Получаем NFT из таблицы nfts (Drizzle ORM)
     const nftsForSale = await query;
     console.log(`[Bored Ape NFT Service] Найдено ${nftsForSale.length} NFT на продаже из таблицы nfts`);
+    
+    // Фильтруем дубликаты на основе tokenId
+    const uniqueNFTs = nftsForSale.filter(nft => {
+      // Создаем композитный ключ токена, объединяя id и коллекцию
+      const tokenKey = `${nft.tokenId}-${nft.collectionId}`;
+      
+      // Если этот токен уже был обработан, пропускаем его
+      if (tokenTracker.has(tokenKey)) {
+        return false;
+      }
+      
+      // Добавляем токен в трекер и включаем в результат
+      tokenTracker.add(tokenKey);
+      return true;
+    });
+    
+    console.log(`[Bored Ape NFT Service] После дедупликации осталось ${uniqueNFTs.length} уникальных NFT из ${nftsForSale.length} всего`);
     
     // Также попробуем получить NFT из старой таблицы nft (legacy)
     let legacyNFTs = [];
@@ -580,13 +600,33 @@ export async function getNFTsForSale(excludeUserId?: number) {
       }
       
       console.log(`[Bored Ape NFT Service] Найдено ${legacyNFTs.length} NFT на продаже из таблицы nft (legacy)`);
+      
+      // Фильтруем дубликаты из legacy таблицы
+      legacyNFTs = legacyNFTs.filter((nft: { token_id: any; collection_id?: number }) => {
+        // Создаем композитный ключ токена для legacy NFTs
+        const legacyTokenId = nft.token_id.toString();
+        // Преобразуем в формат, совместимый с новым форматом для сравнения
+        const bayPrefix = legacyTokenId.startsWith('BAYC-') ? '' : 'BAYC-';
+        const tokenKey = `${bayPrefix}${legacyTokenId}-${nft.collection_id || '1'}`;
+        
+        // Если этот токен уже был обработан, пропускаем его
+        if (tokenTracker.has(tokenKey)) {
+          return false;
+        }
+        
+        // Добавляем токен в трекер и включаем в результат
+        tokenTracker.add(tokenKey);
+        return true;
+      });
+      
+      console.log(`[Bored Ape NFT Service] После дедупликации осталось ${legacyNFTs.length} уникальных legacy NFT`);
     } catch (legacyError) {
       console.error('[Bored Ape NFT Service] Ошибка при получении NFT из legacy таблицы:', legacyError);
     }
     
     // Объединяем результаты
-    const combinedNFTs = [...nftsForSale, ...legacyNFTs];
-    console.log(`[Bored Ape NFT Service] Всего найдено ${combinedNFTs.length} NFT на продаже (${nftsForSale.length} из nfts + ${legacyNFTs.length} из nft)`);
+    const combinedNFTs = [...uniqueNFTs, ...legacyNFTs];
+    console.log(`[Bored Ape NFT Service] Всего найдено ${combinedNFTs.length} уникальных NFT на продаже (${uniqueNFTs.length} из nfts + ${legacyNFTs.length} из nft)`);
     
     return combinedNFTs;
   } catch (error) {
