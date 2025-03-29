@@ -7,7 +7,7 @@ import * as buenoNftService from '../services/bueno-nft-service';
 import * as boredApeNftService from '../services/bored-ape-nft-service';
 import { storage } from '../storage';
 import { z } from 'zod';
-import { db } from '../db';
+import { db, client } from '../db';
 import { nfts, nftCollections, nftTransfers, users, cards } from '../../shared/schema';
 import { eq, and, not, or, inArray } from 'drizzle-orm';
 
