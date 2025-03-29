@@ -2,7 +2,7 @@
  * Контроллер для работы с NFT
  * Обрабатывает запросы API, связанные с NFT
  */
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import * as buenoNftService from '../services/bueno-nft-service';
 import * as boredApeNftService from '../services/bored-ape-nft-service';
 import { storage } from '../storage';
@@ -20,6 +20,18 @@ function log(...args: any[]) {
     console.log('[NFT Controller]', ...args);
   }
 }
+
+// Middleware для проверки аутентификации
+function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  log('Доступ запрещен: пользователь не аутентифицирован');
+  res.status(401).json({ error: 'Требуется авторизация' });
+}
+
+// Применяем middleware ко всем маршрутам контроллера
+router.use(ensureAuthenticated);
 
 // Тип редкости NFT
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -53,9 +65,11 @@ const giftNFTSchema = z.object({
  */
 router.post('/create', async (req: Request, res: Response) => {
   try {
-    // Проверяем авторизацию
-    if (!req.session.user) {
-      return res.status(401).json({ error: 'Требуется авторизация' });
+    // Пользователь уже проверен через middleware
+    const userId = req.user?.id;
+    if (!userId) {
+      log('ID пользователя не найден');
+      return res.status(500).json({ error: 'Ошибка сервера при создании NFT' });
     }
     
     // Валидируем данные запроса
@@ -67,16 +81,8 @@ router.post('/create', async (req: Request, res: Response) => {
     
     const { rarity, price } = result.data;
     
-    // Получаем ID пользователя
-    const username = req.session.user;
-    const user = await storage.getUserByUsername(username);
-    
-    if (!user) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
-    }
-    
     // Создаем NFT из коллекции Bored Ape вместо Bueno Art
-    const nft = await boredApeNftService.createBoredApeNFT(user.id, rarity as NFTRarity, price);
+    const nft = await boredApeNftService.createBoredApeNFT(userId, rarity as NFTRarity, price);
     
     res.status(201).json({
       success: true,
@@ -96,47 +102,24 @@ router.get('/user', async (req: Request, res: Response) => {
   try {
     log('Запрос на получение NFT пользователя через /api/nft/user');
     
-    // Проверяем авторизацию
-    if (!req.session.user) {
-      log('Ошибка авторизации при получении NFT');
-      return res.status(401).json({ error: 'Требуется авторизация' });
+    // Пользователь уже проверен через middleware
+    const userId = req.user?.id;
+    if (!userId) {
+      log('ID пользователя не найден');
+      return res.status(500).json({ error: 'Ошибка сервера при получении NFT пользователя' });
     }
     
-    // Получаем ID пользователя
-    const username = req.session.user;
-    const user = await storage.getUserByUsername(username);
-    
-    if (!user) {
-      log('Пользователь не найден при получении NFT');
-      return res.status(404).json({ error: 'Пользователь не найден' });
-    }
-    
-    log(`Получаем NFT для пользователя ${user.id} (${username})`);
+    log(`Получаем NFT для пользователя ${userId} (${req.user?.username})`);
     
     // Получаем NFT пользователя
-    const userNFTs = await boredApeNftService.getUserNFTs(user.id);
-    log(`Найдено ${userNFTs.length} NFT для пользователя ${user.id}`);
+    const userNFTs = await boredApeNftService.getUserNFTs(userId);
+    log(`Найдено ${userNFTs.length} NFT для пользователя ${userId}`);
     
-    // Преобразуем имена полей из snake_case в camelCase для клиента
-    const formattedNFTs = userNFTs.map(nft => ({
-      id: nft.id,
-      collectionId: nft.collection_id,
-      ownerId: nft.owner_id,
-      name: nft.name,
-      description: nft.description,
-      imagePath: nft.image_path,
-      rarity: nft.rarity,
-      mintedAt: nft.minted_at,
-      tokenId: nft.token_id,
-      price: nft.price,
-      forSale: nft.for_sale,
-      attributes: nft.attributes
-    }));
-    
-    log(`Отправляем ${formattedNFTs.length} NFT клиенту`);
+    // NFT уже в правильном формате, просто логируем и отправляем их
+    log(`Отправляем ${userNFTs.length} NFT клиенту`);
     
     // Клиент ожидает прямой массив, а не объект с полем nfts
-    res.status(200).json(formattedNFTs);
+    res.status(200).json(userNFTs);
   } catch (error) {
     console.error('Ошибка при получении NFT пользователя:', error);
     res.status(500).json({ error: 'Ошибка сервера при получении NFT пользователя' });
@@ -151,43 +134,24 @@ router.get('/marketplace', async (req: Request, res: Response) => {
   try {
     log('Запрос на получение NFT на продаже');
     
-    // Проверяем авторизацию
-    if (!req.session.user) {
-      log('Ошибка авторизации при получении маркетплейса');
-      return res.status(401).json({ error: 'Требуется авторизация' });
+    // Пользователь уже проверен через middleware
+    const userId = req.user?.id;
+    if (!userId) {
+      log('ID пользователя не найден');
+      return res.status(500).json({ error: 'Ошибка сервера при получении NFT на продаже' });
     }
     
-    // Получаем ID пользователя
-    const username = req.session.user;
-    const user = await storage.getUserByUsername(username);
-    
-    if (!user) {
-      log('Пользователь не найден при получении маркетплейса');
-      return res.status(404).json({ error: 'Пользователь не найден' });
-    }
-    
-    log(`Получаем NFT на продаже (кроме пользователя ${user.id})`);
+    log(`Получаем NFT на продаже (кроме пользователя ${userId})`);
     
     // Получаем NFT на продаже (исключая NFT текущего пользователя)
-    const nftsForSale = await boredApeNftService.getNFTsForSale(user.id);
+    const nftsForSale = await boredApeNftService.getNFTsForSale(userId);
     log(`Найдено ${nftsForSale.length} NFT на продаже`);
     
-    // Добавляем информацию о владельцах и преобразуем поля в camelCase
+    // Добавляем информацию о владельцах
     const formattedNFTs = await Promise.all(nftsForSale.map(async (nft) => {
-      const owner = await storage.getUser(nft.owner_id);
+      const owner = await storage.getUser(nft.ownerId);
       return {
-        id: nft.id,
-        collectionId: nft.collection_id,
-        ownerId: nft.owner_id,
-        name: nft.name,
-        description: nft.description,
-        imagePath: nft.image_path,
-        rarity: nft.rarity,
-        mintedAt: nft.minted_at,
-        tokenId: nft.token_id,
-        price: nft.price,
-        forSale: nft.for_sale,
-        attributes: nft.attributes,
+        ...nft,
         ownerUsername: owner ? owner.username : 'Unknown'
       };
     }));
@@ -208,27 +172,25 @@ router.get('/marketplace', async (req: Request, res: Response) => {
  */
 router.post('/list-for-sale', async (req: Request, res: Response) => {
   try {
-    // Проверяем авторизацию
-    if (!req.session.user) {
-      return res.status(401).json({ error: 'Требуется авторизация' });
+    log('Запрос на выставление NFT на продажу');
+    
+    // Пользователь уже проверен через middleware
+    const userId = req.user?.id;
+    if (!userId) {
+      log('ID пользователя не найден');
+      return res.status(500).json({ error: 'Ошибка сервера при выставлении NFT на продажу' });
     }
     
     // Валидируем данные запроса
     const result = listForSaleSchema.safeParse(req.body);
     
     if (!result.success) {
+      log('Некорректные данные запроса');
       return res.status(400).json({ error: 'Некорректные данные', details: result.error.format() });
     }
     
     const { nftId, price } = result.data;
-    
-    // Получаем ID пользователя
-    const username = req.session.user;
-    const user = await storage.getUserByUsername(username);
-    
-    if (!user) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
-    }
+    log(`Выставляем NFT ${nftId} на продажу за ${price}`);
     
     // Проверяем, что пользователь является владельцем NFT
     const nftInfo = await db.select()
@@ -236,15 +198,18 @@ router.post('/list-for-sale', async (req: Request, res: Response) => {
       .where(eq(nfts.id, nftId));
     
     if (nftInfo.length === 0) {
+      log('NFT не найден:', nftId);
       return res.status(404).json({ error: 'NFT не найден' });
     }
     
-    if (nftInfo[0].ownerId !== user.id) {
+    if (nftInfo[0].ownerId !== userId) {
+      log(`Пользователь ${userId} не является владельцем NFT ${nftId} (владелец: ${nftInfo[0].ownerId})`);
       return res.status(403).json({ error: 'Вы не являетесь владельцем этого NFT' });
     }
     
     // Выставляем NFT на продажу
     const updatedNft = await boredApeNftService.listNFTForSale(nftId, price);
+    log('NFT успешно выставлен на продажу:', nftId);
     
     res.status(200).json({
       success: true,
@@ -262,25 +227,24 @@ router.post('/list-for-sale', async (req: Request, res: Response) => {
  */
 router.post('/remove-from-sale', async (req: Request, res: Response) => {
   try {
-    // Проверяем авторизацию
-    if (!req.session.user) {
-      return res.status(401).json({ error: 'Требуется авторизация' });
+    log('Запрос на снятие NFT с продажи');
+    
+    // Пользователь уже проверен через middleware
+    const userId = req.user?.id;
+    if (!userId) {
+      log('ID пользователя не найден');
+      return res.status(500).json({ error: 'Ошибка сервера при снятии NFT с продажи' });
     }
     
     // Валидируем данные запроса
     const { nftId } = req.body;
     
     if (!nftId || typeof nftId !== 'number') {
+      log('Некорректные данные запроса');
       return res.status(400).json({ error: 'Некорректные данные' });
     }
     
-    // Получаем ID пользователя
-    const username = req.session.user;
-    const user = await storage.getUserByUsername(username);
-    
-    if (!user) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
-    }
+    log(`Снимаем NFT ${nftId} с продажи пользователем ${userId}`);
     
     // Проверяем, что пользователь является владельцем NFT
     const nftInfo = await db.select()
@@ -288,15 +252,18 @@ router.post('/remove-from-sale', async (req: Request, res: Response) => {
       .where(eq(nfts.id, nftId));
     
     if (nftInfo.length === 0) {
+      log('NFT не найден:', nftId);
       return res.status(404).json({ error: 'NFT не найден' });
     }
     
-    if (nftInfo[0].ownerId !== user.id) {
+    if (nftInfo[0].ownerId !== userId) {
+      log(`Пользователь ${userId} не является владельцем NFT ${nftId} (владелец: ${nftInfo[0].ownerId})`);
       return res.status(403).json({ error: 'Вы не являетесь владельцем этого NFT' });
     }
     
     // Снимаем NFT с продажи
     const updatedNft = await boredApeNftService.removeNFTFromSale(nftId);
+    log('NFT успешно снят с продажи:', nftId);
     
     res.status(200).json({
       success: true,
@@ -314,30 +281,29 @@ router.post('/remove-from-sale', async (req: Request, res: Response) => {
  */
 router.post('/buy', async (req: Request, res: Response) => {
   try {
-    // Проверяем авторизацию
-    if (!req.session.user) {
-      return res.status(401).json({ error: 'Требуется авторизация' });
+    log('Запрос на покупку NFT');
+    
+    // Пользователь уже проверен через middleware
+    const userId = req.user?.id;
+    if (!userId) {
+      log('ID пользователя не найден');
+      return res.status(500).json({ error: 'Ошибка сервера при покупке NFT' });
     }
     
     // Валидируем данные запроса
     const result = buyNFTSchema.safeParse(req.body);
     
     if (!result.success) {
+      log('Некорректные данные запроса');
       return res.status(400).json({ error: 'Некорректные данные', details: result.error.format() });
     }
     
     const { nftId } = result.data;
-    
-    // Получаем ID пользователя
-    const username = req.session.user;
-    const user = await storage.getUserByUsername(username);
-    
-    if (!user) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
-    }
+    log(`Покупаем NFT ${nftId} пользователем ${userId}`);
     
     // Покупаем NFT
-    const boughtNft = await boredApeNftService.buyNFT(nftId, user.id);
+    const boughtNft = await boredApeNftService.buyNFT(nftId, userId);
+    log('NFT успешно куплен:', nftId);
     
     res.status(200).json({
       success: true,
@@ -355,37 +321,52 @@ router.post('/buy', async (req: Request, res: Response) => {
  */
 router.post('/gift', async (req: Request, res: Response) => {
   try {
-    // Проверяем авторизацию
-    if (!req.session.user) {
-      return res.status(401).json({ error: 'Требуется авторизация' });
+    log('Запрос на дарение NFT');
+    
+    // Пользователь уже проверен через middleware
+    const userId = req.user?.id;
+    if (!userId) {
+      log('ID пользователя не найден');
+      return res.status(500).json({ error: 'Ошибка сервера при дарении NFT' });
     }
     
     // Валидируем данные запроса
     const result = giftNFTSchema.safeParse(req.body);
     
     if (!result.success) {
+      log('Некорректные данные запроса');
       return res.status(400).json({ error: 'Некорректные данные', details: result.error.format() });
     }
     
     const { nftId, receiverUsername } = result.data;
-    
-    // Получаем данные отправителя
-    const senderUsername = req.session.user;
-    const sender = await storage.getUserByUsername(senderUsername);
-    
-    if (!sender) {
-      return res.status(404).json({ error: 'Отправитель не найден' });
-    }
+    log(`Дарим NFT ${nftId} пользователю ${receiverUsername}`);
     
     // Получаем данные получателя
     const receiver = await storage.getUserByUsername(receiverUsername);
     
     if (!receiver) {
+      log(`Получатель ${receiverUsername} не найден`);
       return res.status(404).json({ error: 'Получатель не найден' });
     }
     
+    // Проверяем, что пользователь является владельцем NFT
+    const nftInfo = await db.select()
+      .from(nfts)
+      .where(eq(nfts.id, nftId));
+    
+    if (nftInfo.length === 0) {
+      log('NFT не найден:', nftId);
+      return res.status(404).json({ error: 'NFT не найден' });
+    }
+    
+    if (nftInfo[0].ownerId !== userId) {
+      log(`Пользователь ${userId} не является владельцем NFT ${nftId} (владелец: ${nftInfo[0].ownerId})`);
+      return res.status(403).json({ error: 'Вы не являетесь владельцем этого NFT' });
+    }
+    
     // Дарим NFT
-    const giftedNft = await boredApeNftService.giftNFT(nftId, sender.id, receiver.id);
+    const giftedNft = await boredApeNftService.giftNFT(nftId, userId, receiver.id);
+    log(`NFT ${nftId} успешно подарен пользователю ${receiverUsername}`);
     
     res.status(200).json({
       success: true,
@@ -403,20 +384,28 @@ router.post('/gift', async (req: Request, res: Response) => {
  */
 router.get('/:id/history', async (req: Request, res: Response) => {
   try {
-    // Проверяем авторизацию
-    if (!req.session.user) {
-      return res.status(401).json({ error: 'Требуется авторизация' });
+    log('Запрос на получение истории передач NFT:', req.params.id);
+    
+    // Пользователь уже проверен через middleware
+    const userId = req.user?.id;
+    if (!userId) {
+      log('ID пользователя не найден');
+      return res.status(500).json({ error: 'Ошибка сервера при получении истории передач NFT' });
     }
     
     // Получаем ID NFT
     const nftId = parseInt(req.params.id);
     
     if (isNaN(nftId)) {
+      log('Некорректный ID NFT:', req.params.id);
       return res.status(400).json({ error: 'Некорректный ID NFT' });
     }
     
+    log(`Получаем историю передач NFT ${nftId}`);
+    
     // Получаем историю передач NFT
     const history = await boredApeNftService.getNFTTransferHistory(nftId);
+    log(`Найдено ${history.length} записей истории NFT ${nftId}`);
     
     // Добавляем информацию о пользователях
     const historyWithUsernames = await Promise.all(history.map(async (transfer) => {
@@ -429,6 +418,8 @@ router.get('/:id/history', async (req: Request, res: Response) => {
         toUsername: to ? to.username : 'Unknown'
       };
     }));
+    
+    log(`Отправляем ${historyWithUsernames.length} записей истории NFT ${nftId}`);
     
     res.status(200).json({
       success: true,
