@@ -128,15 +128,9 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
       <div className="border rounded-lg p-6 text-center">
         <h3 className="text-lg font-semibold mb-2">У вас пока нет NFT</h3>
         <p className="text-muted-foreground mb-4">
-          Создайте свой первый NFT во вкладке Коллекции или купите на Маркетплейсе.
+          Купите свой первый NFT на Маркетплейсе и начните свою коллекцию!
         </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Button
-            variant="outline"
-            onClick={handleNavigateToCollections}
-          >
-            Перейти к Коллекциям
-          </Button>
+        <div className="flex justify-center gap-4">
           <Button
             variant="default"
             onClick={handleNavigateToMarketplace}
@@ -207,15 +201,15 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
 
       {selectedNFT && (
         <Dialog open={!!selectedNFT} onOpenChange={(open) => !open && setSelectedNFT(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-auto">
             <DialogHeader>
-              <DialogTitle>{selectedNFT.name}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-lg">{selectedNFT.name}</DialogTitle>
+              <DialogDescription className="text-xs">
                 Token ID: {selectedNFT.tokenId}
               </DialogDescription>
             </DialogHeader>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-4">
               <div className="relative aspect-square rounded-md overflow-hidden">
                 <div className="w-full h-full relative">
                   {selectedNFT.imagePath.endsWith('.svg') ? (
@@ -249,43 +243,43 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
                 )}
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <h4 className="text-sm font-medium mb-1">Описание</h4>
-                  <p className="text-sm text-muted-foreground">{selectedNFT.description}</p>
+                  <h4 className="text-xs font-medium mb-1">Описание</h4>
+                  <p className="text-xs text-muted-foreground">{selectedNFT.description}</p>
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium mb-2">Характеристики</h4>
-                  <div className="grid grid-cols-2 gap-y-2">
+                  <h4 className="text-xs font-medium mb-1">Характеристики</h4>
+                  <div className="grid grid-cols-2 gap-y-1 gap-x-2">
                     <div className="flex items-center">
-                      <span className="text-sm mr-2">Сила:</span>
-                      <Badge variant="outline">{selectedNFT.attributes.power}</Badge>
+                      <span className="text-xs mr-1">Сила:</span>
+                      <Badge variant="outline" className="text-xs">{selectedNFT.attributes.power}</Badge>
                     </div>
                     <div className="flex items-center">
-                      <span className="text-sm mr-2">Ловкость:</span>
-                      <Badge variant="outline">{selectedNFT.attributes.agility}</Badge>
+                      <span className="text-xs mr-1">Ловкость:</span>
+                      <Badge variant="outline" className="text-xs">{selectedNFT.attributes.agility}</Badge>
                     </div>
                     <div className="flex items-center">
-                      <span className="text-sm mr-2">Мудрость:</span>
-                      <Badge variant="outline">{selectedNFT.attributes.wisdom}</Badge>
+                      <span className="text-xs mr-1">Мудрость:</span>
+                      <Badge variant="outline" className="text-xs">{selectedNFT.attributes.wisdom}</Badge>
                     </div>
                     <div className="flex items-center">
-                      <span className="text-sm mr-2">Удача:</span>
-                      <Badge variant="outline">{selectedNFT.attributes.luck}</Badge>
+                      <span className="text-xs mr-1">Удача:</span>
+                      <Badge variant="outline" className="text-xs">{selectedNFT.attributes.luck}</Badge>
                     </div>
                   </div>
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium mb-1">Дата создания</h4>
-                  <p className="text-sm text-muted-foreground">{formatDate(selectedNFT.mintedAt)}</p>
+                  <h4 className="text-xs font-medium mb-1">Дата создания</h4>
+                  <p className="text-xs text-muted-foreground">{formatDate(selectedNFT.mintedAt)}</p>
                 </div>
                 
                 {selectedNFT.forSale && (
                   <div>
-                    <h4 className="text-sm font-medium mb-1">Статус</h4>
-                    <p className="text-sm text-amber-500">
+                    <h4 className="text-xs font-medium mb-1">Статус</h4>
+                    <p className="text-xs text-amber-500">
                       Выставлен на продажу за {selectedNFT.price} USD
                     </p>
                   </div>
@@ -293,19 +287,31 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
               </div>
             </div>
             
-            <DialogFooter>
+            <DialogFooter className="flex space-x-2 pt-3">
               {selectedNFT.forSale ? (
                 <Button 
                   variant="default" 
+                  size="sm"
                   onClick={() => {
                     handleNavigateToMarketplace();
                     setSelectedNFT(null);
                   }}
                 >
-                  Перейти на Маркетплейс
+                  На Маркетплейс
                 </Button>
-              ) : null}
-              <Button variant="secondary" onClick={() => setSelectedNFT(null)}>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    navigation.switchToMarketplace(); 
+                    setSelectedNFT(null);
+                  }}
+                >
+                  Продать NFT
+                </Button>
+              )}
+              <Button variant="secondary" size="sm" onClick={() => setSelectedNFT(null)}>
                 Закрыть
               </Button>
             </DialogFooter>

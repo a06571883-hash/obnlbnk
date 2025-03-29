@@ -76,20 +76,13 @@ export const NFTPage: React.FC = () => {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger 
             value="gallery" 
             ref={galleryTabRef}
             id="gallery-tab"
           >
-            Галерея
-          </TabsTrigger>
-          <TabsTrigger 
-            value="collections" 
-            ref={collectionsTabRef}
-            id="collections-tab"
-          >
-            Коллекции
+            Моя Галерея
           </TabsTrigger>
           <TabsTrigger 
             value="marketplace" 
@@ -101,9 +94,6 @@ export const NFTPage: React.FC = () => {
         </TabsList>
         <TabsContent value="gallery">
           <NFTGallery navigation={tabNavigation} />
-        </TabsContent>
-        <TabsContent value="collections">
-          <NFTCollectionView navigation={tabNavigation} />
         </TabsContent>
         <TabsContent value="marketplace">
           <NFTMarketplace />

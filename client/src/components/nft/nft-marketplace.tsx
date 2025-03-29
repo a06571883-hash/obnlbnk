@@ -407,15 +407,15 @@ export const NFTMarketplace: React.FC = () => {
       {/* Модальное окно с деталями NFT */}
       {selectedNFT && (
         <Dialog open={!!selectedNFT} onOpenChange={(open) => !open && setSelectedNFT(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-auto">
             <DialogHeader>
-              <DialogTitle>{selectedNFT.name}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-lg">{selectedNFT.name}</DialogTitle>
+              <DialogDescription className="text-xs">
                 Token ID: {selectedNFT.tokenId}
               </DialogDescription>
             </DialogHeader>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-4">
               <div className="relative aspect-square rounded-md overflow-hidden">
                 <img 
                   src={selectedNFT.imagePath} 
@@ -439,25 +439,25 @@ export const NFTMarketplace: React.FC = () => {
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium mb-2">Характеристики</h4>
-                  <div className="grid grid-cols-2 gap-y-2">
+                  <h4 className="text-xs font-medium mb-1">Характеристики</h4>
+                  <div className="grid grid-cols-2 gap-y-1 gap-x-2">
                     {selectedNFT.attributes && (
                       <>
                         <div className="flex items-center">
-                          <span className="text-sm mr-2">Сила:</span>
-                          <Badge variant="outline">{selectedNFT.attributes.power}</Badge>
+                          <span className="text-xs mr-1">Сила:</span>
+                          <Badge variant="outline" className="text-xs">{selectedNFT.attributes.power}</Badge>
                         </div>
                         <div className="flex items-center">
-                          <span className="text-sm mr-2">Ловкость:</span>
-                          <Badge variant="outline">{selectedNFT.attributes.agility}</Badge>
+                          <span className="text-xs mr-1">Ловкость:</span>
+                          <Badge variant="outline" className="text-xs">{selectedNFT.attributes.agility}</Badge>
                         </div>
                         <div className="flex items-center">
-                          <span className="text-sm mr-2">Мудрость:</span>
-                          <Badge variant="outline">{selectedNFT.attributes.wisdom}</Badge>
+                          <span className="text-xs mr-1">Мудрость:</span>
+                          <Badge variant="outline" className="text-xs">{selectedNFT.attributes.wisdom}</Badge>
                         </div>
                         <div className="flex items-center">
-                          <span className="text-sm mr-2">Удача:</span>
-                          <Badge variant="outline">{selectedNFT.attributes.luck}</Badge>
+                          <span className="text-xs mr-1">Удача:</span>
+                          <Badge variant="outline" className="text-xs">{selectedNFT.attributes.luck}</Badge>
                         </div>
                       </>
                     )}
@@ -465,22 +465,22 @@ export const NFTMarketplace: React.FC = () => {
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium mb-1">Владелец</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <h4 className="text-xs font-medium mb-1">Владелец</h4>
+                  <p className="text-xs text-muted-foreground">
                     {selectedNFT.owner ? selectedNFT.owner.username : 'Неизвестно'}
-                    {selectedNFT.ownerId === currentUser?.id ? ' (Вы)' : ''}
+                    {selectedNFT.ownerId === (currentUser as any)?.id ? ' (Вы)' : ''}
                   </p>
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium mb-1">Дата создания</h4>
-                  <p className="text-sm text-muted-foreground">{formatDate(selectedNFT.mintedAt)}</p>
+                  <h4 className="text-xs font-medium mb-1">Дата создания</h4>
+                  <p className="text-xs text-muted-foreground">{formatDate(selectedNFT.mintedAt)}</p>
                 </div>
               </div>
             </div>
             
             <DialogFooter className="flex flex-col sm:flex-row gap-2">
-              {selectedNFT.ownerId === currentUser?.id ? (
+              {selectedNFT.ownerId === (currentUser as any)?.id ? (
                 // Если текущий пользователь - владелец NFT
                 <>
                   {selectedNFT.forSale ? (
