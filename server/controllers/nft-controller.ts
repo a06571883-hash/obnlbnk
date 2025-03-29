@@ -210,10 +210,11 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       let legacyNFTResult;
       
       // Показываем все NFT на продаже, независимо от пользователя
+      // Убираем лимит, чтобы получить все NFT
       legacyNFTResult = await client`
         SELECT * FROM nft 
         WHERE for_sale = true 
-        ORDER BY id LIMIT 1000
+        ORDER BY id
       `;
       
       log(`Найдено ${legacyNFTResult.length} NFT из таблицы nft (legacy)`);

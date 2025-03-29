@@ -560,12 +560,38 @@ export async function getNFTsForSale(excludeUserId?: number) {
       .from(nfts)
       .where(eq(nfts.forSale, true));
     
+    // Получаем NFT из таблицы nfts (Drizzle ORM)
     const nftsForSale = await query;
+    console.log(`[Bored Ape NFT Service] Найдено ${nftsForSale.length} NFT на продаже из таблицы nfts`);
     
-    return nftsForSale;
+    // Также попробуем получить NFT из старой таблицы nft (legacy)
+    let legacyNFTs = [];
+    try {
+      // Используем Drizzle SQL для legacy таблицы
+      const legacyQuery = `SELECT * FROM nft WHERE for_sale = true`;
+      const result = await db.execute(legacyQuery);
+      
+      // Проверяем структуру результата и извлекаем данные правильным способом
+      if (Array.isArray(result)) {
+        legacyNFTs = result;
+      } else if (result && typeof result === 'object' && 'rows' in result) {
+        // @ts-ignore - игнорируем ошибку TypeScript, так как мы проверили наличие свойства
+        legacyNFTs = result.rows;
+      }
+      
+      console.log(`[Bored Ape NFT Service] Найдено ${legacyNFTs.length} NFT на продаже из таблицы nft (legacy)`);
+    } catch (legacyError) {
+      console.error('[Bored Ape NFT Service] Ошибка при получении NFT из legacy таблицы:', legacyError);
+    }
+    
+    // Объединяем результаты
+    const combinedNFTs = [...nftsForSale, ...legacyNFTs];
+    console.log(`[Bored Ape NFT Service] Всего найдено ${combinedNFTs.length} NFT на продаже (${nftsForSale.length} из nfts + ${legacyNFTs.length} из nft)`);
+    
+    return combinedNFTs;
   } catch (error) {
     console.error('[Bored Ape NFT Service] Ошибка при получении NFT на продаже:', error);
-    throw new Error(`Не удалось получить NFT на продаже: ${error}`);
+    throw new Error(`Не удалось получить NFT на продаже: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

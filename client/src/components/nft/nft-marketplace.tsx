@@ -251,15 +251,26 @@ export const NFTMarketplace: React.FC = () => {
     legendary: 'bg-yellow-500',
   };
   
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
+  const formatDate = (dateString: string | Date) => {
+    try {
+      const date = dateString instanceof Date ? dateString : new Date(dateString);
+      
+      // Проверяем валидность даты
+      if (isNaN(date.getTime())) {
+        return 'Недоступно';
+      }
+      
+      return new Intl.DateTimeFormat('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    } catch (error) {
+      console.error('Ошибка форматирования даты:', error);
+      return 'Недоступно';
+    }
   };
   
   const calculatePower = (nft: NFT) => {
