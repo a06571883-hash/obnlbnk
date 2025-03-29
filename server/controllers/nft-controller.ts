@@ -94,8 +94,11 @@ router.post('/create', async (req: Request, res: Response) => {
  */
 router.get('/user', async (req: Request, res: Response) => {
   try {
+    log('Запрос на получение NFT пользователя через /api/nft/user');
+    
     // Проверяем авторизацию
     if (!req.session.user) {
+      log('Ошибка авторизации при получении NFT');
       return res.status(401).json({ error: 'Требуется авторизация' });
     }
     
@@ -104,16 +107,36 @@ router.get('/user', async (req: Request, res: Response) => {
     const user = await storage.getUserByUsername(username);
     
     if (!user) {
+      log('Пользователь не найден при получении NFT');
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
     
+    log(`Получаем NFT для пользователя ${user.id} (${username})`);
+    
     // Получаем NFT пользователя
     const userNFTs = await boredApeNftService.getUserNFTs(user.id);
+    log(`Найдено ${userNFTs.length} NFT для пользователя ${user.id}`);
     
-    res.status(200).json({
-      success: true,
-      nfts: userNFTs
-    });
+    // Преобразуем имена полей из snake_case в camelCase для клиента
+    const formattedNFTs = userNFTs.map(nft => ({
+      id: nft.id,
+      collectionId: nft.collection_id,
+      ownerId: nft.owner_id,
+      name: nft.name,
+      description: nft.description,
+      imagePath: nft.image_path,
+      rarity: nft.rarity,
+      mintedAt: nft.minted_at,
+      tokenId: nft.token_id,
+      price: nft.price,
+      forSale: nft.for_sale,
+      attributes: nft.attributes
+    }));
+    
+    log(`Отправляем ${formattedNFTs.length} NFT клиенту`);
+    
+    // Клиент ожидает прямой массив, а не объект с полем nfts
+    res.status(200).json(formattedNFTs);
   } catch (error) {
     console.error('Ошибка при получении NFT пользователя:', error);
     res.status(500).json({ error: 'Ошибка сервера при получении NFT пользователя' });
@@ -126,8 +149,11 @@ router.get('/user', async (req: Request, res: Response) => {
  */
 router.get('/marketplace', async (req: Request, res: Response) => {
   try {
+    log('Запрос на получение NFT на продаже');
+    
     // Проверяем авторизацию
     if (!req.session.user) {
+      log('Ошибка авторизации при получении маркетплейса');
       return res.status(401).json({ error: 'Требуется авторизация' });
     }
     
@@ -136,25 +162,40 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     const user = await storage.getUserByUsername(username);
     
     if (!user) {
+      log('Пользователь не найден при получении маркетплейса');
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
     
+    log(`Получаем NFT на продаже (кроме пользователя ${user.id})`);
+    
     // Получаем NFT на продаже (исключая NFT текущего пользователя)
     const nftsForSale = await boredApeNftService.getNFTsForSale(user.id);
+    log(`Найдено ${nftsForSale.length} NFT на продаже`);
     
-    // Добавляем информацию о владельцах
-    const nftsWithOwners = await Promise.all(nftsForSale.map(async (nft) => {
-      const owner = await storage.getUser(nft.ownerId);
+    // Добавляем информацию о владельцах и преобразуем поля в camelCase
+    const formattedNFTs = await Promise.all(nftsForSale.map(async (nft) => {
+      const owner = await storage.getUser(nft.owner_id);
       return {
-        ...nft,
+        id: nft.id,
+        collectionId: nft.collection_id,
+        ownerId: nft.owner_id,
+        name: nft.name,
+        description: nft.description,
+        imagePath: nft.image_path,
+        rarity: nft.rarity,
+        mintedAt: nft.minted_at,
+        tokenId: nft.token_id,
+        price: nft.price,
+        forSale: nft.for_sale,
+        attributes: nft.attributes,
         ownerUsername: owner ? owner.username : 'Unknown'
       };
     }));
     
-    res.status(200).json({
-      success: true,
-      nfts: nftsWithOwners
-    });
+    log(`Отправляем ${formattedNFTs.length} NFT клиенту`);
+    
+    // Клиент ожидает массив объектов, не обернутый в объект success/nfts
+    res.status(200).json(formattedNFTs);
   } catch (error) {
     console.error('Ошибка при получении NFT на продаже:', error);
     res.status(500).json({ error: 'Ошибка сервера при получении NFT на продаже' });
