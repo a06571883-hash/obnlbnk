@@ -129,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Добавляем синоним для /api/nft/collections для совместимости с рендер-версией
   app.get('/api/nft-collections', ensureAuthenticated, async (req, res) => {
     try {
-      console.log('Запрос на получение всех NFT коллекций через альтернативный маршрут');
+      console.log('ОТЛАДКА: Запрос на получение всех NFT коллекций через альтернативный маршрут /api/nft-collections');
       
       // Проверяем авторизацию
       if (!req.session.user) {
@@ -146,19 +146,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Пользователь не найден' });
       }
       
+      console.log(`ОТЛАДКА: Получен user ${user.id} (${username}) при запросе коллекций через /api/nft-collections`);
+      
       // Получаем все коллекции
       const collections = await db.select().from(nftCollections);
+      console.log(`ОТЛАДКА: Запрос к таблице nftCollections вернул ${collections.length} коллекций`);
       
       // Загружаем NFT для каждой коллекции
       const collectionsWithNFTs = await Promise.all(collections.map(async (collection) => {
         const collectionNFTs = await db.select().from(nfts).where(eq(nfts.collectionId, collection.id));
+        console.log(`ОТЛАДКА: Коллекция ${collection.id} содержит ${collectionNFTs.length} NFT`);
         return {
           ...collection,
           nfts: collectionNFTs
         };
       }));
       
-      console.log(`Найдено ${collectionsWithNFTs.length} коллекций NFT через альтернативный маршрут`);
+      console.log(`ОТЛАДКА: Найдено ${collectionsWithNFTs.length} коллекций NFT через альтернативный маршрут`);
       
       res.status(200).json(collectionsWithNFTs);
     } catch (error) {
@@ -842,12 +846,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Получение коллекций NFT пользователя
   app.get("/api/nft/collections", ensureAuthenticated, async (req, res) => {
     try {
+      console.log('ОТЛАДКА: Запрос на получение NFT коллекций через основной маршрут /api/nft/collections');
+      
       const userId = req.user?.id;
       if (!userId) {
+        console.log('ОТЛАДКА: Пользователь не авторизован при запросе коллекций через основной маршрут');
         return res.status(401).json({ error: "Unauthorized" });
       }
       
+      console.log(`ОТЛАДКА: Запрос коллекций для пользователя ${userId} через основной маршрут`);
       const collections = await storage.getNFTCollectionsByUserId(userId);
+      console.log(`ОТЛАДКА: Получено ${collections.length} коллекций через метод storage.getNFTCollectionsByUserId`);
+      
       return res.json(collections);
     } catch (error) {
       console.error("Error getting user NFT collections:", error);

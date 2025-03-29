@@ -920,6 +920,8 @@ export class DatabaseStorage implements IStorage {
   
   async getNFTCollectionsByUserId(userId: number): Promise<NftCollection[]> {
     return this.withRetry(async () => {
+      console.log(`ОТЛАДКА: getNFTCollectionsByUserId вызван для пользователя ${userId}`);
+      
       // Сначала получаем все коллекции пользователя
       const collections = await db
         .select()
@@ -927,13 +929,17 @@ export class DatabaseStorage implements IStorage {
         .where(eq(nftCollections.userId, userId))
         .orderBy(desc(nftCollections.createdAt));
       
+      console.log(`ОТЛАДКА: Найдено ${collections.length} коллекций для пользователя ${userId}`);
+      
       // Если коллекций нет, возвращаем пустой массив
       if (collections.length === 0) {
+        console.log(`ОТЛАДКА: У пользователя ${userId} нет коллекций NFT`);
         return [];
       }
       
       // Для каждой коллекции получаем связанные NFT
       const collectionsWithNFTs = await Promise.all(collections.map(async (collection) => {
+        console.log(`ОТЛАДКА: Загружаем NFT для коллекции ${collection.id} (${collection.name})`);
         const nftItems = await db
           .select()
           .from(nfts)
@@ -947,7 +953,18 @@ export class DatabaseStorage implements IStorage {
         };
       }));
       
-      console.log(`Retrieved ${collections.length} NFT collections with a total of ${collectionsWithNFTs.reduce((sum, col) => sum + (col.nfts?.length || 0), 0)} NFTs for user ${userId}`);
+      const totalNFTs = collectionsWithNFTs.reduce((sum, col) => sum + (col.nfts?.length || 0), 0);
+      console.log(`ОТЛАДКА: Получено ${collections.length} NFT коллекций с ${totalNFTs} NFT для пользователя ${userId}`);
+      
+      // Подробно выводим информацию о каждой коллекции
+      collectionsWithNFTs.forEach(collection => {
+        console.log(`ОТЛАДКА: Коллекция ${collection.id} (${collection.name}) содержит ${collection.nfts?.length || 0} NFT.`);
+        if (collection.nfts && collection.nfts.length > 0) {
+          collection.nfts.forEach(nft => {
+            console.log(`ОТЛАДКА: - NFT ${nft.id} (${nft.name}): ${nft.imagePath}`);
+          });
+        }
+      });
       
       return collectionsWithNFTs;
     }, 'Get NFT collections by user ID');
