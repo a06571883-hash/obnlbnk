@@ -30,8 +30,11 @@ function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
   res.status(401).json({ error: 'Требуется авторизация' });
 }
 
-// Применяем middleware ко всем маршрутам контроллера
-router.use(ensureAuthenticated);
+// Не применяем middleware ко всем маршрутам - это позволит общедоступный доступ к маркетплейсу
+// router.use(ensureAuthenticated);
+
+// Индивидуально защищаем только те маршруты, которые требуют авторизации
+// (кроме /marketplace, который должен быть публичным)
 
 // Тип редкости NFT
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
