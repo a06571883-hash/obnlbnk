@@ -338,7 +338,7 @@ export async function buyNFT(nftId: number, buyerId: number) {
     }
     
     // Получаем цену NFT
-    const nftPrice = parseFloat(nft.price);
+    const nftPrice = parseFloat(nft.price || '0');
     if (isNaN(nftPrice) || nftPrice <= 0) {
       throw new Error('Некорректная цена NFT');
     }

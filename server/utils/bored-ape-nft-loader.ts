@@ -65,15 +65,11 @@ export async function getBoredApeNFT(rarity: NFTRarity): Promise<string> {
         console.log(`[Bored Ape NFT] Создана директория ${fallbackDir}`);
       }
       
-      // Создаем запасное изображение, если его нет
+      // Используем запасное изображение
       const fallbackPath = `/public/assets/nft/fallback/${rarity.toLowerCase()}_nft.png`;
       const absoluteFallbackPath = `.${fallbackPath}`;
       
-      if (!fs.existsSync(absoluteFallbackPath)) {
-        // Создаем текстовый файл с описанием, что это запасное изображение
-        fs.writeFileSync(absoluteFallbackPath, 'Fallback image for NFT');
-        console.log(`[Bored Ape NFT] Создан запасной файл: ${absoluteFallbackPath}`);
-      }
+      console.log(`[Bored Ape NFT] Используем запасное изображение: ${fallbackPath}`);
       
       return fallbackPath;
     }
@@ -119,15 +115,11 @@ export async function getBoredApeNFT(rarity: NFTRarity): Promise<string> {
       console.log(`[Bored Ape NFT] Создана директория ${fallbackDir} (из catch)`);
     }
     
-    // Создаем запасное изображение, если его нет
+    // Используем запасное изображение
     const fallbackPath = `/public/assets/nft/fallback/${rarity.toLowerCase()}_nft.png`;
     const absoluteFallbackPath = `.${fallbackPath}`;
     
-    if (!fs.existsSync(absoluteFallbackPath)) {
-      // Создаем текстовый файл с описанием, что это запасное изображение
-      fs.writeFileSync(absoluteFallbackPath, 'Fallback image for NFT');
-      console.log(`[Bored Ape NFT] Создан запасной файл: ${absoluteFallbackPath} (из catch)`);
-    }
+    console.log(`[Bored Ape NFT] Используем запасное изображение: ${fallbackPath} (из catch)`);
     
     // Возвращаем путь к статическому запасному изображению
     return fallbackPath;

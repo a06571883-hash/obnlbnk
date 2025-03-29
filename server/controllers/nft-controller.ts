@@ -596,14 +596,20 @@ router.post('/generate', async (req: Request, res: Response) => {
     log(`Создание NFT: Оплата в размере $${NFT_CREATION_COST} переведена администратору, ID транзакции: ${transferResult.transaction?.id}`);
     
     // Создаем NFT с указанной редкостью (с ценой 0, не выставлен на продажу)
-    const nft = await boredApeNftService.createBoredApeNFT(userId, rarity as NFTRarity);
-    
-    log('NFT успешно создан:', nft.id);
-    
-    res.status(201).json({
-      ...nft,
-      transaction: transferResult.transaction
-    });
+    try {
+      log(`Вызов createBoredApeNFT с параметрами: userId=${userId}, rarity=${rarity}`);
+      const nft = await boredApeNftService.createBoredApeNFT(userId, rarity as NFTRarity);
+      
+      log('NFT успешно создан:', nft.id);
+      
+      res.status(201).json({
+        ...nft,
+        transaction: transferResult.transaction
+      });
+    } catch (nftError) {
+      log('Ошибка при создании NFT в createBoredApeNFT:', nftError);
+      throw new Error(`Не удалось создать NFT: ${nftError instanceof Error ? nftError.message : String(nftError)}`);
+    }
   } catch (error) {
     console.error('Ошибка при генерации NFT:', error);
     res.status(500).json({ error: 'Ошибка сервера при генерации NFT' });
