@@ -207,32 +207,32 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     
     // 2. Теперь пробуем получить NFT на продаже из таблицы nft (старая таблица)
     try {
-      log('Получаем NFT из таблицы nft (legacy)...');
+      log('Получаем NFT из таблицы nft (legacy) с помощью прямого SQL...');
       
-      // SQL запрос зависит от наличия пользователя
-      let sql = `
-        SELECT * FROM nft 
-        WHERE for_sale = true 
-      `;
-      let params = [];
+      // При использовании postgres.js, client является функцией, которую можно вызвать с шаблонным литералом
+      let legacyNFTResult;
       
       // Если пользователь авторизован, исключаем его NFT
       if (userId) {
-        sql += `AND owner_id != $1 `;
-        params.push(userId);
+        legacyNFTResult = await client`
+          SELECT * FROM nft 
+          WHERE for_sale = true 
+          AND owner_id != ${userId}
+          ORDER BY id LIMIT 1000
+        `;
+      } else {
+        legacyNFTResult = await client`
+          SELECT * FROM nft 
+          WHERE for_sale = true 
+          ORDER BY id LIMIT 1000
+        `;
       }
       
-      // Добавляем сортировку и лимит
-      sql += `ORDER BY id LIMIT 1000`;
+      log(`Найдено ${legacyNFTResult.length} NFT из таблицы nft (legacy)`);
       
-      // Используем прямой SQL запрос для получения NFT из таблицы nft
-      const legacyNFTResult = await client.query(sql, params);
-      
-      log(`Найдено ${legacyNFTResult.rows.length} NFT из таблицы nft (legacy)`);
-      
-      if (legacyNFTResult.rows.length > 0) {
+      if (legacyNFTResult.length > 0) {
         // Форматируем NFT перед отправкой
-        const formattedLegacyNFTs = await Promise.all(legacyNFTResult.rows.map(async (nft) => {
+        const formattedLegacyNFTs = await Promise.all(legacyNFTResult.map(async (nft) => {
           const owner = await storage.getUser(nft.owner_id);
           
           // Создаем объект NFT, который будет соответствовать формату, ожидаемому фронтендом
