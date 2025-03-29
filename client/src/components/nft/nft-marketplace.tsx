@@ -83,13 +83,13 @@ export const NFTMarketplace: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12; // Показываем 12 NFT на страницу
   
-  // Фильтруем NFT, исключая те, которые принадлежат текущему пользователю,
-  // и удаляем дубликаты на основе tokenId
+  // Фильтруем NFT, исключая те, которые принадлежат текущему пользователю
+  // и не используем фильтрацию по tokenId, чтобы показать все доступные NFT
   const uniqueMarketplaceNfts = React.useMemo(() => {
-    // Создаем Map для хранения уникальных NFT по tokenId
-    const uniqueNfts = new Map();
+    // Создаем массив для хранения всех NFT для маркетплейса
+    const marketplaceNfts: NFT[] = [];
     
-    // Добавляем только уникальные NFT в Map, которые НЕ принадлежат текущему пользователю
+    // Добавляем NFT, которые не принадлежат текущему пользователю или выставлены на продажу
     rawMarketplaceNfts.forEach(nft => {
       // Пропускаем NFT текущего пользователя (если не выставлен на продажу)
       const isCurrentUserNft = nft.ownerId === (currentUser as any)?.id;
@@ -98,15 +98,16 @@ export const NFTMarketplace: React.FC = () => {
       // 1. NFT НЕ принадлежит текущему пользователю ИЛИ
       // 2. NFT принадлежит текущему пользователю, но выставлен на продажу
       if (!isCurrentUserNft || (isCurrentUserNft && nft.forSale)) {
-        // Если NFT с таким tokenId еще нет в Map или текущий NFT имеет более высокий ID
-        if (!uniqueNfts.has(nft.tokenId) || uniqueNfts.get(nft.tokenId).id < nft.id) {
-          uniqueNfts.set(nft.tokenId, nft);
-        }
+        marketplaceNfts.push(nft);
       }
     });
     
-    // Преобразуем Map обратно в массив
-    return Array.from(uniqueNfts.values());
+    // Сортируем NFT по цене (от самых дорогих к самым дешевым)
+    return marketplaceNfts.sort((a, b) => {
+      const priceA = parseFloat(a.price) || 0;
+      const priceB = parseFloat(b.price) || 0;
+      return priceB - priceA; // Сортировка от самых дорогих к самым дешевым
+    });
   }, [rawMarketplaceNfts, currentUser]);
   
   // Получаем общее количество страниц
