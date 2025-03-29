@@ -11,6 +11,9 @@ type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 // Кэш загруженных NFT для предотвращения повторных загрузок
 const nftCache: Record<string, string> = {};
 
+// Отслеживаем используемые изображения NFT
+const usedNFTImages: Set<string> = new Set();
+
 /**
  * Получает NFT из коллекции Bored Ape
  * @param rarity Редкость NFT, которая определяет выбор из коллекции
@@ -48,17 +51,34 @@ export async function getBoredApeNFT(rarity: NFTRarity): Promise<string> {
     }
     
     // Получаем пул изображений на основе редкости
-    const nftPool = filterByRarity(imageFiles, rarity);
+    let nftPool = filterByRarity(imageFiles, rarity);
+    
+    // Отфильтровываем уже использованные изображения
+    const availableImages = nftPool.filter(image => !usedNFTImages.has(image));
+    
+    // Если все изображения уже использованы, сбрасываем отслеживание
+    if (availableImages.length === 0) {
+      console.log('[Bored Ape NFT] Все изображения использованы, сбрасываем отслеживание');
+      usedNFTImages.clear();
+      nftPool = filterByRarity(imageFiles, rarity);
+    } else {
+      nftPool = availableImages;
+    }
     
     // Выбираем случайное изображение из пула
     const randomIndex = Math.floor(Math.random() * nftPool.length);
     const selectedImage = nftPool[randomIndex];
+    
+    // Отмечаем изображение как использованное
+    usedNFTImages.add(selectedImage);
     
     // Формируем относительный путь к изображению
     const relativePath = `/bored_ape_nft/${selectedImage}`;
     
     // Кэшируем результат
     nftCache[cacheKey] = relativePath;
+    
+    console.log(`[Bored Ape NFT] Выбрано уникальное изображение: ${selectedImage}`);
     
     return relativePath;
   } catch (error) {

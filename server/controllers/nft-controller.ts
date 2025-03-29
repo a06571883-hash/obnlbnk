@@ -42,10 +42,9 @@ const createNFTSchema = z.object({
   price: z.number().optional().default(0)
 });
 
-// Схема для выставления NFT на продажу
+// Схема для выставления NFT на продажу (фиксированная цена $10)
 const listForSaleSchema = z.object({
-  nftId: z.number(),
-  price: z.number().positive()
+  nftId: z.number()
 });
 
 // Схема для покупки NFT
@@ -189,8 +188,9 @@ router.post('/list-for-sale', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Некорректные данные', details: result.error.format() });
     }
     
-    const { nftId, price } = result.data;
-    log(`Выставляем NFT ${nftId} на продажу за ${price}`);
+    const { nftId } = result.data;
+    const FIXED_NFT_PRICE = 10; // Фиксированная цена $10 для всех NFT
+    log(`Выставляем NFT ${nftId} на продажу по фиксированной цене $${FIXED_NFT_PRICE}`);
     
     // Проверяем, что пользователь является владельцем NFT
     const nftInfo = await db.select()
@@ -207,8 +207,8 @@ router.post('/list-for-sale', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Вы не являетесь владельцем этого NFT' });
     }
     
-    // Выставляем NFT на продажу
-    const updatedNft = await boredApeNftService.listNFTForSale(nftId, price);
+    // Выставляем NFT на продажу по фиксированной цене
+    const updatedNft = await boredApeNftService.listNFTForSale(nftId);
     log('NFT успешно выставлен на продажу:', nftId);
     
     res.status(200).json({

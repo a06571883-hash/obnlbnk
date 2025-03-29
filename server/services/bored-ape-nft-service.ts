@@ -2,12 +2,13 @@
  * Сервис для работы с NFT из коллекции Bored Ape Yacht Club
  * Обеспечивает интеграцию с загруженной из ZIP-архива коллекцией
  */
-import { generateNFTImage } from '../utils/nft-generator';
+// Используем getBoredApeNFT вместо generateNFTImage
 import { db } from '../db';
-import { nfts, nftCollections, nftTransfers, insertNftSchema } from '../../shared/schema';
+import { nfts, nftCollections, nftTransfers, insertNftSchema, users, cards, transactions } from '../../shared/schema';
 import { eq, and, not } from 'drizzle-orm';
 import { getBoredApeNFT, checkBoredApeNFTFiles } from '../utils/bored-ape-nft-loader';
 import * as crypto from 'crypto';
+import { storage } from '../storage';
 
 // Тип редкости NFT
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -42,7 +43,7 @@ export async function createBoredApeNFT(userId: number, rarity: NFTRarity, price
     }
     
     // Получаем изображение NFT из коллекции Bored Ape
-    const imagePath = await generateNFTImage(rarity);
+    const imagePath = await getBoredApeNFT(rarity);
     
     // Генерируем атрибуты NFT в зависимости от редкости
     const attributes = generateNFTAttributes(rarity);
@@ -241,21 +242,21 @@ function generateNFTDescription(rarity: NFTRarity): string {
 }
 
 /**
- * Выставляет NFT на продажу или обновляет цену
+ * Выставляет NFT на продажу по фиксированной цене $10
  * @param nftId ID NFT
- * @param price Цена NFT
  * @returns Обновленная информация об NFT
  */
-export async function listNFTForSale(nftId: number, price: number) {
+export async function listNFTForSale(nftId: number) {
   try {
-    if (price <= 0) {
-      throw new Error('Цена должна быть больше нуля');
-    }
+    // Фиксированная цена $10 для всех NFT
+    const FIXED_NFT_PRICE = 10;
+    
+    console.log(`[Bored Ape NFT Service] Выставление NFT ${nftId} на продажу по фиксированной цене $${FIXED_NFT_PRICE}`);
     
     // Обновляем информацию об NFT
     const updatedNft = await db.update(nfts)
       .set({
-        price: price.toString(),
+        price: FIXED_NFT_PRICE.toString(),
         forSale: true
       })
       .where(eq(nfts.id, nftId))
@@ -265,10 +266,12 @@ export async function listNFTForSale(nftId: number, price: number) {
       throw new Error('NFT не найден');
     }
     
+    console.log(`[Bored Ape NFT Service] NFT ${nftId} успешно выставлен на продажу по цене $${FIXED_NFT_PRICE}`);
+    
     return updatedNft[0];
   } catch (error) {
     console.error('[Bored Ape NFT Service] Ошибка при выставлении NFT на продажу:', error);
-    throw new Error(`Не удалось выставить NFT на продажу: ${error}`);
+    throw new Error(`Не удалось выставить NFT на продажу: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -306,6 +309,11 @@ export async function removeNFTFromSale(nftId: number) {
  */
 export async function buyNFT(nftId: number, buyerId: number) {
   try {
+    console.log(`[Bored Ape NFT Service] Запрос на покупку NFT ${nftId} пользователем ${buyerId}`);
+    
+    // Фиксированная цена NFT: $10
+    const FIXED_NFT_PRICE = 10;
+    
     // Получаем информацию об NFT
     const nftInfo = await db.select()
       .from(nfts)
@@ -327,11 +335,76 @@ export async function buyNFT(nftId: number, buyerId: number) {
       throw new Error('Вы не можете купить собственный NFT');
     }
     
+    // Получаем ID администратора (регулятора)
+    const adminUser = await db.select()
+      .from(users)
+      .where(eq(users.username, 'admin'))
+      .limit(1);
+      
+    if (adminUser.length === 0) {
+      throw new Error('Администратор не найден');
+    }
+    
+    const adminUserId = adminUser[0].id;
+    console.log(`[Bored Ape NFT Service] Найден администратор с ID: ${adminUserId}`);
+    
+    // Получаем карту покупателя
+    const buyerCards = await db.select()
+      .from(cards)
+      .where(and(
+        eq(cards.userId, buyerId),
+        eq(cards.type, 'fiat')
+      ))
+      .limit(1);
+    
+    if (buyerCards.length === 0) {
+      throw new Error('У вас нет карты для оплаты NFT');
+    }
+    
+    const buyerCard = buyerCards[0];
+    console.log(`[Bored Ape NFT Service] Найдена карта покупателя: ${buyerCard.id}`);
+    
+    // Получаем карту администратора
+    const adminCards = await db.select()
+      .from(cards)
+      .where(and(
+        eq(cards.userId, adminUserId),
+        eq(cards.type, 'fiat')
+      ))
+      .limit(1);
+    
+    if (adminCards.length === 0) {
+      throw new Error('Карта администратора не найдена');
+    }
+    
+    const adminCard = adminCards[0];
+    console.log(`[Bored Ape NFT Service] Найдена карта администратора: ${adminCard.id}`);
+    
+    // Проверяем баланс покупателя
+    if (parseFloat(buyerCard.balance) < FIXED_NFT_PRICE) {
+      throw new Error(`Недостаточно средств для покупки NFT. Требуется: $${FIXED_NFT_PRICE}`);
+    }
+    
+    // Выполняем транзакцию перевода денег от покупателя администратору
+    console.log(`[Bored Ape NFT Service] Выполняем перевод $${FIXED_NFT_PRICE} с карты ${buyerCard.id} на карту ${adminCard.id}`);
+    const transferResult = await storage.transferMoney(
+      buyerCard.id,
+      adminCard.number,
+      FIXED_NFT_PRICE
+    );
+    
+    if (!transferResult.success) {
+      throw new Error(`Ошибка при переводе средств: ${transferResult.error}`);
+    }
+    
+    console.log(`[Bored Ape NFT Service] Перевод успешен, ID транзакции: ${transferResult.transaction?.id}`);
+    
     // Обновляем информацию об NFT
     const updatedNft = await db.update(nfts)
       .set({
         ownerId: buyerId,
-        forSale: false
+        forSale: false,
+        price: '0' // Сбрасываем цену после покупки
       })
       .where(eq(nfts.id, nftId))
       .returning();
@@ -342,14 +415,19 @@ export async function buyNFT(nftId: number, buyerId: number) {
       fromUserId: nft.ownerId,
       toUserId: buyerId,
       transferType: 'sale',
-      price: nft.price,
+      price: FIXED_NFT_PRICE.toString(),
       transferredAt: new Date()
     });
     
-    return updatedNft[0];
+    console.log(`[Bored Ape NFT Service] NFT ${nftId} успешно передан пользователю ${buyerId}`);
+    
+    return {
+      ...updatedNft[0],
+      transaction: transferResult.transaction
+    };
   } catch (error) {
     console.error('[Bored Ape NFT Service] Ошибка при покупке NFT:', error);
-    throw new Error(`Не удалось купить NFT: ${error}`);
+    throw new Error(`Не удалось купить NFT: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
