@@ -18,7 +18,7 @@ import { generateNFTImage } from './utils/nft-generator';
 import { Telegraf } from 'telegraf';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
-import { nfts } from '@shared/schema';
+import { nfts, nftCollections } from '@shared/schema';
 import nftRoutes from './controllers/nft-controller';
 
 // Вспомогательные функции для генерации NFT
@@ -125,6 +125,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Регистрируем маршруты для NFT
   app.use('/api/nft', nftRoutes);
+  
+  // Добавляем синоним для /api/nft/collections для совместимости с рендер-версией
+  app.get('/api/nft-collections', ensureAuthenticated, async (req, res) => {
+    try {
+      console.log('Запрос на получение всех NFT коллекций через альтернативный маршрут');
+      
+      // Проверяем авторизацию
+      if (!req.session.user) {
+        console.log('Ошибка авторизации при получении коллекций');
+        return res.status(401).json({ error: 'Требуется авторизация' });
+      }
+      
+      // Получаем ID пользователя
+      const username = req.session.user;
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user) {
+        console.log('Пользователь не найден при получении коллекций');
+        return res.status(404).json({ error: 'Пользователь не найден' });
+      }
+      
+      // Получаем все коллекции
+      const collections = await db.select().from(nftCollections);
+      
+      // Загружаем NFT для каждой коллекции
+      const collectionsWithNFTs = await Promise.all(collections.map(async (collection) => {
+        const collectionNFTs = await db.select().from(nfts).where(eq(nfts.collectionId, collection.id));
+        return {
+          ...collection,
+          nfts: collectionNFTs
+        };
+      }));
+      
+      console.log(`Найдено ${collectionsWithNFTs.length} коллекций NFT через альтернативный маршрут`);
+      
+      res.status(200).json(collectionsWithNFTs);
+    } catch (error) {
+      console.error('Ошибка при получении коллекций NFT через альтернативный маршрут:', error);
+      res.status(500).json({ error: 'Ошибка сервера при получении коллекций NFT' });
+    }
+  });
 
   // Получение последних курсов валют
   app.get("/api/rates", async (req, res) => {
