@@ -68,15 +68,45 @@ export const NFTMarketplace: React.FC = () => {
     retry: 1
   });
   
-  // Получаем все NFT, доступные для покупки
+  // Получаем все NFT, доступные для покупки и удаляем дубликаты
   const { 
-    data: marketplaceNfts = [], 
+    data: rawMarketplaceNfts = [], 
     isLoading: isLoadingMarketplace,
     isError: isErrorMarketplace
   } = useQuery<NFT[]>({
     queryKey: ['/api/nft/marketplace'],
     retry: 3
   });
+  
+  // Состояние для пагинации
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12; // Показываем 12 NFT на страницу
+  
+  // Удаляем дубликаты NFT на основе tokenId (чтобы избежать дублирования Bored Ape #1, #2, и т.д.)
+  const uniqueMarketplaceNfts = React.useMemo(() => {
+    // Создаем Map для хранения уникальных NFT по tokenId
+    const uniqueNfts = new Map();
+    
+    // Добавляем только уникальные NFT в Map
+    rawMarketplaceNfts.forEach(nft => {
+      // Если NFT с таким tokenId еще нет в Map или текущий NFT имеет более высокий ID
+      if (!uniqueNfts.has(nft.tokenId) || uniqueNfts.get(nft.tokenId).id < nft.id) {
+        uniqueNfts.set(nft.tokenId, nft);
+      }
+    });
+    
+    // Преобразуем Map обратно в массив
+    return Array.from(uniqueNfts.values());
+  }, [rawMarketplaceNfts]);
+  
+  // Получаем общее количество страниц
+  const totalPages = Math.ceil(uniqueMarketplaceNfts.length / itemsPerPage);
+  
+  // Получаем NFT для текущей страницы
+  const marketplaceNfts = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return uniqueMarketplaceNfts.slice(startIndex, startIndex + itemsPerPage);
+  }, [uniqueMarketplaceNfts, currentPage, itemsPerPage]);
   
   // Мутация для выставления NFT на продажу
   const sellNftMutation = useMutation({
@@ -366,40 +396,97 @@ export const NFTMarketplace: React.FC = () => {
             </AlertDescription>
           </Alert>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {marketplaceNfts.map((nft) => (
-              <Card 
-                key={nft.id} 
-                className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => {
-                  setSelectedNFT(nft);
-                  playSoundWithLog('click');
-                }}
-              >
-                <div className="relative aspect-square">
-                  <img 
-                    src={nft.imagePath} 
-                    alt={nft.name} 
-                    className="w-full h-full object-cover"
-                  />
-                  <Badge className={`absolute top-2 right-2 ${rarityColors[nft.rarity]}`}>
-                    {nft.rarity}
-                  </Badge>
-                  <Badge className="absolute top-2 left-2 bg-amber-500">
-                    {nft.price} USD
-                  </Badge>
-                </div>
-                <CardContent className="p-3">
-                  <h3 className="font-semibold truncate">{nft.name}</h3>
-                  <div className="flex justify-between items-center mt-1">
-                    <span className="text-xs text-muted-foreground">Сила: {calculatePower(nft)}</span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {nft.owner ? `@${nft.owner.username}` : 'Неизвестно'}
-                    </span>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {marketplaceNfts.map((nft) => (
+                <Card 
+                  key={nft.id} 
+                  className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => {
+                    setSelectedNFT(nft);
+                    playSoundWithLog('click');
+                  }}
+                >
+                  <div className="relative aspect-square">
+                    <img 
+                      src={nft.imagePath} 
+                      alt={nft.name} 
+                      className="w-full h-full object-cover"
+                    />
+                    <Badge className={`absolute top-2 right-2 ${rarityColors[nft.rarity]}`}>
+                      {nft.rarity}
+                    </Badge>
+                    <Badge className="absolute top-2 left-2 bg-amber-500">
+                      {nft.price} USD
+                    </Badge>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-3">
+                    <h3 className="font-semibold truncate">{nft.name}</h3>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-xs text-muted-foreground">Сила: {calculatePower(nft)}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {nft.owner ? `@${nft.owner.username}` : 'Неизвестно'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            {/* Пагинация */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                >
+                  Назад
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    // Вычисляем номера страниц для отображения (до 5 страниц)
+                    const pageToShow = totalPages <= 5 
+                      ? i + 1 
+                      : currentPage <= 3 
+                        ? i + 1 
+                        : currentPage >= totalPages - 2 
+                          ? totalPages - 4 + i 
+                          : currentPage - 2 + i;
+                          
+                    // Убеждаемся, что страница в пределах общего количества
+                    if (pageToShow > totalPages) return null;
+                    
+                    return (
+                      <Button
+                        key={pageToShow}
+                        variant={currentPage === pageToShow ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setCurrentPage(pageToShow)}
+                      >
+                        {pageToShow}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                >
+                  Вперед
+                </Button>
+                
+                <div className="text-xs text-muted-foreground ml-2">
+                  {uniqueMarketplaceNfts.length} NFT в маркетплейсе
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
