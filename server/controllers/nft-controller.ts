@@ -143,64 +143,88 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     
     log(`Получаем NFT на продаже (кроме пользователя ${userId})`);
     
-    // Получаем NFT на продаже (исключая NFT текущего пользователя)
+    // Попробуем получить NFT на продаже с помощью Drizzle ORM
     try {
-      // Сначала пробуем получить через сервис
-      const nftsForSale = await boredApeNftService.getNFTsForSale(userId);
-      log(`Найдено ${nftsForSale.length} NFT на продаже через сервис`);
+      log('Получаем NFT с помощью Drizzle ORM...');
       
-      // Если ничего не найдено, пробуем напрямую через SQL
-      if (nftsForSale.length === 0) {
-        log('Пробуем получить NFT напрямую из базы данных...');
-        
-        // Попробуем получить NFT напрямую из SQL
-        const nftsResult = await client.query(`
-          SELECT * FROM nft 
-          WHERE for_sale = true 
-          ORDER BY id DESC
-        `);
-        
-        const directNftsForSale = nftsResult.rows;
-        log(`Найдено ${directNftsForSale.length} NFT через прямой SQL запрос`);
-        
-        // Если нашли NFT через SQL, форматируем и отправляем
-        if (directNftsForSale.length > 0) {
-          const formattedDirectNFTs = await Promise.all(directNftsForSale.map(async (nft) => {
-            const owner = await storage.getUser(nft.owner_id);
-            return {
-              id: nft.id,
-              tokenId: nft.token_id,
-              collectionName: nft.collection_name,
-              name: nft.name,
-              description: nft.description,
-              imageUrl: nft.image_url,
-              price: nft.price,
-              forSale: nft.for_sale,
-              ownerId: nft.owner_id,
-              creatorId: nft.creator_id,
-              ownerUsername: owner ? owner.username : 'Unknown'
-            };
-          }));
+      // Используем Drizzle для выборки NFT на продаже
+      const nftsForSaleResult = await db.select()
+        .from(nfts)
+        .where(
+          and(
+            eq(nfts.forSale, true),
+            not(eq(nfts.ownerId, userId))
+          )
+        )
+        .orderBy(nfts.id)
+        .limit(100);
+      
+      log(`Найдено ${nftsForSaleResult.length} NFT через Drizzle ORM`);
+      
+      if (nftsForSaleResult.length > 0) {
+        // Форматируем NFT перед отправкой
+        const formattedNFTs = await Promise.all(nftsForSaleResult.map(async (nft) => {
+          const owner = await storage.getUser(nft.ownerId);
           
-          log(`Отправляем ${formattedDirectNFTs.length} NFT клиенту (из SQL)`);
-          return res.status(200).json(formattedDirectNFTs);
-        }
+          // Определяем номер коллекции
+          const collectionName = nft.collectionId ? nft.collectionId.toString() : "1";
+          
+          return {
+            id: nft.id,
+            tokenId: nft.tokenId,
+            collectionName: collectionName,
+            name: nft.name,
+            description: nft.description || '',
+            imagePath: nft.imagePath,
+            imageUrl: nft.imagePath, // Для совместимости с фронтендом
+            price: nft.price || "0",
+            forSale: nft.forSale,
+            ownerId: nft.ownerId,
+            creatorId: nft.ownerId, // В Drizzle схеме нет creatorId, используем владельца
+            ownerUsername: owner ? owner.username : 'Unknown',
+            // Добавляем базовые атрибуты для совместимости с фронтендом
+            attributes: nft.attributes || {
+              power: 70, 
+              agility: 65, 
+              wisdom: 60, 
+              luck: 75
+            }
+          };
+        }));
+        
+        log(`Отправляем ${formattedNFTs.length} NFT клиенту (из Drizzle)`);
+        return res.status(200).json(formattedNFTs);
       }
       
-      // Если нашли NFT через сервис, продолжаем обычный процесс
-      // Добавляем информацию о владельцах
-      const formattedNFTs = await Promise.all(nftsForSale.map(async (nft) => {
-        const owner = await storage.getUser(nft.ownerId);
-        return {
-          ...nft,
-          ownerUsername: owner ? owner.username : 'Unknown'
-        };
-      }));
+      // Запасной вариант: попробуем получить через сервис
+      log('Drizzle не вернул результатов, пробуем через сервис...');
+      const serviceNFTs = await boredApeNftService.getNFTsForSale(userId);
+      log(`Найдено ${serviceNFTs.length} NFT на продаже через сервис`);
       
-      log(`Отправляем ${formattedNFTs.length} NFT клиенту (из сервиса)`);
+      if (serviceNFTs.length > 0) {
+        // Добавляем информацию о владельцах
+        const formattedServiceNFTs = await Promise.all(serviceNFTs.map(async (nft) => {
+          const owner = await storage.getUser(nft.ownerId);
+          return {
+            ...nft,
+            ownerUsername: owner ? owner.username : 'Unknown',
+            // Добавляем базовые атрибуты для совместимости с фронтендом, если их нет
+            attributes: nft.attributes || {
+              power: 70, 
+              agility: 65, 
+              wisdom: 60, 
+              luck: 75
+            }
+          };
+        }));
+        
+        log(`Отправляем ${formattedServiceNFTs.length} NFT клиенту (из сервиса)`);
+        return res.status(200).json(formattedServiceNFTs);
+      }
       
-      // Клиент ожидает массив объектов, не обернутый в объект success/nfts
-      res.status(200).json(formattedNFTs);
+      // Если ничего не нашли, возвращаем пустой массив
+      log('NFT для маркетплейса не найдены ни через Drizzle, ни через сервис');
+      return res.status(200).json([]);
     } catch (innerError) {
       console.error('Ошибка при обработке NFT для маркетплейса:', innerError);
       res.status(500).json({ error: 'Ошибка сервера при получении NFT на продаже' });
