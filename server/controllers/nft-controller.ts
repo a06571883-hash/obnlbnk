@@ -149,15 +149,12 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     try {
       log('Получаем NFT с помощью Drizzle ORM из таблицы nfts...');
       
-      // База запроса - NFT на продаже
+      // База запроса - NFT на продаже - показываем все NFT
       let query = db.select()
         .from(nfts)
         .where(eq(nfts.forSale, true));
       
-      // Если пользователь авторизован, исключаем его NFT
-      if (userId) {
-        query = query.where(not(eq(nfts.ownerId, userId)));
-      }
+      // Убираем фильтрацию по владельцу, чтобы показывать все NFT на продаже
       
       // Выполняем запрос
       const nftsForSaleResult = await query
@@ -212,21 +209,12 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       // При использовании postgres.js, client является функцией, которую можно вызвать с шаблонным литералом
       let legacyNFTResult;
       
-      // Если пользователь авторизован, исключаем его NFT
-      if (userId) {
-        legacyNFTResult = await client`
-          SELECT * FROM nft 
-          WHERE for_sale = true 
-          AND owner_id != ${userId}
-          ORDER BY id LIMIT 1000
-        `;
-      } else {
-        legacyNFTResult = await client`
-          SELECT * FROM nft 
-          WHERE for_sale = true 
-          ORDER BY id LIMIT 1000
-        `;
-      }
+      // Показываем все NFT на продаже, независимо от пользователя
+      legacyNFTResult = await client`
+        SELECT * FROM nft 
+        WHERE for_sale = true 
+        ORDER BY id LIMIT 1000
+      `;
       
       log(`Найдено ${legacyNFTResult.length} NFT из таблицы nft (legacy)`);
       

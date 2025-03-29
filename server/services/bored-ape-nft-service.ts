@@ -555,19 +555,10 @@ export async function getUserNFTs(userId: number) {
  */
 export async function getNFTsForSale(excludeUserId?: number) {
   try {
-    let query = db.select()
+    // Показываем все NFT на продаже, независимо от пользователя
+    const query = db.select()
       .from(nfts)
       .where(eq(nfts.forSale, true));
-    
-    // Если указан ID пользователя, исключаем его NFT из результатов
-    if (excludeUserId !== undefined) {
-      query = db.select()
-        .from(nfts)
-        .where(and(
-          eq(nfts.forSale, true),
-          not(eq(nfts.ownerId, excludeUserId))
-        ));
-    }
     
     const nftsForSale = await query;
     
