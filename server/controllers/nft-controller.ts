@@ -115,14 +115,41 @@ router.get('/user', ensureAuthenticated, async (req: Request, res: Response) => 
     log(`Получаем NFT для пользователя ${userId} (${req.user?.username})`);
     
     // Получаем NFT пользователя
-    const userNFTs = await boredApeNftService.getUserNFTs(userId);
-    log(`Найдено ${userNFTs.length} NFT для пользователя ${userId}`);
+    const allUserNFTs = await boredApeNftService.getUserNFTs(userId);
+    log(`Найдено ${allUserNFTs.length} NFT для пользователя ${userId}`);
     
-    // NFT уже в правильном формате, просто логируем и отправляем их
-    log(`Отправляем ${userNFTs.length} NFT клиенту`);
+    // Функция для проверки, является ли NFT обезьяной BAYC
+    const isBoredApe = (nft: any): boolean => {
+      // Проверяем по имени, коллекции и пути к изображению
+      const nameCheck = nft.name?.toLowerCase().includes('ape') || 
+                         nft.name?.toLowerCase().includes('bayc') || 
+                         nft.name?.toLowerCase().includes('bored');
+      
+      const collectionCheck = (nft.collectionName?.toLowerCase().includes('bored') || 
+                               nft.collectionName?.toLowerCase().includes('ape') || 
+                               nft.collectionName?.toLowerCase().includes('bayc') ||
+                               nft.collection_name?.toLowerCase().includes('bored') || 
+                               nft.collection_name?.toLowerCase().includes('ape') || 
+                               nft.collection_name?.toLowerCase().includes('bayc'));
+      
+      const imageCheck = nft.imagePath?.includes('bayc_') || 
+                         nft.imageUrl?.includes('bayc_') || 
+                         nft.image_url?.includes('bayc_') ||
+                         nft.imagePath?.includes('official_bayc_') || 
+                         nft.imageUrl?.includes('official_bayc_') || 
+                         nft.image_url?.includes('official_bayc_');
+      
+      return nameCheck || collectionCheck || imageCheck;
+    };
+    
+    // Фильтруем только обезьян Bored Ape
+    const onlyBoredApes = allUserNFTs.filter(nft => isBoredApe(nft));
+    
+    log(`Отфильтровано ${onlyBoredApes.length} обезьян BAYC из ${allUserNFTs.length} всего NFT для пользователя ${userId}`);
+    log(`Отправляем ${onlyBoredApes.length} NFT клиенту`);
     
     // Клиент ожидает прямой массив, а не объект с полем nfts
-    res.status(200).json(userNFTs);
+    res.status(200).json(onlyBoredApes);
   } catch (error) {
     console.error('Ошибка при получении NFT пользователя:', error);
     res.status(500).json({ error: 'Ошибка сервера при получении NFT пользователя' });
@@ -140,7 +167,7 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     // Получаем ID пользователя, если он авторизован
     const userId = req.user?.id || 0; // Используем 0 если пользователь не авторизован
     
-    log(`Получаем все NFT на продаже${userId ? ` (кроме пользователя ${userId})` : ''}`);
+    log(`Получаем только обезьяны BAYC на продаже${userId ? ` (кроме пользователя ${userId})` : ''}`);
     
     // Определяем интерфейс для NFT с общими свойствами
     interface CombinedNFT {
@@ -165,6 +192,30 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     
     // Для отслеживания уникальных токенов, чтобы избежать дубликатов
     const tokenTracker = new Set<string>();
+    
+    // Функция для проверки, является ли NFT обезьяной BAYC
+    const isBoredApe = (nft: any): boolean => {
+      // Проверяем по имени, коллекции и пути к изображению
+      const nameCheck = nft.name?.toLowerCase().includes('ape') || 
+                         nft.name?.toLowerCase().includes('bayc') || 
+                         nft.name?.toLowerCase().includes('bored');
+      
+      const collectionCheck = (nft.collectionName?.toLowerCase().includes('bored') || 
+                               nft.collectionName?.toLowerCase().includes('ape') || 
+                               nft.collectionName?.toLowerCase().includes('bayc') ||
+                               nft.collection_name?.toLowerCase().includes('bored') || 
+                               nft.collection_name?.toLowerCase().includes('ape') || 
+                               nft.collection_name?.toLowerCase().includes('bayc'));
+      
+      const imageCheck = nft.imagePath?.includes('bayc_') || 
+                         nft.imageUrl?.includes('bayc_') || 
+                         nft.image_url?.includes('bayc_') ||
+                         nft.imagePath?.includes('official_bayc_') || 
+                         nft.imageUrl?.includes('official_bayc_') || 
+                         nft.image_url?.includes('official_bayc_');
+      
+      return nameCheck || collectionCheck || imageCheck;
+    };
     
     // 1. Сначала пробуем получить NFT на продаже с помощью Drizzle ORM из таблицы nfts
     try {
@@ -367,9 +418,13 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       }
     }
     
-    // Возвращаем все найденные NFT
-    log(`Отправляем итоговый список из ${combinedNFTs.length} NFT клиенту`);
-    return res.status(200).json(combinedNFTs);
+    // Фильтруем только обезьян Bored Ape перед отправкой
+    const onlyBoredApes = combinedNFTs.filter(nft => isBoredApe(nft));
+    
+    log(`Отфильтровано ${onlyBoredApes.length} обезьян BAYC из ${combinedNFTs.length} всего NFT`);
+    log(`Отправляем итоговый список из ${onlyBoredApes.length} обезьян BAYC клиенту`);
+    
+    return res.status(200).json(onlyBoredApes);
   } catch (error) {
     console.error('Ошибка при получении NFT на продаже:', error);
     res.status(500).json({ error: 'Ошибка сервера при получении NFT на продаже' });
@@ -924,11 +979,35 @@ router.get('/gallery', ensureAuthenticated, async (req: Request, res: Response) 
     log(`Получение галереи NFT для пользователя ${userId}`);
     
     // Получаем все NFT пользователя
-    const userNFTs = await db.select().from(nfts).where(eq(nfts.ownerId, userId));
+    const allUserNFTs = await db.select().from(nfts).where(eq(nfts.ownerId, userId));
     
-    log(`Найдено ${userNFTs.length} NFT в галерее пользователя ${userId}`);
+    log(`Найдено ${allUserNFTs.length} NFT в галерее пользователя ${userId}`);
     
-    res.status(200).json(userNFTs);
+    // Функция для проверки, является ли NFT обезьяной BAYC
+    const isBoredApe = (nft: any): boolean => {
+      // Проверяем по имени, коллекции и пути к изображению
+      const nameCheck = nft.name?.toLowerCase().includes('ape') || 
+                         nft.name?.toLowerCase().includes('bayc') || 
+                         nft.name?.toLowerCase().includes('bored');
+      
+      const collectionCheck = nft.collectionId === 1 || 
+                              (typeof nft.collectionName === 'string' && 
+                              (nft.collectionName.toLowerCase().includes('bored') || 
+                               nft.collectionName.toLowerCase().includes('ape') || 
+                               nft.collectionName.toLowerCase().includes('bayc')));
+      
+      const imageCheck = nft.imagePath?.includes('bayc_') || 
+                         nft.imagePath?.includes('official_bayc_');
+      
+      return nameCheck || collectionCheck || imageCheck;
+    };
+    
+    // Фильтруем только обезьян Bored Ape
+    const onlyBoredApes = allUserNFTs.filter(nft => isBoredApe(nft));
+    
+    log(`Отфильтровано ${onlyBoredApes.length} обезьян BAYC из ${allUserNFTs.length} всего NFT для галереи пользователя ${userId}`);
+    
+    res.status(200).json(onlyBoredApes);
   } catch (error) {
     console.error('Ошибка при получении галереи NFT:', error);
     res.status(500).json({ error: 'Ошибка сервера при получении галереи NFT' });

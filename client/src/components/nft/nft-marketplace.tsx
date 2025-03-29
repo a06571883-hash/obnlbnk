@@ -345,63 +345,6 @@ export const NFTMarketplace: React.FC = () => {
   
   return (
     <div className="space-y-10">
-      {/* Мои NFT */}
-      <div>
-        <h2 className="text-2xl font-bold mb-6">Мои NFT</h2>
-        
-        {isLoadingMyNfts ? (
-          <div className="flex justify-center items-center h-[200px]">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : myNfts.length === 0 ? (
-          <Alert>
-            <AlertDescription>
-              У вас пока нет NFT. Создайте новый или купите на маркетплейсе.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {myNfts.map((nft) => (
-              <Card 
-                key={nft.id} 
-                className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => {
-                  setSelectedNFT(nft);
-                  playSoundWithLog('click');
-                }}
-              >
-                <div className="relative aspect-square">
-                  <img 
-                    src={getProxiedImageUrl(nft.imagePath)} 
-                    alt={nft.name} 
-                    className="w-full h-full object-cover"
-                  />
-                  <Badge className={`absolute top-2 right-2 ${rarityColors[nft.rarity]}`}>
-                    {nft.rarity}
-                  </Badge>
-                  {nft.forSale && (
-                    <Badge className="absolute top-2 left-2 bg-amber-500">
-                      {nft.price} USD
-                    </Badge>
-                  )}
-                </div>
-                <CardContent className="p-3">
-                  <h3 className="font-semibold truncate">{nft.name}</h3>
-                  <div className="flex justify-between items-center mt-1">
-                    <span className="text-xs text-muted-foreground">Сила: {calculatePower(nft)}</span>
-                    {nft.forSale ? (
-                      <Badge variant="outline" className="border-amber-500 text-amber-500">
-                        В продаже
-                      </Badge>
-                    ) : null}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-      
       {/* Маркетплейс */}
       <div>
         <h2 className="text-2xl font-bold mb-6">NFT Маркетплейс</h2>
