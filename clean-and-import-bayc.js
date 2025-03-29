@@ -3,19 +3,61 @@
  * и импорта только уникальных обезьян Bored Ape Yacht Club
  */
 
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { eq, sql } from 'drizzle-orm';
+import { createCanvas } from '@napi-rs/canvas';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import pkg from 'pg';
+import { dirname } from 'path';
 
-const { Pool } = pkg;
+// Получаем путь к текущему файлу
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
 
-// Подключение к PostgreSQL
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+// Проверяем наличие переменной окружения DATABASE_URL
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL не установлен. Устанавливаем соединение с базой данных невозможно.');
+  process.exit(1);
+}
+
+// Создаем подключение к PostgreSQL
+const client = postgres(process.env.DATABASE_URL, {
+  ssl: { rejectUnauthorized: false },
+  max: 10,
+  idle_timeout: 20,
+  connect_timeout: 30
 });
+
+// Загружаем схему из файла схемы
+const schema = {
+  nfts: {
+    id: 'id',
+    collectionId: 'collection_id',
+    ownerId: 'owner_id',
+    name: 'name',
+    description: 'description',
+    imagePath: 'image_path',
+    attributes: 'attributes',
+    rarity: 'rarity',
+    price: 'price',
+    forSale: 'for_sale',
+    mintedAt: 'minted_at',
+    tokenId: 'token_id'
+  },
+  nftCollections: {
+    id: 'id',
+    name: 'name',
+    description: 'description',
+    userId: 'user_id',
+    coverImage: 'cover_image',
+    createdAt: 'created_at'
+  }
+};
+
+// Инициализируем Drizzle ORM с схемой
+const db = drizzle(client);
 
 /**
  * Определяет редкость NFT на основе его ID
@@ -23,21 +65,19 @@ const pool = new Pool({
  * @returns {string} Редкость NFT (common, uncommon, rare, epic, legendary)
  */
 function determineRarity(tokenId) {
-  // Используем ID токена для определения редкости
-  // Чем меньше вероятность, тем выше редкость
-  const random = Math.sin(tokenId) * 10000;
-  const normalizedRandom = Math.abs(random) % 100;
-
-  if (normalizedRandom < 5) {
-    return 'legendary'; // 5% - легендарные
-  } else if (normalizedRandom < 15) {
-    return 'epic'; // 10% - эпические
-  } else if (normalizedRandom < 35) {
-    return 'rare'; // 20% - редкие
-  } else if (normalizedRandom < 65) {
-    return 'uncommon'; // 30% - необычные
+  // Определение редкости на основе последней цифры ID
+  const lastDigit = tokenId % 10;
+  
+  if (lastDigit === 7 || lastDigit === 9) {
+    return 'legendary'; // 20% (2/10) - самые редкие
+  } else if (lastDigit === 0 || lastDigit === 5) {
+    return 'epic'; // 20% (2/10) - очень редкие
+  } else if (lastDigit === 1 || lastDigit === 8) {
+    return 'rare'; // 20% (2/10) - редкие
+  } else if (lastDigit === 2 || lastDigit === 6) {
+    return 'uncommon'; // 20% (2/10) - необычные
   } else {
-    return 'common'; // 35% - обычные
+    return 'common'; // 20% (2/10) - обычные
   }
 }
 
@@ -48,31 +88,30 @@ function determineRarity(tokenId) {
  * @returns {number} Цена NFT в долларах
  */
 function generateNFTPrice(tokenId, rarity) {
-  // Базовая цена зависит от редкости
-  let basePrice = 0;
-  switch (rarity) {
-    case 'legendary':
-      basePrice = 200000;
-      break;
-    case 'epic':
-      basePrice = 40000;
-      break;
-    case 'rare':
-      basePrice = 5000;
-      break;
-    case 'uncommon':
-      basePrice = 500;
-      break;
-    case 'common':
-      basePrice = 20;
-      break;
-    default:
-      basePrice = 10;
+  // Базовые цены для разных уровней редкости
+  const basePrices = {
+    common: 16,               // $16 - $20,000
+    uncommon: 251,            // $251 - $50,000
+    rare: 2_133,              // $2,133 - $70,000
+    epic: 32_678,             // $32,678 - $150,000
+    legendary: 189_777        // $189,777 - $291,835
+  };
+  
+  // Множитель на основе ID (чем меньше ID, тем ценнее NFT)
+  const idMultiplier = Math.max(0.1, Math.min(1, 1 - (tokenId % 1000) / 1000));
+  
+  // Расчет модификатора цены (от 1 до 2)
+  const priceModifier = 1 + idMultiplier;
+  
+  // Итоговая цена с учетом редкости и ID
+  let price = Math.round(basePrices[rarity] * priceModifier);
+  
+  // Особая цена для первых 100 NFT (коллекционная ценность)
+  if (tokenId < 100) {
+    price = Math.round(price * 1.5); 
   }
-
-  // Вариация цены на основе ID токена (±20%)
-  const variationFactor = 0.8 + (Math.abs(Math.sin(tokenId * 13)) * 0.4);
-  return Math.round(basePrice * variationFactor);
+  
+  return price;
 }
 
 /**
@@ -82,38 +121,21 @@ function generateNFTPrice(tokenId, rarity) {
  * @returns {string} Описание NFT
  */
 function generateNFTDescription(tokenId, rarity) {
-  const descriptions = {
-    legendary: [
-      "Невероятно редкий экземпляр из коллекции Bored Ape Yacht Club. Этот NFT представляет собой уникальное произведение цифрового искусства с исключительными чертами, делающими его одним из самых ценных в коллекции.",
-      "Эксклюзивный Bored Ape с легендарным статусом. Владение этим NFT открывает доступ к элитному сообществу коллекционеров и мероприятиям BAYC.",
-      "Один из самых редких и ценных Bored Ape в существовании. Уникальная комбинация признаков делает эту обезьяну настоящим сокровищем цифрового искусства.",
-    ],
-    epic: [
-      "Эпический Bored Ape с редкими характеристиками, выделяющими его среди других. Этот NFT является частью знаменитой коллекции BAYC, известной своей эксклюзивностью и культовым статусом.",
-      "Необычайно редкий экземпляр из коллекции Bored Ape Yacht Club с выдающимися чертами. Владение этим NFT дает доступ к эксклюзивному сообществу BAYC.",
-      "Высоко ценимый Bored Ape с редкими атрибутами. Этот NFT представляет собой значительную инвестицию в пространстве цифрового искусства.",
-    ],
-    rare: [
-      "Редкий Bored Ape с уникальной комбинацией черт. Этот NFT является частью престижной коллекции BAYC, одной из самых известных в мире криптоискусства.",
-      "Ценный экземпляр из коллекции Bored Ape Yacht Club с необычными характеристиками. Этот NFT отражает культурное влияние BAYC в пространстве цифрового искусства.",
-      "Редкий Bored Ape с отличительными чертами. Этот NFT представляет собой отличную возможность для коллекционеров и энтузиастов криптоискусства.",
-    ],
-    uncommon: [
-      "Необычный Bored Ape с интересной комбинацией характеристик. Этот NFT из знаменитой коллекции BAYC имеет свой уникальный характер и стиль.",
-      "Отличительный Bored Ape с примечательными чертами. Часть культовой коллекции BAYC, изменившей представление о цифровом искусстве и NFT.",
-      "Уникальный Bored Ape с выразительным характером. Этот NFT представляет возможность стать частью сообщества BAYC, одного из самых влиятельных в NFT пространстве.",
-    ],
-    common: [
-      "Классический Bored Ape из знаменитой коллекции BAYC. Даже будучи более распространенным, этот NFT представляет собой входной билет в легендарное сообщество Bored Ape Yacht Club.",
-      "Традиционный Bored Ape с характерными чертами коллекции. Этот NFT является частью культурного феномена BAYC, ставшего синонимом элитного статуса в мире NFT.",
-      "Стандартный, но стильный Bored Ape. Этот NFT из коллекции BAYC представляет собой отличную начальную точку для коллекционеров криптоискусства.",
-    ]
+  const baseDescriptions = {
+    common: "Обычная обезьяна из клуба Bored Ape Yacht Club. Обладает стандартными чертами без особых украшений.",
+    uncommon: "Необычная обезьяна из клуба Bored Ape Yacht Club. Имеет несколько интересных деталей, выделяющих её среди других.",
+    rare: "Редкая обезьяна из клуба Bored Ape Yacht Club. Обладает уникальными чертами и особыми аксессуарами.",
+    epic: "Очень редкая обезьяна из клуба Bored Ape Yacht Club. Выделяется исключительными характеристиками и стилем.",
+    legendary: "Легендарная обезьяна из клуба Bored Ape Yacht Club. Одна из самых ценных и уникальных во всей коллекции."
   };
-
-  // Выбираем случайное описание из соответствующей категории редкости
-  const descArray = descriptions[rarity] || descriptions.common;
-  const randomIndex = Math.abs(Math.floor(Math.sin(tokenId * 7) * descArray.length)) % descArray.length;
-  return descArray[randomIndex];
+  
+  // Усиливаем описание для первых 100 NFT
+  let specialDescription = "";
+  if (tokenId < 100) {
+    specialDescription = " Принадлежит к первой сотне выпущенных обезьян, что придаёт ей особую коллекционную ценность.";
+  }
+  
+  return `${baseDescriptions[rarity]}${specialDescription} Токен #${tokenId}`;
 }
 
 /**
@@ -123,41 +145,34 @@ function generateNFTDescription(tokenId, rarity) {
  * @returns {Object} Объект с атрибутами NFT
  */
 function generateNFTAttributes(tokenId, rarity) {
-  // Базовые значения атрибутов зависят от редкости
-  let baseValue;
-  switch (rarity) {
-    case 'legendary':
-      baseValue = 85;
-      break;
-    case 'epic':
-      baseValue = 75;
-      break;
-    case 'rare':
-      baseValue = 65;
-      break;
-    case 'uncommon':
-      baseValue = 55;
-      break;
-    case 'common':
-      baseValue = 45;
-      break;
-    default:
-      baseValue = 40;
+  // Базовые значения атрибутов в зависимости от редкости
+  const rarityBaseStats = {
+    common: { min: 30, max: 70 },
+    uncommon: { min: 40, max: 80 },
+    rare: { min: 50, max: 85 },
+    epic: { min: 60, max: 90 },
+    legendary: { min: 70, max: 99 }
+  };
+  
+  // Используем ID как семя для генерации псевдо-случайных значений
+  const seed = tokenId;
+  
+  // Функция для генерации псевдо-случайного числа на основе seed и диапазона
+  function generateAttributeValue(seed, attributeIndex, min, max) {
+    const hash = (seed * 9301 + 49297 + attributeIndex * 233) % 233280;
+    return min + Math.floor((hash / 233280) * (max - min + 1));
   }
-
-  // Генерируем атрибуты с некоторой вариацией
-  const generateAttribute = (seed) => {
-    const variation = 15; // ±15 от базового значения
-    const value = baseValue + Math.floor((Math.sin(tokenId * seed) * variation));
-    return Math.max(1, Math.min(100, value)); // Ограничиваем значение диапазоном 1-100
+  
+  // Генерируем значения атрибутов
+  const baseStats = rarityBaseStats[rarity];
+  const attributes = {
+    power: generateAttributeValue(seed, 1, baseStats.min, baseStats.max),
+    agility: generateAttributeValue(seed, 2, baseStats.min, baseStats.max),
+    wisdom: generateAttributeValue(seed, 3, baseStats.min, baseStats.max),
+    luck: generateAttributeValue(seed, 4, baseStats.min, baseStats.max)
   };
-
-  return {
-    power: generateAttribute(11),
-    agility: generateAttribute(23),
-    wisdom: generateAttribute(37),
-    luck: generateAttribute(59)
-  };
+  
+  return attributes;
 }
 
 /**
@@ -165,86 +180,53 @@ function generateNFTAttributes(tokenId, rarity) {
  * которые не являются обезьянами BAYC
  */
 async function cleanAllNonBAYCNFT() {
-  const client = await pool.connect();
   try {
-    console.log('Начинаем транзакцию для очистки NFT...');
-    await client.query('BEGIN');
+    console.log("Начинаем удаление всех не-BAYC NFT из базы данных...");
     
-    // Функция для определения, является ли NFT обезьяной BAYC
-    const isBAYC = (name, imagePath, collectionName) => {
-      const nameCheck = name?.toLowerCase().includes('ape') || 
-                         name?.toLowerCase().includes('bayc') || 
-                         name?.toLowerCase().includes('bored');
-      
-      const imageCheck = imagePath?.includes('bayc_') || 
-                         imagePath?.includes('official_bayc_');
-      
-      const collectionCheck = collectionName?.toLowerCase?.().includes('bored') || 
-                              collectionName?.toLowerCase?.().includes('ape') || 
-                              collectionName?.toLowerCase?.().includes('bayc');
-      
-      return nameCheck || imageCheck || collectionCheck;
-    };
-
-    // 1. Сначала получаем все NFT
-    const { rows: allNFTs } = await client.query('SELECT * FROM nfts');
-    console.log(`Всего найдено ${allNFTs.length} NFT в таблице nfts`);
+    // 1. Находим ID коллекции BAYC
+    const baycCollectionResult = await client`
+      SELECT id FROM nft_collections 
+      WHERE name = 'Bored Ape Yacht Club'
+    `;
     
-    // Фильтруем только не-BAYC NFT
-    const nonBaycIds = allNFTs
-      .filter(nft => !isBAYC(nft.name, nft.image_path, nft.collection_id))
-      .map(nft => nft.id);
-    
-    console.log(`Найдено ${nonBaycIds.length} не-BAYC NFT для удаления из таблицы nfts`);
-    
-    if (nonBaycIds.length > 0) {
-      // Удаляем все переводы NFT, связанные с не-BAYC
-      await client.query('DELETE FROM nft_transfers WHERE nft_id = ANY($1)', [nonBaycIds]);
-      console.log(`Удалены записи переводов для не-BAYC NFT`);
+    // 2. Если коллекция не существует, удаляем все NFT
+    if (baycCollectionResult.length === 0) {
+      console.log("Коллекция BAYC не найдена, удаляем все существующие NFT и коллекции...");
       
-      // Удаляем сами не-BAYC NFT
-      await client.query('DELETE FROM nfts WHERE id = ANY($1)', [nonBaycIds]);
-      console.log(`Удалены не-BAYC NFT из таблицы nfts`);
+      // Удаляем все NFT
+      const deletedNfts = await client`DELETE FROM nfts RETURNING id`;
+      console.log(`Удалено ${deletedNfts.length} NFT`);
+      
+      // Удаляем все коллекции
+      const deletedCollections = await client`DELETE FROM nft_collections RETURNING id`;
+      console.log(`Удалено ${deletedCollections.length} коллекций NFT`);
+    } else {
+      // 3. Если коллекция BAYC существует, удаляем только NFT из других коллекций
+      const baycCollectionId = baycCollectionResult[0].id;
+      console.log(`Коллекция BAYC найдена с ID ${baycCollectionId}`);
+      
+      // Удаляем только NFT, не относящиеся к коллекции BAYC
+      const deletedNfts = await client`
+        DELETE FROM nfts 
+        WHERE collection_id <> ${baycCollectionId}
+        RETURNING id
+      `;
+      console.log(`Удалено ${deletedNfts.length} не-BAYC NFT`);
+      
+      // Удаляем другие коллекции, кроме BAYC
+      const deletedCollections = await client`
+        DELETE FROM nft_collections 
+        WHERE id <> ${baycCollectionId}
+        RETURNING id
+      `;
+      console.log(`Удалено ${deletedCollections.length} других коллекций NFT`);
     }
     
-    // 2. Теперь очищаем старую таблицу nft от не-BAYC
-    try {
-      const { rows: legacyNFTs } = await client.query('SELECT * FROM nft');
-      console.log(`Всего найдено ${legacyNFTs.length} NFT в устаревшей таблице nft`);
-      
-      // Фильтруем только не-BAYC NFT в legacy таблице
-      const nonBaycLegacyIds = legacyNFTs
-        .filter(nft => !isBAYC(nft.name, nft.image_url, nft.collection_name))
-        .map(nft => nft.id);
-      
-      console.log(`Найдено ${nonBaycLegacyIds.length} не-BAYC NFT для удаления из устаревшей таблицы nft`);
-      
-      if (nonBaycLegacyIds.length > 0) {
-        // Удаляем все не-BAYC NFT из legacy таблицы
-        await client.query('DELETE FROM nft WHERE id = ANY($1)', [nonBaycLegacyIds]);
-        console.log(`Удалены не-BAYC NFT из устаревшей таблицы nft`);
-      }
-    } catch (err) {
-      console.log("Старая таблица nft не существует или иная ошибка:", err.message);
-    }
-    
-    await client.query('COMMIT');
-    console.log('Транзакция успешно завершена');
-    
-    return {
-      success: true,
-      removedFromNfts: nonBaycIds.length,
-      removedFromLegacy: 0
-    };
+    console.log("Очистка завершена успешно.");
+    return true;
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Ошибка при очистке NFT:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  } finally {
-    client.release();
+    console.error("Ошибка при очистке NFT:", error);
+    return false;
   }
 }
 
@@ -252,137 +234,92 @@ async function cleanAllNonBAYCNFT() {
  * Импортирует изображения обезьян BAYC в маркетплейс
  */
 async function importBoredApesToMarketplace() {
-  const client = await pool.connect();
   try {
-    console.log('Начинаем импорт обезьян Bored Ape Yacht Club...');
+    console.log("Начинаем импорт обезьян BAYC в маркетплейс...");
     
-    // Получаем информацию о регуляторе (админе)
-    const { rows: adminUsers } = await client.query(
-      "SELECT * FROM users WHERE username = 'admin' OR username = 'regulator' LIMIT 1"
-    );
+    // 1. Создаем коллекцию BAYC, если она не существует
+    const baycCollectionResult = await client`
+      SELECT id FROM nft_collections 
+      WHERE name = 'Bored Ape Yacht Club'
+    `;
     
-    if (adminUsers.length === 0) {
-      throw new Error('Не удалось найти пользователя admin или regulator');
-    }
+    let baycCollectionId;
     
-    const regulator = adminUsers[0];
-    console.log(`Найден регулятор: ${regulator.username} (id: ${regulator.id})`);
-    
-    // Получаем ID коллекции BAYC или создаем новую
-    let collectionId;
-    const { rows: collections } = await client.query(
-      "SELECT * FROM nft_collections WHERE name LIKE '%Bored Ape%' OR name LIKE '%BAYC%' LIMIT 1"
-    );
-    
-    if (collections.length > 0) {
-      collectionId = collections[0].id;
-      console.log(`Найдена коллекция BAYC: ${collections[0].name} (id: ${collectionId})`);
-    } else {
-      const { rows: newCollection } = await client.query(
-        "INSERT INTO nft_collections (name, description, creator_id) VALUES ($1, $2, $3) RETURNING id",
-        ['Bored Ape Yacht Club', 'Официальная коллекция Bored Ape Yacht Club - эксклюзивные NFT обезьян', regulator.id]
-      );
-      collectionId = newCollection[0].id;
-      console.log(`Создана новая коллекция BAYC (id: ${collectionId})`);
-    }
-    
-    // Путь к директории с изображениями
-    const imagesDir = path.join(__dirname, 'public/bayc_official');
-    
-    // Проверяем, что директория существует
-    if (!fs.existsSync(imagesDir)) {
-      throw new Error(`Директория с изображениями не найдена: ${imagesDir}`);
-    }
-    
-    // Получаем все PNG файлы
-    const imageFiles = fs.readdirSync(imagesDir)
-      .filter(file => file.startsWith('bayc_') && file.endsWith('.png'))
-      .sort((a, b) => {
-        const numA = parseInt(a.replace('bayc_', '').replace('.png', ''));
-        const numB = parseInt(b.replace('bayc_', '').replace('.png', ''));
-        return numA - numB;
-      });
-    
-    console.log(`Найдено ${imageFiles.length} изображений BAYC`);
-    
-    // Начинаем транзакцию для импорта
-    await client.query('BEGIN');
-    
-    // Получаем уже существующие NFT для проверки дубликатов
-    const { rows: existingNFTs } = await client.query(
-      "SELECT * FROM nfts WHERE name LIKE '%Bored Ape%' OR name LIKE '%BAYC%' OR image_path LIKE '%bayc_%'"
-    );
-    console.log(`В базе уже есть ${existingNFTs.length} NFT BAYC`);
-    
-    // Создаем Set с уже импортированными ID токенов
-    const existingTokenIds = new Set(existingNFTs.map(nft => nft.token_id));
-    
-    // Счетчики для статистики
-    let created = 0;
-    let skipped = 0;
-    
-    // Импортируем каждое изображение
-    for (const imageFile of imageFiles) {
-      const tokenId = imageFile.replace('bayc_', '').replace('.png', '');
+    if (baycCollectionResult.length === 0) {
+      // Создаем новую коллекцию
+      const newCollection = await client`
+        INSERT INTO nft_collections (name, description, user_id, cover_image, created_at)
+        VALUES (
+          'Bored Ape Yacht Club', 
+          'Bored Ape Yacht Club - это коллекция из 10,000 уникальных NFT обезьян, живущих в блокчейне Ethereum.',
+          5, 
+          '/bayc_official/bayc_1.png',
+          NOW()
+        )
+        RETURNING id
+      `;
       
-      // Проверяем, существует ли уже этот токен
-      if (existingTokenIds.has(`BAYC-${tokenId}`)) {
-        console.log(`Пропуск токена BAYC-${tokenId} - уже существует`);
-        skipped++;
-        continue;
+      baycCollectionId = newCollection[0].id;
+      console.log(`Создана новая коллекция BAYC с ID ${baycCollectionId}`);
+    } else {
+      baycCollectionId = baycCollectionResult[0].id;
+      console.log(`Использование существующей коллекции BAYC с ID ${baycCollectionId}`);
+    }
+    
+    // 2. Импортируем NFT
+    const totalNFTCount = 10000;
+    const batchSize = 200;
+    let importedCount = 0;
+    
+    for (let batchStart = 0; batchStart < totalNFTCount; batchStart += batchSize) {
+      const batchEnd = Math.min(batchStart + batchSize, totalNFTCount) - 1;
+      console.log(`Импорт пакета NFT с ID от ${batchStart} до ${batchEnd}...`);
+      
+      // Для каждого NFT в пакете
+      for (let tokenId = batchStart; tokenId <= batchEnd; tokenId++) {
+        try {
+          // Определяем редкость и генерируем свойства
+          const rarity = determineRarity(tokenId);
+          const price = generateNFTPrice(tokenId, rarity);
+          const description = generateNFTDescription(tokenId, rarity);
+          const attributes = generateNFTAttributes(tokenId, rarity);
+          
+          // Создаем NFT запись
+          await client`
+            INSERT INTO nfts (
+              collection_id, token_id, name, description, image_path, 
+              price, for_sale, owner_id, rarity, attributes, minted_at
+            )
+            VALUES (
+              ${baycCollectionId},
+              ${tokenId.toString()},
+              ${'Bored Ape #' + tokenId},
+              ${description},
+              ${'/bayc_official/bayc_' + tokenId + '.png'},
+              ${price.toString()},
+              ${true},
+              ${5},
+              ${rarity},
+              ${JSON.stringify(attributes)},
+              NOW()
+            )
+            ON CONFLICT (id) DO NOTHING
+          `;
+          
+          importedCount++;
+        } catch (error) {
+          console.error(`Ошибка при импорте NFT #${tokenId}:`, error);
+        }
       }
       
-      // Определяем редкость на основе ID
-      const rarity = determineRarity(parseInt(tokenId));
-      
-      // Генерируем цену в зависимости от редкости
-      const price = generateNFTPrice(parseInt(tokenId), rarity);
-      
-      // Генерируем описание
-      const description = generateNFTDescription(parseInt(tokenId), rarity);
-      
-      // Генерируем атрибуты
-      const attributes = generateNFTAttributes(parseInt(tokenId), rarity);
-      
-      // Путь к изображению
-      const imagePath = `/bayc_official/${imageFile}`;
-      
-      // Создаем имя для NFT
-      const name = `Bored Ape #${tokenId}`;
-      
-      // Вставляем NFT в базу данных
-      await client.query(
-        `INSERT INTO nfts (
-          token_id, name, description, image_path, price, for_sale, 
-          owner_id, collection_id, rarity, attributes, minted_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [
-          `BAYC-${tokenId}`, name, description, imagePath, price.toString(), true, 
-          regulator.id, collectionId, rarity, JSON.stringify(attributes), new Date()
-        ]
-      );
-      
-      console.log(`Создан NFT ${name} с ID BAYC-${tokenId}, редкость: ${rarity}, цена: $${price}`);
-      created++;
+      console.log(`Прогресс: ${Math.round(importedCount / totalNFTCount * 100)}% (${importedCount}/${totalNFTCount})`);
     }
     
-    await client.query('COMMIT');
-    console.log('Транзакция успешно завершена');
-    
-    return {
-      success: true,
-      created,
-      skipped
-    };
+    console.log(`Импорт завершен. Всего создано ${importedCount} NFT.`);
+    return true;
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Ошибка при импорте NFT:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  } finally {
-    client.release();
+    console.error("Ошибка при импорте обезьян BAYC:", error);
+    return false;
   }
 }
 
@@ -390,99 +327,66 @@ async function importBoredApesToMarketplace() {
  * Удаляет дубликаты NFT
  */
 async function removeDuplicateNFTs() {
-  const client = await pool.connect();
   try {
-    console.log('Начинаем поиск и удаление дубликатов NFT...');
+    console.log("Удаление дубликатов NFT...");
     
-    // Начинаем транзакцию для удаления дубликатов
-    await client.query('BEGIN');
-    
-    // Находим дубликаты по token_id
-    const { rows: duplicates } = await client.query(`
+    // Находим дубликаты по tokenId
+    const duplicates = await client`
       WITH duplicates AS (
-        SELECT token_id, MIN(id) as keep_id, 
-               array_agg(id) as all_ids
-        FROM nfts 
-        GROUP BY token_id
+        SELECT token_id, collection_id, COUNT(*) as count
+        FROM nfts
+        GROUP BY token_id, collection_id
         HAVING COUNT(*) > 1
       )
-      SELECT token_id, keep_id, all_ids FROM duplicates
-    `);
+      SELECT n.id, n.token_id, n.collection_id
+      FROM nfts n
+      JOIN duplicates d ON n.token_id = d.token_id AND n.collection_id = d.collection_id
+      ORDER BY n.token_id, n.id DESC
+    `;
     
-    console.log(`Найдено ${duplicates.length} групп дубликатов NFT`);
+    if (duplicates.length === 0) {
+      console.log("Дубликаты NFT не найдены");
+      return true;
+    }
     
-    // Счетчик удаленных NFT
-    let removed = 0;
+    console.log(`Найдено ${duplicates.length} дубликатов NFT`);
     
-    // Обрабатываем каждую группу дубликатов
+    // Группируем дубликаты по tokenId и collectionId
+    const duplicateGroups = {};
+    
     for (const duplicate of duplicates) {
-      const keepId = duplicate.keep_id;
-      // Преобразуем строку array_agg в массив JS
-      const allIds = duplicate.all_ids.replace('{', '').replace('}', '').split(',').map(id => parseInt(id.trim()));
-      
-      // Получаем ID NFT, которые нужно удалить (все кроме keepId)
-      const removeIds = allIds.filter(id => id !== keepId);
-      
-      // Удаляем переводы NFT, связанные с дубликатами
-      await client.query('DELETE FROM nft_transfers WHERE nft_id = ANY($1)', [removeIds]);
-      
-      // Удаляем сами дубликаты
-      await client.query('DELETE FROM nfts WHERE id = ANY($1)', [removeIds]);
-      
-      console.log(`Удалены дубликаты для токена ${duplicate.token_id}: оставлен ID ${keepId}, удалены ID ${removeIds.join(', ')}`);
-      removed += removeIds.length;
-    }
-    
-    // Делаем то же самое для устаревшей таблицы nft
-    try {
-      const { rows: legacyDuplicates } = await client.query(`
-        WITH duplicates AS (
-          SELECT token_id, MIN(id) as keep_id, 
-                array_agg(id) as all_ids
-          FROM nft 
-          GROUP BY token_id
-          HAVING COUNT(*) > 1
-        )
-        SELECT token_id, keep_id, all_ids FROM duplicates
-      `);
-      
-      console.log(`Найдено ${legacyDuplicates.length} групп дубликатов в устаревшей таблице nft`);
-      
-      // Обрабатываем каждую группу дубликатов в устаревшей таблице
-      for (const duplicate of legacyDuplicates) {
-        const keepId = duplicate.keep_id;
-        // Преобразуем строку array_agg в массив JS
-        const allIds = duplicate.all_ids.replace('{', '').replace('}', '').split(',').map(id => parseInt(id.trim()));
-        
-        // Получаем ID NFT, которые нужно удалить (все кроме keepId)
-        const removeIds = allIds.filter(id => id !== keepId);
-        
-        // Удаляем сами дубликаты
-        await client.query('DELETE FROM nft WHERE id = ANY($1)', [removeIds]);
-        
-        console.log(`Удалены дубликаты в устаревшей таблице для токена ${duplicate.token_id}: оставлен ID ${keepId}, удалены ID ${removeIds.join(', ')}`);
-        removed += removeIds.length;
+      const key = `${duplicate.token_id}_${duplicate.collection_id}`;
+      if (!duplicateGroups[key]) {
+        duplicateGroups[key] = [];
       }
-    } catch (err) {
-      console.log("Старая таблица nft не существует или иная ошибка:", err.message);
+      duplicateGroups[key].push(duplicate.id);
     }
     
-    await client.query('COMMIT');
-    console.log('Транзакция успешно завершена');
+    // Оставляем только первый NFT из каждой группы дубликатов
+    for (const key in duplicateGroups) {
+      const ids = duplicateGroups[key];
+      
+      // Сортируем ID, чтобы оставить первый (с наименьшим ID)
+      ids.sort((a, b) => a - b);
+      
+      // Оставляем первый и удаляем остальные
+      const toDelete = ids.slice(1);
+      
+      if (toDelete.length > 0) {
+        await client`
+          DELETE FROM nfts
+          WHERE id IN (${toDelete.join(',')})
+        `;
+        
+        console.log(`Удалено ${toDelete.length} дубликатов для tokenId ${key}`);
+      }
+    }
     
-    return {
-      success: true,
-      removed
-    };
+    console.log("Удаление дубликатов завершено");
+    return true;
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Ошибка при удалении дубликатов NFT:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  } finally {
-    client.release();
+    console.error("Ошибка при удалении дубликатов:", error);
+    return false;
   }
 }
 
@@ -491,31 +395,26 @@ async function removeDuplicateNFTs() {
  */
 async function main() {
   try {
-    console.log('Запуск скрипта очистки и импорта BAYC NFT...');
+    console.log("Запуск скрипта для очистки и импорта обезьян BAYC...");
     
-    // Шаг 1: Удаляем все не-BAYC NFT
-    console.log('\n===== ШАГ 1: УДАЛЕНИЕ НЕ-BAYC NFT =====');
-    const cleanResult = await cleanAllNonBAYCNFT();
-    console.log('Результат очистки:', cleanResult);
+    // 1. Очищаем базу данных от не-BAYC NFT
+    await cleanAllNonBAYCNFT();
     
-    // Шаг 2: Удаляем дубликаты
-    console.log('\n===== ШАГ 2: УДАЛЕНИЕ ДУБЛИКАТОВ =====');
-    const dedupeResult = await removeDuplicateNFTs();
-    console.log('Результат удаления дубликатов:', dedupeResult);
+    // 2. Импортируем обезьян BAYC в маркетплейс
+    await importBoredApesToMarketplace();
     
-    // Шаг 3: Импортируем обезьян BAYC
-    console.log('\n===== ШАГ 3: ИМПОРТ ОБЕЗЬЯН BAYC =====');
-    const importResult = await importBoredApesToMarketplace();
-    console.log('Результат импорта:', importResult);
+    // 3. Удаляем дубликаты NFT
+    await removeDuplicateNFTs();
     
-    console.log('\nСкрипт успешно завершен');
+    console.log("Скрипт успешно выполнен");
   } catch (error) {
-    console.error('Критическая ошибка при выполнении скрипта:', error);
+    console.error("Ошибка при выполнении скрипта:", error);
   } finally {
-    // Закрываем пул соединений
-    pool.end();
+    // Закрываем соединение с базой данных
+    await client.end();
+    console.log("Соединение с базой данных закрыто");
   }
 }
 
-// Запускаем скрипт
+// Запускаем основную функцию
 main();
