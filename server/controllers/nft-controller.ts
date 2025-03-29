@@ -66,7 +66,7 @@ const giftNFTSchema = z.object({
  * Создает новый NFT
  * POST /api/nft/create
  */
-router.post('/create', async (req: Request, res: Response) => {
+router.post('/create', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     // Пользователь уже проверен через middleware
     const userId = req.user?.id;
@@ -101,7 +101,7 @@ router.post('/create', async (req: Request, res: Response) => {
  * Получает NFT пользователя
  * GET /api/nft/user
  */
-router.get('/user', async (req: Request, res: Response) => {
+router.get('/user', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на получение NFT пользователя через /api/nft/user');
     
@@ -130,21 +130,17 @@ router.get('/user', async (req: Request, res: Response) => {
 });
 
 /**
- * Получает список NFT на продаже
+ * Получает список NFT на продаже - ПУБЛИЧНЫЙ ЭНДПОИНТ (не требует авторизации)
  * GET /api/nft/marketplace
  */
 router.get('/marketplace', async (req: Request, res: Response) => {
   try {
-    log('Запрос на получение NFT на продаже');
+    log('Запрос на получение NFT на продаже (публичный эндпоинт)');
     
-    // Пользователь уже проверен через middleware
-    const userId = req.user?.id;
-    if (!userId) {
-      log('ID пользователя не найден');
-      return res.status(500).json({ error: 'Ошибка сервера при получении NFT на продаже' });
-    }
+    // Получаем ID пользователя, если он авторизован
+    const userId = req.user?.id || 0; // Используем 0 если пользователь не авторизован
     
-    log(`Получаем NFT на продаже (кроме пользователя ${userId})`);
+    log(`Получаем все NFT на продаже${userId ? ` (кроме пользователя ${userId})` : ''}`);
     
     // Массив для результатов NFT
     let combinedNFTs = [];
@@ -153,17 +149,20 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     try {
       log('Получаем NFT с помощью Drizzle ORM из таблицы nfts...');
       
-      // Используем Drizzle для выборки NFT на продаже
-      const nftsForSaleResult = await db.select()
+      // База запроса - NFT на продаже
+      let query = db.select()
         .from(nfts)
-        .where(
-          and(
-            eq(nfts.forSale, true),
-            not(eq(nfts.ownerId, userId))
-          )
-        )
+        .where(eq(nfts.forSale, true));
+      
+      // Если пользователь авторизован, исключаем его NFT
+      if (userId) {
+        query = query.where(not(eq(nfts.ownerId, userId)));
+      }
+      
+      // Выполняем запрос
+      const nftsForSaleResult = await query
         .orderBy(nfts.id)
-        .limit(100);
+        .limit(1000); // Увеличиваем лимит до 1000
       
       log(`Найдено ${nftsForSaleResult.length} NFT через Drizzle ORM из таблицы nfts`);
       
@@ -210,14 +209,24 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     try {
       log('Получаем NFT из таблицы nft (legacy)...');
       
-      // Используем прямой SQL запрос для получения NFT из таблицы nft
-      const legacyNFTResult = await client.query(`
+      // SQL запрос зависит от наличия пользователя
+      let sql = `
         SELECT * FROM nft 
         WHERE for_sale = true 
-        AND owner_id != $1 
-        ORDER BY id 
-        LIMIT 100
-      `, [userId]);
+      `;
+      let params = [];
+      
+      // Если пользователь авторизован, исключаем его NFT
+      if (userId) {
+        sql += `AND owner_id != $1 `;
+        params.push(userId);
+      }
+      
+      // Добавляем сортировку и лимит
+      sql += `ORDER BY id LIMIT 1000`;
+      
+      // Используем прямой SQL запрос для получения NFT из таблицы nft
+      const legacyNFTResult = await client.query(sql, params);
       
       log(`Найдено ${legacyNFTResult.rows.length} NFT из таблицы nft (legacy)`);
       
@@ -260,8 +269,8 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       console.error('Ошибка при получении NFT из legacy таблицы:', legacyError);
     }
     
-    // 3. Запасной вариант: попробуем получить через сервис
-    if (combinedNFTs.length === 0) {
+    // 3. Запасной вариант - если у нас есть авторизованный пользователь
+    if (combinedNFTs.length === 0 && userId) {
       try {
         log('Первые два метода не вернули результатов, пробуем через сервис...');
         const serviceNFTs = await boredApeNftService.getNFTsForSale(userId);
@@ -306,7 +315,7 @@ router.get('/marketplace', async (req: Request, res: Response) => {
  * Выставляет NFT на продажу
  * POST /api/nft/list-for-sale
  */
-router.post('/list-for-sale', async (req: Request, res: Response) => {
+router.post('/list-for-sale', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на выставление NFT на продажу');
     
@@ -363,7 +372,7 @@ router.post('/list-for-sale', async (req: Request, res: Response) => {
  * Снимает NFT с продажи
  * POST /api/nft/remove-from-sale
  */
-router.post('/remove-from-sale', async (req: Request, res: Response) => {
+router.post('/remove-from-sale', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на снятие NFT с продажи');
     
@@ -417,7 +426,7 @@ router.post('/remove-from-sale', async (req: Request, res: Response) => {
  * Покупает NFT
  * POST /api/nft/buy
  */
-router.post('/buy', async (req: Request, res: Response) => {
+router.post('/buy', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на покупку NFT');
     
@@ -457,7 +466,7 @@ router.post('/buy', async (req: Request, res: Response) => {
  * Дарит NFT другому пользователю
  * POST /api/nft/gift
  */
-router.post('/gift', async (req: Request, res: Response) => {
+router.post('/gift', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на дарение NFT');
     
@@ -520,7 +529,7 @@ router.post('/gift', async (req: Request, res: Response) => {
  * Получает историю передач NFT
  * GET /api/nft/:id/history
  */
-router.get('/:id/history', async (req: Request, res: Response) => {
+router.get('/:id/history', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на получение истории передач NFT:', req.params.id);
     
@@ -573,7 +582,7 @@ router.get('/:id/history', async (req: Request, res: Response) => {
  * Получает все NFT коллекции
  * GET /api/nft/collections
  */
-router.get('/collections', async (req: Request, res: Response) => {
+router.get('/collections', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на получение всех NFT коллекций');
     
@@ -611,7 +620,7 @@ router.get('/collections', async (req: Request, res: Response) => {
  * Получает информацию о доступности создания NFT в текущий день
  * GET /api/nft/daily-limit
  */
-router.get('/daily-limit', async (req: Request, res: Response) => {
+router.get('/daily-limit', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на получение информации о лимите NFT');
     
@@ -645,7 +654,7 @@ router.get('/daily-limit', async (req: Request, res: Response) => {
  * Обрабатывает создание NFT
  * POST /api/nft/generate
  */
-router.post('/generate', async (req: Request, res: Response) => {
+router.post('/generate', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на генерацию NFT');
     
@@ -784,7 +793,7 @@ router.post('/generate', async (req: Request, res: Response) => {
  * Очищает все NFT пользователя
  * POST /api/nft/clear-all
  */
-router.post('/clear-all', async (req: Request, res: Response) => {
+router.post('/clear-all', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на очистку всех NFT');
     
@@ -837,7 +846,7 @@ router.post('/clear-all', async (req: Request, res: Response) => {
  * Получает галерею NFT пользователя
  * GET /api/nft/gallery
  */
-router.get('/gallery', async (req: Request, res: Response) => {
+router.get('/gallery', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на получение галереи NFT');
     
@@ -866,7 +875,7 @@ router.get('/gallery', async (req: Request, res: Response) => {
  * Получает детальную информацию об NFT
  * GET /api/nft/:id
  */
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     log('Запрос на получение детальной информации об NFT:', req.params.id);
     
