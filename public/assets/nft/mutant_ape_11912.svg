@@ -1,0 +1,84 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+      <defs>
+        
+    <linearGradient id="gradient-11912" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#007bff" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#0dcaf0" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#6610f2" stop-opacity="0.8" />
+    </linearGradient>
+  
+      </defs>
+      <rect width="100%" height="100%" fill="url(#gradient-11912)" />
+      
+      <rect 
+        x="56%" 
+        y="12%" 
+        width="28%" 
+        height="28%" 
+        fill="#6610f2"
+        opacity="0.4"
+        transform="rotate(224, 70%, 26%)"
+      />
+    
+      <rect 
+        x="12%" 
+        y="68%" 
+        width="34%" 
+        height="34%" 
+        fill="#007bff"
+        opacity="0.56"
+        transform="rotate(280, 29%, 85%)"
+      />
+    
+      <rect 
+        x="68%" 
+        y="24%" 
+        width="40%" 
+        height="40%" 
+        fill="#0dcaf0"
+        opacity="0.72"
+        transform="rotate(336, 88%, 44%)"
+      />
+    
+      <rect 
+        x="24%" 
+        y="80%" 
+        width="46%" 
+        height="46%" 
+        fill="#6610f2"
+        opacity="0.88"
+        transform="rotate(32, 47%, 103%)"
+      />
+    
+      <rect 
+        x="80%" 
+        y="36%" 
+        width="52%" 
+        height="52%" 
+        fill="#007bff"
+        opacity="0.34"
+        transform="rotate(88, 106%, 62%)"
+      />
+    
+      <circle cx="200" cy="150" r="100" fill="#6610f2" opacity="0.7" />
+      <circle cx="160" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="240" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="160" cy="120" r="10" fill="black" />
+      <circle cx="240" cy="120" r="10" fill="black" />
+      <path d="M 150 200 Q 200 250 250 200" stroke="black" stroke-width="5" fill="none" />
+      
+    <text 
+      x="50%" 
+      y="85%" 
+      font-family="Arial, sans-serif" 
+      font-size="14" 
+      font-weight="bold"
+      text-anchor="middle"
+      fill="white"
+    >
+      MAYC #11912 - RARE
+    </text>
+  
+    </svg>
+  

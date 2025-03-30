@@ -1,0 +1,84 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+      <defs>
+        
+    <linearGradient id="gradient-11923" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffc107" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#fd7e14" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#e83e8c" stop-opacity="0.8" />
+    </linearGradient>
+  
+      </defs>
+      <rect width="100%" height="100%" fill="url(#gradient-11923)" />
+      
+      <rect 
+        x="99%" 
+        y="98%" 
+        width="57%" 
+        height="57%" 
+        fill="#fd7e14"
+        opacity="0.55"
+        transform="rotate(76, 127.5%, 126.5%)"
+      />
+    
+      <rect 
+        x="98%" 
+        y="97%" 
+        width="56%" 
+        height="56%" 
+        fill="#e83e8c"
+        opacity="0.74"
+        transform="rotate(275, 126%, 125%)"
+      />
+    
+      <rect 
+        x="97%" 
+        y="96%" 
+        width="55%" 
+        height="55%" 
+        fill="#ffc107"
+        opacity="0.93"
+        transform="rotate(114, 124.5%, 123.5%)"
+      />
+    
+      <rect 
+        x="96%" 
+        y="95%" 
+        width="54%" 
+        height="54%" 
+        fill="#fd7e14"
+        opacity="0.42"
+        transform="rotate(313, 123%, 122%)"
+      />
+    
+      <rect 
+        x="95%" 
+        y="94%" 
+        width="53%" 
+        height="53%" 
+        fill="#e83e8c"
+        opacity="0.61"
+        transform="rotate(152, 121.5%, 120.5%)"
+      />
+    
+      <circle cx="200" cy="150" r="100" fill="#fd7e14" opacity="0.7" />
+      <circle cx="160" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="240" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="160" cy="120" r="10" fill="black" />
+      <circle cx="240" cy="120" r="10" fill="black" />
+      <path d="M 150 200 Q 200 250 250 200" stroke="black" stroke-width="5" fill="none" />
+      
+    <text 
+      x="50%" 
+      y="85%" 
+      font-family="Arial, sans-serif" 
+      font-size="14" 
+      font-weight="bold"
+      text-anchor="middle"
+      fill="white"
+    >
+      MAYC #11923 - LEGENDARY
+    </text>
+  
+    </svg>
+  

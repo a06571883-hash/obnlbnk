@@ -1,0 +1,84 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+      <defs>
+        
+    <linearGradient id="gradient-11177" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6c757d" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#adb5bd" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#ced4da" stop-opacity="0.8" />
+    </linearGradient>
+  
+      </defs>
+      <rect width="100%" height="100%" fill="url(#gradient-11177)" />
+      
+      <rect 
+        x="1%" 
+        y="2%" 
+        width="13%" 
+        height="13%" 
+        fill="#ced4da"
+        opacity="0.75"
+        transform="rotate(164, 7.5%, 8.5%)"
+      />
+    
+      <rect 
+        x="2%" 
+        y="3%" 
+        width="14%" 
+        height="14%" 
+        fill="#6c757d"
+        opacity="0.56"
+        transform="rotate(25, 9%, 10%)"
+      />
+    
+      <rect 
+        x="3%" 
+        y="4%" 
+        width="15%" 
+        height="15%" 
+        fill="#adb5bd"
+        opacity="0.37"
+        transform="rotate(246, 10.5%, 11.5%)"
+      />
+    
+      <rect 
+        x="4%" 
+        y="5%" 
+        width="16%" 
+        height="16%" 
+        fill="#ced4da"
+        opacity="0.88"
+        transform="rotate(107, 12%, 13%)"
+      />
+    
+      <rect 
+        x="5%" 
+        y="6%" 
+        width="17%" 
+        height="17%" 
+        fill="#6c757d"
+        opacity="0.69"
+        transform="rotate(328, 13.5%, 14.5%)"
+      />
+    
+      <circle cx="200" cy="150" r="100" fill="#ced4da" opacity="0.7" />
+      <circle cx="160" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="240" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="160" cy="120" r="10" fill="black" />
+      <circle cx="240" cy="120" r="10" fill="black" />
+      <path d="M 150 200 Q 200 250 250 200" stroke="black" stroke-width="5" fill="none" />
+      
+    <text 
+      x="50%" 
+      y="85%" 
+      font-family="Arial, sans-serif" 
+      font-size="14" 
+      font-weight="bold"
+      text-anchor="middle"
+      fill="white"
+    >
+      MAYC #11177 - COMMON
+    </text>
+  
+    </svg>
+  

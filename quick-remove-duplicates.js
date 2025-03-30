@@ -1,121 +1,108 @@
 /**
- * Скрипт для быстрого удаления всех дубликатов NFT в базе данных
- * Использует прямые SQL-запросы для оптимизации производительности
+ * Скрипт для быстрого удаления всех дубликатов NFT одним SQL-запросом
  */
-
 import pg from 'pg';
-const { Pool } = pg;
 
-// Подключение к PostgreSQL
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+const { Client } = pg;
+
+// Подключение к базе данных PostgreSQL
+const client = new Client({
+  connectionString: process.env.DATABASE_URL
 });
 
 /**
- * Находит и удаляет все дубликаты NFT с одинаковыми token_id
- * Использует единый SQL-запрос для оптимизации производительности
+ * Удаляет все дубликаты NFT с одинаковыми token_id одним SQL-запросом
  */
-async function removeAllDuplicates() {
-  const client = await pool.connect();
+async function removeDuplicateTokenIds() {
   try {
-    console.log('Запуск быстрого удаления дубликатов NFT...');
+    console.log('Подключаемся к базе данных...');
+    await client.connect();
     
-    // Сначала проверяем, есть ли дубликаты token_id
-    const countResult = await client.query(`
-      SELECT COUNT(*) as total_count FROM nfts
-    `);
-    const totalCount = countResult.rows[0].total_count;
+    console.log('Начинаем удаление дубликатов...');
     
-    const duplicatesResult = await client.query(`
-      SELECT COUNT(DISTINCT token_id) as unique_token_count FROM nfts
-    `);
-    const uniqueTokenCount = duplicatesResult.rows[0].unique_token_count;
+    // Используем более оптимизированный запрос для удаления дубликатов
+    // Удаляем все, кроме записи с максимальным id для каждого token_id
+    const deleteQuery = `
+      DELETE FROM nfts
+      WHERE id IN (
+        SELECT id
+        FROM (
+          SELECT id,
+                 token_id,
+                 ROW_NUMBER() OVER (PARTITION BY token_id ORDER BY id DESC) as row_num
+          FROM nfts
+        ) t
+        WHERE t.row_num > 1
+      );
+    `;
     
-    console.log(`Всего NFT в базе данных: ${totalCount}`);
-    console.log(`Уникальных token_id: ${uniqueTokenCount}`);
-    console.log(`Приблизительное количество дубликатов: ${totalCount - uniqueTokenCount}`);
+    console.log('Выполняем запрос на удаление дубликатов...');
+    const result = await client.query(deleteQuery);
     
-    if (totalCount === uniqueTokenCount) {
-      console.log('Дубликаты не обнаружены, база данных уже оптимизирована.');
-      return;
-    }
+    console.log(`Удалено ${result.rowCount} дубликатов NFT`);
     
-    console.log('Удаление дубликатов...');
+    // Получаем общее количество оставшихся NFT
+    const countQuery = `SELECT COUNT(*) FROM nfts`;
+    const countResult = await client.query(countQuery);
     
-    // Создаем временную таблицу с уникальными token_id и выбранным id
-    await client.query(`
-      CREATE TEMPORARY TABLE unique_nfts AS
-      SELECT DISTINCT ON (token_id) id
-      FROM nfts
-      ORDER BY token_id, minted_at DESC
-    `);
+    console.log(`Общее количество NFT после очистки: ${countResult.rows[0].count}`);
     
-    // Получаем количество строк в временной таблице
-    const tempTableResult = await client.query(`
-      SELECT COUNT(*) as count FROM unique_nfts
-    `);
-    const tempTableCount = tempTableResult.rows[0].count;
-    console.log(`Количество уникальных NFT для сохранения: ${tempTableCount}`);
+    // Проверяем распределение по коллекциям
+    const collectionsQuery = `
+      SELECT c.name, COUNT(*) 
+      FROM nfts n 
+      JOIN nft_collections c ON n.collection_id = c.id 
+      GROUP BY c.name
+      ORDER BY count DESC
+    `;
     
-    // Удаляем все записи, которые не входят в набор уникальных ID
-    const deleteResult = await client.query(`
-      DELETE FROM nfts 
-      WHERE id NOT IN (SELECT id FROM unique_nfts)
-      RETURNING id
-    `);
+    const collectionsResult = await client.query(collectionsQuery);
+    console.log('Распределение по коллекциям:');
+    collectionsResult.rows.forEach(row => {
+      console.log(`- ${row.name}: ${row.count}`);
+    });
     
-    const deletedCount = deleteResult.rowCount;
-    console.log(`Удалено ${deletedCount} дубликатов NFT`);
+    // Проверяем распределение по редкости
+    const rarityQuery = `
+      SELECT rarity, COUNT(*) 
+      FROM nfts 
+      GROUP BY rarity
+      ORDER BY count DESC
+    `;
     
-    // Проверяем финальное количество NFT
-    const finalCountResult = await client.query(`
-      SELECT COUNT(*) as final_count FROM nfts
-    `);
-    const finalCount = finalCountResult.rows[0].final_count;
-    
-    console.log(`Финальное количество уникальных NFT в базе данных: ${finalCount}`);
+    const rarityResult = await client.query(rarityQuery);
+    console.log('Распределение по редкости:');
+    rarityResult.rows.forEach(row => {
+      console.log(`- ${row.rarity || 'не указано'}: ${row.count}`);
+    });
     
     // Проверяем, остались ли дубликаты
-    const remainingDuplicatesResult = await client.query(`
-      SELECT token_id, COUNT(*) 
-      FROM nfts 
-      GROUP BY token_id 
+    const checkDuplicatesQuery = `
+      SELECT token_id, COUNT(*) as count
+      FROM nfts
+      GROUP BY token_id
       HAVING COUNT(*) > 1
-    `);
+      ORDER BY count DESC
+      LIMIT 5
+    `;
     
-    if (remainingDuplicatesResult.rows.length > 0) {
-      console.log(`ВНИМАНИЕ: В базе всё еще остались ${remainingDuplicatesResult.rows.length} дубликатов!`);
+    const checkResult = await client.query(checkDuplicatesQuery);
+    
+    if (checkResult.rows.length > 0) {
+      console.log('⚠️ Оставшиеся дубликаты:');
+      checkResult.rows.forEach(row => {
+        console.log(`- Token ID ${row.token_id}: ${row.count} дубликатов`);
+      });
     } else {
-      console.log('Все дубликаты успешно удалены!');
+      console.log('✅ Дубликаты полностью удалены!');
     }
-    
   } catch (error) {
     console.error('Ошибка при удалении дубликатов:', error);
-    throw error;
   } finally {
-    client.release();
+    console.log('Завершаем работу...');
+    await client.end();
   }
 }
 
-/**
- * Основная функция запуска скрипта
- */
-async function main() {
-  try {
-    // Удаление всех дубликатов
-    await removeAllDuplicates();
-    
-    console.log('Скрипт очистки дубликатов завершен успешно!');
-    console.log('Для проверки результатов перезапустите приложение и обновите страницу маркетплейса');
-    
-  } catch (error) {
-    console.error('Ошибка при выполнении скрипта:', error);
-  } finally {
-    // Закрываем пул соединений
-    await pool.end();
-    console.log('Подключение к базе данных закрыто.');
-  }
-}
-
-// Запуск скрипта
-main();
+// Запускаем функцию удаления дубликатов
+removeDuplicateTokenIds().catch(console.error);

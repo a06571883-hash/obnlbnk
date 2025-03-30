@@ -1,0 +1,84 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+      <defs>
+        
+    <linearGradient id="gradient-12176" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6c757d" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#adb5bd" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#ced4da" stop-opacity="0.8" />
+    </linearGradient>
+  
+      </defs>
+      <rect width="100%" height="100%" fill="url(#gradient-12176)" />
+      
+      <rect 
+        x="88%" 
+        y="76%" 
+        width="24%" 
+        height="24%" 
+        fill="#ced4da"
+        opacity="0.5"
+        transform="rotate(272, 100%, 88%)"
+      />
+    
+      <rect 
+        x="76%" 
+        y="64%" 
+        width="12%" 
+        height="12%" 
+        fill="#6c757d"
+        opacity="0.68"
+        transform="rotate(160, 82%, 70%)"
+      />
+    
+      <rect 
+        x="64%" 
+        y="52%" 
+        width="50%" 
+        height="50%" 
+        fill="#adb5bd"
+        opacity="0.86"
+        transform="rotate(48, 89%, 77%)"
+      />
+    
+      <rect 
+        x="52%" 
+        y="40%" 
+        width="38%" 
+        height="38%" 
+        fill="#ced4da"
+        opacity="0.34"
+        transform="rotate(296, 71%, 59%)"
+      />
+    
+      <rect 
+        x="40%" 
+        y="28%" 
+        width="26%" 
+        height="26%" 
+        fill="#6c757d"
+        opacity="0.52"
+        transform="rotate(184, 53%, 41%)"
+      />
+    
+      <circle cx="200" cy="150" r="100" fill="#ced4da" opacity="0.7" />
+      <circle cx="160" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="240" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="160" cy="120" r="10" fill="black" />
+      <circle cx="240" cy="120" r="10" fill="black" />
+      <path d="M 150 200 Q 200 250 250 200" stroke="black" stroke-width="5" fill="none" />
+      
+    <text 
+      x="50%" 
+      y="85%" 
+      font-family="Arial, sans-serif" 
+      font-size="14" 
+      font-weight="bold"
+      text-anchor="middle"
+      fill="white"
+    >
+      MAYC #12176 - COMMON
+    </text>
+  
+    </svg>
+  

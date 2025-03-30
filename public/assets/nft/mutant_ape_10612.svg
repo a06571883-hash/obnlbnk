@@ -1,0 +1,84 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+      <defs>
+        
+    <linearGradient id="gradient-10612" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#dc3545" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#fd7e14" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#f8f9fa" stop-opacity="0.8" />
+    </linearGradient>
+  
+      </defs>
+      <rect width="100%" height="100%" fill="url(#gradient-10612)" />
+      
+      <rect 
+        x="56%" 
+        y="12%" 
+        width="28%" 
+        height="28%" 
+        fill="#fd7e14"
+        opacity="0.3"
+        transform="rotate(304, 70%, 26%)"
+      />
+    
+      <rect 
+        x="12%" 
+        y="68%" 
+        width="34%" 
+        height="34%" 
+        fill="#f8f9fa"
+        opacity="0.86"
+        transform="rotate(20, 29%, 85%)"
+      />
+    
+      <rect 
+        x="68%" 
+        y="24%" 
+        width="40%" 
+        height="40%" 
+        fill="#dc3545"
+        opacity="0.72"
+        transform="rotate(96, 88%, 44%)"
+      />
+    
+      <rect 
+        x="24%" 
+        y="80%" 
+        width="46%" 
+        height="46%" 
+        fill="#fd7e14"
+        opacity="0.58"
+        transform="rotate(172, 47%, 103%)"
+      />
+    
+      <rect 
+        x="80%" 
+        y="36%" 
+        width="52%" 
+        height="52%" 
+        fill="#f8f9fa"
+        opacity="0.44"
+        transform="rotate(248, 106%, 62%)"
+      />
+    
+      <circle cx="200" cy="150" r="100" fill="#fd7e14" opacity="0.7" />
+      <circle cx="160" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="240" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="160" cy="120" r="10" fill="black" />
+      <circle cx="240" cy="120" r="10" fill="black" />
+      <path d="M 150 200 Q 200 250 250 200" stroke="black" stroke-width="5" fill="none" />
+      
+    <text 
+      x="50%" 
+      y="85%" 
+      font-family="Arial, sans-serif" 
+      font-size="14" 
+      font-weight="bold"
+      text-anchor="middle"
+      fill="white"
+    >
+      MAYC #10612 - EPIC
+    </text>
+  
+    </svg>
+  

@@ -1,0 +1,84 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+      <defs>
+        
+    <linearGradient id="gradient-12061" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#28a745" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#5cb85c" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#20c997" stop-opacity="0.8" />
+    </linearGradient>
+  
+      </defs>
+      <rect width="100%" height="100%" fill="url(#gradient-12061)" />
+      
+      <rect 
+        x="93%" 
+        y="86%" 
+        width="39%" 
+        height="39%" 
+        fill="#5cb85c"
+        opacity="0.65"
+        transform="rotate(52, 112.5%, 105.5%)"
+      />
+    
+      <rect 
+        x="86%" 
+        y="79%" 
+        width="32%" 
+        height="32%" 
+        fill="#20c997"
+        opacity="0.58"
+        transform="rotate(245, 102%, 95%)"
+      />
+    
+      <rect 
+        x="79%" 
+        y="72%" 
+        width="25%" 
+        height="25%" 
+        fill="#28a745"
+        opacity="0.51"
+        transform="rotate(78, 91.5%, 84.5%)"
+      />
+    
+      <rect 
+        x="72%" 
+        y="65%" 
+        width="18%" 
+        height="18%" 
+        fill="#5cb85c"
+        opacity="0.44"
+        transform="rotate(271, 81%, 74%)"
+      />
+    
+      <rect 
+        x="65%" 
+        y="58%" 
+        width="11%" 
+        height="11%" 
+        fill="#20c997"
+        opacity="0.37"
+        transform="rotate(104, 70.5%, 63.5%)"
+      />
+    
+      <circle cx="200" cy="150" r="100" fill="#5cb85c" opacity="0.7" />
+      <circle cx="160" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="240" cy="120" r="20" fill="white" opacity="0.8" />
+      <circle cx="160" cy="120" r="10" fill="black" />
+      <circle cx="240" cy="120" r="10" fill="black" />
+      <path d="M 150 200 Q 200 250 250 200" stroke="black" stroke-width="5" fill="none" />
+      
+    <text 
+      x="50%" 
+      y="85%" 
+      font-family="Arial, sans-serif" 
+      font-size="14" 
+      font-weight="bold"
+      text-anchor="middle"
+      fill="white"
+    >
+      MAYC #12061 - UNCOMMON
+    </text>
+  
+    </svg>
+  
