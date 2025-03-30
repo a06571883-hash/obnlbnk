@@ -1,8 +1,9 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NFTCollectionView } from '../components/nft/nft-collection';
 import { NFTGallery } from '../components/nft/nft-gallery';
 import { NFTMarketplace } from '../components/nft/nft-marketplace';
+import { useLocation } from 'wouter';
 
 // Simple PageHeader component to avoid import issues
 const PageHeader: React.FC<{title: string; description: string}> = ({title, description}) => (
@@ -21,9 +22,20 @@ export type NFTTabNavigation = {
 
 export const NFTPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('gallery');
+  const [location] = useLocation();
   const galleryTabRef = useRef<HTMLButtonElement>(null);
   const collectionsTabRef = useRef<HTMLButtonElement>(null);
   const marketplaceTabRef = useRef<HTMLButtonElement>(null);
+  
+  // Определяем активную вкладку на основе URL
+  useEffect(() => {
+    console.log('Current location:', location);
+    if (location === '/nft/marketplace') {
+      setActiveTab('marketplace');
+    } else if (location === '/nft/gallery') {
+      setActiveTab('gallery');
+    }
+  }, [location]);
   
   // Функции для программного переключения между вкладками
   const switchToCollections = useCallback(() => {

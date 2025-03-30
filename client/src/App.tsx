@@ -34,6 +34,8 @@ function Router() {
         <ProtectedRoute path="/activity" component={ActivityPage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
         <ProtectedRoute path="/nft" component={() => <NFTPage />} />
+        <ProtectedRoute path="/nft/marketplace" component={() => <NFTPage />} />
+        <ProtectedRoute path="/nft/gallery" component={() => <NFTPage />} />
         <ProtectedRoute path="/admin" component={AdminPage} /> {/* Admin panel route */}
         <Route path="/stats" component={StatisticsPage} /> {/* Added route for statistics page */}
         <Route component={NotFound} />

@@ -1,0 +1,106 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+      <defs>
+        
+    <linearGradient id="gradient-20327" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8a8c90" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#d2d5db" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#e5e7eb" stop-opacity="0.8" />
+    </linearGradient>
+  
+      </defs>
+      <rect width="100%" height="100%" fill="url(#gradient-20327)" />
+      
+      <rect 
+        x="97%" 
+        y="94%" 
+        width="41%" 
+        height="41%" 
+        fill="#e5e7eb"
+        opacity="0.45"
+        transform="rotate(148, 117.5%, 114.5%)"
+      />
+    
+      <rect 
+        x="94%" 
+        y="91%" 
+        width="38%" 
+        height="38%" 
+        fill="#8a8c90"
+        opacity="0.62"
+        transform="rotate(185, 113%, 110%)"
+      />
+    
+      <rect 
+        x="91%" 
+        y="88%" 
+        width="35%" 
+        height="35%" 
+        fill="#d2d5db"
+        opacity="0.79"
+        transform="rotate(222, 108.5%, 105.5%)"
+      />
+    
+      <rect 
+        x="88%" 
+        y="85%" 
+        width="32%" 
+        height="32%" 
+        fill="#e5e7eb"
+        opacity="0.96"
+        transform="rotate(259, 104%, 101%)"
+      />
+    
+      <rect 
+        x="85%" 
+        y="82%" 
+        width="29%" 
+        height="29%" 
+        fill="#8a8c90"
+        opacity="0.43"
+        transform="rotate(296, 99.5%, 96.5%)"
+      />
+    
+      <rect 
+        x="82%" 
+        y="79%" 
+        width="26%" 
+        height="26%" 
+        fill="#d2d5db"
+        opacity="0.6"
+        transform="rotate(333, 95%, 92%)"
+      />
+    
+      
+    <g transform="translate(150, 100) scale(0.8)">
+      <!-- Голова -->
+      <ellipse cx="50" cy="50" rx="45" ry="45" fill="#e5e7eb" />
+      
+      <!-- Глаза -->
+      <circle cx="30" cy="40" r="10" fill="white" />
+      <circle cx="70" cy="40" r="10" fill="white" />
+      <circle cx="30" cy="40" r="5" fill="black" />
+      <circle cx="70" cy="40" r="5" fill="black" />
+      
+      <!-- Нос -->
+      <ellipse cx="50" cy="55" rx="10" ry="5" fill="#333" />
+      
+      <!-- Рот -->
+      <path d="M 30 70 Q 50 80 70 70" stroke="black" stroke-width="3" fill="none" />
+    </g>
+  
+      
+    <text 
+      x="50%" 
+      y="85%" 
+      font-family="Arial, sans-serif" 
+      font-size="14" 
+      font-weight="bold"
+      text-anchor="middle"
+      fill="white"
+    >
+      BAYC #20327 - COMMON
+    </text>
+  
+    </svg>
+  
