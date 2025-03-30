@@ -33,6 +33,7 @@ type NFT = {
   tokenId: string;
   price: string;
   forSale: boolean;
+  collectionName?: string; // Добавляем название коллекции
   owner?: {
     id: number;
     username: string;
@@ -385,6 +386,10 @@ export const NFTMarketplace: React.FC = () => {
                   </div>
                   <CardContent className="p-3">
                     <h3 className="font-semibold truncate">{nft.name}</h3>
+                    {/* Добавляем отображение названия коллекции */}
+                    <div className="text-xs text-muted-foreground mt-1 mb-1 truncate">
+                      {nft.collectionName || 'Bored Ape Yacht Club'}
+                    </div>
                     <div className="flex justify-between items-center mt-1">
                       <span className="text-xs text-muted-foreground">Сила: {calculatePower(nft)}</span>
                       <span className="text-xs text-muted-foreground truncate">
@@ -483,6 +488,11 @@ export const NFTMarketplace: React.FC = () => {
               </div>
               
               <div className="space-y-4">
+                {/* Добавляем отображение названия коллекции */}
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Коллекция</h4>
+                  <p className="text-sm text-muted-foreground">{selectedNFT.collectionName || 'Bored Ape Yacht Club'}</p>
+                </div>
                 <div>
                   <h4 className="text-sm font-medium mb-1">Описание</h4>
                   <p className="text-sm text-muted-foreground">{selectedNFT.description}</p>
