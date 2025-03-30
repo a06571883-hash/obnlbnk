@@ -1,0 +1,37 @@
+<svg width="350" height="350" viewBox="0 0 350 350" xmlns="http://www.w3.org/2000/svg">
+  <!-- Фон -->
+  <rect width="350" height="350" fill="#13151c" />
+  
+  <!-- Стилизованная обезьяна BAYC -->
+  <g transform="translate(50, 50)">
+    <!-- Голова обезьяны -->
+    <circle cx="125" cy="125" r="100" fill="#be8a59" />
+    
+    <!-- Лицо и черты -->
+    <circle cx="90" cy="95" r="15" fill="white" />
+    <circle cx="90" cy="95" r="8" fill="#111" />
+    
+    <circle cx="160" cy="95" r="15" fill="white" />
+    <circle cx="160" cy="95" r="8" fill="#111" />
+    
+    <!-- Нос и рот -->
+    <rect x="115" y="115" width="20" height="35" rx="10" fill="#593d28" />
+    <path d="M90,145 Q125,175 160,145" fill="none" stroke="#593d28" stroke-width="8" />
+    
+    <!-- Зубы -->
+    <rect x="108" y="150" width="34" height="10" fill="white" />
+    <line x1="125" y1="150" x2="125" y2="160" stroke="#333" stroke-width="1" />
+    
+    <!-- Уши -->
+    <circle cx="60" cy="70" r="20" fill="#be8a59" />
+    <circle cx="190" cy="70" r="20" fill="#be8a59" />
+  </g>
+  
+  <!-- Текст -->
+  <text x="175" y="280" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold" font-size="24">Bored Ape</text>
+  <text x="175" y="310" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold" font-size="24">Yacht Club</text>
+  
+  <!-- Блестящий эффект -->
+  <path d="M 40,40 L 60,60 M 70,30 L 90,50 M 100,20 L 120,40" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+  <path d="M 210,20 L 230,40 M 240,30 L 260,50 M 270,40 L 290,60" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+</svg>

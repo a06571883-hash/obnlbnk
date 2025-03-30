@@ -12,7 +12,7 @@
  */
 export function getProxiedImageUrl(imagePath: string): string {
   if (!imagePath) {
-    return '/assets/nft/fallback/common_nft.png';
+    return '/assets/nft/fallback/common_nft.svg';
   }
 
   console.log('Обработка пути к изображению NFT:', imagePath);
@@ -25,6 +25,24 @@ export function getProxiedImageUrl(imagePath: string): string {
   // Если путь относительный, добавляем слэш в начало
   if (!imagePath.startsWith('/')) {
     imagePath = '/' + imagePath;
+  }
+
+  // Используем запасное изображение, если у нас путь к обезьяне с высоким ID
+  // (для оптимизации загрузки)
+  if (imagePath.includes('bored_ape_nft')) {
+    const match = imagePath.match(/bored_ape_(\d+)/);
+    if (match) {
+      const id = parseInt(match[1], 10);
+      if (id > 2000) {
+        // Используем стандартное изображение для высоких ID
+        return '/assets/nft/fallback/bayc_nft.svg';
+      }
+    }
+  }
+
+  // Проверка на Mutant Ape - если отсутствует, используем заглушку
+  if (imagePath.includes('mutant_ape_nft')) {
+    return '/assets/nft/fallback/mutant_ape_nft.svg';
   }
 
   // Перенаправляем через прокси любые NFT изображения,
