@@ -31,12 +31,58 @@ const nftPaths = {
   '/nft_assets': path.join(process.cwd(), 'nft_assets')
 };
 
-// Fallback изображения для замены отсутствующих
-const fallbackImages = {
-  boredApe: path.join(process.cwd(), 'public', 'assets', 'nft', 'fallback', 'bayc_nft.svg'),
-  mutantApe: path.join(process.cwd(), 'public', 'assets', 'nft', 'fallback', 'mutant_ape_nft.svg'),
-  common: path.join(process.cwd(), 'public', 'assets', 'nft', 'fallback', 'common_nft.svg')
+// Реальные изображения для замены отсутствующих
+const realNFTImages = {
+  boredApe: {
+    dir: path.join(process.cwd(), 'public', 'assets', 'nft', 'real'),
+    files: []
+  },
+  mutantApe: {
+    dir: path.join(process.cwd(), 'public', 'assets', 'nft', 'real'),
+    files: []
+  },
+  common: {
+    dir: path.join(process.cwd(), 'public', 'assets', 'nft', 'real'),
+    files: []
+  }
 };
+
+// Загружаем списки реальных изображений
+function loadRealImages() {
+  try {
+    // Загружаем изображения Bored Ape из директории
+    const boredApeDir = path.join(process.cwd(), 'bored_ape_nft');
+    if (fs.existsSync(boredApeDir)) {
+      const files = fs.readdirSync(boredApeDir)
+        .filter(file => file.endsWith('.png') || file.endsWith('.jpg'));
+      realNFTImages.boredApe.files = files.map(file => path.join(boredApeDir, file));
+      console.log(`[NFT Server] Loaded ${realNFTImages.boredApe.files.length} Bored Ape images`);
+    }
+    
+    // Загружаем изображения Mutant Ape из директории
+    const mutantApeDir = path.join(process.cwd(), 'mutant_ape_nft');
+    if (fs.existsSync(mutantApeDir)) {
+      const files = fs.readdirSync(mutantApeDir)
+        .filter(file => file.endsWith('.png') || file.endsWith('.jpg'));
+      realNFTImages.mutantApe.files = files.map(file => path.join(mutantApeDir, file));
+      console.log(`[NFT Server] Loaded ${realNFTImages.mutantApe.files.length} Mutant Ape images`);
+    }
+    
+    // Загружаем общие изображения из директории public/assets/nft/real
+    const commonDir = path.join(process.cwd(), 'public', 'assets', 'nft', 'real');
+    if (fs.existsSync(commonDir)) {
+      const files = fs.readdirSync(commonDir)
+        .filter(file => file.endsWith('.png') || file.endsWith('.jpg'));
+      realNFTImages.common.files = files.map(file => path.join(commonDir, file));
+      console.log(`[NFT Server] Loaded ${realNFTImages.common.files.length} common NFT images`);
+    }
+  } catch (error) {
+    console.error('[NFT Server] Error loading real images:', error);
+  }
+}
+
+// Загружаем изображения при запуске
+loadRealImages();
 
 // Функция для определения типа файла по имени
 function getContentType(filePath) {
@@ -54,22 +100,45 @@ function getContentType(filePath) {
   return 'application/octet-stream';
 }
 
-// Функция для отправки запасного изображения
-function sendFallbackImage(res, type, originalPath) {
-  const fallbackPath = type === 'bored_ape' ? fallbackImages.boredApe : 
-                       type === 'mutant_ape' ? fallbackImages.mutantApe : 
-                       fallbackImages.common;
+// Функция для отправки реального случайного изображения вместо отсутствующего
+function sendRealNftImage(res, type, originalPath) {
+  const collection = type === 'bored_ape' ? realNFTImages.boredApe : 
+                     type === 'mutant_ape' ? realNFTImages.mutantApe : 
+                     realNFTImages.common;
   
-  if (fs.existsSync(fallbackPath)) {
-    const contentType = getContentType(fallbackPath);
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=3600'); // кеширование на 1 час для запасных
-    fs.createReadStream(fallbackPath).pipe(res);
-    console.log(`[NFT Server] Sending fallback image for ${originalPath}: ${fallbackPath}`);
-  } else {
-    console.error(`[NFT Server] Fallback image not found: ${fallbackPath}`);
-    res.status(404).send('Not Found');
+  if (collection.files.length > 0) {
+    // Выбираем случайное изображение из коллекции
+    const randomIndex = Math.floor(Math.random() * collection.files.length);
+    const realImagePath = collection.files[randomIndex];
+    
+    if (fs.existsSync(realImagePath)) {
+      const contentType = getContentType(realImagePath);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // кеширование на 1 день
+      fs.createReadStream(realImagePath).pipe(res);
+      console.log(`[NFT Server] Sending real NFT image for ${originalPath}: ${realImagePath}`);
+      return;
+    }
   }
+  
+  // Если нет реальных изображений или изображение не существует
+  // используем изображения из общего пула
+  if (realNFTImages.common.files.length > 0) {
+    const randomIndex = Math.floor(Math.random() * realNFTImages.common.files.length);
+    const commonImagePath = realNFTImages.common.files[randomIndex];
+    
+    if (fs.existsSync(commonImagePath)) {
+      const contentType = getContentType(commonImagePath);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // кеширование на 1 день
+      fs.createReadStream(commonImagePath).pipe(res);
+      console.log(`[NFT Server] Sending common NFT image for ${originalPath}: ${commonImagePath}`);
+      return;
+    }
+  }
+  
+  console.error(`[NFT Server] No real images available for ${originalPath}`);
+  res.status(404).send('Not Found');
 }
 
 // Настраиваем статические маршруты для каждой директории с NFT
@@ -102,8 +171,8 @@ Object.keys(nftPaths).forEach(route => {
         fallbackType = 'mutant_ape';
       }
       
-      // Отправляем запасное изображение
-      sendFallbackImage(res, fallbackType, `${route}/${filename}`);
+      // Отправляем реальное изображение вместо отсутствующего
+      sendRealNftImage(res, fallbackType, `${route}/${filename}`);
     }
   });
   

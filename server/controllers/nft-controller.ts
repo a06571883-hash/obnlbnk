@@ -10,6 +10,15 @@ import { z } from 'zod';
 import { db, client } from '../db';
 import { nfts, nftCollections, nftTransfers, users, cards } from '../../shared/schema';
 import { eq, and, not, or, inArray, sql } from 'drizzle-orm';
+import path from 'path';
+import fs from 'fs';
+
+// Директории с изображениями NFT
+const NFT_DIRS = {
+  BORED_APE: path.join(process.cwd(), 'bored_ape_nft'),
+  MUTANT_APE: path.join(process.cwd(), 'mutant_ape_nft'),
+  BAYC_OFFICIAL: path.join(process.cwd(), 'bayc_official_nft')
+};
 
 const router = express.Router();
 
