@@ -21,6 +21,7 @@ import { eq } from 'drizzle-orm';
 import { nfts, nftCollections } from '@shared/schema';
 import nftRoutes from './controllers/nft-controller';
 import nftImportRoutes from './controllers/nft-import-controller';
+import nftMarketplaceRoutes from './controllers/nft-marketplace-controller';
 // Импортируем маршрут для статических ресурсов
 import { staticAssetsRouter } from './routes/static-assets';
 
@@ -218,6 +219,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Регистрируем маршруты для NFT
   app.use('/api/nft', nftRoutes);
+  
+  // Регистрируем маршруты для NFT маркетплейса
+  app.use('/api/nft/marketplace', nftMarketplaceRoutes);
   
   // Регистрируем маршруты для импорта NFT
   app.use('/api/nft-import', nftImportRoutes);

@@ -53,6 +53,8 @@ export const NFTMarketplace: React.FC = () => {
   const [isGiftDialogOpen, setIsGiftDialogOpen] = useState(false);
   const [isSellDialogOpen, setIsSellDialogOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // asc = от низкой к высокой, desc = от высокой к низкой
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50; // Ограничиваем количество NFT на странице для лучшей производительности
   const queryClient = useQueryClient();
   
   // Получаем данные о текущем пользователе
@@ -71,19 +73,41 @@ export const NFTMarketplace: React.FC = () => {
     retry: 1
   });
   
-  // Получаем все NFT, доступные для покупки и удаляем дубликаты
+  // API с маркетплейсом версии V2 для расширенных возможностей
+  // Получаем NFT с маркетплейса с использованием API v2
   const { 
-    data: rawMarketplaceNfts = [], 
+    data: marketplaceData, 
     isLoading: isLoadingMarketplace,
     isError: isErrorMarketplace
-  } = useQuery<NFT[]>({
-    queryKey: ['/api/nft/marketplace'],
+  } = useQuery<{
+    items: NFT[],
+    pagination: {
+      page: number;
+      limit: number;
+      totalItems: number;
+      totalPages: number;
+    },
+    filters: {
+      sortBy: string;
+      sortOrder: string;
+      minPrice?: number;
+      maxPrice?: number;
+      rarity?: string;
+      search?: string;
+      collection?: string;
+    }
+  }>({
+    queryKey: ['/api/nft/marketplace/v2'],
+    queryFn: () => fetch(`/api/nft/marketplace/v2?page=${currentPage}&limit=${itemsPerPage}&sortBy=price&sortOrder=${sortOrder}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Ошибка получения NFT');
+        return res.json();
+      }),
     retry: 3
   });
   
-  // Состояние для пагинации
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 1000; // Увеличиваем лимит, чтобы все NFT отображались на одной странице
+  // Сохраняем NFT из ответа API
+  const rawMarketplaceNfts = marketplaceData?.items || [];
   
   // Фильтруем только дубликаты на основе tokenId
   // НЕ фильтруем по владельцу, чтобы показать все NFT на продажу
@@ -159,6 +183,7 @@ export const NFTMarketplace: React.FC = () => {
       playSoundWithLog('success');
       queryClient.invalidateQueries({ queryKey: ['/api/nft/gallery'] });
       queryClient.invalidateQueries({ queryKey: ['/api/nft/marketplace'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/marketplace/v2'] });
       setIsSellDialogOpen(false);
       setSalePrice('');
     },
@@ -193,6 +218,7 @@ export const NFTMarketplace: React.FC = () => {
       playSoundWithLog('success');
       queryClient.invalidateQueries({ queryKey: ['/api/nft/gallery'] });
       queryClient.invalidateQueries({ queryKey: ['/api/nft/marketplace'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/marketplace/v2'] });
     },
     onError: (error: any) => {
       toast({
@@ -225,6 +251,7 @@ export const NFTMarketplace: React.FC = () => {
       playSoundWithLog('success');
       queryClient.invalidateQueries({ queryKey: ['/api/nft/gallery'] });
       queryClient.invalidateQueries({ queryKey: ['/api/nft/marketplace'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/marketplace/v2'] });
       setSelectedNFT(null);
     },
     onError: (error: any) => {
@@ -259,6 +286,7 @@ export const NFTMarketplace: React.FC = () => {
       playSoundWithLog('success');
       queryClient.invalidateQueries({ queryKey: ['/api/nft/gallery'] });
       queryClient.invalidateQueries({ queryKey: ['/api/nft/marketplace'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/marketplace/v2'] });
       setIsGiftDialogOpen(false);
       setGiftRecipient('');
     },
@@ -362,13 +390,34 @@ export const NFTMarketplace: React.FC = () => {
     );
   }
   
+  // Рассчитываем минимальную и максимальную цену отображаемых NFT
+  const minMaxPrices = React.useMemo(() => {
+    if (!uniqueMarketplaceNfts.length) return { min: 0, max: 0 };
+    
+    let min = Infinity;
+    let max = 0;
+    
+    uniqueMarketplaceNfts.forEach(nft => {
+      const price = parseFloat(nft.price);
+      if (price < min) min = price;
+      if (price > max) max = price;
+    });
+    
+    return { min, max };
+  }, [uniqueMarketplaceNfts]);
+
   return (
     <div className="space-y-10">
       {/* Маркетплейс */}
       <div>
         {/* Заголовок и фильтры - адаптивная версия */}
         <div className="flex flex-col gap-3 mb-6">
-          <h2 className="text-2xl font-bold">NFT Маркетплейс</h2>
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <h2 className="text-2xl font-bold">NFT Маркетплейс</h2>
+            <div className="text-xs bg-slate-100 dark:bg-slate-800 rounded-full px-3 py-1">
+              Всего: {uniqueMarketplaceNfts.length} NFT • Цены: ${minMaxPrices.min} - ${minMaxPrices.max}
+            </div>
+          </div>
           
           {/* Сортировка по цене - адаптируется под размер экрана */}
           <div className="flex flex-wrap items-center gap-2">

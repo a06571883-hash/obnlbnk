@@ -1,0 +1,155 @@
+{
+  "timestamp": "2025-03-30T18:58:41.407Z",
+  "totalNFTs": 10359,
+  "totalPages": 208,
+  "priceRanges": [
+    {
+      "range": "30$-100$",
+      "count": 2631
+    },
+    {
+      "range": "101$-500$",
+      "count": 5716
+    },
+    {
+      "range": "501$-1000$",
+      "count": 424
+    },
+    {
+      "range": "1001$-5000$",
+      "count": 1164
+    },
+    {
+      "range": "5001$-10000$",
+      "count": 301
+    },
+    {
+      "range": "10001$-20000$",
+      "count": 123
+    }
+  ],
+  "cheapestNFTs": [
+    {
+      "id": 16944,
+      "name": "Mutant Ape #12126",
+      "rarity": "common",
+      "price": "30"
+    },
+    {
+      "id": 12732,
+      "name": "Mutant Ape #7426",
+      "rarity": "common",
+      "price": "30"
+    },
+    {
+      "id": 13381,
+      "name": "Mutant Ape #8319",
+      "rarity": "common",
+      "price": "30"
+    },
+    {
+      "id": 8787,
+      "name": "Mutant Ape #2068",
+      "rarity": "common",
+      "price": "30"
+    },
+    {
+      "id": 8996,
+      "name": "Mutant Ape #2397",
+      "rarity": "common",
+      "price": "30"
+    },
+    {
+      "id": 14386,
+      "name": "Mutant Ape #9541",
+      "rarity": "common",
+      "price": "30"
+    },
+    {
+      "id": 8693,
+      "name": "Mutant Ape #1974",
+      "rarity": "common",
+      "price": "30"
+    },
+    {
+      "id": 10258,
+      "name": "Mutant Ape #4042",
+      "rarity": "common",
+      "price": "30"
+    },
+    {
+      "id": 10416,
+      "name": "Mutant Ape #4324",
+      "rarity": "common",
+      "price": "30"
+    },
+    {
+      "id": 9326,
+      "name": "Mutant Ape #2867",
+      "rarity": "common",
+      "price": "30"
+    }
+  ],
+  "expensiveNFTs": [
+    {
+      "id": 17247,
+      "name": "Bored Ape #20235",
+      "rarity": "legendary",
+      "price": "19500"
+    },
+    {
+      "id": 14045,
+      "name": "Mutant Ape #9100",
+      "rarity": "legendary",
+      "price": "18000"
+    },
+    {
+      "id": 8619,
+      "name": "Mutant Ape #1900",
+      "rarity": "legendary",
+      "price": "18000"
+    },
+    {
+      "id": 8899,
+      "name": "Mutant Ape #2300",
+      "rarity": "legendary",
+      "price": "18000"
+    },
+    {
+      "id": 10116,
+      "name": "Mutant Ape #3900",
+      "rarity": "legendary",
+      "price": "18000"
+    },
+    {
+      "id": 9824,
+      "name": "Mutant Ape #3500",
+      "rarity": "legendary",
+      "price": "18000"
+    },
+    {
+      "id": 11863,
+      "name": "Mutant Ape #6300",
+      "rarity": "legendary",
+      "price": "18000"
+    },
+    {
+      "id": 11310,
+      "name": "Mutant Ape #5500",
+      "rarity": "legendary",
+      "price": "18000"
+    },
+    {
+      "id": 15854,
+      "name": "Mutant Ape #11500",
+      "rarity": "legendary",
+      "price": "18000"
+    },
+    {
+      "id": 12806,
+      "name": "Mutant Ape #7500",
+      "rarity": "legendary",
+      "price": "18000"
+    }
+  ]
+}
