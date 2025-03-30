@@ -52,6 +52,7 @@ export const NFTMarketplace: React.FC = () => {
   const [salePrice, setSalePrice] = useState('');
   const [isGiftDialogOpen, setIsGiftDialogOpen] = useState(false);
   const [isSellDialogOpen, setIsSellDialogOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // asc = от низкой к высокой, desc = от высокой к низкой
   const queryClient = useQueryClient();
   
   // Получаем данные о текущем пользователе
@@ -112,12 +113,18 @@ export const NFTMarketplace: React.FC = () => {
       }
     });
     
-    // Сохраняем порядок NFT, но сначала сортируем по цене - от низкой к высокой
-    // чтобы улучшить пользовательский опыт
+    // Сортируем NFT по цене в зависимости от выбранного порядка сортировки
     return marketplaceNfts.sort((a, b) => {
-      return parseFloat(a.price) - parseFloat(b.price);
+      // Если порядок сортировки 'asc' (по возрастанию, от низкой к высокой цене)
+      if (sortOrder === 'asc') {
+        return parseFloat(a.price) - parseFloat(b.price);
+      } 
+      // Если порядок сортировки 'desc' (по убыванию, от высокой к низкой цене)
+      else {
+        return parseFloat(b.price) - parseFloat(a.price);
+      }
     });
-  }, [rawMarketplaceNfts, currentUser]);
+  }, [rawMarketplaceNfts, currentUser, sortOrder]);
   
   // Получаем общее количество страниц
   const totalPages = Math.ceil(uniqueMarketplaceNfts.length / itemsPerPage);
@@ -357,7 +364,30 @@ export const NFTMarketplace: React.FC = () => {
     <div className="space-y-10">
       {/* Маркетплейс */}
       <div>
-        <h2 className="text-2xl font-bold mb-6">NFT Маркетплейс</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">NFT Маркетплейс</h2>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Сортировка по цене:</span>
+            <div className="flex">
+              <Button
+                variant={sortOrder === 'asc' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSortOrder('asc')}
+                className="rounded-r-none border-r-0"
+              >
+                От низкой к высокой
+              </Button>
+              <Button
+                variant={sortOrder === 'desc' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSortOrder('desc')}
+                className="rounded-l-none"
+              >
+                От высокой к низкой
+              </Button>
+            </div>
+          </div>
+        </div>
         
         {isLoadingMarketplace ? (
           <div className="flex justify-center items-center h-[200px]">
