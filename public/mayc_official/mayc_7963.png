@@ -1,0 +1,11 @@
+
+    <svg width="350" height="350" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="hsl(131, 83%, 69%)" />
+      <text x="175" y="175" font-family="Arial" font-size="24" text-anchor="middle" fill="white">
+        Mutant Ape #7963
+      </text>
+      <text x="175" y="210" font-family="Arial" font-size="16" text-anchor="middle" fill="white">
+        MAYC Collection
+      </text>
+    </svg>
+  
