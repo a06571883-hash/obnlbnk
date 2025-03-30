@@ -1310,30 +1310,69 @@ export class DatabaseStorage implements IStorage {
     return this.withRetry(async () => {
       console.log('[Storage] Запрос NFT, доступных для продажи...');
       
-      // Сначала попробуем использовать ORM
-      const nftItems = await db
-        .select()
-        .from(nfts)
-        .where(eq(nfts.forSale, true))
-        .orderBy(desc(nfts.mintedAt));
-      
-      console.log(`[Storage] Найдено ${nftItems.length} NFT через ORM`);
-      
-      // Если ORM не вернул результаты, попробуем прямой SQL-запрос
-      if (nftItems.length === 0) {
+      // Сначала попробуем использовать ORM с подробным логом
+      try {
+        // Сначала проверим все NFT с forSale = true
+        const allForSaleNFTs = await db
+          .select()
+          .from(nfts)
+          .where(eq(nfts.forSale, true));
+          
+        console.log(`[Storage] Всего NFT с forSale = true: ${allForSaleNFTs.length}`);
+        
+        if (allForSaleNFTs.length > 0) {
+          // Выводим информацию о нескольких NFT для отладки
+          const sampleNFTs = allForSaleNFTs.slice(0, Math.min(3, allForSaleNFTs.length));
+          console.log('[Storage] Примеры NFT на продаже:');
+          sampleNFTs.forEach(nft => {
+            console.log(`[Storage] NFT ID: ${nft.id}, name: ${nft.name}, forSale: ${nft.forSale}, ownerId: ${nft.ownerId}, price: ${nft.price}`);
+          });
+        }
+        
+        // Получаем отсортированные NFT для маркетплейса
+        const nftItems = await db
+          .select()
+          .from(nfts)
+          .where(eq(nfts.forSale, true))
+          .orderBy(desc(nfts.mintedAt));
+        
+        console.log(`[Storage] Найдено ${nftItems.length} NFT через ORM для маркетплейса`);
+        
+        return nftItems;
+      } catch (error) {
+        console.error('[Storage] Ошибка при получении NFT через ORM:', error);
+        
+        // Если произошла ошибка, пробуем прямой SQL-запрос
         console.log('[Storage] Попытка получить NFT через прямой SQL...');
         
-        const result = await client.query(`
-          SELECT * FROM nft 
+        const result = await client`
+          SELECT * FROM nfts 
           WHERE for_sale = true 
-          ORDER BY id DESC
-        `);
+          ORDER BY minted_at DESC
+        `;
         
-        console.log(`[Storage] Найдено ${result.rows.length} NFT через прямой SQL`);
-        return result.rows;
+        console.log(`[Storage] Найдено ${result.length} NFT через прямой SQL`);
+        
+        // Преобразуем объекты PostgreSQL в формат, совместимый с ORM
+        const formattedResult = result.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          collectionId: item.collection_id,
+          ownerId: item.owner_id,
+          imagePath: item.image_path,
+          attributes: typeof item.attributes === 'string' ? JSON.parse(item.attributes) : item.attributes,
+          rarity: item.rarity,
+          price: item.price,
+          forSale: item.for_sale,
+          mintedAt: new Date(item.minted_at),
+          tokenId: item.token_id,
+          originalImagePath: item.original_image_path,
+          sortOrder: item.sort_order
+        }));
+        
+        return formattedResult;
       }
-      
-      return nftItems;
     }, 'Get NFTs for sale');
   }
 

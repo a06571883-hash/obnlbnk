@@ -85,8 +85,8 @@ export const NFTMarketplace: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 1000; // Увеличиваем лимит, чтобы все NFT отображались на одной странице
   
-  // Фильтруем NFT, исключая те, которые принадлежат текущему пользователю
-  // и удаляем дубликаты на основе tokenId
+  // Фильтруем только дубликаты на основе tokenId
+  // НЕ фильтруем по владельцу, чтобы показать все NFT на продажу
   const uniqueMarketplaceNfts = React.useMemo(() => {
     // Создаем массив для хранения всех NFT для маркетплейса
     const marketplaceNfts: NFT[] = [];
@@ -94,19 +94,14 @@ export const NFTMarketplace: React.FC = () => {
     // Создаем Set для отслеживания уникальных tokenId
     const uniqueTokenIds = new Set<string>();
     
-    // Добавляем NFT, которые не принадлежат текущему пользователю или выставлены на продажу
+    // Добавляем все NFT, которые выставлены на продажу
     // и удаляем дубликаты по tokenId
     rawMarketplaceNfts.forEach(nft => {
-      // Пропускаем NFT текущего пользователя (если не выставлен на продажу)
-      const isCurrentUserNft = nft.ownerId === (currentUser as any)?.id;
-      
       // Проверяем, что это не дубликат по tokenId 
       // (если tokenId уже есть в наборе, значит мы уже добавили этот NFT)
       if (!uniqueTokenIds.has(nft.tokenId)) {
-        // Добавляем в маркетплейс только если:
-        // 1. NFT НЕ принадлежит текущему пользователю ИЛИ
-        // 2. NFT принадлежит текущему пользователю, но выставлен на продажу
-        if (!isCurrentUserNft || (isCurrentUserNft && nft.forSale)) {
+        // Добавляем в маркетплейс все NFT, которые выставлены на продажу (forSale = true)
+        if (nft.forSale) {
           marketplaceNfts.push(nft);
           uniqueTokenIds.add(nft.tokenId); // Запоминаем, что этот tokenId уже добавлен
         }

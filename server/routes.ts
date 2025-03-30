@@ -1158,10 +1158,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Получение доступных для покупки NFT
   app.get("/api/nft/marketplace", async (req, res) => {
     try {
+      console.log('[API] Запрос на получение NFT маркетплейса');
       const nftsForSale = await storage.getAvailableNFTsForSale();
+      console.log(`[API] Получено ${nftsForSale.length} NFT для маркетплейса`);
       
       // Дополнительно получаем информацию о владельцах
       const userIds = [...new Set(nftsForSale.map(nft => nft.ownerId))];
+      console.log(`[API] Найдено ${userIds.length} уникальных владельцев NFT`);
+      
       const users = await Promise.all(userIds.map(id => storage.getUser(id)));
       const userMap = users.reduce((map, user) => {
         if (user) map[user.id] = user;
@@ -1177,6 +1181,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } : undefined
       }));
       
+      // Выводим информацию о первых нескольких NFT для отладки
+      if (enrichedNfts.length > 0) {
+        const sampleNFTs = enrichedNfts.slice(0, Math.min(3, enrichedNfts.length));
+        console.log('[API] Примеры NFT отправляемых клиенту:');
+        sampleNFTs.forEach(nft => {
+          console.log(`[API] NFT ID: ${nft.id}, name: ${nft.name}, forSale: ${nft.forSale}, ownerId: ${nft.ownerId}, price: ${nft.price}, owner: ${nft.owner ? nft.owner.username : 'unknown'}`);
+        });
+      }
+      
+      console.log(`[API] Возвращаем ${enrichedNfts.length} NFT для маркетплейса`);
       return res.json(enrichedNfts);
     } catch (error) {
       console.error('Error fetching NFTs for sale:', error);

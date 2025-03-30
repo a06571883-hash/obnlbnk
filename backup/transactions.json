@@ -1202,5 +1202,33 @@
     "description": "Комиссия за перевод (0.00000017 BTC)",
     "fromCardNumber": "4111151178490202",
     "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 111,
+    "fromCardId": 13,
+    "toCardId": 14,
+    "amount": "1",
+    "convertedAmount": "82820",
+    "type": "transfer",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-30T13:37:30.977Z",
+    "description": "Перевод 1.00000000 CRYPTO → 82820.00 USD (курс: 82820.00)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "4111323103306819"
+  },
+  {
+    "id": 112,
+    "fromCardId": 13,
+    "toCardId": 2,
+    "amount": "0.01",
+    "convertedAmount": "1.207437816952427e-7",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-03-30T13:37:31.054Z",
+    "description": "Комиссия за перевод (0.00000012 BTC)",
+    "fromCardNumber": "4000101461947771",
+    "toCardNumber": "REGULATOR"
   }
 ]
