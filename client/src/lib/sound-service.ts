@@ -12,7 +12,7 @@ const soundFiles: Record<SoundType, string> = {
 };
 
 // Сервис для работы со звуками
-const sounds: Record<SoundType, HTMLAudioElement> = {};
+const sounds: Partial<Record<SoundType, HTMLAudioElement>> = {};
 
 // Предварительная загрузка звуков
 export const preloadSounds = async () => {
@@ -31,8 +31,13 @@ export const preloadSounds = async () => {
 
     // Пробуем воспроизвести тихий звук после загрузки страницы
     try {
-      await sounds.silent.play();
-      console.log('Звуки успешно загружены');
+      const silentSound = sounds.silent;
+      if (silentSound) {
+        await silentSound.play();
+        console.log('Звуки успешно загружены');
+      } else {
+        console.log('Тихий звук еще не загружен');
+      }
     } catch (error) {
       console.log('Аудио будет доступно после взаимодействия с пользователем');
     }
@@ -46,29 +51,45 @@ export const playSound = async (soundName: SoundType) => {
   try {
     const sound = sounds[soundName];
     if (!sound) {
-      console.warn(`Звук ${soundName} не найден`);
-      return;
+      // Если звук не найден, создаем его заново
+      const audio = new Audio();
+      audio.preload = 'auto';
+      const path = soundFiles[soundName];
+      audio.src = path.startsWith('/') ? path : `/${path}`;
+      sounds[soundName] = audio;
+      console.log(`Звук ${soundName} не был найден, пробуем загрузить заново`);
+      return; // Выходим, чтобы дать возможность звуку загрузиться
     }
 
-    if (sound.readyState >= 2) {
+    // Пробуем воспроизвести звук
+    try {
       sound.currentTime = 0;
-      sound.volume = 0.5;
+      sound.volume = 0.3; // Снижаем громкость
       await sound.play();
-    } else {
-      console.log(`Звук ${soundName} еще загружается...`);
+    } catch (playError) {
+      // Игнорируем ошибки воспроизведения, чтобы не спамить консоль
+      if (playError instanceof Error && playError.name === 'NotAllowedError') {
+        // Ошибка из-за политики автовоспроизведения, это нормально
+      } else {
+        console.log(`Не удалось воспроизвести звук ${soundName}`);
+      }
     }
   } catch (error) {
-    if (error instanceof Error && error.name === 'NotAllowedError') {
-      console.log('Звук будет доступен после взаимодействия с пользователем');
-    } else {
-      console.error(`Ошибка при воспроизведении звука ${soundName}:`, error);
-    }
+    // Тихо игнорируем ошибки звука, чтобы они не мешали работе приложения
   }
 };
 
 // Функция для воспроизведения звука с проверкой состояния
 export const playSoundIfEnabled = (soundName: SoundType) => {
-  playSound(soundName).catch(console.error);
+  // Проверяем, включены ли звуки
+  try {
+    if (isSoundEnabled()) {
+      // Вызываем функцию воспроизведения звука без вывода ошибок
+      playSound(soundName).catch(() => {});
+    }
+  } catch (e) {
+    // Игнорируем любые ошибки
+  }
 };
 
 /**
