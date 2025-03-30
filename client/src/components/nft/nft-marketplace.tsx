@@ -97,7 +97,7 @@ export const NFTMarketplace: React.FC = () => {
       collection?: string;
     }
   }>({
-    queryKey: ['/api/nft/marketplace/v2'],
+    queryKey: ['/api/nft/marketplace/v2', currentPage, sortOrder],
     queryFn: () => fetch(`/api/nft/marketplace/v2?page=${currentPage}&limit=${itemsPerPage}&sortBy=price&sortOrder=${sortOrder}`)
       .then(res => {
         if (!res.ok) throw new Error('Ошибка получения NFT');
@@ -455,7 +455,7 @@ export const NFTMarketplace: React.FC = () => {
                       {nft.rarity}
                     </Badge>
                     <Badge className="absolute top-1 left-1 text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-0.5 bg-amber-500">
-                      {nft.price} USD
+                      {parseFloat(nft.price).toFixed(0)} USD
                     </Badge>
                   </div>
                   <CardContent className="p-2 sm:p-3">
@@ -556,7 +556,7 @@ export const NFTMarketplace: React.FC = () => {
                 </Badge>
                 {selectedNFT.forSale && (
                   <Badge className="absolute top-2 left-2 text-xs bg-amber-500">
-                    {selectedNFT.price} USD
+                    {parseFloat(selectedNFT.price).toFixed(0)} USD
                   </Badge>
                 )}
               </div>
@@ -663,7 +663,7 @@ export const NFTMarketplace: React.FC = () => {
                       className="text-xs sm:text-sm py-1 px-2 h-8 sm:h-9"
                     >
                       {buyNftMutation.isPending ? <LoadingSpinner className="mr-1 h-3 w-3" /> : null}
-                      Купить за {selectedNFT.price} USD
+                      Купить за {parseFloat(selectedNFT.price).toFixed(0)} USD
                     </Button>
                   )}
                 </>

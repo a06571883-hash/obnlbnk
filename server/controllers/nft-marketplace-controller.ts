@@ -103,7 +103,9 @@ router.get('/v2', async (req: Request, res: Response) => {
       .where(and(...conditions));
     
     const countResult = await countQuery;
-    const totalItems = parseInt(countResult[0].count.toString());
+    // Используем безопасное преобразование счетчика к числу
+    const countValue = countResult[0]?.count;
+    const totalItems = typeof countValue === 'number' ? countValue : parseInt(String(countValue || 0));
     
     // Общее количество страниц
     const totalPages = Math.ceil(totalItems / limit);
@@ -114,18 +116,21 @@ router.get('/v2', async (req: Request, res: Response) => {
     // Базовый запрос
     let query = db.select().from(nfts).where(and(...conditions));
     
+    // Создаем выражение для сортировки
+    let orderByExpr;
+    
     // Применяем сортировку
     if (sortBy === 'price') {
       if (sortOrder === 'desc') {
-        query = query.orderBy(desc(sql`CAST(${nfts.price} AS FLOAT)`));
+        orderByExpr = desc(sql`CAST(${nfts.price} AS FLOAT)`);
       } else {
-        query = query.orderBy(asc(sql`CAST(${nfts.price} AS FLOAT)`));
+        orderByExpr = asc(sql`CAST(${nfts.price} AS FLOAT)`);
       }
     } else if (sortBy === 'name') {
       if (sortOrder === 'desc') {
-        query = query.orderBy(desc(nfts.name));
+        orderByExpr = desc(nfts.name);
       } else {
-        query = query.orderBy(asc(nfts.name));
+        orderByExpr = asc(nfts.name);
       }
     } else if (sortBy === 'rarity') {
       // Сортировка по редкости (кастомный порядок)
@@ -145,14 +150,20 @@ router.get('/v2', async (req: Request, res: Response) => {
           "WHEN 'common' THEN 5 " +
           "ELSE 0 END";
       
-      query = query.orderBy(sql`${sql.raw(rarityOrder)}`);
+      orderByExpr = sql`${sql.raw(rarityOrder)}`;
+    } else {
+      // По умолчанию сортируем по ID
+      orderByExpr = sortOrder === 'desc' ? desc(nfts.id) : asc(nfts.id);
     }
     
-    // Добавляем пагинацию
-    query = query.limit(limit).offset(offset);
+    // Формируем итоговый запрос с сортировкой и пагинацией
+    const finalQuery = query
+      .orderBy(orderByExpr)
+      .limit(limit)
+      .offset(offset);
     
     // Выполняем запрос
-    const results = await query;
+    const results = await finalQuery;
     
     // Преобразуем результаты в единый формат
     const formattedNFTs = results.map((nft: any) => ({
@@ -168,7 +179,18 @@ router.get('/v2', async (req: Request, res: Response) => {
       creatorId: nft.creatorId,
       regulatorId: nft.regulatorId,
       rarity: nft.rarity,
-      attributes: nft.attributes ? (typeof nft.attributes === 'string' ? JSON.parse(nft.attributes) : nft.attributes) : null,
+      attributes: (() => {
+        try {
+          if (!nft.attributes) return { power: 0, agility: 0, wisdom: 0, luck: 0 };
+          if (typeof nft.attributes === 'string') {
+            return JSON.parse(nft.attributes);
+          }
+          return nft.attributes;
+        } catch (e) {
+          console.error('Ошибка при парсинге атрибутов NFT:', e);
+          return { power: 0, agility: 0, wisdom: 0, luck: 0 };
+        }
+      })(),
       mintedAt: nft.createdAt,
       owner: {
         id: nft.ownerId,
