@@ -118,13 +118,13 @@ export const NFTMarketplace: React.FC = () => {
     // Создаем Set для отслеживания уникальных tokenId
     const uniqueTokenIds = new Set<string>();
     
-    // Добавляем все NFT, которые выставлены на продажу
-    // и удаляем дубликаты по tokenId
+    // Для API v2 нам не нужно сортировать вручную, так как сервер уже возвращает отсортированные данные
+    // Но все равно фильтруем для удаления потенциальных дубликатов
     rawMarketplaceNfts.forEach(nft => {
       // Проверяем, что это не дубликат по tokenId 
-      // (если tokenId уже есть в наборе, значит мы уже добавили этот NFT)
       if (!uniqueTokenIds.has(nft.tokenId)) {
-        // Добавляем в маркетплейс все NFT, которые выставлены на продажу (forSale = true)
+        // Проверка forSale может быть избыточной, так как API v2 должен возвращать только NFT на продаже,
+        // но оставляем для дополнительной безопасности
         if (nft.forSale) {
           marketplaceNfts.push(nft);
           uniqueTokenIds.add(nft.tokenId); // Запоминаем, что этот tokenId уже добавлен
@@ -132,25 +132,8 @@ export const NFTMarketplace: React.FC = () => {
       }
     });
     
-    // Создаем копию массива перед сортировкой, чтобы не изменять оригинальный массив
-    const sortedNfts = [...marketplaceNfts];
-    
-    // Сортируем NFT по цене в зависимости от выбранного порядка сортировки
-    return sortedNfts.sort((a, b) => {
-      // Преобразуем строковые цены в числа для корректного сравнения
-      const priceA = parseFloat(a.price);
-      const priceB = parseFloat(b.price);
-      
-      // Если порядок сортировки 'asc' (по возрастанию, от низкой к высокой цене)
-      if (sortOrder === 'asc') {
-        return priceA - priceB;
-      } 
-      // Если порядок сортировки 'desc' (по убыванию, от высокой к низкой цене)
-      else {
-        return priceB - priceA;
-      }
-    });
-  }, [rawMarketplaceNfts, currentUser, sortOrder]);
+    return marketplaceNfts;
+  }, [rawMarketplaceNfts]);
   
   // Получаем общее количество страниц
   const totalPages = Math.ceil(uniqueMarketplaceNfts.length / itemsPerPage);
@@ -377,19 +360,6 @@ export const NFTMarketplace: React.FC = () => {
     buyNftMutation.mutate(selectedNFT.id);
   };
   
-  const isLoading = isLoadingMyNfts || isLoadingMarketplace || sellNftMutation.isPending || buyNftMutation.isPending || giftNftMutation.isPending || cancelSaleMutation.isPending;
-  
-  if (isErrorMyNfts || isErrorMarketplace) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Ошибка загрузки</AlertTitle>
-        <AlertDescription>
-          Не удалось загрузить данные о NFT. Пожалуйста, обновите страницу.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
   // Рассчитываем минимальную и максимальную цену отображаемых NFT
   const minMaxPrices = React.useMemo(() => {
     if (!uniqueMarketplaceNfts.length) return { min: 0, max: 0 };
@@ -405,6 +375,19 @@ export const NFTMarketplace: React.FC = () => {
     
     return { min, max };
   }, [uniqueMarketplaceNfts]);
+
+  const isLoading = isLoadingMyNfts || isLoadingMarketplace || sellNftMutation.isPending || buyNftMutation.isPending || giftNftMutation.isPending || cancelSaleMutation.isPending;
+  
+  if (isErrorMyNfts || isErrorMarketplace) {
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Ошибка загрузки</AlertTitle>
+        <AlertDescription>
+          Не удалось загрузить данные о NFT. Пожалуйста, обновите страницу.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-10">
