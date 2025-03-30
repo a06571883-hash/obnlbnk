@@ -115,16 +115,27 @@ export const NFTMarketplace: React.FC = () => {
     totalPages: 0 
   };
   
-  // Получаем NFT без клиентской пагинации, так как API v2 уже поддерживает серверную пагинацию
+  // Отфильтровываем только обезьян BAYC и MAYC, которые на продаже
+  // и гарантируем уникальность tokenId
   const marketplaceNfts = React.useMemo(() => {
-    // Полностью исключаем дубликаты на основе tokenId
-    // Используем Map для сохранения только последнего экземпляра каждого NFT с уникальным tokenId
+    // Используем Map для сохранения только одного NFT для каждого tokenId
     const uniqueMap = new Map<string, NFT>();
     
-    // Добавляем NFT в Map, перезаписывая дубликаты
     items.forEach(nft => {
-      // Проверяем, что NFT доступен для продажи
-      if (nft.forSale) {
+      // Проверки:
+      // 1. NFT доступен для продажи
+      // 2. Проверка имени коллекции или путь к изображению содержит "bored_ape" или "mutant_ape"
+      const isApeNft = 
+        (nft.collectionName === 'Bored Ape Yacht Club' || nft.collectionName === 'Mutant Ape Yacht Club') || 
+        (nft.imagePath && (
+          nft.imagePath.includes('bored_ape') || 
+          nft.imagePath.includes('mutant_ape') || 
+          nft.imagePath.includes('official_bored_ape') ||
+          nft.imagePath.includes('bayc_official')
+        ));
+      
+      if (nft.forSale && isApeNft) {
+        // При совпадении tokenId перезаписываем, чтобы избежать дубликатов
         uniqueMap.set(nft.tokenId, nft);
       }
     });
