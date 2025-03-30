@@ -1,8 +1,8 @@
 /**
- * Скрипт для исправления цен NFT в маркетплейсе
- * - Устанавливает минимальную цену на уровне 30$
- * - Устанавливает максимальную цену на уровне 20,000$
- * - Обновляет все цены для соответствия новому диапазону
+ * Скрипт для обновления цен NFT:
+ * - Минимальная цена 30$ (для некрасивых/обычных NFT)
+ * - Максимальная цена 20,000$ (для самых редких и красивых NFT)
+ * - Распределение цен в соответствии с редкостью
  */
 
 const { Pool } = require('pg');
@@ -16,8 +16,41 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL
 });
 
+// Новые диапазоны цен по редкости
+const PRICE_RANGES = {
+  common: { min: 30, max: 500 },
+  uncommon: { min: 300, max: 2000 },
+  rare: { min: 1500, max: 8000 },
+  epic: { min: 5000, max: 15000 },
+  legendary: { min: 12000, max: 20000 }
+};
+
 /**
- * Обновляет цены NFT в соответствии с новыми правилами
+ * Генерирует цену внутри заданного диапазона с учетом редкости
+ * @param {string} rarity Редкость NFT
+ * @param {number} tokenId ID токена для получения последовательной генерации
+ * @returns {number} Цена NFT в долларах
+ */
+function generatePrice(rarity, tokenId) {
+  const range = PRICE_RANGES[rarity.toLowerCase()] || PRICE_RANGES.common;
+  const seed = tokenId || Math.random();
+  
+  // Используем seed для генерации числа в диапазоне
+  const randomFactor = (Math.cos(seed * 10000) + 1) / 2; // 0 to 1
+  const price = range.min + randomFactor * (range.max - range.min);
+  
+  // Округляем до красивых чисел
+  if (price < 100) {
+    return Math.round(price / 5) * 5; // Кратно 5
+  } else if (price < 1000) {
+    return Math.round(price / 50) * 50; // Кратно 50
+  } else {
+    return Math.round(price / 100) * 100; // Кратно 100
+  }
+}
+
+/**
+ * Обновляет цены всех NFT в соответствии с их редкостью
  */
 async function updateNFTPrices() {
   const client = await pool.connect();
@@ -25,140 +58,156 @@ async function updateNFTPrices() {
   try {
     console.log('Начинаем обновление цен NFT...');
     
-    // 1. Получаем количество NFT с ценами ниже 30$
-    const lowPriceResult = await client.query(`
-      SELECT COUNT(*) 
-      FROM nfts 
-      WHERE CAST(price AS DECIMAL) < 30
-    `);
-    
-    const lowPriceCount = parseInt(lowPriceResult.rows[0].count);
-    console.log(`Найдено ${lowPriceCount} NFT с ценой ниже 30$`);
-    
-    // 2. Получаем количество NFT с ценами выше 20,000$
-    const highPriceResult = await client.query(`
-      SELECT COUNT(*) 
-      FROM nfts 
-      WHERE CAST(price AS DECIMAL) > 20000
-    `);
-    
-    const highPriceCount = parseInt(highPriceResult.rows[0].count);
-    console.log(`Найдено ${highPriceCount} NFT с ценой выше 20,000$`);
-    
-    // 3. Обновляем NFT с низкими ценами (меньше 30$)
-    if (lowPriceCount > 0) {
-      const updateLowPriceResult = await client.query(`
-        UPDATE nfts
-        SET price = '30'
-        WHERE CAST(price AS DECIMAL) < 30
-        RETURNING id, name, price
-      `);
-      
-      console.log(`Обновлено ${updateLowPriceResult.rowCount} NFT с низкой ценой на минимальную цену 30$`);
-    }
-    
-    // 4. Обновляем NFT с высокими ценами (более 20,000$)
-    if (highPriceCount > 0) {
-      const updateHighPriceResult = await client.query(`
-        UPDATE nfts
-        SET price = '20000'
-        WHERE CAST(price AS DECIMAL) > 20000
-        RETURNING id, name, price
-      `);
-      
-      console.log(`Обновлено ${updateHighPriceResult.rowCount} NFT с высокой ценой на максимальную цену 20,000$`);
-    }
-    
-    // 5. Обновляем цены для NFT на основе редкости
-    const updatePricesByRarityResult = await client.query(`
-      UPDATE nfts
-      SET price = 
-        CASE 
-          WHEN rarity = 'common' THEN 
-            GREATEST(30, LEAST(500, CAST(price AS DECIMAL)))::text
-          WHEN rarity = 'uncommon' THEN 
-            GREATEST(500, LEAST(2000, CAST(price AS DECIMAL)))::text
-          WHEN rarity = 'rare' THEN 
-            GREATEST(2000, LEAST(5000, CAST(price AS DECIMAL)))::text
-          WHEN rarity = 'epic' THEN 
-            GREATEST(5000, LEAST(10000, CAST(price AS DECIMAL)))::text
-          WHEN rarity = 'legendary' THEN 
-            GREATEST(10000, LEAST(20000, CAST(price AS DECIMAL)))::text
-          ELSE price
-        END
-      RETURNING id
-    `);
-    
-    console.log(`Обновлено ${updatePricesByRarityResult.rowCount} NFT с ценами в соответствии с редкостью`);
-    
-    // 6. Убедимся, что все NFT выставлены на продажу (for_sale = true)
-    const updateForSaleResult = await client.query(`
-      UPDATE nfts
-      SET for_sale = true
-      WHERE for_sale = false AND owner_id = 1
-      RETURNING id
-    `);
-    
-    console.log(`Обновлено ${updateForSaleResult.rowCount} NFT, теперь они доступны для продажи на маркетплейсе`);
-    
-    // 7. Проверяем статистику цен после обновления
-    const priceStatsResult = await client.query(`
+    // Получаем статистику по текущим ценам до обновления
+    const beforeStatsResult = await client.query(`
       SELECT 
-        MIN(CAST(price AS DECIMAL)) as min_price,
-        MAX(CAST(price AS DECIMAL)) as max_price,
-        AVG(CAST(price AS DECIMAL)) as avg_price
+        MIN(CAST(price AS FLOAT)) as min_price, 
+        MAX(CAST(price AS FLOAT)) as max_price,
+        AVG(CAST(price AS FLOAT)) as avg_price,
+        COUNT(*) as total
       FROM nfts
     `);
     
-    const { min_price, max_price, avg_price } = priceStatsResult.rows[0];
-    console.log(`Статистика цен NFT после обновления:`);
-    console.log(`- Минимальная цена: ${min_price}$`);
-    console.log(`- Максимальная цена: ${max_price}$`);
-    console.log(`- Средняя цена: ${Math.round(avg_price)}$`);
+    const beforeStats = beforeStatsResult.rows[0];
+    console.log(`\nСтатистика до обновления:`);
+    console.log(`- Всего NFT: ${beforeStats.total}`);
+    console.log(`- Минимальная цена: $${Math.round(beforeStats.min_price)}`);
+    console.log(`- Максимальная цена: $${Math.round(beforeStats.max_price)}`);
+    console.log(`- Средняя цена: $${Math.round(beforeStats.avg_price)}`);
     
-    // 8. Проверяем цены по категориям редкости
-    const rarityStatsResult = await client.query(`
-      SELECT 
-        rarity,
-        COUNT(*) as count,
-        MIN(CAST(price AS DECIMAL)) as min_price,
-        MAX(CAST(price AS DECIMAL)) as max_price,
-        AVG(CAST(price AS DECIMAL)) as avg_price
-      FROM nfts
-      GROUP BY rarity
-      ORDER BY 
-        CASE 
-          WHEN rarity = 'common' THEN 1
-          WHEN rarity = 'uncommon' THEN 2
-          WHEN rarity = 'rare' THEN 3
-          WHEN rarity = 'epic' THEN 4
-          WHEN rarity = 'legendary' THEN 5
-          ELSE 6
-        END
+    // Получаем все NFT для обработки
+    const nftsResult = await client.query(`
+      SELECT id, name, rarity, token_id 
+      FROM nfts 
     `);
     
-    console.log(`\nРаспределение цен по категориям редкости:`);
-    rarityStatsResult.rows.forEach(row => {
-      console.log(`- ${row.rarity}: ${row.count} NFT, цены от ${row.min_price}$ до ${row.max_price}$, средняя ${Math.round(row.avg_price)}$`);
-    });
+    const nfts = nftsResult.rows;
+    console.log(`\nНайдено NFT для обновления цен: ${nfts.length}`);
     
-    // 9. Для пользовательских NFT, не являющихся регулятором, устанавливаем высокие цены
-    const updateUserNftsResult = await client.query(`
+    // Счетчики для статистики
+    const stats = {
+      common: 0,
+      uncommon: 0,
+      rare: 0,
+      epic: 0, 
+      legendary: 0,
+      other: 0
+    };
+    
+    // Быстро обновляем цены одним запросом для каждой редкости
+    console.log('Начинаем обновление цен...');
+    
+    // Обновление цен для Common NFTs (самая низкая цена)
+    const commonResult = await client.query(`
       UPDATE nfts
-      SET price = 
-        CASE 
-          WHEN rarity = 'common' THEN '500'
-          WHEN rarity = 'uncommon' THEN '2000' 
-          WHEN rarity = 'rare' THEN '5000'
-          WHEN rarity = 'epic' THEN '10000'
-          WHEN rarity = 'legendary' THEN '20000'
-          ELSE '5000'
-        END
-      WHERE owner_id != 1
-      RETURNING id, owner_id, price, rarity
+      SET price = (30 + (ABS(MOD(CAST(token_id AS INTEGER), 47)) * 5))::text
+      WHERE rarity = 'common'
     `);
     
-    console.log(`\nОбновлено ${updateUserNftsResult.rowCount} пользовательских NFT с новыми ценами`);
+    const commonCount = await client.query(`
+      SELECT COUNT(*) as count FROM nfts WHERE rarity = 'common'
+    `);
+    
+    console.log(`Обновлено ${commonCount.rows[0].count} common NFT`);
+    stats.common = parseInt(commonCount.rows[0].count);
+    
+    // Обновление цен для Uncommon NFTs
+    await client.query(`
+      UPDATE nfts
+      SET price = (300 + (ABS(MOD(CAST(token_id AS INTEGER), 34)) * 50))::text
+      WHERE rarity = 'uncommon'
+    `);
+    
+    const uncommonCount = await client.query(`
+      SELECT COUNT(*) as count FROM nfts WHERE rarity = 'uncommon'
+    `);
+    
+    console.log(`Обновлено ${uncommonCount.rows[0].count} uncommon NFT`);
+    stats.uncommon = parseInt(uncommonCount.rows[0].count);
+    
+    // Обновление цен для Rare NFTs
+    await client.query(`
+      UPDATE nfts
+      SET price = (1500 + (ABS(MOD(CAST(token_id AS INTEGER), 65)) * 100))::text
+      WHERE rarity = 'rare'
+    `);
+    
+    const rareCount = await client.query(`
+      SELECT COUNT(*) as count FROM nfts WHERE rarity = 'rare'
+    `);
+    
+    console.log(`Обновлено ${rareCount.rows[0].count} rare NFT`);
+    stats.rare = parseInt(rareCount.rows[0].count);
+    
+    // Обновление цен для Epic NFTs
+    await client.query(`
+      UPDATE nfts
+      SET price = (5000 + (ABS(MOD(CAST(token_id AS INTEGER), 100)) * 100))::text
+      WHERE rarity = 'epic'
+    `);
+    
+    const epicCount = await client.query(`
+      SELECT COUNT(*) as count FROM nfts WHERE rarity = 'epic'
+    `);
+    
+    console.log(`Обновлено ${epicCount.rows[0].count} epic NFT`);
+    stats.epic = parseInt(epicCount.rows[0].count);
+    
+    // Обновление цен для Legendary NFTs (самая высокая цена)
+    await client.query(`
+      UPDATE nfts
+      SET price = (12000 + (ABS(MOD(CAST(token_id AS INTEGER), 80)) * 100))::text
+      WHERE rarity = 'legendary'
+    `);
+    
+    const legendaryCount = await client.query(`
+      SELECT COUNT(*) as count FROM nfts WHERE rarity = 'legendary'
+    `);
+    
+    console.log(`Обновлено ${legendaryCount.rows[0].count} legendary NFT`);
+    stats.legendary = parseInt(legendaryCount.rows[0].count);
+    
+    // Если остались NFT без указанной редкости, даем им минимальную цену
+    await client.query(`
+      UPDATE nfts
+      SET price = '30'
+      WHERE rarity IS NULL OR rarity NOT IN ('common', 'uncommon', 'rare', 'epic', 'legendary')
+    `);
+    
+    const otherCount = await client.query(`
+      SELECT COUNT(*) as count FROM nfts 
+      WHERE rarity IS NULL OR rarity NOT IN ('common', 'uncommon', 'rare', 'epic', 'legendary')
+    `);
+    
+    console.log(`Обновлено ${otherCount.rows[0].count} NFT без редкости`);
+    stats.other = parseInt(otherCount.rows[0].count);
+    
+    console.log('Обновление цен завершено!');
+    
+    // Получаем статистику по новым ценам после обновления
+    const afterStatsResult = await client.query(`
+      SELECT 
+        MIN(CAST(price AS FLOAT)) as min_price, 
+        MAX(CAST(price AS FLOAT)) as max_price,
+        AVG(CAST(price AS FLOAT)) as avg_price,
+        COUNT(*) as total
+      FROM nfts
+    `);
+    
+    const afterStats = afterStatsResult.rows[0];
+    console.log(`\nСтатистика после обновления:`);
+    console.log(`- Всего NFT: ${afterStats.total}`);
+    console.log(`- Минимальная цена: $${Math.round(afterStats.min_price)}`);
+    console.log(`- Максимальная цена: $${Math.round(afterStats.max_price)}`);
+    console.log(`- Средняя цена: $${Math.round(afterStats.avg_price)}`);
+    
+    console.log(`\nСтатистика по редкости NFT:`);
+    console.log(`- Common: ${stats.common}`);
+    console.log(`- Uncommon: ${stats.uncommon}`);
+    console.log(`- Rare: ${stats.rare}`);
+    console.log(`- Epic: ${stats.epic}`);
+    console.log(`- Legendary: ${stats.legendary}`);
+    console.log(`- Другие: ${stats.other}`);
     
     console.log('\nОбновление цен NFT успешно завершено!');
     

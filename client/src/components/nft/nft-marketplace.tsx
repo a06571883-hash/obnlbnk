@@ -108,15 +108,22 @@ export const NFTMarketplace: React.FC = () => {
       }
     });
     
+    // Создаем копию массива перед сортировкой, чтобы не изменять оригинальный массив
+    const sortedNfts = [...marketplaceNfts];
+    
     // Сортируем NFT по цене в зависимости от выбранного порядка сортировки
-    return marketplaceNfts.sort((a, b) => {
+    return sortedNfts.sort((a, b) => {
+      // Преобразуем строковые цены в числа для корректного сравнения
+      const priceA = parseFloat(a.price);
+      const priceB = parseFloat(b.price);
+      
       // Если порядок сортировки 'asc' (по возрастанию, от низкой к высокой цене)
       if (sortOrder === 'asc') {
-        return parseFloat(a.price) - parseFloat(b.price);
+        return priceA - priceB;
       } 
       // Если порядок сортировки 'desc' (по убыванию, от высокой к низкой цене)
       else {
-        return parseFloat(b.price) - parseFloat(a.price);
+        return priceB - priceA;
       }
     });
   }, [rawMarketplaceNfts, currentUser, sortOrder]);
