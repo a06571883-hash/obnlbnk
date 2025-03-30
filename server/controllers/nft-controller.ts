@@ -344,8 +344,8 @@ router.get('/marketplace', async (req: Request, res: Response) => {
             collectionName: collectionName,
             name: nft.name,
             description: nft.description || '',
-            imagePath: nft.imagePath,
-            imageUrl: nft.imagePath, // Для совместимости с фронтендом
+            imagePath: nft.originalImagePath || nft.imagePath, // Используем оригинальный путь к изображению, если он есть
+            imageUrl: nft.originalImagePath || nft.imagePath, // Для совместимости с фронтендом
             price: nft.price || "0",
             forSale: nft.forSale,
             ownerId: nft.ownerId,
@@ -443,8 +443,8 @@ router.get('/marketplace', async (req: Request, res: Response) => {
             collectionName: nft.collection_name || 'Bored Ape Yacht Club',
             name: nft.name,
             description: nft.description || '',
-            imagePath: nft.image_url,
-            imageUrl: nft.image_url, // Для совместимости с фронтендом
+            imagePath: nft.original_image_path || nft.image_url,
+            imageUrl: nft.original_image_path || nft.image_url, // Для совместимости с фронтендом
             price: nft.price.toString() || "0",
             forSale: nft.for_sale,
             ownerId: nft.owner_id,

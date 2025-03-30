@@ -444,12 +444,17 @@ export async function buyNFT(nftId: number, buyerId: number) {
     
     console.log(`[Bored Ape NFT Service] Перевод комиссии успешен, ID транзакции: ${commissionTransferResult.transaction?.id}`);
     
+    // Получаем текущие данные NFT перед обновлением для сохранения оригинального пути
+    const currentNft = await db.select().from(nfts).where(eq(nfts.id, nftId));
+    
     // Обновляем информацию об NFT
     const updatedNft = await db.update(nfts)
       .set({
         ownerId: buyerId,
         forSale: false,
-        price: '0' // Сбрасываем цену после покупки
+        price: '0', // Сбрасываем цену после покупки
+        // Если у NFT есть originalImagePath, используем его, иначе сохраняем текущий путь как originalImagePath
+        originalImagePath: currentNft[0].originalImagePath || currentNft[0].imagePath
       })
       .where(eq(nfts.id, nftId))
       .returning();
@@ -503,11 +508,16 @@ export async function giftNFT(nftId: number, fromUserId: number, toUserId: numbe
       throw new Error('NFT не найден или вы не являетесь его владельцем');
     }
     
+    // Получаем текущие данные NFT перед обновлением для сохранения оригинального пути
+    const nft = nftInfo[0];
+    
     // Обновляем информацию об NFT
     const updatedNft = await db.update(nfts)
       .set({
         ownerId: toUserId,
-        forSale: false // Снимаем с продажи при передаче
+        forSale: false, // Снимаем с продажи при передаче
+        // Сохраняем оригинальный путь к изображению при передаче
+        originalImagePath: nft.originalImagePath || nft.imagePath
       })
       .where(eq(nfts.id, nftId))
       .returning();

@@ -74,7 +74,9 @@ export const nfts = pgTable("nfts", {
   price: text("price").default("0"), // Цена для продажи, 0 - не продается
   forSale: boolean("for_sale").notNull().default(false), // Выставлен ли на продажу
   mintedAt: timestamp("minted_at").notNull().defaultNow(),
-  tokenId: text("token_id").notNull()
+  tokenId: text("token_id").notNull(),
+  originalImagePath: text("original_image_path"), // Путь к оригинальному изображению, которое не должно меняться
+  sortOrder: integer("sort_order") // Порядок сортировки для стабильного отображения
 });
 
 // История передачи NFT (продажи, дарения)
