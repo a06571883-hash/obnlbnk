@@ -81,7 +81,7 @@ export const NFTMarketplace: React.FC = () => {
   
   // Состояние для пагинации
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12; // Показываем 12 NFT на страницу
+  const itemsPerPage = 1000; // Увеличиваем лимит, чтобы все NFT отображались на одной странице
   
   // Фильтруем NFT, исключая те, которые принадлежат текущему пользователю
   // и не используем фильтрацию по tokenId, чтобы показать все доступные NFT
