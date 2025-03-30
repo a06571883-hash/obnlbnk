@@ -34,8 +34,8 @@ export function getProxiedImageUrl(imagePath: string): string {
       imagePath.includes('mutant_ape_nft') ||
       imagePath.includes('new_bored_ape') ||
       imagePath.includes('nft_assets')) {
-    // Обеспечиваем прямой доступ через сервер изображений на порту 8080
-    return `http://localhost:8080${imagePath}`;
+    // Используем относительный путь для проксирования через наш API
+    return `/nft-proxy${imagePath}`;
   }
 
   // Для других изображений возвращаем исходный путь

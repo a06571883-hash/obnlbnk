@@ -75,11 +75,11 @@ app.get('*', (req, res) => {
   res.status(404).send('Not Found');
 });
 
-// Запускаем сервер на порту 8080
+// Запускаем сервер на порту 8080 и слушаем на всех интерфейсах для доступа в Replit
 const PORT = 8080;
-app.listen(PORT, () => {
-  console.log(`NFT image server running on port ${PORT}`);
-  console.log(`Server address: http://127.0.0.1:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`NFT image server running on port ${PORT} (0.0.0.0)`);
+  console.log(`Server address: http://0.0.0.0:${PORT}`);
   console.log(`Configured paths:`);
   for (const [route, path] of Object.entries(nftPaths)) {
     console.log(`  ${route} -> ${path}`);

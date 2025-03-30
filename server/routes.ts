@@ -173,14 +173,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Заменяем /nft-proxy на пустую строку в начале URL
       const proxyUrl = req.url?.replace(/^\/nft-proxy/, '') || '';
       const proxyOptions = {
-        hostname: 'localhost',
+        hostname: '0.0.0.0',
         port: 8080,
         path: proxyUrl,
         method: req.method,
         headers: req.headers
       };
       
-      console.log(`Proxying NFT request: ${req.url} -> http://localhost:8080${proxyUrl}`);
+      console.log(`Proxying NFT request: ${req.url} -> http://0.0.0.0:8080${proxyUrl}`);
       
       // Создаем прокси-запрос на наш NFT сервер
       const proxyReq = http.request(proxyOptions, (proxyRes: any) => {
