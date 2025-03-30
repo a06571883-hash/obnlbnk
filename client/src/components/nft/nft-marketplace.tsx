@@ -85,28 +85,38 @@ export const NFTMarketplace: React.FC = () => {
   const itemsPerPage = 1000; // Увеличиваем лимит, чтобы все NFT отображались на одной странице
   
   // Фильтруем NFT, исключая те, которые принадлежат текущему пользователю
-  // и не используем фильтрацию по tokenId, чтобы показать все доступные NFT
+  // и удаляем дубликаты на основе tokenId
   const uniqueMarketplaceNfts = React.useMemo(() => {
     // Создаем массив для хранения всех NFT для маркетплейса
     const marketplaceNfts: NFT[] = [];
     
+    // Создаем Set для отслеживания уникальных tokenId
+    const uniqueTokenIds = new Set<string>();
+    
     // Добавляем NFT, которые не принадлежат текущему пользователю или выставлены на продажу
+    // и удаляем дубликаты по tokenId
     rawMarketplaceNfts.forEach(nft => {
       // Пропускаем NFT текущего пользователя (если не выставлен на продажу)
       const isCurrentUserNft = nft.ownerId === (currentUser as any)?.id;
       
-      // Добавляем в маркетплейс только если:
-      // 1. NFT НЕ принадлежит текущему пользователю ИЛИ
-      // 2. NFT принадлежит текущему пользователю, но выставлен на продажу
-      if (!isCurrentUserNft || (isCurrentUserNft && nft.forSale)) {
-        marketplaceNfts.push(nft);
+      // Проверяем, что это не дубликат по tokenId 
+      // (если tokenId уже есть в наборе, значит мы уже добавили этот NFT)
+      if (!uniqueTokenIds.has(nft.tokenId)) {
+        // Добавляем в маркетплейс только если:
+        // 1. NFT НЕ принадлежит текущему пользователю ИЛИ
+        // 2. NFT принадлежит текущему пользователю, но выставлен на продажу
+        if (!isCurrentUserNft || (isCurrentUserNft && nft.forSale)) {
+          marketplaceNfts.push(nft);
+          uniqueTokenIds.add(nft.tokenId); // Запоминаем, что этот tokenId уже добавлен
+        }
       }
     });
     
-    // Сохраняем порядок NFT, который уже был перемешан на сервере
-    // Не сортируем дополнительно, чтобы показывать разные NFT вперемешку
-    // Если требуется сортировка, можно добавить ее позже
-    return marketplaceNfts;
+    // Сохраняем порядок NFT, но сначала сортируем по цене - от низкой к высокой
+    // чтобы улучшить пользовательский опыт
+    return marketplaceNfts.sort((a, b) => {
+      return parseFloat(a.price) - parseFloat(b.price);
+    });
   }, [rawMarketplaceNfts, currentUser]);
   
   // Получаем общее количество страниц

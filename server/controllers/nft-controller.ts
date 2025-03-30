@@ -278,18 +278,27 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       // Выполняем запрос с сортировкой по случайному полю (если оно есть) или по ID
       let nftsForSaleResult;
       try {
-        // Пробуем сначала сортировать по sort_order (для случайного перемешивания)
+        // Пробуем сначала сортировать по price (от низкой к высокой)
         nftsForSaleResult = await query
-          .orderBy(sql`sort_order`) // SQL выражение для поля, добавленного вручную
-          .limit(300); // Уменьшаем лимит для улучшения производительности
+          .orderBy(sql`cast(price as numeric)`) // SQL выражение для сортировки по числовому значению
+          .limit(500); // Увеличиваем лимит для получения большего числа NFT
         
-        log('Сортировка по случайному полю sort_order применена успешно');
+        log('Сортировка по цене (от низкой к высокой) применена успешно');
       } catch (error) {
-        // Если не удалось отсортировать по sort_order, используем обычную сортировку
-        log('Не удалось применить сортировку по sort_order, используем сортировку по id');
-        nftsForSaleResult = await query
-          .orderBy(nfts.id)
-          .limit(300);
+        try {
+          // Если не удалось отсортировать по цене, пробуем sort_order
+          nftsForSaleResult = await query
+            .orderBy(sql`sort_order`) // SQL выражение для поля, добавленного вручную
+            .limit(500);
+          
+          log('Сортировка по случайному полю sort_order применена успешно');
+        } catch (secondError) {
+          // Если и это не удалось, используем обычную сортировку по id
+          log('Не удалось применить сортировки, используем сортировку по id');
+          nftsForSaleResult = await query
+            .orderBy(nfts.id)
+            .limit(500);
+        }
       }
       
       log(`Найдено ${nftsForSaleResult.length} NFT через Drizzle ORM из таблицы nfts`);
@@ -370,23 +379,34 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       // Показываем все NFT на продаже, независимо от пользователя
       // Убираем лимит, чтобы получить все NFT
       try {
-        // Пробуем использовать случайную сортировку с sort_order и ограничиваем количество записей
+        // Пробуем использовать сортировку по цене от низкой к высокой
         legacyNFTResult = await client`
           SELECT * FROM nft 
           WHERE for_sale = true 
-          ORDER BY sort_order
-          LIMIT 50
+          ORDER BY cast(price as numeric) ASC
+          LIMIT 500
         `;
-        log('Сортировка по случайному полю sort_order для legacy NFT применена успешно');
+        log('Сортировка по цене (от низкой к высокой) для legacy NFT применена успешно');
       } catch (sortError) {
-        // Если sort_order не существует, используем случайную сортировку
-        legacyNFTResult = await client`
-          SELECT * FROM nft 
-          WHERE for_sale = true 
-          ORDER BY RANDOM()
-          LIMIT 50
-        `;
-        log('Применена случайная сортировка для legacy NFT');
+        // Если произошла ошибка, пробуем использовать сортировку по sort_order
+        try {
+          legacyNFTResult = await client`
+            SELECT * FROM nft 
+            WHERE for_sale = true 
+            ORDER BY sort_order
+            LIMIT 500
+          `;
+          log('Сортировка по случайному полю sort_order для legacy NFT применена успешно');
+        } catch (secondSortError) {
+          // Если и sort_order не существует, используем случайную сортировку
+          legacyNFTResult = await client`
+            SELECT * FROM nft 
+            WHERE for_sale = true 
+            ORDER BY RANDOM()
+            LIMIT 500
+          `;
+          log('Применена случайная сортировка для legacy NFT');
+        }
       }
       
       log(`Найдено ${legacyNFTResult.length} NFT из таблицы nft (legacy)`);
