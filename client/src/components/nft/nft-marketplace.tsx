@@ -106,43 +106,37 @@ export const NFTMarketplace: React.FC = () => {
     retry: 3
   });
   
-  // Сохраняем NFT из ответа API
-  const rawMarketplaceNfts = marketplaceData?.items || [];
+  // Получаем NFT и информацию о пагинации из ответа API v2
+  const items = marketplaceData?.items || [];
+  const pagination = marketplaceData?.pagination || { 
+    page: 1, 
+    limit: itemsPerPage, 
+    totalItems: 0, 
+    totalPages: 0 
+  };
   
-  // Фильтруем только дубликаты на основе tokenId
-  // НЕ фильтруем по владельцу, чтобы показать все NFT на продажу
-  const uniqueMarketplaceNfts = React.useMemo(() => {
+  // Получаем NFT без клиентской пагинации, так как API v2 уже поддерживает серверную пагинацию
+  const marketplaceNfts = React.useMemo(() => {
     // Создаем массив для хранения всех NFT для маркетплейса
-    const marketplaceNfts: NFT[] = [];
+    const uniqueItems: NFT[] = [];
     
-    // Создаем Set для отслеживания уникальных tokenId
+    // Создаем Set для отслеживания уникальных tokenId для защиты от дубликатов
     const uniqueTokenIds = new Set<string>();
     
-    // Для API v2 нам не нужно сортировать вручную, так как сервер уже возвращает отсортированные данные
-    // Но все равно фильтруем для удаления потенциальных дубликатов
-    rawMarketplaceNfts.forEach(nft => {
-      // Проверяем, что это не дубликат по tokenId 
-      if (!uniqueTokenIds.has(nft.tokenId)) {
-        // Проверка forSale может быть избыточной, так как API v2 должен возвращать только NFT на продаже,
-        // но оставляем для дополнительной безопасности
-        if (nft.forSale) {
-          marketplaceNfts.push(nft);
-          uniqueTokenIds.add(nft.tokenId); // Запоминаем, что этот tokenId уже добавлен
-        }
+    // Проверяем уникальность по tokenId (на всякий случай, хотя API уже должен возвращать уникальные NFT)
+    items.forEach(nft => {
+      if (!uniqueTokenIds.has(nft.tokenId) && nft.forSale) {
+        uniqueItems.push(nft);
+        uniqueTokenIds.add(nft.tokenId);
       }
     });
     
-    return marketplaceNfts;
-  }, [rawMarketplaceNfts]);
+    return uniqueItems;
+  }, [items]);
   
-  // Получаем общее количество страниц
-  const totalPages = Math.ceil(uniqueMarketplaceNfts.length / itemsPerPage);
-  
-  // Получаем NFT для текущей страницы
-  const marketplaceNfts = React.useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return uniqueMarketplaceNfts.slice(startIndex, startIndex + itemsPerPage);
-  }, [uniqueMarketplaceNfts, currentPage, itemsPerPage]);
+  // Используем данные о пагинации из API
+  const totalItems = pagination.totalItems;
+  const totalPages = pagination.totalPages;
   
   // Мутация для выставления NFT на продажу
   const sellNftMutation = useMutation({
@@ -362,19 +356,19 @@ export const NFTMarketplace: React.FC = () => {
   
   // Рассчитываем минимальную и максимальную цену отображаемых NFT
   const minMaxPrices = React.useMemo(() => {
-    if (!uniqueMarketplaceNfts.length) return { min: 0, max: 0 };
+    if (!marketplaceNfts.length) return { min: 0, max: 0 };
     
     let min = Infinity;
     let max = 0;
     
-    uniqueMarketplaceNfts.forEach(nft => {
+    marketplaceNfts.forEach(nft => {
       const price = parseFloat(nft.price);
       if (price < min) min = price;
       if (price > max) max = price;
     });
     
     return { min, max };
-  }, [uniqueMarketplaceNfts]);
+  }, [marketplaceNfts]);
 
   const isLoading = isLoadingMyNfts || isLoadingMarketplace || sellNftMutation.isPending || buyNftMutation.isPending || giftNftMutation.isPending || cancelSaleMutation.isPending;
   
@@ -398,7 +392,7 @@ export const NFTMarketplace: React.FC = () => {
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="text-2xl font-bold">NFT Маркетплейс</h2>
             <div className="text-xs bg-slate-100 dark:bg-slate-800 rounded-full px-3 py-1">
-              Всего: {uniqueMarketplaceNfts.length} NFT • Цены: ${minMaxPrices.min} - ${minMaxPrices.max}
+              Всего: {totalItems} NFT • Цены: ${minMaxPrices.min} - ${minMaxPrices.max}
             </div>
           </div>
           
@@ -531,7 +525,7 @@ export const NFTMarketplace: React.FC = () => {
                 </Button>
                 
                 <div className="text-xs text-muted-foreground ml-2">
-                  {uniqueMarketplaceNfts.length} NFT в маркетплейсе
+                  {totalItems} NFT в маркетплейсе
                 </div>
               </div>
             )}
