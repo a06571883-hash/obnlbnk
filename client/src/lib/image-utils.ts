@@ -12,7 +12,11 @@
  */
 export function getProxiedImageUrl(imagePath: string): string {
   if (!imagePath) {
-    return '/assets/nft/fallback/common_nft.svg';
+    // Генерируем случайное число от 0 до 1759 для выбора реального BAYC изображения
+    const randomId = Math.floor(Math.random() * 1760);
+    // Форматируем номер с ведущими нулями (0000, 0001 и т.д.)
+    const paddedId = randomId.toString().padStart(4, '0');
+    return `/nft-proxy/bored_ape_nft/bored_ape_${paddedId}.png`;
   }
 
   console.log('Обработка пути к изображению NFT:', imagePath);
@@ -27,22 +31,27 @@ export function getProxiedImageUrl(imagePath: string): string {
     imagePath = '/' + imagePath;
   }
 
-  // Используем запасное изображение, если у нас путь к обезьяне с высоким ID
-  // (для оптимизации загрузки)
+  // Используем реальное изображение, даже если у нас путь к обезьяне с высоким ID
+  // Всегда показываем настоящие изображения вместо SVG заглушек
   if (imagePath.includes('bored_ape_nft')) {
     const match = imagePath.match(/bored_ape_(\d+)/);
     if (match) {
       const id = parseInt(match[1], 10);
       if (id > 2000) {
-        // Используем стандартное изображение для высоких ID
-        return '/assets/nft/fallback/bayc_nft.svg';
+        // Генерируем случайное число от 0 до 1759 для выбора реального BAYC изображения
+        const randomId = Math.floor(Math.random() * 1760);
+        // Форматируем номер с ведущими нулями (0000, 0001 и т.д.)
+        const paddedId = randomId.toString().padStart(4, '0');
+        return `/nft-proxy/bored_ape_nft/bored_ape_${paddedId}.png`;
       }
     }
   }
 
-  // Проверка на Mutant Ape - если отсутствует, используем заглушку
+  // Для Mutant Ape используем реальное изображение вместо заглушки
   if (imagePath.includes('mutant_ape_nft')) {
-    return '/assets/nft/fallback/mutant_ape_nft.svg';
+    // Генерируем случайное число от 15000 до 15103 для выбора реального Mutant Ape изображения
+    const randomId = Math.floor(Math.random() * 104) + 15000;
+    return `/nft-proxy/mutant_ape_nft/mutant_ape_${randomId}.png`;
   }
 
   // Перенаправляем через прокси любые NFT изображения,
