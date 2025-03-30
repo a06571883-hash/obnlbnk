@@ -12,11 +12,8 @@
  */
 export function getProxiedImageUrl(imagePath: string): string {
   if (!imagePath) {
-    // Генерируем случайное число от 0 до 1759 для выбора реального BAYC изображения
-    const randomId = Math.floor(Math.random() * 1760);
-    // Форматируем номер с ведущими нулями (0000, 0001 и т.д.)
-    const paddedId = randomId.toString().padStart(4, '0');
-    return `/nft-proxy/bored_ape_nft/bored_ape_${paddedId}.png`;
+    // Для пустого пути используем стандартное изображение
+    return `/nft-proxy/assets/nft/placeholder.png`;
   }
 
   console.log('Обработка пути к изображению NFT:', imagePath);
@@ -29,29 +26,6 @@ export function getProxiedImageUrl(imagePath: string): string {
   // Если путь относительный, добавляем слэш в начало
   if (!imagePath.startsWith('/')) {
     imagePath = '/' + imagePath;
-  }
-
-  // Используем реальное изображение, даже если у нас путь к обезьяне с высоким ID
-  // Всегда показываем настоящие изображения вместо SVG заглушек
-  if (imagePath.includes('bored_ape_nft')) {
-    const match = imagePath.match(/bored_ape_(\d+)/);
-    if (match) {
-      const id = parseInt(match[1], 10);
-      if (id > 2000) {
-        // Генерируем случайное число от 0 до 1759 для выбора реального BAYC изображения
-        const randomId = Math.floor(Math.random() * 1760);
-        // Форматируем номер с ведущими нулями (0000, 0001 и т.д.)
-        const paddedId = randomId.toString().padStart(4, '0');
-        return `/nft-proxy/bored_ape_nft/bored_ape_${paddedId}.png`;
-      }
-    }
-  }
-
-  // Для Mutant Ape используем реальное изображение вместо заглушки
-  if (imagePath.includes('mutant_ape_nft')) {
-    // Генерируем случайное число от 15000 до 15103 для выбора реального Mutant Ape изображения
-    const randomId = Math.floor(Math.random() * 104) + 15000;
-    return `/nft-proxy/mutant_ape_nft/mutant_ape_${randomId}.png`;
   }
 
   // Перенаправляем через прокси любые NFT изображения,
