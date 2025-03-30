@@ -273,7 +273,7 @@ router.get('/marketplace', async (req: Request, res: Response) => {
         .from(nfts)
         .where(eq(nfts.forSale, true));
       
-      // Убираем фильтрацию по владельцу, чтобы показывать все NFT на продаже
+      // Показываем все NFT на продаже, включая те, которые принадлежат текущему пользователю
       
       // Выполняем запрос с сортировкой по случайному полю (если оно есть) или по ID
       let nftsForSaleResult;
