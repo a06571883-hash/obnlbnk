@@ -120,30 +120,49 @@ router.get('/user', ensureAuthenticated, async (req: Request, res: Response) => 
     
     // Функция для проверки, является ли NFT обезьяной BAYC
     const isBoredApe = (nft: any): boolean => {
-      // Проверяем по имени, коллекции и пути к изображению
-      const nameCheck = nft.name?.toLowerCase().includes('ape') || 
-                         nft.name?.toLowerCase().includes('bayc') || 
-                         nft.name?.toLowerCase().includes('bored');
+      // Проверяем, какой тип NFT
+      const isNftMutant = isMutantApe(nft);
+      const isNftBored = isRegularBoredApe(nft);
       
-      const collectionCheck = (nft.collectionName?.toLowerCase().includes('bored') || 
-                               nft.collectionName?.toLowerCase().includes('ape') || 
-                               nft.collectionName?.toLowerCase().includes('bayc') ||
-                               nft.collection_name?.toLowerCase().includes('bored') || 
-                               nft.collection_name?.toLowerCase().includes('ape') || 
-                               nft.collection_name?.toLowerCase().includes('bayc'));
+      // Оба типа считаются обезьянами, которые должны отображаться в маркетплейсе
+      return isNftMutant || isNftBored;
+    };
+    
+    // Функция для определения Mutant Ape
+    const isMutantApe = (nft: any): boolean => {
+      // Проверка по имени NFT
+      const nameCheck = nft.name?.toLowerCase().includes('mutant ape');
       
-      const imageCheck = nft.imagePath?.includes('bayc_') || 
-                         nft.imageUrl?.includes('bayc_') || 
-                         nft.image_url?.includes('bayc_') ||
-                         nft.imagePath?.includes('official_bayc_') || 
-                         nft.imageUrl?.includes('official_bayc_') || 
-                         nft.image_url?.includes('official_bayc_');
+      // Проверка по пути к изображению
+      const imageCheck = nft.imagePath?.includes('mutant_ape') || 
+                          nft.imageUrl?.includes('mutant_ape') || 
+                          nft.image_url?.includes('mutant_ape');
       
-      return nameCheck || collectionCheck || imageCheck;
+      return nameCheck || imageCheck;
+    };
+    
+    // Функция для определения Bored Ape (не Mutant)
+    const isRegularBoredApe = (nft: any): boolean => {
+      // Проверка по имени NFT (содержит 'Bored Ape', но не 'Mutant')
+      const nameCheck = nft.name?.toLowerCase().includes('bored ape') &&
+                        !nft.name?.toLowerCase().includes('mutant');
+      
+      // Проверка по пути к изображению
+      const imageCheck = (nft.imagePath?.includes('bored_ape') || 
+                          nft.imageUrl?.includes('bored_ape') || 
+                          nft.image_url?.includes('bored_ape') ||
+                          nft.imagePath?.includes('bayc_') || 
+                          nft.imageUrl?.includes('bayc_') || 
+                          nft.image_url?.includes('bayc_')) &&
+                         !(nft.imagePath?.includes('mutant') || 
+                           nft.imageUrl?.includes('mutant') || 
+                           nft.image_url?.includes('mutant'));
+      
+      return nameCheck || imageCheck;
     };
     
     // Фильтруем только обезьян Bored Ape
-    const onlyBoredApes = allUserNFTs.filter(nft => isBoredApe(nft));
+    const onlyBoredApes = allUserNFTs; // Показываем все типы NFT
     
     log(`Отфильтровано ${onlyBoredApes.length} обезьян BAYC из ${allUserNFTs.length} всего NFT для пользователя ${userId}`);
     log(`Отправляем ${onlyBoredApes.length} NFT клиенту`);
@@ -195,26 +214,45 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     
     // Функция для проверки, является ли NFT обезьяной BAYC
     const isBoredApe = (nft: any): boolean => {
-      // Проверяем по имени, коллекции и пути к изображению
-      const nameCheck = nft.name?.toLowerCase().includes('ape') || 
-                         nft.name?.toLowerCase().includes('bayc') || 
-                         nft.name?.toLowerCase().includes('bored');
+      // Проверяем, какой тип NFT
+      const isNftMutant = isMutantApe(nft);
+      const isNftBored = isRegularBoredApe(nft);
       
-      const collectionCheck = (nft.collectionName?.toLowerCase().includes('bored') || 
-                               nft.collectionName?.toLowerCase().includes('ape') || 
-                               nft.collectionName?.toLowerCase().includes('bayc') ||
-                               nft.collection_name?.toLowerCase().includes('bored') || 
-                               nft.collection_name?.toLowerCase().includes('ape') || 
-                               nft.collection_name?.toLowerCase().includes('bayc'));
+      // Оба типа считаются обезьянами, которые должны отображаться в маркетплейсе
+      return isNftMutant || isNftBored;
+    };
+    
+    // Функция для определения Mutant Ape
+    const isMutantApe = (nft: any): boolean => {
+      // Проверка по имени NFT
+      const nameCheck = nft.name?.toLowerCase().includes('mutant ape');
       
-      const imageCheck = nft.imagePath?.includes('bayc_') || 
-                         nft.imageUrl?.includes('bayc_') || 
-                         nft.image_url?.includes('bayc_') ||
-                         nft.imagePath?.includes('official_bayc_') || 
-                         nft.imageUrl?.includes('official_bayc_') || 
-                         nft.image_url?.includes('official_bayc_');
+      // Проверка по пути к изображению
+      const imageCheck = nft.imagePath?.includes('mutant_ape') || 
+                          nft.imageUrl?.includes('mutant_ape') || 
+                          nft.image_url?.includes('mutant_ape');
       
-      return nameCheck || collectionCheck || imageCheck;
+      return nameCheck || imageCheck;
+    };
+    
+    // Функция для определения Bored Ape (не Mutant)
+    const isRegularBoredApe = (nft: any): boolean => {
+      // Проверка по имени NFT (содержит 'Bored Ape', но не 'Mutant')
+      const nameCheck = nft.name?.toLowerCase().includes('bored ape') &&
+                        !nft.name?.toLowerCase().includes('mutant');
+      
+      // Проверка по пути к изображению
+      const imageCheck = (nft.imagePath?.includes('bored_ape') || 
+                          nft.imageUrl?.includes('bored_ape') || 
+                          nft.image_url?.includes('bored_ape') ||
+                          nft.imagePath?.includes('bayc_') || 
+                          nft.imageUrl?.includes('bayc_') || 
+                          nft.image_url?.includes('bayc_')) &&
+                         !(nft.imagePath?.includes('mutant') || 
+                           nft.imageUrl?.includes('mutant') || 
+                           nft.image_url?.includes('mutant'));
+      
+      return nameCheck || imageCheck;
     };
     
     // 1. Сначала пробуем получить NFT на продаже с помощью Drizzle ORM из таблицы nfts
@@ -234,7 +272,7 @@ router.get('/marketplace', async (req: Request, res: Response) => {
         // Пробуем сначала сортировать по sort_order (для случайного перемешивания)
         nftsForSaleResult = await query
           .orderBy(sql`sort_order`) // SQL выражение для поля, добавленного вручную
-          .limit(1000); // Увеличиваем лимит до 1000
+          .limit(5000); // Увеличиваем лимит до 1000
         
         log('Сортировка по случайному полю sort_order применена успешно');
       } catch (error) {
@@ -242,7 +280,7 @@ router.get('/marketplace', async (req: Request, res: Response) => {
         log('Не удалось применить сортировку по sort_order, используем сортировку по id');
         nftsForSaleResult = await query
           .orderBy(nfts.id)
-          .limit(1000);
+          .limit(5000);
       }
       
       log(`Найдено ${nftsForSaleResult.length} NFT через Drizzle ORM из таблицы nfts`);
@@ -443,7 +481,7 @@ router.get('/marketplace', async (req: Request, res: Response) => {
     }
     
     // Фильтруем только обезьян Bored Ape перед отправкой
-    const onlyBoredApes = combinedNFTs.filter(nft => isBoredApe(nft));
+    const onlyBoredApes = combinedNFTs; // Показываем все типы NFT
     
     log(`Отфильтровано ${onlyBoredApes.length} обезьян BAYC из ${combinedNFTs.length} всего NFT`);
     log(`Отправляем итоговый список из ${onlyBoredApes.length} обезьян BAYC клиенту`);
@@ -1009,25 +1047,49 @@ router.get('/gallery', ensureAuthenticated, async (req: Request, res: Response) 
     
     // Функция для проверки, является ли NFT обезьяной BAYC
     const isBoredApe = (nft: any): boolean => {
-      // Проверяем по имени, коллекции и пути к изображению
-      const nameCheck = nft.name?.toLowerCase().includes('ape') || 
-                         nft.name?.toLowerCase().includes('bayc') || 
-                         nft.name?.toLowerCase().includes('bored');
+      // Проверяем, какой тип NFT
+      const isNftMutant = isMutantApe(nft);
+      const isNftBored = isRegularBoredApe(nft);
       
-      const collectionCheck = nft.collectionId === 1 || 
-                              (typeof nft.collectionName === 'string' && 
-                              (nft.collectionName.toLowerCase().includes('bored') || 
-                               nft.collectionName.toLowerCase().includes('ape') || 
-                               nft.collectionName.toLowerCase().includes('bayc')));
+      // Оба типа считаются обезьянами, которые должны отображаться в маркетплейсе
+      return isNftMutant || isNftBored;
+    };
+    
+    // Функция для определения Mutant Ape
+    const isMutantApe = (nft: any): boolean => {
+      // Проверка по имени NFT
+      const nameCheck = nft.name?.toLowerCase().includes('mutant ape');
       
-      const imageCheck = nft.imagePath?.includes('bayc_') || 
-                         nft.imagePath?.includes('official_bayc_');
+      // Проверка по пути к изображению
+      const imageCheck = nft.imagePath?.includes('mutant_ape') || 
+                          nft.imageUrl?.includes('mutant_ape') || 
+                          nft.image_url?.includes('mutant_ape');
       
-      return nameCheck || collectionCheck || imageCheck;
+      return nameCheck || imageCheck;
+    };
+    
+    // Функция для определения Bored Ape (не Mutant)
+    const isRegularBoredApe = (nft: any): boolean => {
+      // Проверка по имени NFT (содержит 'Bored Ape', но не 'Mutant')
+      const nameCheck = nft.name?.toLowerCase().includes('bored ape') &&
+                        !nft.name?.toLowerCase().includes('mutant');
+      
+      // Проверка по пути к изображению
+      const imageCheck = (nft.imagePath?.includes('bored_ape') || 
+                          nft.imageUrl?.includes('bored_ape') || 
+                          nft.image_url?.includes('bored_ape') ||
+                          nft.imagePath?.includes('bayc_') || 
+                          nft.imageUrl?.includes('bayc_') || 
+                          nft.image_url?.includes('bayc_')) &&
+                         !(nft.imagePath?.includes('mutant') || 
+                           nft.imageUrl?.includes('mutant') || 
+                           nft.image_url?.includes('mutant'));
+      
+      return nameCheck || imageCheck;
     };
     
     // Фильтруем только обезьян Bored Ape
-    const onlyBoredApes = allUserNFTs.filter(nft => isBoredApe(nft));
+    const onlyBoredApes = allUserNFTs; // Показываем все типы NFT
     
     log(`Отфильтровано ${onlyBoredApes.length} обезьян BAYC из ${allUserNFTs.length} всего NFT для галереи пользователя ${userId}`);
     

@@ -30,7 +30,7 @@ export const NFTPage: React.FC = () => {
   // Определяем активную вкладку на основе URL
   useEffect(() => {
     console.log('Current location:', location);
-    if (location === '/nft/marketplace') {
+    if (location === '/nft/marketplace' || location === '/nft-marketplace') {
       setActiveTab('marketplace');
     } else if (location === '/nft/gallery') {
       setActiveTab('gallery');
