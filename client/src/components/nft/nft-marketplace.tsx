@@ -102,12 +102,10 @@ export const NFTMarketplace: React.FC = () => {
       }
     });
     
-    // Сортируем NFT по цене (от самых дорогих к самым дешевым)
-    return marketplaceNfts.sort((a, b) => {
-      const priceA = parseFloat(a.price) || 0;
-      const priceB = parseFloat(b.price) || 0;
-      return priceB - priceA; // Сортировка от самых дорогих к самым дешевым
-    });
+    // Сохраняем порядок NFT, который уже был перемешан на сервере
+    // Не сортируем дополнительно, чтобы показывать разные NFT вперемешку
+    // Если требуется сортировка, можно добавить ее позже
+    return marketplaceNfts;
   }, [rawMarketplaceNfts, currentUser]);
   
   // Получаем общее количество страниц
