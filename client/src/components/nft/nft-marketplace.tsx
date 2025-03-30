@@ -117,21 +117,20 @@ export const NFTMarketplace: React.FC = () => {
   
   // Получаем NFT без клиентской пагинации, так как API v2 уже поддерживает серверную пагинацию
   const marketplaceNfts = React.useMemo(() => {
-    // Создаем массив для хранения всех NFT для маркетплейса
-    const uniqueItems: NFT[] = [];
+    // Полностью исключаем дубликаты на основе tokenId
+    // Используем Map для сохранения только последнего экземпляра каждого NFT с уникальным tokenId
+    const uniqueMap = new Map<string, NFT>();
     
-    // Создаем Set для отслеживания уникальных tokenId для защиты от дубликатов
-    const uniqueTokenIds = new Set<string>();
-    
-    // Проверяем уникальность по tokenId (на всякий случай, хотя API уже должен возвращать уникальные NFT)
+    // Добавляем NFT в Map, перезаписывая дубликаты
     items.forEach(nft => {
-      if (!uniqueTokenIds.has(nft.tokenId) && nft.forSale) {
-        uniqueItems.push(nft);
-        uniqueTokenIds.add(nft.tokenId);
+      // Проверяем, что NFT доступен для продажи
+      if (nft.forSale) {
+        uniqueMap.set(nft.tokenId, nft);
       }
     });
     
-    return uniqueItems;
+    // Преобразуем Map обратно в массив
+    return Array.from(uniqueMap.values());
   }, [items]);
   
   // Используем данные о пагинации из API
@@ -500,56 +499,125 @@ export const NFTMarketplace: React.FC = () => {
             </div>
             
             {/* Пагинация */}
-            {totalPages > 1 && (
+            {totalPages > 0 && (
               <div className="flex justify-center items-center gap-2 mt-4">
                 <Button 
                   variant="outline" 
                   size="sm"
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  onClick={() => {
+                    const newPage = Math.max(currentPage - 1, 1);
+                    setCurrentPage(newPage);
+                    // Прокручиваем страницу вверх
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                 >
                   Назад
                 </Button>
                 
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    // Вычисляем номера страниц для отображения (до 5 страниц)
-                    const pageToShow = totalPages <= 5 
-                      ? i + 1 
-                      : currentPage <= 3 
-                        ? i + 1 
-                        : currentPage >= totalPages - 2 
-                          ? totalPages - 4 + i 
-                          : currentPage - 2 + i;
-                          
-                    // Убеждаемся, что страница в пределах общего количества
-                    if (pageToShow > totalPages) return null;
+                <div className="flex items-center gap-1 flex-wrap justify-center">
+                  {(() => {
+                    // Создаем массив номеров страниц для отображения
+                    const pageButtons = [];
                     
-                    return (
-                      <Button
-                        key={pageToShow}
-                        variant={currentPage === pageToShow ? "default" : "outline"}
-                        size="sm"
-                        className="w-8 h-8 p-0"
-                        onClick={() => setCurrentPage(pageToShow)}
-                      >
-                        {pageToShow}
-                      </Button>
-                    );
-                  })}
+                    // Максимальное количество кнопок страниц для отображения
+                    const maxPageButtons = 5;
+                    
+                    // Вычисляем диапазон страниц для отображения
+                    let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+                    let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+                    
+                    // Корректируем начальную страницу, если достигли конца
+                    if (endPage - startPage + 1 < maxPageButtons) {
+                      startPage = Math.max(1, endPage - maxPageButtons + 1);
+                    }
+                    
+                    // Добавляем первую страницу и многоточие если нужно
+                    if (startPage > 1) {
+                      pageButtons.push(
+                        <Button
+                          key={1}
+                          variant={currentPage === 1 ? "default" : "outline"}
+                          size="sm"
+                          className="w-8 h-8 p-0"
+                          onClick={() => {
+                            setCurrentPage(1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                        >
+                          1
+                        </Button>
+                      );
+                      
+                      if (startPage > 2) {
+                        pageButtons.push(
+                          <span key="ellipsis1" className="px-1">...</span>
+                        );
+                      }
+                    }
+                    
+                    // Добавляем кнопки для страниц в диапазоне
+                    for (let page = startPage; page <= endPage; page++) {
+                      pageButtons.push(
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          className="w-8 h-8 p-0"
+                          onClick={() => {
+                            setCurrentPage(page);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                        >
+                          {page}
+                        </Button>
+                      );
+                    }
+                    
+                    // Добавляем многоточие и последнюю страницу если нужно
+                    if (endPage < totalPages) {
+                      if (endPage < totalPages - 1) {
+                        pageButtons.push(
+                          <span key="ellipsis2" className="px-1">...</span>
+                        );
+                      }
+                      
+                      pageButtons.push(
+                        <Button
+                          key={totalPages}
+                          variant={currentPage === totalPages ? "default" : "outline"}
+                          size="sm"
+                          className="w-8 h-8 p-0"
+                          onClick={() => {
+                            setCurrentPage(totalPages);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                        >
+                          {totalPages}
+                        </Button>
+                      );
+                    }
+                    
+                    return pageButtons;
+                  })()}
                 </div>
                 
                 <Button 
                   variant="outline" 
                   size="sm"
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  onClick={() => {
+                    const newPage = Math.min(currentPage + 1, totalPages);
+                    setCurrentPage(newPage);
+                    // Прокручиваем страницу вверх
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                 >
                   Вперед
                 </Button>
                 
                 <div className="text-xs text-muted-foreground ml-2">
-                  {totalItems} NFT в маркетплейсе
+                  Страница {currentPage} из {totalPages} • {totalItems} NFT
                 </div>
               </div>
             )}
