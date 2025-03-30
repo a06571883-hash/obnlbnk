@@ -168,7 +168,7 @@ router.get('/v2', async (req: Request, res: Response) => {
       creatorId: nft.creatorId,
       regulatorId: nft.regulatorId,
       rarity: nft.rarity,
-      attributes: nft.attributes ? JSON.parse(nft.attributes as string) : null,
+      attributes: nft.attributes ? (typeof nft.attributes === 'string' ? JSON.parse(nft.attributes) : nft.attributes) : null,
       mintedAt: nft.createdAt,
       owner: {
         id: nft.ownerId,
