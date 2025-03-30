@@ -15,15 +15,27 @@ export function getProxiedImageUrl(imagePath: string): string {
     return '/assets/nft/fallback/common_nft.png';
   }
 
-  // Преобразуем пути к NFT изображениям из Bored Ape Yacht Club коллекции
-  if (imagePath.includes('/bayc_official/')) {
-    // Перенаправляем запрос через прокси
-    return `/nft-proxy${imagePath}`;
+  console.log('Обработка пути к изображению NFT:', imagePath);
+
+  // Абсолютный URL - возвращаем как есть
+  if (imagePath.startsWith('http')) {
+    return imagePath;
   }
 
   // Если путь относительный, добавляем слэш в начало
-  if (!imagePath.startsWith('/') && !imagePath.startsWith('http')) {
+  if (!imagePath.startsWith('/')) {
     imagePath = '/' + imagePath;
+  }
+
+  // Перенаправляем через прокси любые NFT изображения,
+  // включая BAYC и Mutant Ape
+  if (imagePath.includes('bayc_official') || 
+      imagePath.includes('bored_ape_nft') || 
+      imagePath.includes('mutant_ape_nft') ||
+      imagePath.includes('new_bored_ape') ||
+      imagePath.includes('nft_assets')) {
+    // Обеспечиваем прямой доступ через сервер изображений на порту 8080
+    return `http://localhost:8080${imagePath}`;
   }
 
   // Для других изображений возвращаем исходный путь

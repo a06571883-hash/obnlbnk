@@ -23,7 +23,11 @@ app.use((req, res, next) => {
 const nftPaths = {
   '/bayc_official': path.join(process.cwd(), 'public', 'bayc_official'),
   '/bored_ape_nft': path.join(process.cwd(), 'bored_ape_nft'),
-  '/public/assets/nft': path.join(process.cwd(), 'public', 'assets', 'nft')
+  '/public/assets/nft': path.join(process.cwd(), 'public', 'assets', 'nft'),
+  '/mutant_ape_nft': path.join(process.cwd(), 'mutant_ape_nft'),
+  '/new_bored_ape_nft': path.join(process.cwd(), 'new_bored_ape_nft'),
+  '/new_bored_apes': path.join(process.cwd(), 'new_bored_apes'),
+  '/nft_assets': path.join(process.cwd(), 'nft_assets')
 };
 
 // Настраиваем статические маршруты для каждой директории с NFT
