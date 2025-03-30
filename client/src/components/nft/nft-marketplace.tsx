@@ -362,12 +362,27 @@ export const NFTMarketplace: React.FC = () => {
     let max = 0;
     
     marketplaceNfts.forEach(nft => {
-      const price = parseFloat(nft.price);
-      if (price < min) min = price;
-      if (price > max) max = price;
+      try {
+        // Безопасное преобразование цены
+        const price = typeof nft.price === 'string' ? parseFloat(nft.price) : nft.price;
+        if (!isNaN(price)) {
+          if (price < min) min = price;
+          if (price > max) max = price;
+        }
+      } catch (e) {
+        console.error('Ошибка при расчете мин-макс цен:', e);
+      }
     });
     
-    return { min, max };
+    // Если после обработки всех NFT у нас нет действительных цен
+    if (min === Infinity || max === 0) {
+      return { min: 30, max: 20000 }; // Используем значения по умолчанию
+    }
+    
+    return { 
+      min: Math.floor(min), // Округляем до целого числа вниз
+      max: Math.ceil(max)   // Округляем до целого числа вверх
+    };
   }, [marketplaceNfts]);
 
   const isLoading = isLoadingMyNfts || isLoadingMarketplace || sellNftMutation.isPending || buyNftMutation.isPending || giftNftMutation.isPending || cancelSaleMutation.isPending;
@@ -455,7 +470,16 @@ export const NFTMarketplace: React.FC = () => {
                       {nft.rarity}
                     </Badge>
                     <Badge className="absolute top-1 left-1 text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-0.5 bg-amber-500">
-                      {parseFloat(nft.price).toFixed(0)} USD
+                      {(() => {
+                        try {
+                          // Обрабатываем цену, учитывая возможные ошибки с парсингом
+                          const price = typeof nft.price === 'string' ? parseFloat(nft.price) : nft.price;
+                          return isNaN(price) ? '30' : price.toFixed(0);
+                        } catch (e) {
+                          console.error('Ошибка при обработке цены:', e);
+                          return '30';
+                        }
+                      })()} USD
                     </Badge>
                   </div>
                   <CardContent className="p-2 sm:p-3">
@@ -556,7 +580,15 @@ export const NFTMarketplace: React.FC = () => {
                 </Badge>
                 {selectedNFT.forSale && (
                   <Badge className="absolute top-2 left-2 text-xs bg-amber-500">
-                    {parseFloat(selectedNFT.price).toFixed(0)} USD
+                    {(() => {
+                      try {
+                        const price = typeof selectedNFT.price === 'string' ? parseFloat(selectedNFT.price) : selectedNFT.price;
+                        return isNaN(price) ? '30' : price.toFixed(0);
+                      } catch (e) {
+                        console.error('Ошибка при обработке цены в модальном окне:', e);
+                        return '30';
+                      }
+                    })()} USD
                   </Badge>
                 )}
               </div>
@@ -663,7 +695,15 @@ export const NFTMarketplace: React.FC = () => {
                       className="text-xs sm:text-sm py-1 px-2 h-8 sm:h-9"
                     >
                       {buyNftMutation.isPending ? <LoadingSpinner className="mr-1 h-3 w-3" /> : null}
-                      Купить за {parseFloat(selectedNFT.price).toFixed(0)} USD
+                      Купить за {(() => {
+                        try {
+                          const price = typeof selectedNFT.price === 'string' ? parseFloat(selectedNFT.price) : selectedNFT.price;
+                          return isNaN(price) ? '30' : price.toFixed(0);
+                        } catch (e) {
+                          console.error('Ошибка при обработке цены кнопки покупки:', e);
+                          return '30';
+                        }
+                      })()} USD
                     </Button>
                   )}
                 </>

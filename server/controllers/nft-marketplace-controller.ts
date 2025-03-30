@@ -11,6 +11,9 @@ import { db } from '../db';
 
 const router = Router();
 
+// Добавляем дополнительное логирование для отладки
+const VERBOSE_DEBUG = true;
+
 // Включаем логирование, если нужно
 const DEBUG = process.env.DEBUG === 'true';
 function log(...args: any[]) {
@@ -34,6 +37,35 @@ function log(...args: any[]) {
  * - search: поиск по имени или описанию
  * - collection: фильтр по коллекции (bored, mutant)
  */
+// Тестовый маршрут без аутентификации для проверки проблем с ценами
+router.get('/test', async (req: Request, res: Response) => {
+  try {
+    // Получаем 10 NFT с ценами для анализа
+    const nftItems = await db.select().from(nfts).where(eq(nfts.forSale, true)).limit(10);
+    
+    // Логируем и преобразуем данные для проверки цен
+    const debugInfo = nftItems.map(nft => ({
+      id: nft.id,
+      name: nft.name,
+      rawPrice: nft.price,
+      parsedPrice: parseFloat(nft.price as string),
+      priceType: typeof nft.price,
+      isNaN: isNaN(parseFloat(nft.price as string))
+    }));
+    
+    console.log("DEBUG NFT PRICES:", JSON.stringify(debugInfo, null, 2));
+    
+    res.status(200).json({
+      success: true,
+      message: 'Проверка цен NFT',
+      data: debugInfo
+    });
+  } catch (error) {
+    console.error('Ошибка при проверке цен NFT:', error);
+    res.status(500).json({ error: 'Ошибка сервера при тестировании NFT цен' });
+  }
+});
+
 router.get('/v2', async (req: Request, res: Response) => {
   try {
     log('Запрос на получение NFT на продаже с расширенными возможностями');
