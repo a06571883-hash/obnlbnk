@@ -307,8 +307,18 @@ router.get('/marketplace', async (req: Request, res: Response) => {
         const formattedNFTs = await Promise.all(uniqueNFTs.map(async (nft) => {
           const owner = await storage.getUser(nft.ownerId);
           
-          // Определяем номер коллекции
-          const collectionName = nft.collectionId ? nft.collectionId.toString() : "1";
+          // Определяем название коллекции
+          let collectionName = "Bored Ape Yacht Club"; // Дефолтное название
+          
+          // Пробуем получить реальное название коллекции из базы данных
+          try {
+            const collectionInfo = await db.select().from(nftCollections).where(eq(nftCollections.id, nft.collectionId)).limit(1);
+            if (collectionInfo && collectionInfo.length > 0) {
+              collectionName = collectionInfo[0].name;
+            }
+          } catch (err) {
+            console.log('Ошибка при получении названия коллекции:', err);
+          }
           
           return {
             id: nft.id,
@@ -455,12 +465,29 @@ router.get('/marketplace', async (req: Request, res: Response) => {
           
           log(`После дедупликации осталось ${uniqueServiceNFTs.length} уникальных service NFT из ${serviceNFTs.length} всего`);
           
-          // Добавляем информацию о владельцах
+          // Добавляем информацию о владельцах и названии коллекции
           const formattedServiceNFTs = await Promise.all(uniqueServiceNFTs.map(async (nft) => {
             const owner = await storage.getUser(nft.ownerId);
+            
+            // Определяем название коллекции
+            let collectionName = "Bored Ape Yacht Club"; // Дефолтное название
+            
+            // Пробуем получить реальное название коллекции из базы данных, если есть collectionId
+            if (nft.collectionId) {
+              try {
+                const collectionInfo = await db.select().from(nftCollections).where(eq(nftCollections.id, nft.collectionId)).limit(1);
+                if (collectionInfo && collectionInfo.length > 0) {
+                  collectionName = collectionInfo[0].name;
+                }
+              } catch (err) {
+                console.log('Ошибка при получении названия коллекции:', err);
+              }
+            }
+            
             return {
               ...nft,
               ownerUsername: owner ? owner.username : 'Unknown',
+              collectionName: collectionName, // Добавляем название коллекции
               // Добавляем базовые атрибуты для совместимости с фронтендом, если их нет
               attributes: nft.attributes || {
                 power: 70, 
