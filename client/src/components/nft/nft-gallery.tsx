@@ -9,6 +9,8 @@ import { LoadingSpinner } from '../../components/ui/loading-spinner';
 import { NFTTabNavigation } from '../../pages/nft-page';
 import { toast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // Импортируем сервис для звука и утилиты для изображений
 import { playSound } from '../../lib/sound-service';
@@ -46,6 +48,8 @@ interface NFTGalleryProps {
 
 export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+  const [isSellDialogOpen, setIsSellDialogOpen] = useState(false);
+  const [salePrice, setSalePrice] = useState('');
   const queryClient = useQueryClient();
 
   const { 
@@ -99,6 +103,61 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
     console.log('Переход к маркетплейсу из компонента NFTGallery');
     navigation.switchToMarketplace(); // Используем функцию из переданного пропс
     playSoundWithLog('click');
+  };
+  
+  // Мутация для выставления NFT на продажу
+  const sellNftMutation = useMutation({
+    mutationFn: (data: { nftId: number, price: string }) => {
+      return fetch(`/api/nft/${data.nftId}/sell`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ price: data.price }),
+      }).then(res => {
+        if (!res.ok) throw new Error('Не удалось выставить NFT на продажу');
+        return res.json();
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'NFT выставлен на продажу',
+        description: 'Ваш NFT теперь доступен для покупки другими пользователями',
+      });
+      playSoundWithLog('success');
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/marketplace'] });
+      setIsSellDialogOpen(false);
+      setSalePrice('');
+      setSelectedNFT(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Ошибка',
+        description: error.message || 'Не удалось выставить NFT на продажу',
+        variant: 'destructive',
+      });
+      playSoundWithLog('error');
+    }
+  });
+  
+  // Обработчик продажи NFT
+  const handleSellNft = () => {
+    if (!selectedNFT) return;
+    
+    if (!salePrice || isNaN(parseFloat(salePrice)) || parseFloat(salePrice) <= 0) {
+      toast({
+        title: 'Ошибка',
+        description: 'Пожалуйста, укажите корректную цену',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    sellNftMutation.mutate({
+      nftId: selectedNFT.id,
+      price: salePrice
+    });
   };
 
   useEffect(() => {
@@ -305,8 +364,8 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    navigation.switchToMarketplace(); 
-                    setSelectedNFT(null);
+                    setIsSellDialogOpen(true);
+                    setSalePrice('');
                   }}
                 >
                   Продать NFT
@@ -319,6 +378,50 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
           </DialogContent>
         </Dialog>
       )}
+      
+      {/* Диалог для выставления NFT на продажу */}
+      <Dialog open={isSellDialogOpen} onOpenChange={setIsSellDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Выставить NFT на продажу</DialogTitle>
+            <DialogDescription>
+              Укажите цену в USD, за которую вы хотите продать NFT "{selectedNFT?.name}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="price" className="text-right">
+                Цена (USD)
+              </Label>
+              <Input
+                id="price"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                value={salePrice}
+                onChange={(e) => setSalePrice(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="secondary" 
+              onClick={() => setIsSellDialogOpen(false)}
+            >
+              Отмена
+            </Button>
+            <Button 
+              onClick={handleSellNft}
+              disabled={sellNftMutation.isPending}
+            >
+              {sellNftMutation.isPending && <LoadingSpinner className="mr-2 h-4 w-4" />}
+              Выставить на продажу
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
