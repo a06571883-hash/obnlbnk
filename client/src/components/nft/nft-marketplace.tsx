@@ -364,26 +364,31 @@ export const NFTMarketplace: React.FC = () => {
     <div className="space-y-10">
       {/* Маркетплейс */}
       <div>
-        <div className="flex justify-between items-center mb-6">
+        {/* Заголовок и фильтры - адаптивная версия */}
+        <div className="flex flex-col gap-3 mb-6">
           <h2 className="text-2xl font-bold">NFT Маркетплейс</h2>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Сортировка по цене:</span>
-            <div className="flex">
+          
+          {/* Сортировка по цене - адаптируется под размер экрана */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium whitespace-nowrap">Цена:</span>
+            <div className="flex flex-grow max-w-xs">
               <Button
                 variant={sortOrder === 'asc' ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSortOrder('asc')}
-                className="rounded-r-none border-r-0"
+                className="rounded-r-none border-r-0 whitespace-nowrap flex-1 text-xs sm:text-sm px-2 sm:px-3"
               >
-                От низкой к высокой
+                <span className="hidden sm:inline">От низкой к высокой</span>
+                <span className="sm:hidden">↑ Возрастание</span>
               </Button>
               <Button
                 variant={sortOrder === 'desc' ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSortOrder('desc')}
-                className="rounded-l-none"
+                className="rounded-l-none whitespace-nowrap flex-1 text-xs sm:text-sm px-2 sm:px-3"
               >
-                От высокой к низкой
+                <span className="hidden sm:inline">От высокой к низкой</span>
+                <span className="sm:hidden">↓ Убывание</span>
               </Button>
             </div>
           </div>
@@ -401,11 +406,11 @@ export const NFTMarketplace: React.FC = () => {
           </Alert>
         ) : (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4">
               {marketplaceNfts.map((nft) => (
                 <Card 
                   key={nft.id} 
-                  className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                  className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow w-full max-w-full"
                   onClick={() => {
                     setSelectedNFT(nft);
                     playSoundWithLog('click');
@@ -416,23 +421,24 @@ export const NFTMarketplace: React.FC = () => {
                       src={getProxiedImageUrl(nft.imagePath)} 
                       alt={nft.name} 
                       className="w-full h-full object-cover"
+                      loading="lazy"
                     />
-                    <Badge className={`absolute top-2 right-2 ${rarityColors[nft.rarity]}`}>
+                    <Badge className={`absolute top-1 right-1 text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-0.5 ${rarityColors[nft.rarity]}`}>
                       {nft.rarity}
                     </Badge>
-                    <Badge className="absolute top-2 left-2 bg-amber-500">
+                    <Badge className="absolute top-1 left-1 text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-0.5 bg-amber-500">
                       {nft.price} USD
                     </Badge>
                   </div>
-                  <CardContent className="p-3">
-                    <h3 className="font-semibold truncate">{nft.name}</h3>
+                  <CardContent className="p-2 sm:p-3">
+                    <h3 className="font-semibold text-xs sm:text-sm truncate">{nft.name}</h3>
                     {/* Добавляем отображение названия коллекции */}
-                    <div className="text-xs text-muted-foreground mt-1 mb-1 truncate">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 mb-0.5 truncate">
                       {nft.collectionName || 'Bored Ape Yacht Club'}
                     </div>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-xs text-muted-foreground">Сила: {calculatePower(nft)}</span>
-                      <span className="text-xs text-muted-foreground truncate">
+                    <div className="flex justify-between items-center mt-0.5">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground">Сила: {calculatePower(nft)}</span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[70px] sm:max-w-[120px]">
                         {nft.owner ? `@${nft.owner.username}` : 'Неизвестно'}
                       </span>
                     </div>
@@ -499,87 +505,89 @@ export const NFTMarketplace: React.FC = () => {
         )}
       </div>
       
-      {/* Модальное окно с деталями NFT */}
+      {/* Модальное окно с деталями NFT - мобильно-адаптивная версия */}
       {selectedNFT && (
         <Dialog open={!!selectedNFT} onOpenChange={(open) => !open && setSelectedNFT(null)}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle className="text-lg">{selectedNFT.name}</DialogTitle>
-              <DialogDescription className="text-xs">
+          <DialogContent className="max-w-[95%] sm:max-w-md max-h-[90vh] overflow-auto p-3 sm:p-6">
+            <DialogHeader className="pb-2 sm:pb-4">
+              <DialogTitle className="text-base sm:text-lg">{selectedNFT.name}</DialogTitle>
+              <DialogDescription className="text-[10px] sm:text-xs">
                 Token ID: {selectedNFT.tokenId}
               </DialogDescription>
             </DialogHeader>
             
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 sm:gap-4">
               <div className="relative aspect-square rounded-md overflow-hidden">
                 <img 
                   src={getProxiedImageUrl(selectedNFT.imagePath)} 
                   alt={selectedNFT.name} 
                   className="w-full h-full object-cover"
                 />
-                <Badge className={`absolute top-2 right-2 ${rarityColors[selectedNFT.rarity]}`}>
+                <Badge className={`absolute top-2 right-2 text-xs ${rarityColors[selectedNFT.rarity]}`}>
                   {selectedNFT.rarity}
                 </Badge>
                 {selectedNFT.forSale && (
-                  <Badge className="absolute top-2 left-2 bg-amber-500">
+                  <Badge className="absolute top-2 left-2 text-xs bg-amber-500">
                     {selectedNFT.price} USD
                   </Badge>
                 )}
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Добавляем отображение названия коллекции */}
                 <div>
-                  <h4 className="text-sm font-medium mb-1">Коллекция</h4>
-                  <p className="text-sm text-muted-foreground">{selectedNFT.collectionName || 'Bored Ape Yacht Club'}</p>
+                  <h4 className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1">Коллекция</h4>
+                  <p className="text-xs text-muted-foreground">{selectedNFT.collectionName || 'Bored Ape Yacht Club'}</p>
                 </div>
                 <div>
-                  <h4 className="text-sm font-medium mb-1">Описание</h4>
-                  <p className="text-sm text-muted-foreground">{selectedNFT.description}</p>
+                  <h4 className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1">Описание</h4>
+                  <p className="text-xs text-muted-foreground">{selectedNFT.description}</p>
                 </div>
                 
                 <div>
-                  <h4 className="text-xs font-medium mb-1">Характеристики</h4>
+                  <h4 className="text-xs font-medium mb-0.5 sm:mb-1">Характеристики</h4>
                   <div className="grid grid-cols-2 gap-y-1 gap-x-2">
                     {selectedNFT.attributes && (
                       <>
                         <div className="flex items-center">
-                          <span className="text-xs mr-1">Сила:</span>
-                          <Badge variant="outline" className="text-xs">{selectedNFT.attributes.power}</Badge>
+                          <span className="text-[10px] sm:text-xs mr-1">Сила:</span>
+                          <Badge variant="outline" className="text-[10px] sm:text-xs">{selectedNFT.attributes.power}</Badge>
                         </div>
                         <div className="flex items-center">
-                          <span className="text-xs mr-1">Ловкость:</span>
-                          <Badge variant="outline" className="text-xs">{selectedNFT.attributes.agility}</Badge>
+                          <span className="text-[10px] sm:text-xs mr-1">Ловкость:</span>
+                          <Badge variant="outline" className="text-[10px] sm:text-xs">{selectedNFT.attributes.agility}</Badge>
                         </div>
                         <div className="flex items-center">
-                          <span className="text-xs mr-1">Мудрость:</span>
-                          <Badge variant="outline" className="text-xs">{selectedNFT.attributes.wisdom}</Badge>
+                          <span className="text-[10px] sm:text-xs mr-1">Мудрость:</span>
+                          <Badge variant="outline" className="text-[10px] sm:text-xs">{selectedNFT.attributes.wisdom}</Badge>
                         </div>
                         <div className="flex items-center">
-                          <span className="text-xs mr-1">Удача:</span>
-                          <Badge variant="outline" className="text-xs">{selectedNFT.attributes.luck}</Badge>
+                          <span className="text-[10px] sm:text-xs mr-1">Удача:</span>
+                          <Badge variant="outline" className="text-[10px] sm:text-xs">{selectedNFT.attributes.luck}</Badge>
                         </div>
                       </>
                     )}
                   </div>
                 </div>
                 
-                <div>
-                  <h4 className="text-xs font-medium mb-1">Владелец</h4>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedNFT.owner ? selectedNFT.owner.username : 'Неизвестно'}
-                    {selectedNFT.ownerId === (currentUser as any)?.id ? ' (Вы)' : ''}
-                  </p>
-                </div>
-                
-                <div>
-                  <h4 className="text-xs font-medium mb-1">Дата создания</h4>
-                  <p className="text-xs text-muted-foreground">{formatDate(selectedNFT.mintedAt)}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <h4 className="text-[10px] sm:text-xs font-medium mb-0.5">Владелец</h4>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">
+                      {selectedNFT.owner ? selectedNFT.owner.username : 'Неизвестно'}
+                      {selectedNFT.ownerId === (currentUser as any)?.id ? ' (Вы)' : ''}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-[10px] sm:text-xs font-medium mb-0.5">Дата создания</h4>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">{formatDate(selectedNFT.mintedAt)}</p>
+                  </div>
                 </div>
               </div>
             </div>
             
-            <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-3 sm:mt-4">
               {selectedNFT.ownerId === (currentUser as any)?.id ? (
                 // Если текущий пользователь - владелец NFT
                 <>
@@ -588,8 +596,9 @@ export const NFTMarketplace: React.FC = () => {
                       variant="outline" 
                       onClick={() => cancelSaleMutation.mutate(selectedNFT.id)}
                       disabled={isLoading}
+                      className="text-xs sm:text-sm py-1 px-2 h-8 sm:h-9"
                     >
-                      {cancelSaleMutation.isPending ? <LoadingSpinner className="mr-2 h-4 w-4" /> : null}
+                      {cancelSaleMutation.isPending ? <LoadingSpinner className="mr-1 h-3 w-3" /> : null}
                       Снять с продажи
                     </Button>
                   ) : (
@@ -600,6 +609,7 @@ export const NFTMarketplace: React.FC = () => {
                         setSalePrice('');
                       }}
                       disabled={isLoading}
+                      className="text-xs sm:text-sm py-1 px-2 h-8 sm:h-9"
                     >
                       Продать
                     </Button>
@@ -610,6 +620,7 @@ export const NFTMarketplace: React.FC = () => {
                       setGiftRecipient('');
                     }}
                     disabled={isLoading || selectedNFT.forSale}
+                    className="text-xs sm:text-sm py-1 px-2 h-8 sm:h-9"
                   >
                     Подарить
                   </Button>
@@ -621,14 +632,19 @@ export const NFTMarketplace: React.FC = () => {
                     <Button 
                       onClick={handleBuyNft}
                       disabled={isLoading}
+                      className="text-xs sm:text-sm py-1 px-2 h-8 sm:h-9"
                     >
-                      {buyNftMutation.isPending ? <LoadingSpinner className="mr-2 h-4 w-4" /> : null}
+                      {buyNftMutation.isPending ? <LoadingSpinner className="mr-1 h-3 w-3" /> : null}
                       Купить за {selectedNFT.price} USD
                     </Button>
                   )}
                 </>
               )}
-              <Button variant="secondary" onClick={() => setSelectedNFT(null)}>
+              <Button 
+                variant="secondary" 
+                onClick={() => setSelectedNFT(null)}
+                className="text-xs sm:text-sm py-1 px-2 h-8 sm:h-9"
+              >
                 Закрыть
               </Button>
             </DialogFooter>
@@ -636,18 +652,18 @@ export const NFTMarketplace: React.FC = () => {
         </Dialog>
       )}
       
-      {/* Диалог для дарения NFT */}
+      {/* Диалог для дарения NFT - мобильно-адаптивная версия */}
       <Dialog open={isGiftDialogOpen} onOpenChange={setIsGiftDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Подарить NFT</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-[95%] sm:max-w-[425px] p-3 sm:p-6">
+          <DialogHeader className="pb-2 sm:pb-4 space-y-1">
+            <DialogTitle className="text-base sm:text-lg">Подарить NFT</DialogTitle>
+            <DialogDescription className="text-xs">
               Укажите имя пользователя (username), которому хотите подарить этот NFT.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="recipient" className="text-right">
+          <div className="grid gap-3 py-2 sm:py-4">
+            <div className="grid sm:grid-cols-4 items-center gap-2 sm:gap-4">
+              <Label htmlFor="recipient" className="sm:text-right text-xs sm:text-sm">
                 Получатель
               </Label>
               <Input
@@ -655,41 +671,43 @@ export const NFTMarketplace: React.FC = () => {
                 placeholder="username"
                 value={giftRecipient}
                 onChange={(e) => setGiftRecipient(e.target.value)}
-                className="col-span-3"
+                className="sm:col-span-3 h-8 sm:h-9 text-xs sm:text-sm"
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-2 mt-2 sm:mt-0">
             <Button 
               variant="secondary" 
               onClick={() => setIsGiftDialogOpen(false)}
               disabled={giftNftMutation.isPending}
+              className="text-xs sm:text-sm py-1 px-3 h-8 sm:h-9"
             >
               Отмена
             </Button>
             <Button 
               onClick={handleGiftNft}
               disabled={giftNftMutation.isPending || !giftRecipient}
+              className="text-xs sm:text-sm py-1 px-3 h-8 sm:h-9"
             >
-              {giftNftMutation.isPending ? <LoadingSpinner className="mr-2 h-4 w-4" /> : null}
+              {giftNftMutation.isPending ? <LoadingSpinner className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" /> : null}
               Подарить
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
-      {/* Диалог для продажи NFT */}
+      {/* Диалог для продажи NFT - мобильно-адаптивная версия */}
       <Dialog open={isSellDialogOpen} onOpenChange={setIsSellDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Продать NFT</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-[95%] sm:max-w-[425px] p-3 sm:p-6">
+          <DialogHeader className="pb-2 sm:pb-4 space-y-1">
+            <DialogTitle className="text-base sm:text-lg">Продать NFT</DialogTitle>
+            <DialogDescription className="text-xs">
               Укажите цену в USD, за которую вы хотите продать этот NFT.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="price" className="text-right">
+          <div className="grid gap-3 py-2 sm:py-4">
+            <div className="grid sm:grid-cols-4 items-center gap-2 sm:gap-4">
+              <Label htmlFor="price" className="sm:text-right text-xs sm:text-sm">
                 Цена (USD)
               </Label>
               <Input
@@ -698,25 +716,27 @@ export const NFTMarketplace: React.FC = () => {
                 placeholder="0.00"
                 value={salePrice}
                 onChange={(e) => setSalePrice(e.target.value)}
-                className="col-span-3"
+                className="sm:col-span-3 h-8 sm:h-9 text-xs sm:text-sm"
                 min="0.01"
                 step="0.01"
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-2 mt-2 sm:mt-0">
             <Button 
               variant="secondary" 
               onClick={() => setIsSellDialogOpen(false)}
               disabled={sellNftMutation.isPending}
+              className="text-xs sm:text-sm py-1 px-3 h-8 sm:h-9"
             >
               Отмена
             </Button>
             <Button 
               onClick={handleSellNft}
               disabled={sellNftMutation.isPending || !salePrice || isNaN(parseFloat(salePrice)) || parseFloat(salePrice) <= 0}
+              className="text-xs sm:text-sm py-1 px-3 h-8 sm:h-9"
             >
-              {sellNftMutation.isPending ? <LoadingSpinner className="mr-2 h-4 w-4" /> : null}
+              {sellNftMutation.isPending ? <LoadingSpinner className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" /> : null}
               Выставить на продажу
             </Button>
           </DialogFooter>
