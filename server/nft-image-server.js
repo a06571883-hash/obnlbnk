@@ -21,7 +21,7 @@ app.use((req, res, next) => {
 
 // Базовые пути для NFT изображений
 const nftPaths = {
-  '/bayc_official': path.join(process.cwd(), 'public', 'bayc_official'),
+  '/bayc_official': path.join(process.cwd(), 'bayc_official_nft'),
   '/bored_ape_nft': path.join(process.cwd(), 'bored_ape_nft'),
   '/public/assets/nft': path.join(process.cwd(), 'public', 'assets', 'nft'),
   '/assets/nft': path.join(process.cwd(), 'public', 'assets', 'nft'),  // Прямой доступ к assets
@@ -31,14 +31,61 @@ const nftPaths = {
   '/nft_assets': path.join(process.cwd(), 'nft_assets')
 };
 
+// Функция для поиска правильных изображений на основе запрашиваемого пути
+function findActualImagePath(requestedPath) {
+  // Извлекаем имя файла из пути
+  const filename = path.basename(requestedPath);
+  const isBoredApe = requestedPath.includes('bored_ape');
+  const isMutantApe = requestedPath.includes('mutant_ape');
+  
+  // Корневая директория для поиска изображения
+  let searchDir;
+  let pattern;
+  
+  if (isBoredApe) {
+    searchDir = path.join(process.cwd(), 'bored_ape_nft');
+    // Получаем номер обезьяны из запрашиваемого пути
+    const match = filename.match(/bored_ape_(\d+)\.png/);
+    if (match && match[1]) {
+      const number = parseInt(match[1]);
+      
+      // Ищем подходящее по номеру изображение
+      if (number <= 400) {
+        return path.join(searchDir, `bored_ape_${number}.png`);
+      }
+    }
+  } else if (isMutantApe) {
+    searchDir = path.join(process.cwd(), 'mutant_ape_nft');
+    // Получаем номер обезьяны из запрашиваемого пути
+    const match = filename.match(/mutant_ape_(\d+)\.png/);
+    if (match && match[1]) {
+      const number = parseInt(match[1]);
+      
+      // Для экстремально больших номеров (вроде 150xx), берем только первые 400
+      if (number > 15000) {
+        const baseNumber = number % 400 + 1;
+        return path.join(searchDir, `mutant_ape_${baseNumber}.png`);
+      }
+      
+      // Ищем подходящее по номеру изображение
+      if (number <= 400) {
+        return path.join(searchDir, `mutant_ape_${number}.png`);
+      }
+    }
+  }
+  
+  // Если не нашли соответствия, возвращаем запрошенный путь
+  return null;
+}
+
 // Реальные изображения для замены отсутствующих
 const realNFTImages = {
   boredApe: {
-    dir: path.join(process.cwd(), 'public', 'assets', 'nft', 'real'),
+    dir: path.join(process.cwd(), 'bored_ape_nft'),
     files: []
   },
   mutantApe: {
-    dir: path.join(process.cwd(), 'public', 'assets', 'nft', 'real'),
+    dir: path.join(process.cwd(), 'mutant_ape_nft'),
     files: []
   },
   common: {
@@ -150,9 +197,21 @@ Object.keys(nftPaths).forEach(route => {
   // Обработчик для каждого маршрута вместо простого express.static
   app.get(`${route}/:filename`, (req, res) => {
     const filename = req.params.filename;
+    const requestPath = `${route}/${filename}`;
     const fullPath = path.join(directoryPath, filename);
     
     console.log(`[DEBUG] Request for NFT image: ${route}/${filename} -> ${fullPath}`);
+    
+    // Пробуем найти правильное изображение
+    const actualImagePath = findActualImagePath(requestPath);
+    if (actualImagePath && fs.existsSync(actualImagePath)) {
+      console.log(`[NFT Server] Found mapping for ${requestPath} -> ${actualImagePath}`);
+      const contentType = getContentType(actualImagePath);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // кеширование на 1 день
+      fs.createReadStream(actualImagePath).pipe(res);
+      return;
+    }
     
     // Проверяем существование файла
     if (fs.existsSync(fullPath)) {
