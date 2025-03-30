@@ -49,7 +49,9 @@ interface NFTGalleryProps {
 export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
   const [isSellDialogOpen, setIsSellDialogOpen] = useState(false);
+  const [isGiftDialogOpen, setIsGiftDialogOpen] = useState(false);
   const [salePrice, setSalePrice] = useState('');
+  const [giftRecipient, setGiftRecipient] = useState('');
   const queryClient = useQueryClient();
 
   const { 
@@ -141,6 +143,44 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
     }
   });
   
+  // Мутация для подарка NFT другому пользователю
+  const giftNftMutation = useMutation({
+    mutationFn: (data: { nftId: number, recipientUsername: string }) => {
+      return fetch(`/api/nft/gift`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          nftId: data.nftId,
+          recipientUsername: data.recipientUsername 
+        }),
+      }).then(res => {
+        if (!res.ok) throw new Error('Не удалось подарить NFT');
+        return res.json();
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'NFT успешно подарен',
+        description: 'Ваш NFT успешно передан указанному пользователю',
+      });
+      playSoundWithLog('success');
+      queryClient.invalidateQueries({ queryKey: ['/api/nft/user'] });
+      setIsGiftDialogOpen(false);
+      setGiftRecipient('');
+      setSelectedNFT(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Ошибка',
+        description: error.message || 'Пользователь не найден или произошла другая ошибка',
+        variant: 'destructive',
+      });
+      playSoundWithLog('error');
+    }
+  });
+  
   // Обработчик продажи NFT
   const handleSellNft = () => {
     if (!selectedNFT) return;
@@ -157,6 +197,25 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
     sellNftMutation.mutate({
       nftId: selectedNFT.id,
       price: salePrice
+    });
+  };
+  
+  // Обработчик для подарка NFT
+  const handleGiftNft = () => {
+    if (!selectedNFT) return;
+    
+    if (!giftRecipient || giftRecipient.trim() === '') {
+      toast({
+        title: 'Ошибка',
+        description: 'Пожалуйста, укажите имя пользователя получателя',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    giftNftMutation.mutate({
+      nftId: selectedNFT.id,
+      recipientUsername: giftRecipient
     });
   };
 
@@ -348,32 +407,46 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
             </div>
             
             <DialogFooter className="flex space-x-2 pt-3">
-              {selectedNFT.forSale ? (
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={() => {
-                    handleNavigateToMarketplace();
-                    setSelectedNFT(null);
-                  }}
-                >
-                  На Маркетплейс
+              <div className="flex flex-wrap gap-2 w-full justify-between">
+                {selectedNFT.forSale ? (
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    onClick={() => {
+                      handleNavigateToMarketplace();
+                      setSelectedNFT(null);
+                    }}
+                  >
+                    На Маркетплейс
+                  </Button>
+                ) : (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setIsSellDialogOpen(true);
+                        setSalePrice('');
+                      }}
+                    >
+                      Продать NFT
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setIsGiftDialogOpen(true);
+                        setGiftRecipient('');
+                      }}
+                    >
+                      Подарить NFT
+                    </Button>
+                  </>
+                )}
+                <Button variant="secondary" size="sm" onClick={() => setSelectedNFT(null)}>
+                  Закрыть
                 </Button>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    setIsSellDialogOpen(true);
-                    setSalePrice('');
-                  }}
-                >
-                  Продать NFT
-                </Button>
-              )}
-              <Button variant="secondary" size="sm" onClick={() => setSelectedNFT(null)}>
-                Закрыть
-              </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -418,6 +491,48 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ navigation }) => {
             >
               {sellNftMutation.isPending && <LoadingSpinner className="mr-2 h-4 w-4" />}
               Выставить на продажу
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Диалог для подарка NFT другому пользователю */}
+      <Dialog open={isGiftDialogOpen} onOpenChange={setIsGiftDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Подарить NFT</DialogTitle>
+            <DialogDescription>
+              Укажите имя пользователя, которому вы хотите подарить NFT "{selectedNFT?.name}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="username" className="text-right">
+                Пользователь
+              </Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="Имя пользователя"
+                value={giftRecipient}
+                onChange={(e) => setGiftRecipient(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="secondary" 
+              onClick={() => setIsGiftDialogOpen(false)}
+            >
+              Отмена
+            </Button>
+            <Button 
+              onClick={handleGiftNft}
+              disabled={giftNftMutation.isPending}
+            >
+              {giftNftMutation.isPending && <LoadingSpinner className="mr-2 h-4 w-4" />}
+              Подарить
             </Button>
           </DialogFooter>
         </DialogContent>

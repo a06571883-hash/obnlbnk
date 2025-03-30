@@ -68,7 +68,7 @@ const buyNFTSchema = z.object({
 // Схема для дарения NFT
 const giftNFTSchema = z.object({
   nftId: z.number(),
-  receiverUsername: z.string().min(1)
+  recipientUsername: z.string().min(1)
 });
 
 /**
@@ -725,14 +725,14 @@ router.post('/gift', ensureAuthenticated, async (req: Request, res: Response) =>
       return res.status(400).json({ error: 'Некорректные данные', details: result.error.format() });
     }
     
-    const { nftId, receiverUsername } = result.data;
-    log(`Дарим NFT ${nftId} пользователю ${receiverUsername}`);
+    const { nftId, recipientUsername } = result.data;
+    log(`Дарим NFT ${nftId} пользователю ${recipientUsername}`);
     
     // Получаем данные получателя
-    const receiver = await storage.getUserByUsername(receiverUsername);
+    const receiver = await storage.getUserByUsername(recipientUsername);
     
     if (!receiver) {
-      log(`Получатель ${receiverUsername} не найден`);
+      log(`Получатель ${recipientUsername} не найден`);
       return res.status(404).json({ error: 'Получатель не найден' });
     }
     
@@ -753,7 +753,7 @@ router.post('/gift', ensureAuthenticated, async (req: Request, res: Response) =>
     
     // Дарим NFT
     const giftedNft = await boredApeNftService.giftNFT(nftId, userId, receiver.id);
-    log(`NFT ${nftId} успешно подарен пользователю ${receiverUsername}`);
+    log(`NFT ${nftId} успешно подарен пользователю ${recipientUsername}`);
     
     res.status(200).json({
       success: true,
