@@ -95,11 +95,19 @@ function findActualImagePath(requestedPath) {
         console.error(`[NFT Server] Error reading mutant_ape_nft directory:`, err);
       }
       
-      // Если нет файлов Mutant Ape, используем файлы из директории Bored Ape
-      if (realNFTImages.boredApe.files.length > 0) {
-        const index = number % realNFTImages.boredApe.files.length;
-        console.log(`[NFT Server] Fallback to Bored Ape for ${filename}: ${realNFTImages.boredApe.files[index]}`);
-        return realNFTImages.boredApe.files[index];
+      // НИКОГДА не используем файлы Bored Ape для Mutant Ape
+      // Вместо этого используем файлы из общего пула, если они есть
+      if (realNFTImages.mutantApe.files.length > 0) {
+        const index = number % realNFTImages.mutantApe.files.length;
+        console.log(`[NFT Server] Using Mutant Ape pool for ${filename}: ${realNFTImages.mutantApe.files[index]}`);
+        return realNFTImages.mutantApe.files[index];
+      }
+      
+      // Если нет файлов в пуле Mutant Ape, используем общий пул
+      if (realNFTImages.common.files.length > 0) {
+        const index = number % realNFTImages.common.files.length;
+        console.log(`[NFT Server] Using common pool for ${filename}: ${realNFTImages.common.files[index]}`);
+        return realNFTImages.common.files[index];
       }
     }
   }
@@ -158,23 +166,35 @@ function loadRealImages() {
     // Загружаем изображения Mutant Ape из директории
     const mutantApeDir = path.join(process.cwd(), 'mutant_ape_nft');
     if (fs.existsSync(mutantApeDir)) {
-      // Список всех PNG файлов, независимо от размера
+      // Принудительно удаляем любые SVG файлы, если они остались
+      try {
+        const svgFiles = fs.readdirSync(mutantApeDir)
+          .filter(file => file.endsWith('.svg'));
+        
+        if (svgFiles.length > 0) {
+          console.log(`[NFT Server] Found ${svgFiles.length} SVG files to remove`);
+          for (const svgFile of svgFiles) {
+            try {
+              const svgPath = path.join(mutantApeDir, svgFile);
+              fs.unlinkSync(svgPath);
+              console.log(`[NFT Server] Removed SVG file: ${svgFile}`);
+            } catch (err) {
+              console.error(`[NFT Server] Error removing SVG file: ${svgFile}`, err);
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`[NFT Server] Error while cleaning SVG files:`, err);
+      }
+      
+      // Список всех PNG файлов без дополнительных проверок
       const files = fs.readdirSync(mutantApeDir)
         .filter(file => file.endsWith('.png') && file.includes('mutant_ape_'));
       
-      // Только PNG изображения (без проверки размера, все должны быть настоящими)
-      const realFiles = [];
-      for (const file of files) {
-        const fullPath = path.join(mutantApeDir, file);
-        realFiles.push(fullPath);
-        // Выводим отладочную информацию о файле
-        try {
-          const stats = fs.statSync(fullPath);
-          console.log(`[NFT Server] Found Mutant Ape image: ${file}, size: ${stats.size} bytes`);
-        } catch (err) {
-          console.error(`[NFT Server] Error checking file ${fullPath}:`, err);
-        }
-      }
+      console.log(`[NFT Server] Found ${files.length} Mutant Ape PNG images`);
+      
+      // Добавляем все PNG файлы напрямую
+      const realFiles = files.map(file => path.join(mutantApeDir, file));
       
       realNFTImages.mutantApe.files = realFiles;
       console.log(`[NFT Server] Loaded ${realNFTImages.mutantApe.files.length} Mutant Ape images`);
