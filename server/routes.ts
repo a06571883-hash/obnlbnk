@@ -168,6 +168,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Используем специализированный маршрутизатор для статических ресурсов
   app.use(staticAssetsRouter);
   
+  // Проверка существования изображения NFT
+  app.get('/api/nft/image-check', (req, res) => {
+    import('node:http').then(http => {
+      const imagePath = req.query.path;
+      
+      if (!imagePath) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Не указан путь к изображению' 
+        });
+      }
+      
+      // Формируем запрос к image-server для проверки существования
+      const proxyOptions = {
+        hostname: '127.0.0.1',
+        port: 8080,
+        path: `/image-check?path=${encodeURIComponent(imagePath.toString())}`,
+        method: 'GET'
+      };
+      
+      console.log(`Checking NFT image existence: ${imagePath}`);
+      
+      const proxyReq = http.request(proxyOptions, (proxyRes: any) => {
+        // Копируем статус ответа
+        res.statusCode = proxyRes.statusCode || 200;
+        
+        // Копируем заголовки ответа
+        Object.keys(proxyRes.headers).forEach((key: string) => {
+          res.setHeader(key, proxyRes.headers[key] || '');
+        });
+        
+        // Получаем и обрабатываем JSON ответ
+        let data = '';
+        proxyRes.on('data', (chunk: Buffer) => {
+          data += chunk.toString();
+        });
+        
+        proxyRes.on('end', () => {
+          try {
+            // Пытаемся распарсить JSON ответ
+            const result = JSON.parse(data);
+            res.json(result);
+          } catch (error) {
+            console.error('Error parsing image check response:', error);
+            res.status(500).json({ 
+              success: false, 
+              message: 'Ошибка при проверке изображения',
+              error: error instanceof Error ? error.message : 'Ошибка парсинга ответа'
+            });
+          }
+        });
+      });
+      
+      // Обработка ошибок
+      proxyReq.on('error', (error: Error) => {
+        console.error('Image check proxy error:', error);
+        res.status(500).json({ 
+          success: false, 
+          message: 'Ошибка при проверке изображения',
+          error: error.message
+        });
+      });
+      
+      proxyReq.end();
+    }).catch(error => {
+      console.error('Error importing http module:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Ошибка при проверке изображения',
+        error: error instanceof Error ? error.message : 'Ошибка импорта модуля http'
+      });
+    });
+  });
+
   // Прокси для NFT изображений с локального сервера на порту 8080
   app.use('/nft-proxy', (req, res) => {
     import('node:http').then(http => {
@@ -180,14 +254,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const proxyOptions = {
-        hostname: '0.0.0.0',
+        // Используем 127.0.0.1 вместо 0.0.0.0 для гарантированного подключения
+        hostname: '127.0.0.1',
         port: 8080,
         path: proxyUrl,
         method: req.method,
         headers: req.headers
       };
       
-      console.log(`Proxying NFT request: ${req.url} -> http://0.0.0.0:8080${proxyUrl}`);
+      console.log(`Proxying NFT request: ${req.url} -> http://127.0.0.1:8080${proxyUrl}`);
       
       // Создаем прокси-запрос на наш NFT сервер
       const proxyReq = http.request(proxyOptions, (proxyRes: any) => {

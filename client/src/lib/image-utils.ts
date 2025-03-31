@@ -13,6 +13,7 @@
 export function getProxiedImageUrl(imagePath: string): string {
   if (!imagePath) {
     // Для пустого пути используем стандартное изображение
+    console.log('Пустой путь к изображению, используем placeholder');
     return `/nft-proxy/assets/nft/placeholder.png`;
   }
 
@@ -20,12 +21,15 @@ export function getProxiedImageUrl(imagePath: string): string {
 
   // Абсолютный URL - возвращаем как есть
   if (imagePath.startsWith('http')) {
+    console.log('Это абсолютный URL, возвращаем без изменений:', imagePath);
     return imagePath;
   }
 
   // Если путь относительный, добавляем слэш в начало
   if (!imagePath.startsWith('/')) {
-    imagePath = '/' + imagePath;
+    const newPath = '/' + imagePath;
+    console.log('Преобразование относительного пути:', imagePath, '->', newPath);
+    imagePath = newPath;
   }
 
   // Перенаправляем через прокси любые NFT изображения,
@@ -36,9 +40,18 @@ export function getProxiedImageUrl(imagePath: string): string {
       imagePath.includes('new_bored_ape') ||
       imagePath.includes('nft_assets')) {
     // Используем относительный путь для проксирования через наш API
-    return `/nft-proxy${imagePath}`;
+    const proxiedPath = `/nft-proxy${imagePath}`;
+    
+    // Добавляем специальное логирование для Mutant Ape
+    if (imagePath.includes('mutant_ape_nft')) {
+      console.log('MUTANT APE IMAGE PATH:', imagePath, '->', proxiedPath);
+    }
+    
+    console.log('Проксирование NFT изображения:', imagePath, '->', proxiedPath);
+    return proxiedPath;
   }
 
   // Для других изображений возвращаем исходный путь
+  console.log('Обычное изображение (не NFT), возвращаем как есть:', imagePath);
   return imagePath;
 }

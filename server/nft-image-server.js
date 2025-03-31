@@ -402,7 +402,77 @@ Object.keys(nftPaths).forEach(route => {
   }
 });
 
-// Общий обработчик для всех маршрутов
+// Добавляем специальный обработчик для API проверки изображений
+app.get('/image-check', (req, res) => {
+  const { path: imagePath } = req.query;
+  
+  if (!imagePath) {
+    return res.status(400).json({
+      success: false,
+      message: 'Не указан путь к изображению'
+    });
+  }
+  
+  // Убираем начальный слэш если есть
+  const cleanPath = imagePath.toString().startsWith('/') 
+    ? imagePath.toString().substring(1) 
+    : imagePath.toString();
+  
+  // Получаем базовый путь и имя файла
+  const basePath = cleanPath.split('/').slice(0, -1).join('/');
+  const filename = cleanPath.split('/').pop();
+  
+  console.log(`[Image Check] Checking existence of: ${cleanPath}`);
+  console.log(`[Image Check] Base path: ${basePath}, Filename: ${filename}`);
+  
+  // Проверяем все возможные директории
+  let found = false;
+  let foundPath = null;
+  
+  // Сначала ищем точное соответствие
+  for (const [route, dirPath] of Object.entries(nftPaths)) {
+    const routeNoSlash = route.startsWith('/') ? route.substring(1) : route;
+    
+    if (cleanPath.startsWith(routeNoSlash)) {
+      // Находим относительный путь в пределах директории
+      const relativePath = cleanPath.substring(routeNoSlash.length);
+      const absolutePath = path.join(dirPath, relativePath);
+      
+      console.log(`[Image Check] Checking in ${dirPath}: ${absolutePath}`);
+      
+      if (fs.existsSync(absolutePath)) {
+        found = true;
+        foundPath = absolutePath;
+        break;
+      }
+    }
+  }
+  
+  // Если изображение не найдено но содержит mutant_ape, ищем альтернативу
+  if (!found && cleanPath.includes('mutant_ape')) {
+    const mutantDir = nftPaths['/mutant_ape_nft'];
+    const files = fs.readdirSync(mutantDir)
+      .filter(file => file.endsWith('.png') && file.includes('mutant_ape_'));
+    
+    if (files.length > 0) {
+      // Берем первое изображение из списка для примера
+      foundPath = path.join(mutantDir, files[0]);
+      console.log(`[Image Check] Using alternative mutant ape image: ${foundPath}`);
+      found = true;
+    }
+  }
+  
+  res.json({
+    success: true,
+    exists: found,
+    originalPath: imagePath,
+    cleanPath,
+    foundPath,
+    suggestion: found ? null : 'Изображение не найдено. Попробуйте использовать /mutant_ape_nft/mutant_ape_0048.png'
+  });
+});
+
+// Общий обработчик для всех остальных маршрутов
 app.get('*', (req, res) => {
   console.log(`[NFT Server] 404 Not Found: ${req.url}`);
   res.status(404).send('Not Found');
