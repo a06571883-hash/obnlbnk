@@ -54,6 +54,7 @@ export const NFTMarketplace: React.FC = () => {
   const [isSellDialogOpen, setIsSellDialogOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // asc = от низкой к высокой, desc = от высокой к низкой
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(null); // Состояние для фильтрации по коллекции
   const itemsPerPage = 50; // Ограничиваем количество NFT на странице для лучшей производительности
   const queryClient = useQueryClient();
   
@@ -97,12 +98,21 @@ export const NFTMarketplace: React.FC = () => {
       collection?: string;
     }
   }>({
-    queryKey: ['/api/nft/marketplace/v2', currentPage, sortOrder],
-    queryFn: () => fetch(`/api/nft/marketplace/v2?page=${currentPage}&limit=${itemsPerPage}&sortBy=price&sortOrder=${sortOrder}`)
-      .then(res => {
+    queryKey: ['/api/nft/marketplace/v2', currentPage, sortOrder, selectedCollection],
+    queryFn: () => {
+      // Формируем URL с параметрами
+      let url = `/api/nft/marketplace/v2?page=${currentPage}&limit=${itemsPerPage}&sortBy=price&sortOrder=${sortOrder}`;
+      
+      // Добавляем параметр коллекции, если он выбран
+      if (selectedCollection) {
+        url += `&collection=${selectedCollection}`;
+      }
+      
+      return fetch(url).then(res => {
         if (!res.ok) throw new Error('Ошибка получения NFT');
         return res.json();
-      }),
+      });
+    },
     retry: 3
   });
   
@@ -130,20 +140,36 @@ export const NFTMarketplace: React.FC = () => {
     }
     
     items.forEach(nft => {
+      // Проверяем путь к изображению для отладки
+      if (nft.imagePath) {
+        console.log("Обработка пути к изображению NFT:", nft.imagePath);
+      }
+      
       // Проверки:
       // 1. NFT доступен для продажи
-      // 2. Проверка имени коллекции
-      const isApeNft = 
-        (nft.collectionName === 'Bored Ape Yacht Club' || nft.collectionName === 'Mutant Ape Yacht Club');
+      // 2. Проверка имени коллекции 
+      // 3. Проверка пути к изображению:
+      //    - Bored Ape должен начинаться с '/bored_ape_nft/' 
+      //    - Mutant Ape должен начинаться с '/mutant_ape_nft/'
+      const isMutantApe = 
+        nft.collectionName === 'Mutant Ape Yacht Club' && 
+        (nft.imagePath?.includes('/mutant_ape_nft/'));
+      
+      const isBoredApe = 
+        nft.collectionName === 'Bored Ape Yacht Club' && 
+        (nft.imagePath?.includes('/bored_ape_nft/'));
       
       // Логируем отфильтрованные NFT для отладки
-      if (nft.forSale && nft.collectionName === 'Mutant Ape Yacht Club') {
+      if (nft.forSale && isMutantApe) {
         console.log("Найден Mutant Ape:", nft.id, nft.name, nft.collectionName);
       }
       
-      if (nft.forSale && isApeNft) {
-        // При совпадении tokenId перезаписываем, чтобы избежать дубликатов
-        uniqueMap.set(nft.tokenId, nft);
+      // В зависимости от настроек фильтра добавляем NFT в результат
+      if (nft.forSale) {
+        if (isMutantApe || isBoredApe) {
+          // При совпадении tokenId перезаписываем, чтобы избежать дубликатов
+          uniqueMap.set(nft.tokenId, nft);
+        }
       }
     });
     
@@ -428,6 +454,46 @@ export const NFTMarketplace: React.FC = () => {
             </div>
           </div>
           
+          {/* Фильтрация по коллекциям */}
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="text-sm font-medium whitespace-nowrap">Коллекция:</span>
+            <div className="flex flex-grow max-w-lg gap-1">
+              <Button
+                variant={selectedCollection === null ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setSelectedCollection(null);
+                  setCurrentPage(1); // Сбрасываем страницу при смене фильтра
+                }}
+                className="whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 flex-1"
+              >
+                Все
+              </Button>
+              <Button
+                variant={selectedCollection === 'bored' ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setSelectedCollection('bored');
+                  setCurrentPage(1); // Сбрасываем страницу при смене фильтра
+                }}
+                className="whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 flex-1"
+              >
+                Bored Ape
+              </Button>
+              <Button
+                variant={selectedCollection === 'mutant' ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setSelectedCollection('mutant');
+                  setCurrentPage(1); // Сбрасываем страницу при смене фильтра
+                }}
+                className="whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 flex-1"
+              >
+                Mutant Ape
+              </Button>
+            </div>
+          </div>
+        
           {/* Сортировка по цене - адаптируется под размер экрана */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium whitespace-nowrap">Цена:</span>

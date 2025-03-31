@@ -126,9 +126,15 @@ router.get('/v2', async (req: Request, res: Response) => {
     // Добавляем условие фильтрации по коллекции на основе collection_id
     if (collection) {
       if (collection.toLowerCase() === 'bored') {
+        // Фильтруем только "Bored Ape Yacht Club" с коллекцией ID=1
         conditions.push(eq(nfts.collectionId, 1));
+        // Дополнительно проверяем, что imagePath содержит /bored_ape_nft/ для точной фильтрации
+        conditions.push(sql`${nfts.imagePath} LIKE '%/bored_ape_nft/%'`);
       } else if (collection.toLowerCase() === 'mutant') {
+        // Фильтруем только "Mutant Ape Yacht Club" с коллекцией ID=2
         conditions.push(eq(nfts.collectionId, 2));
+        // Дополнительно проверяем, что imagePath содержит /mutant_ape_nft/ для точной фильтрации
+        conditions.push(sql`${nfts.imagePath} LIKE '%/mutant_ape_nft/%'`);
       }
     }
     
