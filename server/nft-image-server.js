@@ -70,21 +70,35 @@ function findActualImagePath(requestedPath) {
     if (match && match[1]) {
       const number = parseInt(match[1]);
       
-      // Сначала пробуем найти точное соответствие
+      // Сначала пробуем найти точное соответствие по имени PNG файла
       const exactPath = path.join(searchDir, `mutant_ape_${number}.png`);
-      if (fs.existsSync(exactPath) && !exactPath.endsWith('.svg')) {
+      console.log(`[NFT Server] Checking exact path for ${filename}: ${exactPath}`);
+      
+      if (fs.existsSync(exactPath)) {
+        console.log(`[NFT Server] Direct match found for ${filename}: ${exactPath}`);
         return exactPath;
       }
       
-      // Если в директории есть реальные PNG файлы, используем их
-      if (realNFTImages.mutantApe.files.length > 0) {
-        const index = number % realNFTImages.mutantApe.files.length;
-        return realNFTImages.mutantApe.files[index];
+      // Получаем список всех PNG файлов в директории и используем номер по модулю
+      try {
+        const pngFiles = fs.readdirSync(searchDir)
+          .filter(file => file.endsWith('.png') && file.includes('mutant_ape_'))
+          .map(file => path.join(searchDir, file));
+          
+        if (pngFiles.length > 0) {
+          const index = number % pngFiles.length;
+          const selectedFile = pngFiles[index];
+          console.log(`[NFT Server] Using modulo mapping for ${filename}: ${selectedFile} (index ${index} of ${pngFiles.length})`);
+          return selectedFile;
+        }
+      } catch (err) {
+        console.error(`[NFT Server] Error reading mutant_ape_nft directory:`, err);
       }
       
       // Если нет файлов Mutant Ape, используем файлы из директории Bored Ape
       if (realNFTImages.boredApe.files.length > 0) {
         const index = number % realNFTImages.boredApe.files.length;
+        console.log(`[NFT Server] Fallback to Bored Ape for ${filename}: ${realNFTImages.boredApe.files[index]}`);
         return realNFTImages.boredApe.files[index];
       }
     }
@@ -144,23 +158,20 @@ function loadRealImages() {
     // Загружаем изображения Mutant Ape из директории
     const mutantApeDir = path.join(process.cwd(), 'mutant_ape_nft');
     if (fs.existsSync(mutantApeDir)) {
+      // Список всех PNG файлов, независимо от размера
       const files = fs.readdirSync(mutantApeDir)
-        .filter(file => (file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.avif')) && 
-                        !file.endsWith('.svg') && 
-                        file.includes('mutant_ape_'));
+        .filter(file => file.endsWith('.png') && file.includes('mutant_ape_'));
       
-      // Только реальные изображения, не SVG
+      // Только PNG изображения (без проверки размера, все должны быть настоящими)
       const realFiles = [];
       for (const file of files) {
         const fullPath = path.join(mutantApeDir, file);
+        realFiles.push(fullPath);
+        // Выводим отладочную информацию о файле
         try {
           const stats = fs.statSync(fullPath);
-          // Изображение должно быть больше 1KB, чтобы исключить SVG-плейсхолдеры
-          if (stats.size > 1024) {
-            realFiles.push(fullPath);
-          }
+          console.log(`[NFT Server] Found Mutant Ape image: ${file}, size: ${stats.size} bytes`);
         } catch (err) {
-          // Пропускаем в случае ошибки
           console.error(`[NFT Server] Error checking file ${fullPath}:`, err);
         }
       }
