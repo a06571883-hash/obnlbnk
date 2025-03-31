@@ -173,6 +173,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     import('node:http').then(http => {
       // Заменяем /nft-proxy на пустую строку в начале URL
       const proxyUrl = req.url?.replace(/^\/nft-proxy/, '') || '';
+      
+      // Добавляем логирование для отладки проблем с Mutant Ape
+      if (proxyUrl.includes('mutant_ape')) {
+        console.log(`[NFT Proxy DEBUG] Обработка запроса изображения Mutant Ape: ${proxyUrl}`);
+      }
+      
       const proxyOptions = {
         hostname: '0.0.0.0',
         port: 8080,

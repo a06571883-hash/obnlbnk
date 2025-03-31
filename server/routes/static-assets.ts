@@ -92,11 +92,28 @@ staticAssetsRouter.get('/bayc_official/:filename', (req: Request, res: Response,
   res.redirect(proxyPath);
 });
 
-// Дополнительный обработчик для полного пути 
+// Дополнительный обработчик для полного пути BAYC
 staticAssetsRouter.get('/bayc_official/*', (req: Request, res: Response, next: NextFunction) => {
   // Извлекаем полный путь после /bayc_official/
   const filePath = req.path;
   const proxyPath = `/nft-proxy${filePath}`;
   console.log(`Redirecting NFT image request to proxy: ${req.path} -> ${proxyPath}`);
+  res.redirect(proxyPath);
+});
+
+// Обработчик для Mutant Ape изображений
+staticAssetsRouter.get('/mutant_ape_nft/:filename', (req: Request, res: Response, next: NextFunction) => {
+  // Перенаправляем запрос через наш прокси на порт 8080
+  const proxyPath = `/nft-proxy/mutant_ape_nft/${req.params.filename}`;
+  console.log(`Redirecting Mutant Ape image request to proxy: ${req.path} -> ${proxyPath}`);
+  res.redirect(proxyPath);
+});
+
+// Общий обработчик для Mutant Ape директории
+staticAssetsRouter.get('/mutant_ape_nft/*', (req: Request, res: Response, next: NextFunction) => {
+  // Извлекаем полный путь после /mutant_ape_nft/
+  const filePath = req.path;
+  const proxyPath = `/nft-proxy${filePath}`;
+  console.log(`Redirecting Mutant Ape image request to proxy: ${req.path} -> ${proxyPath}`);
   res.redirect(proxyPath);
 });
