@@ -134,12 +134,14 @@ router.get('/v2', async (req: Request, res: Response) => {
         conditions.push(sql`${nfts.imagePath} LIKE '%/bored_ape_nft/%'`);
       } else if (collection.toLowerCase() === 'mutant') {
         // Фильтруем "Mutant Ape Yacht Club" с коллекциями ID=2 и ID=11 (официальная коллекция)
-        conditions.push(sql`(${nfts.collectionId} = 2 OR ${nfts.collectionId} = 11)`);
-        // Дополнительно проверяем, что imagePath содержит /mutant_ape_nft/ или /mutant_ape_official/ для точной фильтрации
+        // ВАЖНО: Используем более мягкую фильтрацию, чтобы показать все варианты Mutant Ape
         conditions.push(sql`(
-          ${nfts.imagePath} LIKE '%/mutant_ape_nft/%' OR 
-          ${nfts.imagePath} LIKE '%/mutant_ape_official/%'
+          ${nfts.collectionId} = 2 OR 
+          ${nfts.collectionId} = 11 OR
+          ${nfts.imagePath} LIKE '%mutant%' OR
+          ${nfts.name} LIKE '%Mutant%'
         )`);
+        // Удалили строгую проверку путей изображений для отображения всех Mutant Ape
       }
     }
     

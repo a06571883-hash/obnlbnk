@@ -175,30 +175,50 @@ export const NFTMarketplace: React.FC = () => {
         console.log("Обработка пути к изображению NFT:", nft.imagePath);
       }
       
-      // Проверки:
-      // 1. NFT доступен для продажи
-      // 2. Проверка имени коллекции 
-      // 3. Проверка пути к изображению:
-      //    - Bored Ape должен начинаться с '/bored_ape_nft/' 
-      //    - Mutant Ape должен начинаться с '/mutant_ape_nft/' или '/mutant_ape_official/'
-      const isMutantApe = 
-        nft.collectionName === 'Mutant Ape Yacht Club' && 
-        (nft.imagePath?.includes('/mutant_ape_nft/') || nft.imagePath?.includes('/mutant_ape_official/'));
+      // Улучшенная проверка типа обезьяны
+      // Используем ИЛИ вместо И, чтобы учесть как коллекцию, так и путь к изображению
+      const isMutantApe = (
+        nft.collectionName === 'Mutant Ape Yacht Club' || 
+        (nft.imagePath && (
+          nft.imagePath.includes('/mutant_ape_nft/') || 
+          nft.imagePath.includes('/mutant_ape_official/')
+        ))
+      );
       
-      const isBoredApe = 
-        nft.collectionName === 'Bored Ape Yacht Club' && 
-        (nft.imagePath?.includes('/bored_ape_nft/'));
+      const isBoredApe = (
+        nft.collectionName === 'Bored Ape Yacht Club' || 
+        (nft.imagePath && nft.imagePath.includes('/bored_ape_nft/'))
+      );
       
-      // Логируем отфильтрованные NFT для отладки
+      // Проверяем фильтр коллекции
+      if (selectedCollection === 'bored' && !isBoredApe) {
+        return; // Пропускаем, если фильтр Bored Ape и это не Bored Ape
+      }
+      
+      if (selectedCollection === 'mutant' && !isMutantApe) {
+        return; // Пропускаем, если фильтр Mutant Ape и это не Mutant Ape
+      }
+      
+      // Дополнительное логирование для отладки Mutant Ape
       if (nft.forSale && isMutantApe) {
-        console.log("Найден Mutant Ape:", nft.id, nft.name, nft.collectionName);
+        const isOfficial = nft.imagePath && nft.imagePath.includes('/mutant_ape_official/');
+        console.log(
+          `${isOfficial ? '🔵' : '🟢'} Mutant Ape в маркетплейсе:`,
+          `ID=${nft.id}`,
+          `Имя=${nft.name}`,
+          `Путь=${nft.imagePath ? nft.imagePath : 'нет пути'}`
+        );
       }
       
       // В зависимости от настроек фильтра добавляем NFT в результат
       if (nft.forSale) {
         if (isMutantApe || isBoredApe) {
-          // При совпадении tokenId перезаписываем, чтобы избежать дубликатов
-          uniqueMap.set(nft.tokenId, nft);
+          // Создаем уникальный ключ, который учитывает коллекцию и tokenId
+          // Это предотвращает перезаписывание NFT с одинаковыми tokenId из разных коллекций
+          const uniqueKey = `${isMutantApe ? 'mutant' : 'bored'}_${nft.tokenId}`;
+          
+          // При совпадении уникального ключа перезаписываем, чтобы избежать дубликатов
+          uniqueMap.set(uniqueKey, nft);
         }
       }
     });
