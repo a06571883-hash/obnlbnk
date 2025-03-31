@@ -594,6 +594,15 @@ export const NFTMarketplace: React.FC = () => {
                         }
                       })()} USD
                     </Badge>
+                    
+                    {/* Добавляем индикатор коллекции для Mutant Ape */}
+                    {nft.imagePath && nft.imagePath.includes('mutant_ape') && (
+                      <div className="absolute bottom-1 left-1 right-1 bg-black/70 text-white text-[8px] sm:text-xs px-1 py-0.5 flex justify-center">
+                        {nft.imagePath.includes('mutant_ape_official') 
+                          ? '🔵 Official Collection' 
+                          : '🟢 Regular Collection'}
+                      </div>
+                    )}
                   </div>
                   <CardContent className="p-2 sm:p-3">
                     <h3 className="font-semibold text-xs sm:text-sm truncate">{nft.name}</h3>
@@ -772,6 +781,15 @@ export const NFTMarketplace: React.FC = () => {
                       }
                     })()} USD
                   </Badge>
+                )}
+                
+                {/* Добавляем индикатор коллекции для Mutant Ape */}
+                {selectedNFT.imagePath && selectedNFT.imagePath.includes('mutant_ape') && (
+                  <div className="absolute bottom-2 left-2 right-2 bg-black/70 text-white text-xs px-1 py-0.5 flex justify-center">
+                    {selectedNFT.imagePath.includes('mutant_ape_official') 
+                      ? '🔵 Official Collection' 
+                      : '🟢 Regular Collection'}
+                  </div>
                 )}
               </div>
               

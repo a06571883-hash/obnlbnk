@@ -242,36 +242,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Прокси для NFT изображений с локального сервера на порту 8080
-  app.use('/nft-proxy', (req, res) => {
-    import('node:http').then(http => {
+  // Прокси для NFT изображений с локального сервера на динамически выбранном порту
+  app.use('/nft-proxy', async (req, res) => {
+    try {
+      // Динамический импорт модулей
+      const http = await import('node:http');
+      const fs = await import('node:fs');
+      
+      // Определяем порт NFT-сервера динамически 
+      let nftServerPort = 8080; // порт по умолчанию
+      
+      // Проверяем, доступен ли порт через глобальную переменную
+      if (typeof global.nftServerPort === 'number') {
+        nftServerPort = global.nftServerPort;
+        console.log(`[NFT Proxy] Using NFT server port from global variable: ${nftServerPort}`);
+      } else {
+        // Пробуем прочитать порт из файла
+        try {
+          const portFile = './nft-server-port.txt';
+          if (fs.existsSync(portFile)) {
+            const portData = fs.readFileSync(portFile, 'utf8').trim();
+            const port = parseInt(portData);
+            if (!isNaN(port) && port > 0) {
+              nftServerPort = port;
+              console.log(`[NFT Proxy] Using NFT server port from file: ${nftServerPort}`);
+            }
+          }
+        } catch (err) {
+          console.error('[NFT Proxy] Error reading port file:', err);
+        }
+      }
+      
       // Заменяем /nft-proxy на пустую строку в начале URL
       const proxyUrl = req.url?.replace(/^\/nft-proxy/, '') || '';
       
-      // Добавляем подробное логирование для отладки проблем с NFT изображениями
-      console.log(`[NFT Proxy] Proxying request for: ${proxyUrl}`);
+      // Разделяем URL и параметры запроса для правильной обработки
+      const [baseUrl, queryString] = proxyUrl.split('?');
       
-      // Добавляем логирование для отладки проблем с Mutant Ape
-      if (proxyUrl.includes('mutant_ape_nft')) {
-        console.log(`[NFT Proxy DEBUG] Обработка запроса изображения Mutant Ape (regular): ${proxyUrl}`);
+      // Добавляем подробное логирование для отладки проблем с NFT изображениями
+      console.log(`[NFT Proxy] Proxying request for: ${proxyUrl} (baseUrl: ${baseUrl}, query: ${queryString || 'нет'})`);
+      
+      // Отключаем кеширование для Mutant Ape изображений
+      if (baseUrl.includes('mutant_ape')) {
+        // Устанавливаем заголовки для предотвращения кеширования
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('Surrogate-Control', 'no-store');
       }
       
-      // Добавляем отдельное логирование для официальной коллекции Mutant Ape
-      if (proxyUrl.includes('mutant_ape_official')) {
-        console.log(`[NFT Proxy DEBUG] Обработка запроса изображения Official Mutant Ape: ${proxyUrl}`);
+      // Парсим параметры запроса для получения collection
+      let collection = '';
+      if (queryString) {
+        const params = new URLSearchParams(queryString);
+        collection = params.get('collection') || '';
+      }
+      
+      // Добавляем логирование для отладки проблем с Mutant Ape с учетом параметра collection
+      if (baseUrl.includes('mutant_ape_nft') || baseUrl.includes('mutant_ape_official')) {
+        // Определяем тип коллекции на основе URL и параметра collection
+        const urlType = baseUrl.includes('mutant_ape_official') ? 'official' : 'regular';
+        const collectionType = collection ? collection : urlType;
+        
+        console.log(`[NFT Proxy DEBUG] Обработка запроса изображения Mutant Ape: ${baseUrl}`);
+        console.log(`[NFT Proxy DEBUG] Тип коллекции по URL: ${urlType}, параметр collection: ${collection || 'не указан'}`);
+        console.log(`[NFT Proxy DEBUG] Итоговый тип коллекции: ${collectionType}`);
+        console.log(`[NFT Proxy DEBUG] Полные параметры запроса: ${queryString || 'не указаны'}`);
       }
       
       // Указываем правильный порт для сервера изображений NFT 
       const proxyOptions = {
         // Используем 127.0.0.1 вместо 0.0.0.0 для гарантированного подключения
         hostname: '127.0.0.1',
-        port: 8080,
-        path: proxyUrl,
+        port: nftServerPort,
+        path: proxyUrl, // Используем полный URL с параметрами запроса
         method: req.method,
-        headers: { ...req.headers, host: 'localhost:8080' }
+        headers: { ...req.headers, host: `localhost:${nftServerPort}` }
       };
       
-      console.log(`Proxying NFT request: ${req.url} -> http://127.0.0.1:8080${proxyUrl}`);
+      console.log(`Proxying NFT request: ${req.url} -> http://127.0.0.1:${nftServerPort}${proxyUrl}`);
       
       // Создаем прокси-запрос на наш NFT сервер
       const proxyReq = http.request(proxyOptions, (proxyRes: any) => {
@@ -300,11 +349,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         proxyReq.end();
       }
-    }).catch(error => {
-      console.error('Error importing http module:', error);
+    } catch (error) {
+      console.error('Error in NFT proxy:', error);
       res.statusCode = 500;
       res.end('Internal Server Error');
-    });
+    }
   });
   
   // Регистрируем маршруты для NFT

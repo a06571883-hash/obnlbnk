@@ -36,13 +36,36 @@ const nftPaths = {
 function findActualImagePath(requestedPath) {
   // Извлекаем имя файла из пути
   const filename = path.basename(requestedPath);
+  
+  // Проверяем наличие параметров запроса в пути
+  let queryParams = {};
+  if (requestedPath.includes('?')) {
+    const [basePath, queryString] = requestedPath.split('?');
+    const params = new URLSearchParams(queryString);
+    params.forEach((value, key) => {
+      queryParams[key] = value;
+    });
+    requestedPath = basePath; // Удаляем параметры из пути
+  }
+  
   const isBoredApe = requestedPath.includes('bored_ape');
   const isMutantApe = requestedPath.includes('mutant_ape');
-  const isOfficialMutantApe = requestedPath.includes('mutant_ape_official');
+  
+  // Определяем, является ли это официальным Mutant Ape, учитывая параметр collection
+  let isOfficialMutantApe = requestedPath.includes('mutant_ape_official');
+  
+  // Если параметр collection указан, он имеет приоритет
+  if (queryParams.collection === 'official') {
+    isOfficialMutantApe = true;
+    console.log(`[NFT Server] Overriding to OFFICIAL Mutant Ape collection via query parameter`);
+  } else if (queryParams.collection === 'regular') {
+    isOfficialMutantApe = false;
+    console.log(`[NFT Server] Overriding to REGULAR Mutant Ape collection via query parameter`);
+  }
   
   // Детальное логирование входящего запроса
   console.log(`[NFT Server] Finding image for: ${requestedPath} (filename: ${filename})`);
-  console.log(`[NFT Server] isBoredApe: ${isBoredApe}, isMutantApe: ${isMutantApe}, isOfficialMutantApe: ${isOfficialMutantApe}`);
+  console.log(`[NFT Server] isBoredApe: ${isBoredApe}, isMutantApe: ${isMutantApe}, isOfficialMutantApe: ${isOfficialMutantApe}, collectionParam: ${queryParams.collection || 'none'}`);
   
   // Корневая директория для поиска изображения
   let searchDir;
@@ -367,11 +390,29 @@ function getContentType(filePath) {
 
 // Функция для отправки реального случайного изображения вместо отсутствующего
 function sendRealNftImage(res, type, originalPath) {
-  // Проверяем, относится ли запрос к официальным Mutant Ape
-  const isOfficialMutantApe = originalPath.includes('mutant_ape_official') || type === 'mutant_ape_official';
+  // Извлекаем параметр collection из URL, если он существует
+  let collectionParam = '';
+  if (originalPath.includes('?')) {
+    const queryString = originalPath.split('?')[1];
+    const params = new URLSearchParams(queryString);
+    collectionParam = params.get('collection') || '';
+  }
+  
+  // Определяем, относится ли запрос к официальным Mutant Ape,
+  // учитывая как тип пути, так и параметр collection
+  let isOfficialMutantApe = originalPath.includes('mutant_ape_official') || type === 'mutant_ape_official';
+  
+  // Если параметр collection указан, он имеет приоритет
+  if (collectionParam === 'official') {
+    isOfficialMutantApe = true;
+    console.log(`[MUTANT DEBUG] Приоритет отдан коллекции 'official' из параметра`);
+  } else if (collectionParam === 'regular') {
+    isOfficialMutantApe = false;
+    console.log(`[MUTANT DEBUG] Приоритет отдан коллекции 'regular' из параметра`);
+  }
   
   // Добавляем расширенное логирование
-  console.log(`[MUTANT DEBUG] sendRealNftImage: тип=${type}, путь=${originalPath}, isOfficialMutantApe=${isOfficialMutantApe}`);
+  console.log(`[MUTANT DEBUG] sendRealNftImage: тип=${type}, путь=${originalPath}, коллекция=${collectionParam}, isOfficialMutantApe=${isOfficialMutantApe}`);
   
   // Выбираем соответствующую коллекцию изображений
   let collection;
@@ -432,6 +473,52 @@ function sendRealNftImage(res, type, originalPath) {
   
   // Если коллекция пуста, пробуем другие источники в порядке приоритета
   
+  // Пытаемся извлечь номер обезьяны из запрашиваемого пути
+  let specificApeNumber = null;
+  const match = originalPath.match(/mutant_ape_(\d+)\.png$/);
+  if (match && match[1]) {
+    specificApeNumber = parseInt(match[1]);
+    console.log(`[MUTANT DEBUG] Извлечен номер обезьяны из пути: ${specificApeNumber}`);
+    
+    // Для каждого пула выбираем изображение с наиболее похожим номером
+    // чтобы одна и та же обезьяна всегда получала одно и то же изображение
+    if (isOfficialMutantApe && realNFTImages.mutantApeOfficial.files.length > 0) {
+      const targetIndex = specificApeNumber % realNFTImages.mutantApeOfficial.files.length;
+      const targetPath = realNFTImages.mutantApeOfficial.files[targetIndex];
+      
+      console.log(`[MUTANT DEBUG] Для официальной обезьяны #${specificApeNumber} выбрано изображение #${targetIndex}: ${targetPath}`);
+      
+      if (fs.existsSync(targetPath)) {
+        const contentType = getContentType(targetPath);
+        // Устанавливаем заголовок отключения кеширования
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        fs.createReadStream(targetPath).pipe(res);
+        console.log(`[NFT Server] Отправляем консистентное изображение Official Mutant Ape ${specificApeNumber}: ${targetPath}`);
+        return;
+      }
+    } else if (!isOfficialMutantApe && realNFTImages.mutantApe.files.length > 0) {
+      const targetIndex = specificApeNumber % realNFTImages.mutantApe.files.length;
+      const targetPath = realNFTImages.mutantApe.files[targetIndex];
+      
+      console.log(`[MUTANT DEBUG] Для обычной обезьяны #${specificApeNumber} выбрано изображение #${targetIndex}: ${targetPath}`);
+      
+      if (fs.existsSync(targetPath)) {
+        const contentType = getContentType(targetPath);
+        // Устанавливаем заголовок отключения кеширования
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        fs.createReadStream(targetPath).pipe(res);
+        console.log(`[NFT Server] Отправляем консистентное изображение Regular Mutant Ape ${specificApeNumber}: ${targetPath}`);
+        return;
+      }
+    }
+  }
+  
   // Сначала проверяем мутантов (если они не были выбраны изначально)
   if (!isOfficialMutantApe && type !== 'mutant_ape' && realNFTImages.mutantApe.files.length > 0) {
     const randomIndex = Math.floor(Math.random() * realNFTImages.mutantApe.files.length);
@@ -439,8 +526,11 @@ function sendRealNftImage(res, type, originalPath) {
     
     if (fs.existsSync(mutantImagePath)) {
       const contentType = getContentType(mutantImagePath);
+      // Устанавливаем заголовок отключения кеширования
       res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // кеширование на 1 день
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       fs.createReadStream(mutantImagePath).pipe(res);
       console.log(`[NFT Server] Sending mutant ape image as fallback for ${originalPath}: ${mutantImagePath}`);
       return;
@@ -480,10 +570,24 @@ Object.keys(nftPaths).forEach(route => {
     
     console.log(`[NFT Image Server] [DEBUG] Request for NFT image: ${route}/${filename} -> ${fullPath}`);
     
+    // Проверяем параметр collection для определения типа коллекции
+    const collectionType = req.query.collection || '';
+    
     // Добавляем расширенное логирование для Mutant Ape коллекций
     if (route.includes('mutant_ape')) {
-      const isMutantOfficial = route.includes('mutant_ape_official');
-      console.log(`[MUTANT DEBUG] Запрос ${isMutantOfficial ? 'ОФИЦИАЛЬНОГО' : 'ОБЫЧНОГО'} Mutant Ape: ${filename}`);
+      // Определяем тип коллекции на основе маршрута и параметра collection
+      let isMutantOfficial = route.includes('mutant_ape_official');
+      
+      // Если параметр collection указан, он имеет приоритет
+      if (collectionType === 'official') {
+        isMutantOfficial = true;
+        console.log(`[MUTANT DEBUG] Коллекция переопределена через параметр query: official`);
+      } else if (collectionType === 'regular') {
+        isMutantOfficial = false;
+        console.log(`[MUTANT DEBUG] Коллекция переопределена через параметр query: regular`);
+      }
+      
+      console.log(`[MUTANT DEBUG] Запрос ${isMutantOfficial ? 'ОФИЦИАЛЬНОГО' : 'ОБЫЧНОГО'} Mutant Ape: ${filename}, collectionType=${collectionType}`);
       
       // Проверяем наличие РЕАЛЬНОГО файла в соответствующей директории
       if (fs.existsSync(fullPath)) {
@@ -701,13 +805,68 @@ if (realNFTImages.mutantApeOfficial.files.length > 0) {
   });
 }
 
-// Запускаем сервер на порту 8080 и слушаем на всех интерфейсах для доступа в Replit
-const PORT = 8080;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`NFT image server running on port ${PORT} (0.0.0.0)`);
-  console.log(`Server address: http://0.0.0.0:${PORT}`);
-  console.log(`Configured paths:`);
-  for (const [route, path] of Object.entries(nftPaths)) {
-    console.log(`  ${route} -> ${path}`);
+// Функция для проверки доступности порта
+function isPortAvailable(port) {
+  return new Promise((resolve) => {
+    const server = require('net').createServer();
+    
+    server.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`[NFT Image Server] Port ${port} is already in use, checking another port`);
+        resolve(false);
+      } else {
+        console.error(`[NFT Image Server] Error checking port ${port}:`, err);
+        resolve(false);
+      }
+    });
+    
+    server.once('listening', () => {
+      server.close();
+      resolve(true);
+    });
+    
+    server.listen(port, '0.0.0.0');
+  });
+}
+
+// Асинхронная функция для запуска сервера на свободном порту
+async function startServer() {
+  let PORT = 8080; // Начинаем с порта 8080
+  const MAX_PORT = 8090; // Максимальный порт для проверки
+  
+  // Проверяем порты до тех пор, пока не найдем свободный
+  while (PORT <= MAX_PORT) {
+    if (await isPortAvailable(PORT)) {
+      // Найден свободный порт, запускаем сервер
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`NFT image server running on port ${PORT} (0.0.0.0)`);
+        console.log(`Server address: http://0.0.0.0:${PORT}`);
+        console.log(`Configured paths:`);
+        for (const [route, path] of Object.entries(nftPaths)) {
+          console.log(`  ${route} -> ${path}`);
+        }
+        
+        // Экспортируем текущий порт для возможности использования в других частях приложения
+        global.nftServerPort = PORT;
+        
+        // Создаем файл с информацией о порте для других процессов
+        try {
+          fs.writeFileSync(path.join(process.cwd(), 'nft-server-port.txt'), PORT.toString());
+          console.log(`[NFT Image Server] Port information saved to nft-server-port.txt: ${PORT}`);
+        } catch (err) {
+          console.error('[NFT Image Server] Error saving port information:', err);
+        }
+      });
+      return; // Выходим из функции после успешного запуска
+    }
+    
+    // Увеличиваем порт и пробуем снова
+    PORT++;
   }
-});
+  
+  // Если не удалось найти свободный порт
+  console.error(`[NFT Image Server] Could not find an available port between 8080 and ${MAX_PORT}`);
+}
+
+// Запускаем сервер
+startServer();
