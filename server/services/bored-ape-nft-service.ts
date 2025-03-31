@@ -5,7 +5,7 @@
 // Используем getBoredApeNFT вместо generateNFTImage
 import { db } from '../db';
 import { nfts, nftCollections, nftTransfers, insertNftSchema, users, cards, transactions } from '../../shared/schema';
-import { eq, and, not } from 'drizzle-orm';
+import { eq, and, not, or, inArray } from 'drizzle-orm';
 import { getBoredApeNFT, checkBoredApeNFTFiles } from '../utils/bored-ape-nft-loader';
 import * as crypto from 'crypto';
 import { storage } from '../storage';
@@ -568,14 +568,33 @@ export async function getNFTsForSale(excludeUserId?: number) {
     // Для отслеживания уникальных токенов, чтобы избежать дубликатов
     const tokenTracker = new Set();
     
-    // Показываем все NFT на продаже, независимо от пользователя
+    // Отладочное логирование параметров запроса
+    console.log(`[Bored Ape NFT Service] Запрос NFT на продаже. Исключаем пользователя: ${excludeUserId || 'нет'}`);
+    
+    // Импортируем or из drizzle-orm, если не импортирован
+    
+    // Получаем только NFT с коллекцией Bored Ape (1) или Mutant Ape (2)
     const query = db.select()
       .from(nfts)
-      .where(eq(nfts.forSale, true));
+      .where(
+        and(
+          eq(nfts.forSale, true),
+          // Используем or для включения обеих коллекций
+          or(
+            eq(nfts.collectionId, 1),  // Bored Ape Yacht Club
+            eq(nfts.collectionId, 2)   // Mutant Ape Yacht Club
+          )
+        )
+      );
     
     // Получаем NFT из таблицы nfts (Drizzle ORM)
     const nftsForSale = await query;
     console.log(`[Bored Ape NFT Service] Найдено ${nftsForSale.length} NFT на продаже из таблицы nfts`);
+    
+    // Отладочная информация о коллекциях
+    const initialBoredApeCount = nftsForSale.filter(nft => nft.collectionId === 1).length;
+    const initialMutantApeCount = nftsForSale.filter(nft => nft.collectionId === 2).length;
+    console.log(`[Bored Ape NFT Service] Распределение по коллекциям: Bored Ape: ${initialBoredApeCount}, Mutant Ape: ${initialMutantApeCount}`);
     
     // Фильтруем дубликаты на основе tokenId
     const uniqueNFTs = nftsForSale.filter(nft => {
@@ -594,49 +613,27 @@ export async function getNFTsForSale(excludeUserId?: number) {
     
     console.log(`[Bored Ape NFT Service] После дедупликации осталось ${uniqueNFTs.length} уникальных NFT из ${nftsForSale.length} всего`);
     
-    // Также попробуем получить NFT из старой таблицы nft (legacy)
-    let legacyNFTs = [];
-    try {
-      // Используем Drizzle SQL для legacy таблицы
-      const legacyQuery = `SELECT * FROM nft WHERE for_sale = true`;
-      const result = await db.execute(legacyQuery);
-      
-      // Проверяем структуру результата и извлекаем данные правильным способом
-      if (Array.isArray(result)) {
-        legacyNFTs = result;
-      } else if (result && typeof result === 'object' && 'rows' in result) {
-        // @ts-ignore - игнорируем ошибку TypeScript, так как мы проверили наличие свойства
-        legacyNFTs = result.rows;
-      }
-      
-      console.log(`[Bored Ape NFT Service] Найдено ${legacyNFTs.length} NFT на продаже из таблицы nft (legacy)`);
-      
-      // Фильтруем дубликаты из legacy таблицы
-      legacyNFTs = legacyNFTs.filter((nft: { token_id: any; collection_id?: number }) => {
-        // Создаем композитный ключ токена для legacy NFTs
-        const legacyTokenId = nft.token_id.toString();
-        // Преобразуем в формат, совместимый с новым форматом для сравнения
-        const bayPrefix = legacyTokenId.startsWith('BAYC-') ? '' : 'BAYC-';
-        const tokenKey = `${bayPrefix}${legacyTokenId}-${nft.collection_id || '1'}`;
-        
-        // Если этот токен уже был обработан, пропускаем его
-        if (tokenTracker.has(tokenKey)) {
-          return false;
-        }
-        
-        // Добавляем токен в трекер и включаем в результат
-        tokenTracker.add(tokenKey);
-        return true;
-      });
-      
-      console.log(`[Bored Ape NFT Service] После дедупликации осталось ${legacyNFTs.length} уникальных legacy NFT`);
-    } catch (legacyError) {
-      console.error('[Bored Ape NFT Service] Ошибка при получении NFT из legacy таблицы:', legacyError);
+    // Проверяем, нужно ли исключать NFT текущего пользователя
+    let filteredNFTs = uniqueNFTs;
+    if (excludeUserId) {
+      filteredNFTs = filteredNFTs.filter(nft => nft.ownerId !== excludeUserId);
+      console.log(`[Bored Ape NFT Service] После исключения пользователя ${excludeUserId} осталось ${filteredNFTs.length} NFT`);
     }
     
-    // Объединяем результаты
-    const combinedNFTs = [...uniqueNFTs, ...legacyNFTs];
-    console.log(`[Bored Ape NFT Service] Всего найдено ${combinedNFTs.length} уникальных NFT на продаже (${uniqueNFTs.length} из nfts + ${legacyNFTs.length} из nft)`);
+    // Проверяем наличие Mutant Ape в результатах и логируем для отладки
+    const boredApeCount = filteredNFTs.filter(nft => nft.collectionId === 1).length;
+    const mutantApeCount = filteredNFTs.filter(nft => nft.collectionId === 2).length;
+    console.log(`[Bored Ape NFT Service] Итоговые результаты: Всего ${filteredNFTs.length} NFT (Bored Ape: ${boredApeCount}, Mutant Ape: ${mutantApeCount})`);
+    
+    // Проверяем валидность путей к изображениям у Mutant Ape
+    if (mutantApeCount > 0) {
+      console.log(`[Bored Ape NFT Service] Пример пути к изображению Mutant Ape:`, 
+        filteredNFTs.find(nft => nft.collectionId === 2)?.imagePath || 'не найден');
+    }
+    
+    // Используем только новые NFT, не загружаем из legacy таблицы
+    const combinedNFTs = filteredNFTs;
+    console.log(`[Bored Ape NFT Service] Всего найдено ${combinedNFTs.length} уникальных NFT на продаже`);
     
     return combinedNFTs;
   } catch (error) {
