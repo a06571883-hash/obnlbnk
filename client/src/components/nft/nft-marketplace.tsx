@@ -121,18 +121,25 @@ export const NFTMarketplace: React.FC = () => {
     // Используем Map для сохранения только одного NFT для каждого tokenId
     const uniqueMap = new Map<string, NFT>();
     
+    // Вывести тип данных и количество элементов для отладки
+    console.log("NFT items:", items.length, "Тип первого элемента:", items.length > 0 ? typeof items[0] : "нет данных");
+    
+    // Логируем информацию о нескольких элементах для отладки
+    if (items.length > 0) {
+      console.log("Первые 3 NFT из маркетплейса:", items.slice(0, 3));
+    }
+    
     items.forEach(nft => {
       // Проверки:
       // 1. NFT доступен для продажи
-      // 2. Проверка имени коллекции или путь к изображению содержит "bored_ape" или "mutant_ape"
+      // 2. Проверка имени коллекции
       const isApeNft = 
-        (nft.collectionName === 'Bored Ape Yacht Club' || nft.collectionName === 'Mutant Ape Yacht Club') || 
-        (nft.imagePath && (
-          nft.imagePath.includes('bored_ape') || 
-          nft.imagePath.includes('mutant_ape') || 
-          nft.imagePath.includes('official_bored_ape') ||
-          nft.imagePath.includes('bayc_official')
-        ));
+        (nft.collectionName === 'Bored Ape Yacht Club' || nft.collectionName === 'Mutant Ape Yacht Club');
+      
+      // Логируем отфильтрованные NFT для отладки
+      if (nft.forSale && nft.collectionName === 'Mutant Ape Yacht Club') {
+        console.log("Найден Mutant Ape:", nft.id, nft.name, nft.collectionName);
+      }
       
       if (nft.forSale && isApeNft) {
         // При совпадении tokenId перезаписываем, чтобы избежать дубликатов
