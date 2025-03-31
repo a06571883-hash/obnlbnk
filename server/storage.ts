@@ -1329,14 +1329,22 @@ export class DatabaseStorage implements IStorage {
           });
         }
         
-        // Получаем отсортированные NFT для маркетплейса
+        // Получаем отсортированные NFT для маркетплейса, фильтруя только обезьян (collection_id = 1 или 2)
         const nftItems = await db
           .select()
           .from(nfts)
-          .where(eq(nfts.forSale, true))
+          .where(
+            and(
+              eq(nfts.forSale, true),
+              or(eq(nfts.collectionId, 1), eq(nfts.collectionId, 2))
+            )
+          )
           .orderBy(desc(nfts.mintedAt));
         
-        console.log(`[Storage] Найдено ${nftItems.length} NFT через ORM для маркетплейса`);
+        // Выводим подробную информацию о количестве NFT по коллекциям
+        const boredApeCount = nftItems.filter(nft => nft.collectionId === 1).length;
+        const mutantApeCount = nftItems.filter(nft => nft.collectionId === 2).length;
+        console.log(`[Storage] Найдено ${nftItems.length} NFT через ORM для маркетплейса (${boredApeCount} Bored Ape, ${mutantApeCount} Mutant Ape)`);
         
         return nftItems;
       } catch (error) {
@@ -1348,6 +1356,7 @@ export class DatabaseStorage implements IStorage {
         const result = await client`
           SELECT * FROM nfts 
           WHERE for_sale = true 
+            AND (collection_id = 1 OR collection_id = 2)
           ORDER BY minted_at DESC
         `;
         
