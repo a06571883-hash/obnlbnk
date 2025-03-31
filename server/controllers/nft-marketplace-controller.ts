@@ -92,14 +92,12 @@ router.get('/v2', async (req: Request, res: Response) => {
     if (collection) log(`collection=${collection}`);
     
     // Создаем базовые условия для запроса - NFT на продаже
-    // Добавляем фильтр, чтобы отображать только NFT обезьян (по пути к изображению)
+    // Добавляем фильтр, чтобы отображать только NFT обезьян (по collection_id)
     let conditions = [
       eq(nfts.forSale, true),
       sql`(
-        ${nfts.imagePath} LIKE '%bored_ape%' OR 
-        ${nfts.imagePath} LIKE '%mutant_ape%' OR
-        ${nfts.imagePath} LIKE '%official_bored_ape%' OR
-        ${nfts.imagePath} LIKE '%bayc_official%'
+        ${nfts.collectionId} = 1 OR 
+        ${nfts.collectionId} = 2
       )`
     ];
     
@@ -125,20 +123,12 @@ router.get('/v2', async (req: Request, res: Response) => {
       );
     }
     
-    // Добавляем условие фильтрации по коллекции на основе пути к изображению
+    // Добавляем условие фильтрации по коллекции на основе collection_id
     if (collection) {
       if (collection.toLowerCase() === 'bored') {
-        conditions.push(
-          sql`(
-            ${nfts.imagePath} LIKE '%bored_ape%' OR
-            ${nfts.imagePath} LIKE '%official_bored_ape%' OR
-            ${nfts.imagePath} LIKE '%bayc_official%'
-          )`
-        );
+        conditions.push(eq(nfts.collectionId, 1));
       } else if (collection.toLowerCase() === 'mutant') {
-        conditions.push(
-          sql`${nfts.imagePath} LIKE '%mutant_ape%'`
-        );
+        conditions.push(eq(nfts.collectionId, 2));
       }
     }
     
@@ -215,14 +205,10 @@ router.get('/v2', async (req: Request, res: Response) => {
       id: nft.id,
       tokenId: nft.tokenId,
       collectionName: (() => {
-        // Определяем коллекцию по пути к изображению
-        if (nft.imagePath && nft.imagePath.includes('mutant_ape')) {
+        // Определяем коллекцию по ID коллекции
+        if (nft.collectionId === 2) {
           return 'Mutant Ape Yacht Club';
-        } else if (nft.imagePath && (
-          nft.imagePath.includes('bored_ape') || 
-          nft.imagePath.includes('bayc_official') || 
-          nft.imagePath.includes('official_bored_ape')
-        )) {
+        } else if (nft.collectionId === 1) {
           return 'Bored Ape Yacht Club';
         }
         return '';
