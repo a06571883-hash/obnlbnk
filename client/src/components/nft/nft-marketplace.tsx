@@ -106,11 +106,41 @@ export const NFTMarketplace: React.FC = () => {
       // Добавляем параметр коллекции, если он выбран
       if (selectedCollection) {
         url += `&collection=${selectedCollection}`;
+        console.log(`Запрос фильтрации по коллекции ${selectedCollection}: ${url}`);
       }
       
       return fetch(url).then(res => {
         if (!res.ok) throw new Error('Ошибка получения NFT');
         return res.json();
+      }).then(data => {
+        console.log(`Получено ${data.items?.length || 0} NFT от API. Фильтр: ${selectedCollection || 'все'}`);
+        
+        // Проверяем количество NFT из каждой коллекции для отладки
+        const boredCount = data.items?.filter((nft: any) => 
+          nft.collectionName === 'Bored Ape Yacht Club' || 
+          nft.imagePath?.includes('/bored_ape_nft/')
+        ).length || 0;
+        
+        const mutantCount = data.items?.filter((nft: any) => 
+          nft.collectionName === 'Mutant Ape Yacht Club' || 
+          nft.imagePath?.includes('/mutant_ape')
+        ).length || 0;
+        
+        console.log(`Распределение коллекций в ответе API: Bored Ape=${boredCount}, Mutant Ape=${mutantCount}`);
+        
+        // Если это Mutant Ape, выводим дополнительные детали для отладки
+        if (selectedCollection === 'mutant' && data.items?.length > 0) {
+          const firstFew = data.items.slice(0, 3);
+          console.log("Примеры Mutant Ape из ответа API:", firstFew.map((nft: any) => ({
+            id: nft.id, 
+            name: nft.name, 
+            collectionName: nft.collectionName,
+            imagePath: nft.imagePath,
+            collectionId: nft.collectionId
+          })));
+        }
+        
+        return data;
       });
     },
     retry: 3
