@@ -625,9 +625,31 @@ export async function getNFTsForSale(excludeUserId?: number) {
     const mutantApeCount = filteredNFTs.filter(nft => nft.collectionId === 2).length;
     console.log(`[Bored Ape NFT Service] Итоговые результаты: Всего ${filteredNFTs.length} NFT (Bored Ape: ${boredApeCount}, Mutant Ape: ${mutantApeCount})`);
     
-    // Проверяем валидность путей к изображениям у Mutant Ape
+    // Изменяем пути к изображениям для Mutant Ape, заменяя svg на png
+    filteredNFTs = filteredNFTs.map(nft => {
+      if (nft.collectionId === 2) {
+        // Получаем текущий путь и имя файла
+        const currentPath = nft.imagePath || '';
+        
+        // Проверяем, содержит ли путь .svg
+        if (currentPath.includes('.svg')) {
+          // Создаем новый путь, заменяя .svg на .png
+          const newPath = currentPath.replace('.svg', '.png');
+          console.log(`[Bored Ape NFT Service] Изменяем путь к изображению Mutant Ape: ${currentPath} -> ${newPath}`);
+          
+          // Возвращаем обновленный объект
+          return {
+            ...nft,
+            imagePath: newPath
+          };
+        }
+      }
+      return nft;
+    });
+    
+    // Проверяем валидность путей к изображениям у Mutant Ape после обновления
     if (mutantApeCount > 0) {
-      console.log(`[Bored Ape NFT Service] Пример пути к изображению Mutant Ape:`, 
+      console.log(`[Bored Ape NFT Service] Пример пути к изображению Mutant Ape после обновления:`, 
         filteredNFTs.find(nft => nft.collectionId === 2)?.imagePath || 'не найден');
     }
     
