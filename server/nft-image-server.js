@@ -65,7 +65,38 @@ function findActualImagePath(requestedPath) {
       }
     }
   } else if (isMutantApe) {
-    searchDir = path.join(process.cwd(), 'mutant_ape_nft');
+    // Проверяем, является ли это запросом к официальной коллекции
+    const isOfficialCollection = requestedPath.includes('mutant_ape_official');
+    
+    if (isOfficialCollection) {
+      // Используем путь к официальной коллекции
+      searchDir = path.join(process.cwd(), 'mutant_ape_official');
+      
+      // Если это официальная коллекция, сначала ищем точное совпадение в ней
+      const exactPath = path.join(searchDir, filename);
+      console.log(`[NFT Server] Checking official Mutant Ape path for ${filename}: ${exactPath}`);
+      
+      if (fs.existsSync(exactPath)) {
+        console.log(`[NFT Server] Found official Mutant Ape image: ${exactPath}`);
+        return exactPath;
+      }
+      
+      // Если не нашли файл в официальной директории, проверяем файлы в пуле официальных
+      if (realNFTImages.mutantApeOfficial.files.length > 0) {
+        // Извлекаем номер из имени файла
+        const match = filename.match(/mutant_ape_(\d+)\.png/);
+        if (match && match[1]) {
+          const number = parseInt(match[1]);
+          const index = number % realNFTImages.mutantApeOfficial.files.length;
+          console.log(`[NFT Server] Using official Mutant Ape pool for ${filename}: ${realNFTImages.mutantApeOfficial.files[index]}`);
+          return realNFTImages.mutantApeOfficial.files[index];
+        }
+      }
+    } else {
+      // Если это не официальная коллекция, используем основную директорию Mutant Ape
+      searchDir = path.join(process.cwd(), 'mutant_ape_nft');
+    }
+    
     // Получаем номер обезьяны из запрашиваемого пути
     const match = filename.match(/mutant_ape_(\d+)\.png/);
     if (match && match[1]) {
@@ -410,7 +441,7 @@ Object.keys(nftPaths).forEach(route => {
     const requestPath = `${route}/${filename}`;
     const fullPath = path.join(directoryPath, filename);
     
-    console.log(`[DEBUG] Request for NFT image: ${route}/${filename} -> ${fullPath}`);
+    console.log(`[NFT Image Server] [DEBUG] Request for NFT image: ${route}/${filename} -> ${fullPath}`);
     
     // Пробуем найти правильное изображение
     const actualImagePath = findActualImagePath(requestPath);
@@ -451,7 +482,7 @@ Object.keys(nftPaths).forEach(route => {
       const { subdir, filename } = req.params;
       const fullPath = path.join(directoryPath, subdir, filename);
       
-      console.log(`[DEBUG] Request for nested NFT image: ${route}/${subdir}/${filename} -> ${fullPath}`);
+      console.log(`[NFT Image Server] [DEBUG] Request for nested NFT image: ${route}/${subdir}/${filename} -> ${fullPath}`);
       
       // Проверяем существование файла
       if (fs.existsSync(fullPath)) {

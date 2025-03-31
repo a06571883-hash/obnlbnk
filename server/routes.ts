@@ -249,8 +249,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const proxyUrl = req.url?.replace(/^\/nft-proxy/, '') || '';
       
       // Добавляем логирование для отладки проблем с Mutant Ape
-      if (proxyUrl.includes('mutant_ape')) {
+      if (proxyUrl.includes('mutant_ape_nft')) {
         console.log(`[NFT Proxy DEBUG] Обработка запроса изображения Mutant Ape: ${proxyUrl}`);
+      }
+      
+      // Добавляем отдельное логирование для официальной коллекции Mutant Ape
+      if (proxyUrl.includes('mutant_ape_official')) {
+        console.log(`[NFT Proxy DEBUG] Обработка запроса изображения Official Mutant Ape: ${proxyUrl}`);
       }
       
       const proxyOptions = {

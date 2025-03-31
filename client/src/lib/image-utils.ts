@@ -33,18 +33,24 @@ export function getProxiedImageUrl(imagePath: string): string {
   }
 
   // Перенаправляем через прокси любые NFT изображения,
-  // включая BAYC и Mutant Ape
+  // включая BAYC и Mutant Ape (включая официальную коллекцию)
   if (imagePath.includes('bayc_official') || 
       imagePath.includes('bored_ape_nft') || 
       imagePath.includes('mutant_ape_nft') ||
+      imagePath.includes('mutant_ape_official') ||
       imagePath.includes('new_bored_ape') ||
       imagePath.includes('nft_assets')) {
     // Используем относительный путь для проксирования через наш API
     const proxiedPath = `/nft-proxy${imagePath}`;
     
-    // Добавляем специальное логирование для Mutant Ape
+    // Добавляем специальное логирование для Mutant Ape (обеих коллекций)
     if (imagePath.includes('mutant_ape_nft')) {
       console.log('MUTANT APE IMAGE PATH:', imagePath, '->', proxiedPath);
+    }
+    
+    // Добавляем отдельное логирование для официальной коллекции Mutant Ape
+    if (imagePath.includes('mutant_ape_official')) {
+      console.log('OFFICIAL MUTANT APE IMAGE PATH:', imagePath, '->', proxiedPath);
     }
     
     console.log('Проксирование NFT изображения:', imagePath, '->', proxiedPath);
