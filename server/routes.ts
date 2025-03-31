@@ -248,9 +248,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Заменяем /nft-proxy на пустую строку в начале URL
       const proxyUrl = req.url?.replace(/^\/nft-proxy/, '') || '';
       
+      // Добавляем подробное логирование для отладки проблем с NFT изображениями
+      console.log(`[NFT Proxy] Proxying request for: ${proxyUrl}`);
+      
       // Добавляем логирование для отладки проблем с Mutant Ape
       if (proxyUrl.includes('mutant_ape_nft')) {
-        console.log(`[NFT Proxy DEBUG] Обработка запроса изображения Mutant Ape: ${proxyUrl}`);
+        console.log(`[NFT Proxy DEBUG] Обработка запроса изображения Mutant Ape (regular): ${proxyUrl}`);
       }
       
       // Добавляем отдельное логирование для официальной коллекции Mutant Ape
@@ -258,13 +261,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[NFT Proxy DEBUG] Обработка запроса изображения Official Mutant Ape: ${proxyUrl}`);
       }
       
+      // Указываем правильный порт для сервера изображений NFT 
       const proxyOptions = {
         // Используем 127.0.0.1 вместо 0.0.0.0 для гарантированного подключения
         hostname: '127.0.0.1',
         port: 8080,
         path: proxyUrl,
         method: req.method,
-        headers: req.headers
+        headers: { ...req.headers, host: 'localhost:8080' }
       };
       
       console.log(`Proxying NFT request: ${req.url} -> http://127.0.0.1:8080${proxyUrl}`);
