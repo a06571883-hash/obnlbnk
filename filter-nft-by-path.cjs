@@ -1,272 +1,329 @@
 /**
- * Скрипт для жесткой фильтрации NFT по путям к изображениям
- * Оставляет только NFT, у которых путь к изображению соответствует паттерну обезьян
- * Удаляет все дубликаты изображений по одним и тем же путям
+ * Скрипт для фильтрации NFT по путям к изображениям и удаления всех, 
+ * которые не являются настоящими изображениями обезьян
  */
 
 const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
 
-// Получаем строку подключения из переменной окружения
-const DATABASE_URL = process.env.DATABASE_URL;
+// Загрузка переменных окружения
+dotenv.config();
 
-// Настраиваем пул подключений
+// Создание пула подключений к PostgreSQL
 const pool = new Pool({
-  connectionString: DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
 });
 
 /**
- * Главная функция для фильтрации NFT по путям к изображениям
+ * Получает все пути к изображениям из базы данных
  */
-async function filterNFTByPath() {
-  console.log('Запуск фильтрации NFT по путям к изображениям...');
+async function getAllImagePaths() {
+  const result = await pool.query(`
+    SELECT id, image_path, token_id FROM nfts
+  `);
   
-  try {
-    // Получаем общее количество NFT до фильтрации
-    const countBeforeQuery = 'SELECT COUNT(*) FROM nfts';
-    const countBeforeResult = await pool.query(countBeforeQuery);
-    const countBefore = parseInt(countBeforeResult.rows[0].count);
+  return result.rows;
+}
+
+/**
+ * Фильтрует NFT, оставляя только те, которые содержат настоящие изображения обезьян
+ */
+async function filterNonApeNFT() {
+  const nftList = await getAllImagePaths();
+  console.log(`Получено ${nftList.length} NFT для проверки`);
+  
+  let deletedCount = 0;
+  
+  // Строка для записи удаленных NFT для журнала
+  let deletedLog = "ID,TokenID,ImagePath\n";
+  
+  for (const nft of nftList) {
+    const imagePath = nft.image_path;
+    const isApe = isApeImage(imagePath);
     
-    console.log(`Всего NFT до фильтрации: ${countBefore}`);
-    
-    // Получаем все пути к изображениям NFT с их ID
-    const allNFTsQuery = 'SELECT id, token_id, image_path, price, rarity FROM nfts ORDER BY id';
-    const allNFTsResult = await pool.query(allNFTsQuery);
-    const allNFTs = allNFTsResult.rows;
-    
-    console.log(`Получено ${allNFTs.length} NFT для анализа`);
-    
-    // Определяем шаблоны для путей к изображениям обезьян
-    const apePatterns = [
-      /bored_ape/i,
-      /mutant_ape/i,
-      /bayc_official/i,
-      /official_bored_ape/i
-    ];
-    
-    // Шаблоны для путей, которые не должны быть в базе
-    const nonApePatterns = [
-      /core/i,
-      /human/i,
-      /generated/i,
-      /placeholder/i,
-      /random/i,
-      /test/i
-    ];
-    
-    // Список ID NFT, которые нужно удалить
-    const nftToDeleteIds = [];
-    
-    // Карта путей к изображениям для удаления дубликатов
-    const uniqueImagePaths = new Map();
-    
-    // Анализируем каждый NFT
-    for (const nft of allNFTs) {
-      const imagePath = nft.image_path || '';
-      
-      // Проверяем, соответствует ли путь шаблонам обезьян
-      const isApe = apePatterns.some(pattern => pattern.test(imagePath));
-      
-      // Проверяем, не соответствует ли путь запрещенным шаблонам
-      const isNonApe = nonApePatterns.some(pattern => pattern.test(imagePath));
-      
-      // Если это не обезьяна или это запрещенный паттерн, помечаем для удаления
-      if (!isApe || isNonApe) {
-        nftToDeleteIds.push(nft.id);
-        console.log(`NFT ID ${nft.id} не является обезьяной: ${imagePath}`);
-        continue;
-      }
-      
-      // Проверяем на дубликаты путей
-      if (uniqueImagePaths.has(imagePath)) {
-        // Это дубликат, сравниваем редкость и цену с предыдущим
-        const existingNFT = uniqueImagePaths.get(imagePath);
+    if (!isApe) {
+      try {
+        // Сначала удаляем связанные трансферы
+        await pool.query(`
+          DELETE FROM nft_transfers 
+          WHERE nft_id = $1
+        `, [nft.id]);
         
-        // Если текущий NFT имеет более высокую цену или редкость, заменяем предыдущий
-        if (
-          (nft.rarity === 'legendary' && existingNFT.rarity !== 'legendary') ||
-          (nft.rarity === 'epic' && !['legendary', 'epic'].includes(existingNFT.rarity)) ||
-          parseFloat(nft.price) > parseFloat(existingNFT.price)
-        ) {
-          // Удаляем предыдущий NFT
-          nftToDeleteIds.push(existingNFT.id);
-          console.log(`Заменяем дубликат NFT ID ${existingNFT.id} на ${nft.id} с более высокой редкостью/ценой`);
-          // Сохраняем текущий NFT
-          uniqueImagePaths.set(imagePath, nft);
-        } else {
-          // Удаляем текущий NFT
-          nftToDeleteIds.push(nft.id);
-          console.log(`Удаляем дубликат NFT ID ${nft.id}, оставляем ${existingNFT.id}`);
+        // Затем удаляем само NFT
+        await pool.query(`
+          DELETE FROM nfts 
+          WHERE id = $1
+        `, [nft.id]);
+        
+        deletedCount++;
+        deletedLog += `${nft.id},${nft.token_id},${imagePath}\n`;
+        
+        if (deletedCount % 10 === 0) {
+          console.log(`Удалено ${deletedCount} не-обезьян NFT`);
         }
-      } else {
-        // Это первый NFT с таким путем, сохраняем его
-        uniqueImagePaths.set(imagePath, nft);
+      } catch (error) {
+        console.error(`Ошибка при удалении NFT ${nft.id}:`, error.message);
+      }
+    }
+  }
+  
+  console.log(`Всего удалено ${deletedCount} NFT, которые не являются обезьянами`);
+  
+  // Записываем лог удаленных NFT в файл
+  try {
+    fs.writeFileSync('deleted_nft_log.csv', deletedLog);
+    console.log('Лог удаленных NFT сохранен в deleted_nft_log.csv');
+  } catch (error) {
+    console.error('Ошибка при сохранении лога:', error.message);
+  }
+  
+  return deletedCount;
+}
+
+/**
+ * Проверяет, является ли изображение обезьяной по пути к файлу
+ */
+function isApeImage(imagePath) {
+  if (!imagePath) return false;
+  
+  // Нормализуем путь (удаляем начальный слеш)
+  const normalizedPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+  
+  // Проверяем ключевые слова в пути
+  const lowerPath = normalizedPath.toLowerCase();
+  
+  // Проверяем, является ли это изображением Bored Ape
+  if (lowerPath.includes('bored_ape') && lowerPath.endsWith('.png')) {
+    return true;
+  }
+  
+  // Проверяем, является ли это изображением Mutant Ape
+  if (lowerPath.includes('mutant_ape') && (lowerPath.endsWith('.png') || lowerPath.endsWith('.svg'))) {
+    return true;
+  }
+  
+  // Исключаем все остальные пути, которые могут содержать ключевые слова
+  if (lowerPath.includes('logo') || lowerPath.includes('icon') || 
+      lowerPath.includes('banner') || lowerPath.includes('opensea') ||
+      lowerPath.includes('avatar') || lowerPath.includes('background')) {
+    return false;
+  }
+  
+  return false;
+}
+
+/**
+ * Создает SVG для Mutant Ape с номерами от 10001 до 11000
+ */
+function createMutantApeSVGs() {
+  console.log('Создание SVG для Mutant Ape...');
+  
+  const mutantApeDir = './mutant_ape_nft';
+  if (!fs.existsSync(mutantApeDir)) {
+    fs.mkdirSync(mutantApeDir, { recursive: true });
+  }
+  
+  for (let i = 10001; i <= 11000; i++) {
+    const svgPath = path.join(mutantApeDir, `mutant_ape_${i}.svg`);
+    if (!fs.existsSync(svgPath)) {
+      createMutantApeSVG(svgPath, i);
+    }
+  }
+  
+  console.log('Создано SVG для всех Mutant Ape (10001-11000)');
+}
+
+/**
+ * Создает SVG изображение для Mutant Ape
+ */
+function createMutantApeSVG(filePath, id) {
+  const colors = [
+    '#1abc9c', '#2ecc71', '#3498db', '#9b59b6', '#34495e',
+    '#f1c40f', '#e67e22', '#e74c3c', '#ecf0f1', '#95a5a6'
+  ];
+  
+  const faceColors = [
+    '#cdab8f', '#e0bb95', '#dfbd99', '#eecfb4', '#d29b68',
+    '#a97c50', '#845d3d', '#513a2a', '#4d3629', '#36261e' 
+  ];
+  
+  const color1 = colors[Math.floor(Math.random() * colors.length)];
+  const color2 = colors[Math.floor(Math.random() * colors.length)];
+  const faceColor = faceColors[Math.floor(Math.random() * faceColors.length)];
+  
+  const uniqueId = Math.floor(1000 + Math.random() * 9000);
+  const eyeType = Math.random() > 0.5 ? 'circle' : 'ellipse';
+  const eyeSize = 5 + Math.floor(Math.random() * 10);
+  const mouthWidth = 20 + Math.floor(Math.random() * 40);
+  
+  // Создаем SVG контент с четким изображением обезьяны
+  const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+    <style>
+      .mutant-ape { font-family: 'Arial', sans-serif; }
+      @keyframes mutate {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+      .animated { animation: mutate 3s infinite; }
+    </style>
+    <rect width="200" height="200" fill="${color1}" />
+    <rect x="20" y="20" width="160" height="160" rx="15" fill="${color2}" class="animated" />
+    
+    <!-- Голова обезьяны -->
+    <circle cx="100" cy="90" r="60" fill="${faceColor}" />
+    
+    <!-- Уши -->
+    <ellipse cx="45" cy="70" rx="15" ry="25" fill="${faceColor}" />
+    <ellipse cx="155" cy="70" rx="15" ry="25" fill="${faceColor}" />
+    
+    <!-- Глаза -->
+    <${eyeType} cx="70" cy="80" rx="${eyeSize}" ry="${eyeSize}" fill="white" />
+    <${eyeType} cx="130" cy="80" rx="${eyeSize}" ry="${eyeSize}" fill="white" />
+    <circle cx="70" cy="80" r="3" fill="black" />
+    <circle cx="130" cy="80" r="3" fill="black" />
+    
+    <!-- Нос -->
+    <ellipse cx="100" cy="100" rx="10" ry="5" fill="#333" />
+    
+    <!-- Рот -->
+    <path d="M${100 - mouthWidth/2},120 Q100,${130 + Math.random() * 10} ${100 + mouthWidth/2},120" fill="none" stroke="#333" stroke-width="3" />
+    
+    <!-- Метка коллекции -->
+    <text x="50" y="170" fill="white" font-weight="bold" font-size="12" class="mutant-ape">Mutant Ape #${id-10000}</text>
+    <text x="50" y="185" fill="white" font-size="10" class="mutant-ape">ID: MAYC-${uniqueId}</text>
+  </svg>`;
+  
+  fs.writeFileSync(filePath, svgContent);
+}
+
+/**
+ * Обновляет пути к изображениям для всех NFT
+ */
+async function updateImagePaths() {
+  console.log('Обновление путей к изображениям для всех NFT...');
+  
+  // Обновляем пути для Bored Ape
+  console.log('Обновление путей для коллекции Bored Ape Yacht Club...');
+  
+  await pool.query(`
+    UPDATE nfts 
+    SET 
+      image_path = CONCAT('/bored_ape_nft/bored_ape_', 
+        (MOD(CAST(token_id AS INTEGER), 773) + 1), '.png'),
+      original_image_path = CONCAT('/bored_ape_nft/bored_ape_', 
+        (MOD(CAST(token_id AS INTEGER), 773) + 1), '.png')
+    WHERE collection_id = 1
+  `);
+  
+  // Обновляем пути для Mutant Ape
+  console.log('Обновление путей для коллекции Mutant Ape Yacht Club...');
+  
+  await pool.query(`
+    UPDATE nfts 
+    SET 
+      image_path = CONCAT('/mutant_ape_nft/mutant_ape_', 
+        (MOD(CAST(token_id AS INTEGER) - 10000, 1000) + 10001), '.svg'),
+      original_image_path = CONCAT('/mutant_ape_nft/mutant_ape_', 
+        (MOD(CAST(token_id AS INTEGER) - 10000, 1000) + 10001), '.svg')
+    WHERE collection_id = 2
+  `);
+  
+  console.log('Пути к изображениям обновлены');
+}
+
+/**
+ * Перемешивает порядок отображения NFT
+ */
+async function randomizeOrder() {
+  console.log('Рандомизация порядка отображения NFT...');
+  
+  await pool.query(`
+    UPDATE nfts 
+    SET sort_order = (RANDOM() * 20000)::INTEGER
+  `);
+  
+  console.log('Порядок отображения NFT успешно перемешан');
+}
+
+/**
+ * Очищает директории от неподходящих файлов
+ */
+function cleanDirectories() {
+  console.log('Очистка директорий от неподходящих файлов...');
+  
+  const boredApeDir = './bored_ape_nft';
+  const mutantApeDir = './mutant_ape_nft';
+  
+  if (fs.existsSync(boredApeDir)) {
+    const files = fs.readdirSync(boredApeDir);
+    let removedCount = 0;
+    
+    for (const file of files) {
+      if (!file.match(/^bored_ape_\d+\.png$/)) {
+        try {
+          fs.unlinkSync(path.join(boredApeDir, file));
+          removedCount++;
+        } catch (error) {
+          console.error(`Ошибка при удалении файла ${file}:`, error.message);
+        }
       }
     }
     
-    console.log(`Найдено ${nftToDeleteIds.length} NFT для удаления`);
+    console.log(`Удалено ${removedCount} неподходящих файлов из ${boredApeDir}`);
+  }
+  
+  if (fs.existsSync(mutantApeDir)) {
+    const files = fs.readdirSync(mutantApeDir);
+    let removedCount = 0;
     
-    // Удаляем помеченные NFT
-    if (nftToDeleteIds.length > 0) {
-      // Разбиваем массив на подгруппы для безопасного удаления
-      const batchSize = 500;
-      for (let i = 0; i < nftToDeleteIds.length; i += batchSize) {
-        const batch = nftToDeleteIds.slice(i, i + batchSize);
-        const placeholders = batch.map((_, idx) => `$${idx + 1}`).join(',');
-        
-        // Удаляем записи из таблицы nft_transfers, связанные с этими NFT
-        const deleteTransfersQuery = `DELETE FROM nft_transfers WHERE nft_id IN (${placeholders})`;
-        await pool.query(deleteTransfersQuery, batch);
-        
-        // Удаляем NFT
-        const deleteNFTsQuery = `DELETE FROM nfts WHERE id IN (${placeholders})`;
-        const deleteResult = await pool.query(deleteNFTsQuery, batch);
-        
-        console.log(`Удалено ${deleteResult.rowCount} NFT (пакет ${Math.floor(i / batchSize) + 1})`);
+    for (const file of files) {
+      if (!file.match(/^mutant_ape_\d+\.(svg|png)$/)) {
+        try {
+          fs.unlinkSync(path.join(mutantApeDir, file));
+          removedCount++;
+        } catch (error) {
+          console.error(`Ошибка при удалении файла ${file}:`, error.message);
+        }
       }
     }
     
-    // Получаем количество NFT после фильтрации
-    const countAfterQuery = 'SELECT COUNT(*) FROM nfts';
-    const countAfterResult = await pool.query(countAfterQuery);
-    const countAfter = parseInt(countAfterResult.rows[0].count);
+    console.log(`Удалено ${removedCount} неподходящих файлов из ${mutantApeDir}`);
+  }
+}
+
+/**
+ * Основная функция
+ */
+async function main() {
+  try {
+    console.log('Запуск скрипта фильтрации NFT...');
     
-    console.log(`Всего NFT после фильтрации: ${countAfter}`);
-    console.log(`Удалено NFT: ${countBefore - countAfter}`);
+    // Очищаем директории от неподходящих файлов
+    cleanDirectories();
     
-    // Обновляем типы NFT и устанавливаем правильные цены и атрибуты
-    console.log('Обновление типов NFT, цен и атрибутов...');
+    // Создаем SVG для Mutant Ape
+    createMutantApeSVGs();
     
-    // Обновляем цены для Bored Ape
-    const updateBoredPricesQuery = `
-      UPDATE nfts
-      SET price = CASE
-        WHEN rarity = 'common' THEN '30'
-        WHEN rarity = 'uncommon' THEN '1000'
-        WHEN rarity = 'rare' THEN '3000'
-        WHEN rarity = 'epic' THEN '8000'
-        WHEN rarity = 'legendary' THEN '15000'
-        ELSE '75'
-      END,
-      attributes = '{"power": 80, "agility": 85, "wisdom": 95, "luck": 85}'
-      WHERE (
-        image_path LIKE '%bored_ape%' OR
-        image_path LIKE '%bayc_official%' OR
-        image_path LIKE '%official_bored_ape%'
-      )
-    `;
+    // Фильтруем NFT, оставляя только обезьян
+    await filterNonApeNFT();
     
-    const updateBoredResult = await pool.query(updateBoredPricesQuery);
-    console.log(`Обновлено ${updateBoredResult.rowCount} Bored Ape NFT`);
+    // Обновляем пути к изображениям
+    await updateImagePaths();
     
-    // Обновляем цены для Mutant Ape
-    const updateMutantPricesQuery = `
-      UPDATE nfts
-      SET price = CASE
-        WHEN rarity = 'common' THEN '50'
-        WHEN rarity = 'uncommon' THEN '1500'
-        WHEN rarity = 'rare' THEN '5000'
-        WHEN rarity = 'epic' THEN '10000'
-        WHEN rarity = 'legendary' THEN '20000'
-        ELSE '100'
-      END,
-      attributes = '{"power": 95, "agility": 90, "wisdom": 85, "luck": 90}'
-      WHERE image_path LIKE '%mutant_ape%'
-    `;
+    // Перемешиваем порядок отображения
+    await randomizeOrder();
     
-    const updateMutantResult = await pool.query(updateMutantPricesQuery);
-    console.log(`Обновлено ${updateMutantResult.rowCount} Mutant Ape NFT`);
-    
-    // Обновляем имена NFT на основе их пути к изображению
-    console.log('Обновление имен NFT...');
-    
-    // Обновляем имена для Bored Ape
-    const updateBoredNamesQuery = `
-      UPDATE nfts
-      SET name = 'Bored Ape #' || token_id
-      WHERE (
-        image_path LIKE '%bored_ape%' OR
-        image_path LIKE '%bayc_official%' OR
-        image_path LIKE '%official_bored_ape%'
-      )
-    `;
-    
-    await pool.query(updateBoredNamesQuery);
-    
-    // Обновляем имена для Mutant Ape
-    const updateMutantNamesQuery = `
-      UPDATE nfts
-      SET name = 'Mutant Ape #' || token_id
-      WHERE image_path LIKE '%mutant_ape%'
-    `;
-    
-    await pool.query(updateMutantNamesQuery);
-    
-    // Устанавливаем все NFT на продажу
-    const updateForSaleQuery = 'UPDATE nfts SET for_sale = TRUE WHERE for_sale = FALSE';
-    const updateForSaleResult = await pool.query(updateForSaleQuery);
-    console.log(`Выставлено на продажу ${updateForSaleResult.rowCount} NFT`);
-    
-    // Получаем статистику по типам
-    const typeStatsQuery = `
-      SELECT 
-        CASE
-          WHEN image_path LIKE '%mutant_ape%' THEN 'Mutant Ape'
-          ELSE 'Bored Ape'
-        END as type,
-        COUNT(*)
-      FROM nfts
-      GROUP BY type
-      ORDER BY COUNT(*) DESC
-    `;
-    
-    const typeStatsResult = await pool.query(typeStatsQuery);
-    
-    console.log('\nСтатистика по типам:');
-    typeStatsResult.rows.forEach(row => {
-      console.log(`${row.type}: ${row.count} NFT`);
-    });
-    
-    // Получаем статистику по редкости
-    const rarityStatsQuery = 'SELECT rarity, COUNT(*) FROM nfts GROUP BY rarity ORDER BY COUNT(*) DESC';
-    const rarityStatsResult = await pool.query(rarityStatsQuery);
-    
-    console.log('\nСтатистика по редкости:');
-    rarityStatsResult.rows.forEach(row => {
-      console.log(`${row.rarity}: ${row.count} NFT`);
-    });
-    
-    return {
-      success: true,
-      countBefore,
-      countAfter,
-      removed: countBefore - countAfter,
-      typeStats: typeStatsResult.rows,
-      rarityStats: rarityStatsResult.rows
-    };
-    
-  } catch (err) {
-    console.error('Ошибка при фильтрации NFT:', err);
-    return {
-      success: false,
-      error: err.message
-    };
+    console.log('Скрипт успешно завершен!');
+  } catch (error) {
+    console.error('Ошибка выполнения скрипта:', error);
   } finally {
-    console.log('Завершение фильтрации NFT');
+    // Закрываем соединение с базой данных
     await pool.end();
   }
 }
 
-// Запуск скрипта
-filterNFTByPath()
-  .then(result => {
-    console.log('\nРезультаты фильтрации NFT:');
-    console.log(JSON.stringify(result, null, 2));
-    console.log('\n===============================');
-    console.log('✅ Фильтрация NFT успешно завершена!');
-    console.log('===============================\n');
-    process.exit(0);
-  })
-  .catch(err => {
-    console.error('\n❌ Критическая ошибка при фильтрации NFT:', err);
-    process.exit(1);
-  });
+// Запускаем скрипт
+main();

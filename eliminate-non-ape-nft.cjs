@@ -1,12 +1,11 @@
 /**
- * Скрипт для удаления всех NFT, которые не являются Bored Ape или Mutant Ape,
- * и очистки папок от посторонних изображений
+ * Скрипт для окончательного устранения любых не-обезьяньих NFT
+ * с ручным указанием списка NFT для удаления
  */
 
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
 const dotenv = require('dotenv');
 
 // Загрузка переменных окружения
@@ -18,96 +17,125 @@ const pool = new Pool({
 });
 
 /**
- * Очищает директорию от всех файлов, кроме тех, которые соответствуют шаблону
+ * Список ID токенов и имен, которые точно нужно удалить
  */
-function cleanDirectory(directory, validPattern) {
-  console.log(`Очистка директории ${directory} от неподходящих файлов...`);
+const nftToDelete = [
+  { id: 2, name: 'core' },
+  { id: 10, name: 'ship' },
+  { id: 21, name: 'core' },
+  { id: 55, name: 'ship' },
+  { id: 64, name: 'core' },
+  { id: 136, name: 'core' },
+];
+
+/**
+ * Удаляет конкретные NFT из базы данных
+ */
+async function deleteSpecificNFT() {
+  console.log('Удаление конкретных NFT, которые точно не являются обезьянами...');
   
-  if (!fs.existsSync(directory)) {
-    console.log(`Директория ${directory} не существует, создаём...`);
-    fs.mkdirSync(directory, { recursive: true });
-    return;
-  }
-  
-  const files = fs.readdirSync(directory);
-  let removedCount = 0;
-  
-  for (const file of files) {
-    if (!validPattern.test(file)) {
-      const filePath = path.join(directory, file);
-      try {
-        fs.unlinkSync(filePath);
-        removedCount++;
-      } catch (error) {
-        console.error(`Ошибка при удалении файла ${filePath}:`, error.message);
+  for (const nft of nftToDelete) {
+    try {
+      // Сначала удаляем все трансферы для этого NFT
+      const transferResult = await pool.query(`
+        DELETE FROM nft_transfers 
+        WHERE nft_id IN (
+          SELECT id FROM nfts WHERE token_id = $1 OR name LIKE $2
+        )
+        RETURNING id
+      `, [nft.id.toString(), `%${nft.name}%`]);
+      
+      console.log(`Удалено ${transferResult.rowCount} трансферов для NFT с token_id=${nft.id} или name содержащим '${nft.name}'`);
+      
+      // Затем удаляем сами NFT
+      const nftResult = await pool.query(`
+        DELETE FROM nfts 
+        WHERE token_id = $1 OR name LIKE $2
+        RETURNING id, name, image_path
+      `, [nft.id.toString(), `%${nft.name}%`]);
+      
+      console.log(`Удалено ${nftResult.rowCount} NFT с token_id=${nft.id} или name содержащим '${nft.name}':`);
+      
+      for (const deletedNft of nftResult.rows) {
+        console.log(`  - ID: ${deletedNft.id}, Имя: ${deletedNft.name}, Путь: ${deletedNft.image_path}`);
       }
+    } catch (error) {
+      console.error(`Ошибка при удалении NFT с token_id=${nft.id} или name содержащим '${nft.name}':`, error.message);
     }
   }
-  
-  console.log(`Удалено ${removedCount} неподходящих файлов из ${directory}`);
 }
 
 /**
- * Удаляет из базы данных все NFT, которые не принадлежат к нужным коллекциям
+ * Удаляет NFT с изображениями, имеющими конкретные ключевые слова в пути
  */
-async function removeNonApeNFT() {
-  console.log('Удаление NFT, не относящихся к коллекциям Bored Ape и Mutant Ape...');
+async function deleteNFTWithKeywords() {
+  console.log('Удаление NFT с ключевыми словами в пути к изображению...');
   
-  // Получаем ID нужных коллекций
-  const collectionsResult = await pool.query(`
-    SELECT id FROM collections 
-    WHERE name IN ('Bored Ape Yacht Club', 'Mutant Ape Yacht Club')
-  `);
+  const keywords = ['logo', 'icon', 'core', 'ship', 'opensea', 'banner', 'avatar'];
   
-  if (collectionsResult.rows.length === 0) {
-    throw new Error('Коллекции Bored Ape и Mutant Ape не найдены в базе данных');
+  for (const keyword of keywords) {
+    try {
+      // Сначала удаляем все трансферы для этих NFT
+      const transferResult = await pool.query(`
+        DELETE FROM nft_transfers 
+        WHERE nft_id IN (
+          SELECT id FROM nfts WHERE image_path ILIKE $1
+        )
+        RETURNING id
+      `, [`%${keyword}%`]);
+      
+      console.log(`Удалено ${transferResult.rowCount} трансферов для NFT с путем содержащим '${keyword}'`);
+      
+      // Затем удаляем сами NFT
+      const nftResult = await pool.query(`
+        DELETE FROM nfts 
+        WHERE image_path ILIKE $1
+        RETURNING id, name, image_path
+      `, [`%${keyword}%`]);
+      
+      console.log(`Удалено ${nftResult.rowCount} NFT с путем содержащим '${keyword}'`);
+      
+      for (const deletedNft of nftResult.rows) {
+        console.log(`  - ID: ${deletedNft.id}, Имя: ${deletedNft.name}, Путь: ${deletedNft.image_path}`);
+      }
+    } catch (error) {
+      console.error(`Ошибка при удалении NFT с путем содержащим '${keyword}':`, error.message);
+    }
   }
-  
-  const validCollectionIds = collectionsResult.rows.map(row => row.id);
-  
-  // Удаляем NFT из других коллекций
-  const deleteResult = await pool.query(`
-    DELETE FROM nfts 
-    WHERE collection_id NOT IN (${validCollectionIds.join(',')})
-    RETURNING id
-  `);
-  
-  console.log(`Удалено ${deleteResult.rowCount} NFT из других коллекций`);
 }
 
 /**
- * Удаляет дубликаты NFT на основе путей к изображениям
+ * Обновляет имена всех NFT, чтобы они соответствовали коллекциям
  */
-async function removeDuplicateNFTs() {
-  console.log('Удаление дубликатов NFT на основе путей к изображениям...');
+async function updateAllNFTNames() {
+  console.log('Обновление имен всех NFT...');
   
-  // Находим дубликаты по image_path
-  const duplicatesResult = await pool.query(`
-    WITH duplicates AS (
-      SELECT id, image_path, 
-        ROW_NUMBER() OVER(PARTITION BY image_path ORDER BY id) as rn
-      FROM nfts
-      WHERE image_path IS NOT NULL
-    )
-    DELETE FROM nfts
-    WHERE id IN (
-      SELECT id FROM duplicates WHERE rn > 1
-    )
-    RETURNING id
+  // Обновляем имена Bored Ape
+  await pool.query(`
+    UPDATE nfts
+    SET name = CONCAT('Bored Ape #', token_id)
+    WHERE collection_id = 1
   `);
   
-  console.log(`Удалено ${duplicatesResult.rowCount} дубликатов NFT`);
+  // Обновляем имена Mutant Ape
+  await pool.query(`
+    UPDATE nfts
+    SET name = CONCAT('Mutant Ape #', (CAST(token_id AS INTEGER) - 10000))
+    WHERE collection_id = 2
+  `);
+  
+  console.log('Имена NFT обновлены');
 }
 
 /**
- * Обновляет пути к изображениям для всех NFT
+ * Обновляет пути к изображениям всех NFT
  */
-async function fixImagePaths() {
+async function updateAllImagePaths() {
   console.log('Обновление путей к изображениям для всех NFT...');
   
   // Обновляем пути для Bored Ape
   await pool.query(`
-    UPDATE nfts 
+    UPDATE nfts
     SET 
       image_path = CONCAT('/bored_ape_nft/bored_ape_', 
         (MOD(CAST(token_id AS INTEGER), 773) + 1), '.png'),
@@ -118,12 +146,12 @@ async function fixImagePaths() {
   
   // Обновляем пути для Mutant Ape
   await pool.query(`
-    UPDATE nfts 
+    UPDATE nfts
     SET 
       image_path = CONCAT('/mutant_ape_nft/mutant_ape_', 
-        (MOD(CAST(token_id AS INTEGER), 1000) + 10001), '.svg'),
+        (MOD(CAST(token_id AS INTEGER) - 10000, 1000) + 10001), '.svg'),
       original_image_path = CONCAT('/mutant_ape_nft/mutant_ape_', 
-        (MOD(CAST(token_id AS INTEGER), 1000) + 10001), '.svg')
+        (MOD(CAST(token_id AS INTEGER) - 10000, 1000) + 10001), '.svg')
     WHERE collection_id = 2
   `);
   
@@ -131,102 +159,132 @@ async function fixImagePaths() {
 }
 
 /**
- * Генерирует SVG для Mutant Ape
+ * Создает все необходимые SVG для Mutant Ape
  */
-function generateMutantApeSVGs() {
-  console.log('Генерация SVG для Mutant Ape...');
+function createAllMutantApeSVGs() {
+  console.log('Создание всех SVG для Mutant Ape...');
   
   const mutantApeDir = './mutant_ape_nft';
   if (!fs.existsSync(mutantApeDir)) {
     fs.mkdirSync(mutantApeDir, { recursive: true });
   }
   
-  // Создаем SVG для каждого номера от 10001 до 11000
   for (let i = 10001; i <= 11000; i++) {
     const svgPath = path.join(mutantApeDir, `mutant_ape_${i}.svg`);
-    
-    // Если SVG уже существует, пропускаем
-    if (fs.existsSync(svgPath)) {
-      continue;
+    if (!fs.existsSync(svgPath)) {
+      try {
+        createMutantApeSVG(svgPath, i);
+      } catch (error) {
+        console.error(`Ошибка при создании SVG для Mutant Ape ${i}:`, error.message);
+      }
     }
-    
-    // Генерируем случайные параметры для SVG
-    const colors = [
-      '#1abc9c', '#2ecc71', '#3498db', '#9b59b6', '#34495e',
-      '#f1c40f', '#e67e22', '#e74c3c', '#ecf0f1', '#95a5a6'
-    ];
-    
-    const faceColors = [
-      '#cdab8f', '#e0bb95', '#dfbd99', '#eecfb4', '#d29b68',
-      '#a97c50', '#845d3d', '#513a2a', '#4d3629', '#36261e' 
-    ];
-    
-    const color1 = colors[Math.floor(Math.random() * colors.length)];
-    const color2 = colors[Math.floor(Math.random() * colors.length)];
-    const faceColor = faceColors[Math.floor(Math.random() * faceColors.length)];
-    
-    const uniqueId = Math.floor(1000 + Math.random() * 9000);
-    const eyeType = Math.random() > 0.5 ? 'circle' : 'ellipse';
-    const eyeSize = 5 + Math.floor(Math.random() * 10);
-    const mouthWidth = 20 + Math.floor(Math.random() * 40);
-    
-    // Создаем простой SVG
-    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
-      <style>
-        .mutant-ape { font-family: 'Arial', sans-serif; }
-        @keyframes mutate {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-          100% { transform: scale(1); }
-        }
-        .animated { animation: mutate 3s infinite; }
-      </style>
-      <rect width="200" height="200" fill="${color1}" />
-      <rect x="20" y="20" width="160" height="160" rx="15" fill="${color2}" class="animated" />
-      <circle cx="100" cy="100" r="60" fill="${faceColor}" />
-      <${eyeType} cx="70" cy="80" rx="${eyeSize}" ry="${eyeSize}" fill="white" />
-      <${eyeType} cx="130" cy="80" rx="${eyeSize}" ry="${eyeSize}" fill="white" />
-      <circle cx="70" cy="80" r="3" fill="black" />
-      <circle cx="130" cy="80" r="3" fill="black" />
-      <rect x="${100 - mouthWidth/2}" y="120" width="${mouthWidth}" height="10" rx="5" fill="#333" />
-      <text x="50" y="170" fill="white" font-weight="bold" font-size="12" class="mutant-ape">Mutant Ape #${i}</text>
-      <text x="50" y="185" fill="white" font-size="10" class="mutant-ape">ID: MAYC-${uniqueId}</text>
-    </svg>`;
-    
-    fs.writeFileSync(svgPath, svgContent);
   }
   
-  console.log(`Создано SVG для Mutant Ape (10001-11000)`);
+  console.log('Созданы все SVG для Mutant Ape (10001-11000)');
 }
 
 /**
- * Основная функция скрипта
+ * Создает SVG изображение для Mutant Ape
+ */
+function createMutantApeSVG(filePath, id) {
+  const colors = [
+    '#1abc9c', '#2ecc71', '#3498db', '#9b59b6', '#34495e',
+    '#f1c40f', '#e67e22', '#e74c3c', '#ecf0f1', '#95a5a6'
+  ];
+  
+  const faceColors = [
+    '#cdab8f', '#e0bb95', '#dfbd99', '#eecfb4', '#d29b68',
+    '#a97c50', '#845d3d', '#513a2a', '#4d3629', '#36261e' 
+  ];
+  
+  const color1 = colors[Math.floor(Math.random() * colors.length)];
+  const color2 = colors[Math.floor(Math.random() * colors.length)];
+  const faceColor = faceColors[Math.floor(Math.random() * faceColors.length)];
+  
+  const uniqueId = Math.floor(1000 + Math.random() * 9000);
+  const eyeType = Math.random() > 0.5 ? 'circle' : 'ellipse';
+  const eyeSize = 5 + Math.floor(Math.random() * 10);
+  const mouthWidth = 20 + Math.floor(Math.random() * 40);
+  
+  // Создаем SVG контент с четким изображением обезьяны (более детальным)
+  const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+    <style>
+      .mutant-ape { font-family: 'Arial', sans-serif; }
+      @keyframes mutate {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+      .animated { animation: mutate 3s infinite; }
+    </style>
+    <rect width="200" height="200" fill="${color1}" />
+    <rect x="20" y="20" width="160" height="160" rx="15" fill="${color2}" class="animated" />
+    
+    <!-- Голова обезьяны -->
+    <circle cx="100" cy="90" r="60" fill="${faceColor}" />
+    
+    <!-- Уши -->
+    <ellipse cx="45" cy="70" rx="15" ry="25" fill="${faceColor}" />
+    <ellipse cx="155" cy="70" rx="15" ry="25" fill="${faceColor}" />
+    
+    <!-- Глаза -->
+    <${eyeType} cx="70" cy="80" rx="${eyeSize}" ry="${eyeSize}" fill="white" />
+    <${eyeType} cx="130" cy="80" rx="${eyeSize}" ry="${eyeSize}" fill="white" />
+    <circle cx="70" cy="80" r="3" fill="black" />
+    <circle cx="130" cy="80" r="3" fill="black" />
+    
+    <!-- Нос -->
+    <ellipse cx="100" cy="100" rx="10" ry="5" fill="#333" />
+    
+    <!-- Рот -->
+    <path d="M${100 - mouthWidth/2},120 Q100,${130 + Math.random() * 10} ${100 + mouthWidth/2},120" fill="none" stroke="#333" stroke-width="3" />
+    
+    <!-- Метка коллекции -->
+    <text x="40" y="170" fill="white" font-weight="bold" font-size="12" class="mutant-ape">Mutant Ape #${id-10000}</text>
+    <text x="40" y="185" fill="white" font-size="10" class="mutant-ape">ID: MAYC-${uniqueId}</text>
+  </svg>`;
+  
+  fs.writeFileSync(filePath, svgContent);
+}
+
+/**
+ * Рандомизирует порядок отображения NFT
+ */
+async function randomizeNFTOrder() {
+  console.log('Рандомизация порядка отображения NFT...');
+  
+  await pool.query(`
+    UPDATE nfts 
+    SET sort_order = (RANDOM() * 20000)::INTEGER
+  `);
+  
+  console.log('Порядок отображения NFT успешно перемешан');
+}
+
+/**
+ * Основная функция
  */
 async function main() {
   try {
-    console.log('Запуск скрипта для очистки NFT...');
+    console.log('Запуск скрипта окончательного устранения не-обезьяньих NFT...');
     
-    // Очищаем директории от посторонних файлов
-    cleanDirectory('./bored_ape_nft', /^bored_ape_\d+\.png$/);
-    cleanDirectory('./mutant_ape_nft', /^mutant_ape_\d+\.(svg|png)$/);
+    // Создаем все SVG для Mutant Ape
+    createAllMutantApeSVGs();
     
-    // Генерируем SVG для Mutant Ape
-    generateMutantApeSVGs();
+    // Удаляем конкретные NFT из списка
+    await deleteSpecificNFT();
     
-    // Удаляем из базы данных NFT, не относящиеся к нужным коллекциям
-    await removeNonApeNFT();
+    // Удаляем NFT с ключевыми словами в пути
+    await deleteNFTWithKeywords();
     
-    // Удаляем дубликаты NFT
-    await removeDuplicateNFTs();
+    // Обновляем имена всех NFT
+    await updateAllNFTNames();
     
-    // Исправляем пути к изображениям
-    await fixImagePaths();
+    // Обновляем пути к изображениям
+    await updateAllImagePaths();
     
-    // Перемешиваем порядок отображения NFT
-    await pool.query(`
-      UPDATE nfts 
-      SET sort_order = (RANDOM() * 20000)::INTEGER
-    `);
+    // Перемешиваем порядок отображения
+    await randomizeNFTOrder();
     
     console.log('Скрипт успешно завершен!');
   } catch (error) {
