@@ -93,11 +93,13 @@ router.get('/v2', async (req: Request, res: Response) => {
     
     // Создаем базовые условия для запроса - NFT на продаже
     // Добавляем фильтр, чтобы отображать только NFT обезьян (по collection_id)
+    // Добавляем коллекцию с ID 11 - официальная коллекция Mutant Ape
     let conditions = [
       eq(nfts.forSale, true),
       sql`(
         ${nfts.collectionId} = 1 OR 
-        ${nfts.collectionId} = 2
+        ${nfts.collectionId} = 2 OR
+        ${nfts.collectionId} = 11
       )`
     ];
     
@@ -131,10 +133,13 @@ router.get('/v2', async (req: Request, res: Response) => {
         // Дополнительно проверяем, что imagePath содержит /bored_ape_nft/ для точной фильтрации
         conditions.push(sql`${nfts.imagePath} LIKE '%/bored_ape_nft/%'`);
       } else if (collection.toLowerCase() === 'mutant') {
-        // Фильтруем только "Mutant Ape Yacht Club" с коллекцией ID=2
-        conditions.push(eq(nfts.collectionId, 2));
-        // Дополнительно проверяем, что imagePath содержит /mutant_ape_nft/ для точной фильтрации
-        conditions.push(sql`${nfts.imagePath} LIKE '%/mutant_ape_nft/%'`);
+        // Фильтруем "Mutant Ape Yacht Club" с коллекциями ID=2 и ID=11 (официальная коллекция)
+        conditions.push(sql`(${nfts.collectionId} = 2 OR ${nfts.collectionId} = 11)`);
+        // Дополнительно проверяем, что imagePath содержит /mutant_ape_nft/ или /mutant_ape_official/ для точной фильтрации
+        conditions.push(sql`(
+          ${nfts.imagePath} LIKE '%/mutant_ape_nft/%' OR 
+          ${nfts.imagePath} LIKE '%/mutant_ape_official/%'
+        )`);
       }
     }
     
@@ -212,7 +217,7 @@ router.get('/v2', async (req: Request, res: Response) => {
       tokenId: nft.tokenId,
       collectionName: (() => {
         // Определяем коллекцию по ID коллекции
-        if (nft.collectionId === 2) {
+        if (nft.collectionId === 2 || nft.collectionId === 11) {
           return 'Mutant Ape Yacht Club';
         } else if (nft.collectionId === 1) {
           return 'Bored Ape Yacht Club';

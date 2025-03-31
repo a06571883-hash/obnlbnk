@@ -26,6 +26,7 @@ const nftPaths = {
   '/public/assets/nft': path.join(process.cwd(), 'public', 'assets', 'nft'),
   '/assets/nft': path.join(process.cwd(), 'public', 'assets', 'nft'),  // Прямой доступ к assets
   '/mutant_ape_nft': path.join(process.cwd(), 'mutant_ape_nft'),
+  '/mutant_ape_official': path.join(process.cwd(), 'mutant_ape_official'),  // Новые официальные Mutant Ape с OpenSea
   '/new_bored_ape_nft': path.join(process.cwd(), 'new_bored_ape_nft'),
   '/new_bored_apes': path.join(process.cwd(), 'new_bored_apes'),
   '/nft_assets': path.join(process.cwd(), 'nft_assets')
@@ -126,6 +127,10 @@ const realNFTImages = {
     dir: path.join(process.cwd(), 'mutant_ape_nft'),
     files: []
   },
+  mutantApeOfficial: {
+    dir: path.join(process.cwd(), 'mutant_ape_official'),
+    files: []
+  },
   common: {
     dir: path.join(process.cwd(), 'public', 'assets', 'nft', 'real'),
     files: []
@@ -198,6 +203,31 @@ function loadRealImages() {
       
       realNFTImages.mutantApe.files = realFiles;
       console.log(`[NFT Server] Loaded ${realNFTImages.mutantApe.files.length} Mutant Ape images`);
+    }
+    
+    // Загружаем ОФИЦИАЛЬНЫЕ изображения Mutant Ape из директории
+    const mutantApeOfficialDir = path.join(process.cwd(), 'mutant_ape_official');
+    if (fs.existsSync(mutantApeOfficialDir)) {
+      // Список всех PNG файлов
+      let files = [];
+      try {
+        files = fs.readdirSync(mutantApeOfficialDir)
+          .filter(file => file.endsWith('.png') && file.includes('mutant_ape_'));
+          
+        console.log(`[NFT Server] Found ${files.length} Official Mutant Ape PNG images`);
+        
+        // Добавляем все PNG файлы напрямую
+        const realFiles = files.map(file => path.join(mutantApeOfficialDir, file));
+        
+        realNFTImages.mutantApeOfficial.files = realFiles;
+        console.log(`[NFT Server] Loaded ${realNFTImages.mutantApeOfficial.files.length} Official Mutant Ape images`);
+        
+        // Добавляем официальные изображения в общий пул Mutant Ape
+        realNFTImages.mutantApe.files = [...realNFTImages.mutantApe.files, ...realFiles];
+        console.log(`[NFT Server] Combined total: ${realNFTImages.mutantApe.files.length} Mutant Ape images`);
+      } catch (err) {
+        console.error(`[NFT Server] Error loading Official Mutant Ape images:`, err);
+      }
     }
     
     // Загружаем общие изображения из директории public/assets/nft/real
@@ -292,10 +322,31 @@ function getContentType(filePath) {
 
 // Функция для отправки реального случайного изображения вместо отсутствующего
 function sendRealNftImage(res, type, originalPath) {
-  const collection = type === 'bored_ape' ? realNFTImages.boredApe : 
-                     type === 'mutant_ape' ? realNFTImages.mutantApe : 
-                     realNFTImages.common;
+  // Проверяем, относится ли запрос к официальным Mutant Ape
+  const isOfficialMutantApe = originalPath.includes('mutant_ape_official');
   
+  // Выбираем соответствующую коллекцию изображений
+  let collection;
+  
+  if (isOfficialMutantApe) {
+    // Для официальных Mutant Ape используем специальный пул
+    collection = realNFTImages.mutantApeOfficial.files.length > 0 
+      ? realNFTImages.mutantApeOfficial 
+      : realNFTImages.mutantApe;
+    console.log(`[NFT Server] Using official Mutant Ape pool for ${originalPath} (${collection.files.length} images)`);
+  } else if (type === 'bored_ape') {
+    collection = realNFTImages.boredApe;
+  } else if (type === 'mutant_ape') {
+    // Для обычных Mutant Ape сначала проверяем официальные, потом обычные
+    collection = realNFTImages.mutantApeOfficial.files.length > 0 
+      ? realNFTImages.mutantApeOfficial 
+      : realNFTImages.mutantApe;
+    console.log(`[NFT Server] Using best Mutant Ape pool for ${originalPath} (${collection.files.length} images)`);
+  } else {
+    collection = realNFTImages.common;
+  }
+  
+  // Если в выбранной коллекции есть изображения
   if (collection.files.length > 0) {
     // Выбираем случайное изображение из коллекции
     const randomIndex = Math.floor(Math.random() * collection.files.length);
@@ -311,8 +362,24 @@ function sendRealNftImage(res, type, originalPath) {
     }
   }
   
-  // Если нет реальных изображений или изображение не существует
-  // используем изображения из общего пула
+  // Если коллекция пуста, пробуем другие источники в порядке приоритета
+  
+  // Сначала проверяем мутантов (если они не были выбраны изначально)
+  if (!isOfficialMutantApe && type !== 'mutant_ape' && realNFTImages.mutantApe.files.length > 0) {
+    const randomIndex = Math.floor(Math.random() * realNFTImages.mutantApe.files.length);
+    const mutantImagePath = realNFTImages.mutantApe.files[randomIndex];
+    
+    if (fs.existsSync(mutantImagePath)) {
+      const contentType = getContentType(mutantImagePath);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // кеширование на 1 день
+      fs.createReadStream(mutantImagePath).pipe(res);
+      console.log(`[NFT Server] Sending mutant ape image as fallback for ${originalPath}: ${mutantImagePath}`);
+      return;
+    }
+  }
+  
+  // Если нет специальных изображений или они не существуют, используем изображения из общего пула
   if (realNFTImages.common.files.length > 0) {
     const randomIndex = Math.floor(Math.random() * realNFTImages.common.files.length);
     const commonImagePath = realNFTImages.common.files[randomIndex];
@@ -450,15 +517,42 @@ app.get('/image-check', (req, res) => {
   
   // Если изображение не найдено но содержит mutant_ape, ищем альтернативу
   if (!found && cleanPath.includes('mutant_ape')) {
-    const mutantDir = nftPaths['/mutant_ape_nft'];
-    const files = fs.readdirSync(mutantDir)
-      .filter(file => file.endsWith('.png') && file.includes('mutant_ape_'));
+    // Сначала проверяем официальные изображения Mutant Ape
+    const officialMutantDir = nftPaths['/mutant_ape_official'];
     
-    if (files.length > 0) {
-      // Берем первое изображение из списка для примера
-      foundPath = path.join(mutantDir, files[0]);
-      console.log(`[Image Check] Using alternative mutant ape image: ${foundPath}`);
-      found = true;
+    if (fs.existsSync(officialMutantDir)) {
+      try {
+        const officialFiles = fs.readdirSync(officialMutantDir)
+          .filter(file => file.endsWith('.png') && file.includes('mutant_ape_'));
+        
+        if (officialFiles.length > 0) {
+          // Берем первое изображение из списка официальных для примера
+          foundPath = path.join(officialMutantDir, officialFiles[0]);
+          console.log(`[Image Check] Using official mutant ape image: ${foundPath}`);
+          found = true;
+        }
+      } catch (err) {
+        console.error(`[Image Check] Error reading official Mutant Ape directory:`, err);
+      }
+    }
+    
+    // Если официальных нет, используем обычные
+    if (!found) {
+      const mutantDir = nftPaths['/mutant_ape_nft'];
+      
+      try {
+        const files = fs.readdirSync(mutantDir)
+          .filter(file => file.endsWith('.png') && file.includes('mutant_ape_'));
+        
+        if (files.length > 0) {
+          // Берем первое изображение из списка для примера
+          foundPath = path.join(mutantDir, files[0]);
+          console.log(`[Image Check] Using alternative mutant ape image: ${foundPath}`);
+          found = true;
+        }
+      } catch (err) {
+        console.error(`[Image Check] Error reading Mutant Ape directory:`, err);
+      }
     }
   }
   
@@ -468,7 +562,7 @@ app.get('/image-check', (req, res) => {
     originalPath: imagePath,
     cleanPath,
     foundPath,
-    suggestion: found ? null : 'Изображение не найдено. Попробуйте использовать /mutant_ape_nft/mutant_ape_0048.png'
+    suggestion: found ? null : 'Изображение не найдено. Попробуйте использовать /mutant_ape_official/mutant_ape_0001.png или /mutant_ape_nft/mutant_ape_0048.png'
   });
 });
 

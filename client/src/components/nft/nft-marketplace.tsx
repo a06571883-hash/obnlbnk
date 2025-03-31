@@ -150,10 +150,10 @@ export const NFTMarketplace: React.FC = () => {
       // 2. Проверка имени коллекции 
       // 3. Проверка пути к изображению:
       //    - Bored Ape должен начинаться с '/bored_ape_nft/' 
-      //    - Mutant Ape должен начинаться с '/mutant_ape_nft/'
+      //    - Mutant Ape должен начинаться с '/mutant_ape_nft/' или '/mutant_ape_official/'
       const isMutantApe = 
         nft.collectionName === 'Mutant Ape Yacht Club' && 
-        (nft.imagePath?.includes('/mutant_ape_nft/'));
+        (nft.imagePath?.includes('/mutant_ape_nft/') || nft.imagePath?.includes('/mutant_ape_official/'));
       
       const isBoredApe = 
         nft.collectionName === 'Bored Ape Yacht Club' && 
