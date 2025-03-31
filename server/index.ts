@@ -80,6 +80,8 @@ app.use(express.static('public', {
 // Специальный обработчик для BAYC NFT изображений
 app.use('/bayc_official', (req, res, next) => {
   // Отправляем запрос к прокси NFT сервера
+app.use('/nft_assets', express.static(path.join(__dirname, '../nft_assets')));
+
   console.log(`BAYC request: ${req.path}, перенаправление на NFT прокси сервер`);
   res.redirect(`/nft-proxy/bayc_official${req.path}`);
 });
