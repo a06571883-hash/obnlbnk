@@ -8,9 +8,15 @@ import * as NodeJS from 'node:process';
 import { setupDebugRoutes } from "./debug";
 import { setupGlobalErrorHandlers, logError, errorHandler, notFoundHandler } from "./utils/error-handler";
 import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Запускаем отдельный сервер для NFT изображений
-const nftImageServer = spawn('node', ['server/nft-image-server.js']);
+// Получаем текущую директорию для правильного расчета пути к NFT-серверу
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Запускаем отдельный сервер для NFT изображений через специальный стартер
+const nftImageServerPath = path.join(process.cwd(), 'start-nft-server.js');
+const nftImageServer = spawn('node', [nftImageServerPath]);
 
 nftImageServer.stdout.on('data', (data) => {
   console.log(`[NFT Image Server] ${data}`);
@@ -80,11 +86,11 @@ app.use(express.static('public', {
 // Специальный обработчик для BAYC NFT изображений
 app.use('/bayc_official', (req, res, next) => {
   // Отправляем запрос к прокси NFT сервера
-app.use('/nft_assets', express.static(path.join(__dirname, '../nft_assets')));
-
   console.log(`BAYC request: ${req.path}, перенаправление на NFT прокси сервер`);
   res.redirect(`/nft-proxy/bayc_official${req.path}`);
 });
+
+app.use('/nft_assets', express.static(path.join(__dirname, '../nft_assets')));
 
 // Минимальный CORS для Replit
 app.use((req, res, next) => {
@@ -136,16 +142,28 @@ app.use((req, res, next) => {
       });
     }
 
-    server.listen(5000, "0.0.0.0", () => {
-      console.log('Server running on port 5000');
-      console.log(`Mode: ${process.env.NODE_ENV}`);
-      console.log('WebSocket server enabled');
-    }).on('error', (error) => {
-      console.error('Server error:', error);
-      if ((error as NodeJS.ErrnoException).code === 'EADDRINUSE') {
-        console.error('Port 5000 is already in use. Please kill the process or use a different port.');
-      }
-    });
+    // Определяем порт из переменной окружения или используем 5000 для соответствия workflow
+    const PORT = parseInt(process.env.PORT || "5000", 10);
+    
+    // Функция для попытки запуска на определенном порту
+    const tryListenPort = (port: number) => {
+      console.log(`Attempting to start server on port ${port}...`);
+      
+      server.listen(port, "0.0.0.0", () => {
+        console.log(`✅ Server running on port ${port}`);
+        console.log(`Mode: ${process.env.NODE_ENV}`);
+        console.log('WebSocket server enabled');
+      }).on('error', (error) => {
+        console.error(`Server error on port ${port}:`, error);
+        if ((error as NodeJS.ErrnoException).code === 'EADDRINUSE') {
+          console.error(`Port ${port} is already in use. Trying port ${port + 1}...`);
+          tryListenPort(port + 1);
+        }
+      });
+    };
+    
+    // Запускаем на порте из переменной окружения или на 5000
+    tryListenPort(PORT);
   } catch (error) {
     console.error('Startup error:', error);
     process.exit(1);

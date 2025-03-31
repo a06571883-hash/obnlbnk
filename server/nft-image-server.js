@@ -5,6 +5,7 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import net from 'node:net';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -808,7 +809,7 @@ if (realNFTImages.mutantApeOfficial.files.length > 0) {
 // Функция для проверки доступности порта
 function isPortAvailable(port) {
   return new Promise((resolve) => {
-    const server = require('net').createServer();
+    const server = net.createServer();
     
     server.once('error', (err) => {
       if (err.code === 'EADDRINUSE') {
