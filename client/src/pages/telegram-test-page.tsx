@@ -17,36 +17,189 @@ const TelegramTestPage: React.FC = () => {
 
   useEffect(() => {
     try {
-      addLog('Инициализация аудио элемента...');
+      addLog('Инициализация Web Audio API...');
       
-      // Создаем аудио элемент
-      const audio = new Audio('/audio/light-jazz-fallback.mp3');
-      audio.loop = true;
-      audio.volume = 0.1; // 10% громкости (очень тихо)
+      // Вместо использования аудиофайла, создадим звук программно с помощью Web Audio API
+      const initializeWebAudio = () => {
+        try {
+          // Проверка поддержки Web Audio API
+          if (typeof window === 'undefined' || !window.AudioContext) {
+            addLog('Web Audio API не поддерживается в этом браузере');
+            setLoadingError('Web Audio API не поддерживается');
+            return null;
+          }
+          
+          // Создаем аудиоконтекст
+          const AudioContext = window.AudioContext;
+          const audioContext = new AudioContext();
+          
+          // Создаем общий узел усиления
+          const masterGain = audioContext.createGain();
+          masterGain.gain.value = 0.1; // 10% громкости
+          masterGain.connect(audioContext.destination);
+          
+          addLog('Web Audio API инициализирован успешно');
+          setAudioLoaded(true);
+          
+          return { audioContext, masterGain };
+        } catch (error) {
+          addLog(`Ошибка инициализации Web Audio API: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
+          setLoadingError(`Ошибка инициализации Web Audio API: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
+          return null;
+        }
+      };
       
-      // Добавляем обработчики событий
-      audio.addEventListener('canplaythrough', () => {
-        addLog('Аудио файл загружен и готов к воспроизведению');
-        setAudioLoaded(true);
-      });
+      // Объект для хранения генерируемых осцилляторов
+      const oscillators: { osc: OscillatorNode, gain: GainNode }[] = [];
       
-      audio.addEventListener('error', (e) => {
-        const error = e.currentTarget as HTMLAudioElement;
-        addLog(`Ошибка загрузки аудио: ${error.error?.message || 'Неизвестная ошибка'}`);
-        setLoadingError(error.error?.message || 'Ошибка загрузки аудио');
-      });
+      // Функция для воспроизведения ноты
+      const playNote = (audioContext: AudioContext, masterGain: GainNode, frequency: number, startTime: number, duration: number) => {
+        // Создаем осциллятор (генератор звуковой волны)
+        const oscillator = audioContext.createOscillator();
+        oscillator.type = 'sine'; // Синусоидальная волна для мягкого звука
+        oscillator.frequency.value = frequency; // Частота ноты
+        
+        // Создаем узел усиления для контроля громкости
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = 0.1;
+        
+        // Настраиваем затухание звука
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.1, startTime + 0.02); // Быстрая атака
+        gainNode.gain.linearRampToValueAtTime(0.05, startTime + duration * 0.5); // Плавное снижение
+        gainNode.gain.linearRampToValueAtTime(0, startTime + duration); // Затухание в конце
+        
+        // Подключаем осциллятор к усилителю, затем к основному выходу
+        oscillator.connect(gainNode);
+        gainNode.connect(masterGain);
+        
+        // Запускаем и останавливаем осциллятор в нужное время
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+        
+        // Сохраняем ссылки для возможности остановки
+        oscillators.push({ osc: oscillator, gain: gainNode });
+      };
       
-      audio.load(); // Начинаем загрузку аудио
+      // Функция для воспроизведения джазовой последовательности
+      const playJazzSequence = (audioCtx: AudioContext, masterGain: GainNode) => {
+        // Определяем ноты (в джазовой гамме)
+        const jazzScale = [
+          261.63, // C4
+          293.66, // D4
+          329.63, // E4
+          349.23, // F4
+          392.00, // G4
+          440.00, // A4
+          493.88, // B4
+          523.25, // C5
+        ];
+        
+        // Джазовая последовательность аккордов (C, Dm, G7, C)
+        const now = audioCtx.currentTime;
+        let time = now;
+        
+        // Первый аккорд - C мажор (C, E, G)
+        playNote(audioCtx, masterGain, jazzScale[0], time, 0.8); // C
+        playNote(audioCtx, masterGain, jazzScale[2], time + 0.05, 0.8); // E
+        playNote(audioCtx, masterGain, jazzScale[4], time + 0.1, 0.8); // G
+        
+        time += 1;
+        
+        // Второй аккорд - D минор (D, F, A)
+        playNote(audioCtx, masterGain, jazzScale[1], time, 0.8); // D
+        playNote(audioCtx, masterGain, jazzScale[3], time + 0.05, 0.8); // F
+        playNote(audioCtx, masterGain, jazzScale[5], time + 0.1, 0.8); // A
+        
+        time += 1;
+        
+        // Третий аккорд - G7 (G, B, D, F)
+        playNote(audioCtx, masterGain, jazzScale[4], time, 0.8); // G
+        playNote(audioCtx, masterGain, jazzScale[6], time + 0.05, 0.8); // B
+        playNote(audioCtx, masterGain, jazzScale[1], time + 0.1, 0.8); // D
+        playNote(audioCtx, masterGain, jazzScale[3], time + 0.15, 0.8); // F
+        
+        time += 1;
+        
+        // Четвертый аккорд - C мажор (C, E, G)
+        playNote(audioCtx, masterGain, jazzScale[0], time, 1.2); // C
+        playNote(audioCtx, masterGain, jazzScale[2], time + 0.05, 1.2); // E
+        playNote(audioCtx, masterGain, jazzScale[4], time + 0.1, 1.2); // G
+        
+        addLog('Джазовая последовательность воспроизводится');
+        
+        // Возвращаем общую длительность последовательности
+        return 4; // 4 секунды
+      };
       
-      setAudioElement(audio);
-      addLog('Аудио элемент инициализирован');
+      // Создаем объект-замыкание, который будет хранить наш аудиоконтекст
+      const audioEngine = {
+        audioCtx: null as AudioContext | null,
+        masterGain: null as GainNode | null,
+        isPlaying: false,
+        sequenceLength: 0,
+        loopTimeout: null as NodeJS.Timeout | null,
+        
+        // Функция для воспроизведения
+        play: function() {
+          if (!this.audioCtx) {
+            const webAudio = initializeWebAudio();
+            if (!webAudio) return false;
+            
+            this.audioCtx = webAudio.audioContext;
+            this.masterGain = webAudio.masterGain;
+          }
+          
+          // Запускаем последовательность
+          this.sequenceLength = playJazzSequence(this.audioCtx, this.masterGain!);
+          this.isPlaying = true;
+          
+          // Настраиваем повторение
+          this.loopTimeout = setTimeout(() => {
+            if (this.isPlaying) {
+              this.play();
+            }
+          }, this.sequenceLength * 1000);
+          
+          return true;
+        },
+        
+        // Функция для остановки
+        stop: function() {
+          this.isPlaying = false;
+          
+          // Очищаем таймаут
+          if (this.loopTimeout) {
+            clearTimeout(this.loopTimeout);
+            this.loopTimeout = null;
+          }
+          
+          // Останавливаем все осцилляторы
+          oscillators.forEach(({ osc, gain }) => {
+            try {
+              gain.gain.value = 0;
+              osc.stop();
+              osc.disconnect();
+              gain.disconnect();
+            } catch (e) {
+              // Игнорируем возможные ошибки при остановке
+            }
+          });
+          
+          oscillators.length = 0;
+          
+          return true;
+        }
+      };
+      
+      // Сохраняем как audioElement для использования в компоненте
+      setAudioElement(audioEngine as any);
       
       return () => {
         // Очистка при размонтировании
-        if (audio) {
-          audio.pause();
-          audio.src = '';
-          addLog('Аудио элемент удален');
+        if (audioEngine && audioEngine.isPlaying) {
+          audioEngine.stop();
+          addLog('Аудио остановлено при размонтировании компонента');
         }
       };
     } catch (error) {
@@ -63,39 +216,64 @@ const TelegramTestPage: React.FC = () => {
     }
     
     try {
-      if (isPlaying) {
-        audioElement.pause();
-        setIsPlaying(false);
-        addLog('Музыка остановлена');
+      // Проверяем, используем ли мы Web Audio API или стандартный Audio
+      if (typeof (audioElement as any).play === 'function' && 
+          typeof (audioElement as any).pause === 'function') {
+        // Обычный Audio элемент
+        if (isPlaying) {
+          (audioElement as HTMLAudioElement).pause();
+          setIsPlaying(false);
+          addLog('Музыка остановлена (HTML Audio API)');
+        } else {
+          // Попытка воспроизведения
+          addLog('Попытка воспроизведения музыки (HTML Audio API)');
+          const playPromise = (audioElement as HTMLAudioElement).play();
+          
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                addLog('Музыка успешно запущена');
+                setIsPlaying(true);
+              })
+              .catch(error => {
+                addLog(`Ошибка воспроизведения: ${error.message}`);
+                setLoadingError(`Ошибка воспроизведения: ${error.message}`);
+                
+                // Еще одна попытка после взаимодействия
+                setTimeout(() => {
+                  addLog('Повторная попытка воспроизведения');
+                  (audioElement as HTMLAudioElement).play()
+                    .then(() => {
+                      addLog('Музыка успешно запущена при повторной попытке');
+                      setIsPlaying(true);
+                    })
+                    .catch(e => {
+                      addLog(`Повторная попытка не удалась: ${e.message}`);
+                      setLoadingError(`Повторная попытка не удалась: ${e.message}`);
+                    });
+                }, 100);
+              });
+          }
+        }
       } else {
-        // Попытка воспроизведения
-        addLog('Попытка воспроизведения музыки');
-        const playPromise = audioElement.play();
+        // Web Audio API объект
+        const audioEngine = audioElement as any;
         
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              addLog('Музыка успешно запущена');
-              setIsPlaying(true);
-            })
-            .catch(error => {
-              addLog(`Ошибка воспроизведения: ${error.message}`);
-              setLoadingError(`Ошибка воспроизведения: ${error.message}`);
-              
-              // Еще одна попытка после взаимодействия
-              setTimeout(() => {
-                addLog('Повторная попытка воспроизведения');
-                audioElement.play()
-                  .then(() => {
-                    addLog('Музыка успешно запущена при повторной попытке');
-                    setIsPlaying(true);
-                  })
-                  .catch(e => {
-                    addLog(`Повторная попытка не удалась: ${e.message}`);
-                    setLoadingError(`Повторная попытка не удалась: ${e.message}`);
-                  });
-              }, 100);
-            });
+        if (isPlaying) {
+          addLog('Остановка Web Audio API');
+          audioEngine.stop();
+          setIsPlaying(false);
+          addLog('Джазовая последовательность остановлена');
+        } else {
+          addLog('Запуск Web Audio API');
+          const result = audioEngine.play();
+          if (result) {
+            setIsPlaying(true);
+            addLog('Джазовая последовательность запущена');
+          } else {
+            addLog('Не удалось запустить Web Audio API');
+            setLoadingError('Не удалось запустить Web Audio API');
+          }
         }
       }
     } catch (error) {
