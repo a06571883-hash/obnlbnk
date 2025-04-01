@@ -11,6 +11,7 @@ import ProfilePage from "@/pages/profile-page";
 import StatisticsPage from "./pages/statistics-page"; // Added import for StatisticsPage
 import NFTPage from "./pages/nft-page"; // Fix: direct import instead of alias
 import AdminPage from "./pages/admin-page"; // Admin panel page
+import TelegramMusicPlayer from "./components/telegram-music-player"; // Импорт компонента плеера для Telegram
 
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./components/auth-provider";
@@ -158,6 +159,7 @@ function App() {
       <AuthProvider>
         <div id="app-root" className="min-h-screen bg-background">
           <Router />
+          <TelegramMusicPlayer />
           <Toaster />
         </div>
       </AuthProvider>
