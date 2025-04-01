@@ -546,15 +546,53 @@ export async function giftNFT(nftId: number, fromUserId: number, toUserId: numbe
  */
 export async function getUserNFTs(userId: number) {
   try {
-    // Получаем все NFT пользователя
-    const userNFTs = await db.select()
-      .from(nfts)
-      .where(eq(nfts.ownerId, userId));
+    console.log(`[Bored Ape NFT Service] Получение NFT для пользователя с ID: ${userId}`);
     
-    return userNFTs;
+    // Получаем все NFT, переданные пользователю через таблицу nft_transfers
+    const userNFTsFromTransfers = await db.select({
+        nft_id: nftTransfers.nftId,
+        transfer_type: nftTransfers.transferType,
+        price: nftTransfers.price,
+        transferred_at: nftTransfers.transferredAt
+      })
+      .from(nftTransfers)
+      .where(eq(nftTransfers.toUserId, userId));
+    
+    console.log(`[Bored Ape NFT Service] Найдено ${userNFTsFromTransfers.length} NFT в истории передач для пользователя ${userId}`);
+    
+    if (userNFTsFromTransfers.length === 0) {
+      console.log(`[Bored Ape NFT Service] У пользователя ${userId} нет NFT`);
+      return [];
+    }
+
+    // Получаем ID всех NFT из истории передач
+    const nftIds = userNFTsFromTransfers.map(transfer => transfer.nft_id);
+    console.log(`[Bored Ape NFT Service] ID всех NFT пользователя: ${nftIds.join(', ')}`);
+
+    // Получаем детальную информацию о каждом NFT
+    const nftDetails = await db.select()
+      .from(nfts)
+      .where(inArray(nfts.id, nftIds));
+    
+    console.log(`[Bored Ape NFT Service] Найдено ${nftDetails.length} деталей NFT для пользователя ${userId}`);
+    
+    // Если детали не найдены, пробуем получить по критерию владельца
+    if (nftDetails.length === 0) {
+      console.log(`[Bored Ape NFT Service] Деталей NFT не найдено, проверяем по владельцу`);
+      
+      // Получаем все NFT, где пользователь является владельцем
+      const ownedNFTs = await db.select()
+        .from(nfts)
+        .where(eq(nfts.ownerId, userId));
+      
+      console.log(`[Bored Ape NFT Service] Найдено ${ownedNFTs.length} NFT по владельцу для пользователя ${userId}`);
+      return ownedNFTs;
+    }
+
+    return nftDetails;
   } catch (error) {
     console.error('[Bored Ape NFT Service] Ошибка при получении NFT пользователя:', error);
-    throw new Error(`Не удалось получить NFT пользователя: ${error}`);
+    throw new Error(`Не удалось получить NFT пользователя: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
