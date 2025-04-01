@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Jazz Generator</title>
+</head>
+<body>
+  <button id="startButton">Start</button>
+  <button id="stopButton">Stop</button>
+  <script>
+    // Simple jazz generator using Web Audio API
+    let audioContext;
+    let oscillators = [];
+    let gainNodes = [];
+    let recorder;
+    let chunks = [];
+    let mediaStream;
+    let dest;
+    
+    // Jazz notes and rhythms
+    const jazzNotes = [
+      261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, // C4 to B4
+      523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77  // C5 to B5
+    ];
+    
+    // Jazz chord progressions (frequency ratios)
+    const jazzChords = [
+      [1, 1.26, 1.5],       // Major chord
+      [1, 1.189, 1.498],    // Minor chord
+      [1, 1.26, 1.68],      // Major 7th
+      [1, 1.189, 1.4]       // Dominant 7th
+    ];
+    
+    // Returns random element from array
+    function getRandomFrom(array) {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+    
+    // Create a jazzy note
+    function playJazzNote(time) {
+      if (!audioContext) return;
+      
+      // Base frequency
+      const baseFreq = getRandomFrom(jazzNotes);
+      
+      // Get a chord type
+      const chord = getRandomFrom(jazzChords);
+      
+      // Create oscillators for each note in the chord
+      chord.forEach((ratio, i) => {
+        const freq = baseFreq * ratio;
+        const osc = audioContext.createOscillator();
+        osc.type = ["sine", "triangle"][i % 2]; // Alternating waveforms
+        osc.frequency.value = freq;
+        
+        // Create gain node for volume control
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = 0.05; // Very quiet (0.05 = 5% volume)
+        
+        // Connect oscillator to gain node, then to destination
+        osc.connect(gainNode);
+        gainNode.connect(dest);
+        
+        // Store references
+        oscillators.push(osc);
+        gainNodes.push(gainNode);
+        
+        // Schedule note
+        const startTime = time + Math.random() * 0.1;
+        const duration = 0.2 + Math.random() * 0.3;
+        
+        // Start oscillator
+        osc.start(startTime);
+        
+        // Create fade in/out effect
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.05, startTime + 0.05);
+        gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+        
+        // Stop oscillator after duration
+        osc.stop(startTime + duration);
+        
+        // Clean up
+        setTimeout(() => {
+          osc.disconnect();
+          gainNode.disconnect();
+          
+          // Remove from arrays
+          const oscIndex = oscillators.indexOf(osc);
+          if (oscIndex !== -1) oscillators.splice(oscIndex, 1);
+          
+          const gainIndex = gainNodes.indexOf(gainNode);
+          if (gainIndex !== -1) gainNodes.splice(gainIndex, 1);
+        }, (startTime + duration) * 1000);
+      });
+      
+      // Schedule next note
+      const nextTime = time + 0.2 + Math.random() * 0.3;
+      if (nextTime < audioContext.currentTime + 30) { // Generate 30 seconds
+        setTimeout(() => playJazzNote(nextTime), 10);
+      } else {
+        // Stop recording after 30 seconds
+        setTimeout(() => {
+          if (recorder && recorder.state === "recording") {
+            recorder.stop();
+          }
+        }, (30 - (audioContext.currentTime - time)) * 1000);
+      }
+    }
+    
+    document.getElementById('startButton').addEventListener('click', async () => {
+      try {
+        // Initialize audio context
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Create destination for recording
+        dest = audioContext.createMediaStreamDestination();
+        
+        // Create recorder
+        recorder = new MediaRecorder(dest.stream);
+        
+        // Collect data chunks
+        recorder.ondataavailable = e => chunks.push(e.data);
+        
+        // When recording completes
+        recorder.onstop = () => {
+          // Create blob from chunks
+          const blob = new Blob(chunks, { type: 'audio/mp3' });
+          
+          // Create download link
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = 'light-jazz.mp3';
+          document.body.appendChild(a);
+          a.click();
+          
+          // Clean up
+          setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          }, 100);
+        };
+        
+        // Start recording
+        recorder.start();
+        
+        // Start playing jazz
+        playJazzNote(audioContext.currentTime);
+        
+      } catch (err) {
+        console.error('Error starting audio:', err);
+      }
+    });
+    
+    document.getElementById('stopButton').addEventListener('click', () => {
+      if (recorder && recorder.state === "recording") {
+        recorder.stop();
+      }
+      
+      // Stop all oscillators
+      oscillators.forEach(osc => {
+        try {
+          osc.stop();
+          osc.disconnect();
+        } catch (e) {}
+      });
+      oscillators = [];
+      
+      // Disconnect all gain nodes
+      gainNodes.forEach(gain => {
+        try {
+          gain.disconnect();
+        } catch (e) {}
+      });
+      gainNodes = [];
+      
+      if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+      }
+    });
+  </script>
+</body>
+</html>
