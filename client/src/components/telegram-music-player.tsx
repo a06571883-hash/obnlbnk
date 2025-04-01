@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
 import { isTelegramWebApp } from '../lib/telegram-utils';
@@ -6,8 +6,10 @@ import { isTelegramWebApp } from '../lib/telegram-utils';
 // Компонент управления фоновой музыкой для Telegram WebApp
 const TelegramMusicPlayer: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isTelegramApp, setIsTelegramApp] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const oscillatorsRef = useRef<{osc: OscillatorNode, gain: GainNode}[]>([]);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
     // Проверяем, запущено ли приложение в Telegram WebApp
@@ -16,103 +18,158 @@ const TelegramMusicPlayer: React.FC = () => {
     // Если это не Telegram WebApp, ничего не делаем
     if (!isTelegramWebApp()) return;
     
-    // Создаем аудио элемент с запасным файлом
-    // Сначала попробуем основной файл, если не загрузится - используем запасной
-    const audio = new Audio('/audio/light-jazz.mp3');
-    audio.loop = true;
-    audio.volume = 0.1; // 10% громкости (очень тихо)
-    
-    // Обработка ошибки загрузки первого файла
-    audio.addEventListener('error', () => {
-      console.log('Не удалось загрузить основной аудиофайл, пробуем запасной');
-      const fallbackAudio = new Audio('/audio/light-jazz-fallback.mp3');
-      fallbackAudio.loop = true;
-      fallbackAudio.volume = 0.1;
-      setAudioElement(fallbackAudio);
-    }, { once: true });
-    
-    setAudioElement(audio);
-    
-    // Очистка при размонтировании
+    // Для очистки ресурсов при размонтировании компонента
     return () => {
-      if (audio) {
-        audio.pause();
-        audio.src = '';
+      stopAllOscillators();
+      
+      // Закрываем аудиоконтекст
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(console.error);
+        audioContextRef.current = null;
       }
     };
   }, []);
   
-  // Функция для переключения воспроизведения музыки
-  const toggleMusic = () => {
-    if (!audioElement) {
-      // Если аудио элемент еще не инициализирован, создаем его заново
-      // Попробуем сразу запасной файл, который гарантированно загружен
-      const audio = new Audio('/audio/light-jazz-fallback.mp3');
-      audio.loop = true;
-      audio.volume = 0.1;
-      setAudioElement(audio);
-      
-      // Предварительная загрузка перед воспроизведением
-      audio.load();
-      
-      // Пробуем воспроизвести после загрузки или сразу после взаимодействия пользователя
-      try {
-        // Попытка воспроизведения сразу после клика пользователя - часто работает
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log('Музыка успешно запущена');
-              setIsPlaying(true);
-            })
-            .catch(error => {
-              // Если сразу не получилось, пробуем через событие загрузки
-              console.error('Первая попытка неудачна, ожидаем загрузки:', error);
-              
-              audio.addEventListener('canplaythrough', () => {
-                audio.play()
-                  .then(() => {
-                    console.log('Музыка запущена после загрузки');
-                    setIsPlaying(true);
-                  })
-                  .catch(() => setIsPlaying(false));
-              }, { once: true });
-            });
-        }
-      } catch (error) {
-        console.error('Ошибка воспроизведения музыки:', error);
-        setIsPlaying(false);
-      }
-      
-      return;
+  // Функция для остановки всех осцилляторов
+  const stopAllOscillators = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
     
-    if (isPlaying) {
-      audioElement.pause();
-      setIsPlaying(false);
-    } else {
-      // Удостоверимся, что аудио загружено
-      if (audioElement.readyState < 2) { // HAVE_CURRENT_DATA
-        audioElement.load();
+    oscillatorsRef.current.forEach(({ osc, gain }) => {
+      try {
+        // Быстро снижаем громкость до нуля
+        const currentTime = audioContextRef.current?.currentTime || 0;
+        gain.gain.cancelScheduledValues(currentTime);
+        gain.gain.setValueAtTime(gain.gain.value, currentTime);
+        gain.gain.linearRampToValueAtTime(0, currentTime + 0.1);
+        
+        // Останавливаем через небольшой промежуток времени
+        setTimeout(() => {
+          try {
+            osc.stop();
+            osc.disconnect();
+            gain.disconnect();
+          } catch (e) {
+            // Игнорируем ошибки при остановке
+          }
+        }, 110);
+      } catch (e) {
+        // Игнорируем ошибки при остановке
       }
+    });
+    
+    oscillatorsRef.current = [];
+  };
+  
+  // Функция для воспроизведения ноты
+  const playNote = (frequency: number, startTime: number, duration: number) => {
+    if (!audioContextRef.current) return;
+    
+    try {
+      // Создаем осциллятор
+      const oscillator = audioContextRef.current.createOscillator();
+      oscillator.type = 'sine'; // Синусоидальная волна для мягкого звука
+      oscillator.frequency.value = frequency;
       
-      // Пробуем воспроизвести
-      const playPromise = audioElement.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            console.log('Музыка успешно запущена');
-            setIsPlaying(true);
-          })
-          .catch(error => {
-            console.error('Ошибка воспроизведения музыки:', error);
-            // Еще одна попытка сразу после взаимодействия пользователя
-            setTimeout(() => {
-              audioElement.play()
-                .then(() => setIsPlaying(true))
-                .catch(() => setIsPlaying(false));
-            }, 100);
-          });
+      // Создаем узел усиления для контроля громкости
+      const gainNode = audioContextRef.current.createGain();
+      gainNode.gain.value = 0;
+      
+      // Настраиваем огибающую (атака, затухание)
+      const now = startTime;
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.05, now + 0.02); // Быстрая атака
+      gainNode.gain.linearRampToValueAtTime(0.03, now + duration * 0.7); // Затухание
+      gainNode.gain.linearRampToValueAtTime(0, now + duration); // Плавное окончание
+      
+      // Подключаем осциллятор к узлу усиления
+      oscillator.connect(gainNode);
+      
+      // Подключаем узел усиления к выходу
+      gainNode.connect(audioContextRef.current.destination);
+      
+      // Запускаем осциллятор
+      oscillator.start(now);
+      oscillator.stop(now + duration);
+      
+      // Добавляем в список для возможности остановки
+      oscillatorsRef.current.push({ osc: oscillator, gain: gainNode });
+    } catch (error) {
+      console.error('Ошибка при воспроизведении ноты:', error);
+    }
+  };
+  
+  // Джазовая прогрессия
+  const playJazzProgression = () => {
+    if (!audioContextRef.current) return;
+    
+    try {
+      const now = audioContextRef.current.currentTime;
+      
+      // C major (C-E-G)
+      playNote(261.63, now, 0.8);        // C4
+      playNote(329.63, now + 0.03, 0.8); // E4
+      playNote(392.00, now + 0.06, 0.8); // G4
+      
+      // Dm (D-F-A)
+      playNote(293.66, now + 1, 0.8);      // D4
+      playNote(349.23, now + 1.03, 0.8);   // F4
+      playNote(440.00, now + 1.06, 0.8);   // A4
+      
+      // G7 (G-B-D-F)
+      playNote(392.00, now + 2, 0.8);      // G4
+      playNote(493.88, now + 2.03, 0.8);   // B4
+      playNote(587.33, now + 2.06, 0.8);   // D5
+      playNote(349.23, now + 2.09, 0.8);   // F4
+      
+      // C major (C-E-G)
+      playNote(261.63, now + 3, 1.0);        // C4
+      playNote(329.63, now + 3.03, 1.0); // E4
+      playNote(392.00, now + 3.06, 1.0); // G4
+      
+      // Запланируем следующее воспроизведение через 4 секунды
+      if (isPlaying) {
+        timeoutRef.current = setTimeout(() => {
+          playJazzProgression();
+        }, 4000);
+      }
+    } catch (error) {
+      console.error('Ошибка при воспроизведении джазовой последовательности:', error);
+    }
+  };
+  
+  // Функция для переключения воспроизведения музыки
+  const toggleMusic = () => {
+    if (isPlaying) {
+      // Остановка воспроизведения
+      stopAllOscillators();
+      setIsPlaying(false);
+      console.log('Музыка остановлена');
+      
+      // Приостанавливаем аудиоконтекст для экономии ресурсов
+      if (audioContextRef.current?.state === 'running') {
+        audioContextRef.current?.suspend().catch(console.error);
+      }
+    } else {
+      try {
+        // Создаем аудио контекст, если его еще нет
+        if (!audioContextRef.current) {
+          audioContextRef.current = new AudioContext();
+          console.log('Создан новый AudioContext');
+        } else if (audioContextRef.current.state === 'suspended') {
+          // Возобновляем контекст, если он был приостановлен
+          audioContextRef.current.resume().catch(console.error);
+        }
+        
+        // Запускаем джазовую последовательность
+        setIsPlaying(true);
+        playJazzProgression();
+        console.log('Джазовая последовательность запущена');
+      } catch (error) {
+        console.error('Ошибка при включении музыки:', error);
+        setIsPlaying(false);
       }
     }
   };
