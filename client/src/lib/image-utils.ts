@@ -42,16 +42,24 @@ export function getProxiedImageUrl(imagePath: string): string {
     // Генерируем временную метку для обхода кеша браузера
     const timestamp = new Date().getTime() + Math.floor(Math.random() * 1000);
     
-    // Особая обработка для Mutant Ape (оба типа)
+    // Особая обработка для Mutant Ape (оба типа) с усиленным обходом кеша
     if (imagePath.includes('mutant_ape')) {
       // Определяем тип коллекции
       const isOfficial = imagePath.includes('mutant_ape_official');
       const collectionType = isOfficial ? 'official' : 'regular';
       
-      // Улучшенный формат с дополнительными параметрами
-      const enhancedPath = `/nft-proxy${imagePath}?v=${timestamp}&collection=${collectionType}&nocache=true&mutant=true`;
+      // Разбиваем путь и извлекаем номер обезьяны для более стабильной загрузки изображений
+      const matches = imagePath.match(/mutant_ape_(\d+)\.png/);
+      const apeNumber = matches && matches[1] ? parseInt(matches[1]) : Math.floor(Math.random() * 1000);
       
-      console.log(`${isOfficial ? '🔵' : '🟢'} ${isOfficial ? 'OFFICIAL' : 'REGULAR'} MUTANT APE: ${imagePath} -> ${enhancedPath}`);
+      // Добавляем несколько уникальных параметров для гарантированного обхода кеша браузера
+      const timestamp = new Date().getTime();
+      const random = Math.floor(Math.random() * 1000000);
+      
+      // Улучшенный формат с дополнительными параметрами
+      const enhancedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&collection=${collectionType}&nocache=true&mutant=true&n=${apeNumber}`;
+      
+      console.log(`${isOfficial ? '🔵' : '🟢'} ${isOfficial ? 'OFFICIAL' : 'REGULAR'} MUTANT APE #${apeNumber}: ${imagePath} -> ${enhancedPath}`);
       return enhancedPath;
     }
     

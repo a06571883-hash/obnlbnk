@@ -397,6 +397,16 @@ function sendRealNftImage(res, type, originalPath) {
     const queryString = originalPath.split('?')[1];
     const params = new URLSearchParams(queryString);
     collectionParam = params.get('collection') || '';
+    console.log(`[MUTANT DEBUG] Извлечен параметр collection=${collectionParam} из пути ${originalPath}`);
+  }
+  
+  // Принудительно указываем тип для Mutant Ape в зависимости от параметра collection
+  if (collectionParam === 'official' && (type.includes('mutant') || originalPath.includes('mutant'))) {
+    type = 'mutant_ape_official';
+    console.log(`[MUTANT DEBUG] Принудительно устанавливаем тип ${type} из-за параметра collection=official`);
+  } else if (collectionParam === 'regular' && (type.includes('mutant') || originalPath.includes('mutant'))) {
+    type = 'mutant_ape';
+    console.log(`[MUTANT DEBUG] Принудительно устанавливаем тип ${type} из-за параметра collection=regular`);
   }
   
   // Определяем, относится ли запрос к официальным Mutant Ape,
@@ -655,6 +665,21 @@ Object.keys(nftPaths).forEach(route => {
         // Специфицируем тип для Mutant Ape с учетом официальной/неофициальной коллекции
         fallbackType = route.includes('mutant_ape_official') ? 'mutant_ape_official' : 'mutant_ape';
         console.log(`[MUTANT DEBUG] Используем запасной тип для отсутствующего изображения: ${fallbackType}`);
+        
+        // Проверяем наличие параметра collection в запросе
+        const reqUrl = req.url || '';
+        if (reqUrl.includes('collection=')) {
+          const param = reqUrl.includes('collection=official') ? 'official' : 
+                        reqUrl.includes('collection=regular') ? 'regular' : '';
+          
+          if (param === 'official') {
+            fallbackType = 'mutant_ape_official';
+            console.log(`[MUTANT DEBUG] Переопределяем тип на official из параметра URL: ${reqUrl}`);
+          } else if (param === 'regular') {
+            fallbackType = 'mutant_ape';
+            console.log(`[MUTANT DEBUG] Переопределяем тип на regular из параметра URL: ${reqUrl}`);
+          }
+        }
       }
       
       // Отправляем реальное изображение вместо отсутствующего
