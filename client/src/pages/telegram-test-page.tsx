@@ -216,64 +216,23 @@ const TelegramTestPage: React.FC = () => {
     }
     
     try {
-      // Проверяем, используем ли мы Web Audio API или стандартный Audio
-      if (typeof (audioElement as any).play === 'function' && 
-          typeof (audioElement as any).pause === 'function') {
-        // Обычный Audio элемент
-        if (isPlaying) {
-          (audioElement as HTMLAudioElement).pause();
-          setIsPlaying(false);
-          addLog('Музыка остановлена (HTML Audio API)');
-        } else {
-          // Попытка воспроизведения
-          addLog('Попытка воспроизведения музыки (HTML Audio API)');
-          const playPromise = (audioElement as HTMLAudioElement).play();
-          
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                addLog('Музыка успешно запущена');
-                setIsPlaying(true);
-              })
-              .catch(error => {
-                addLog(`Ошибка воспроизведения: ${error.message}`);
-                setLoadingError(`Ошибка воспроизведения: ${error.message}`);
-                
-                // Еще одна попытка после взаимодействия
-                setTimeout(() => {
-                  addLog('Повторная попытка воспроизведения');
-                  (audioElement as HTMLAudioElement).play()
-                    .then(() => {
-                      addLog('Музыка успешно запущена при повторной попытке');
-                      setIsPlaying(true);
-                    })
-                    .catch(e => {
-                      addLog(`Повторная попытка не удалась: ${e.message}`);
-                      setLoadingError(`Повторная попытка не удалась: ${e.message}`);
-                    });
-                }, 100);
-              });
-          }
-        }
+      // Web Audio API объект
+      const audioEngine = audioElement as any;
+      
+      if (isPlaying) {
+        addLog('Остановка Web Audio API');
+        audioEngine.stop();
+        setIsPlaying(false);
+        addLog('Джазовая последовательность остановлена');
       } else {
-        // Web Audio API объект
-        const audioEngine = audioElement as any;
-        
-        if (isPlaying) {
-          addLog('Остановка Web Audio API');
-          audioEngine.stop();
-          setIsPlaying(false);
-          addLog('Джазовая последовательность остановлена');
+        addLog('Запуск Web Audio API');
+        const result = audioEngine.play();
+        if (result) {
+          setIsPlaying(true);
+          addLog('Джазовая последовательность запущена');
         } else {
-          addLog('Запуск Web Audio API');
-          const result = audioEngine.play();
-          if (result) {
-            setIsPlaying(true);
-            addLog('Джазовая последовательность запущена');
-          } else {
-            addLog('Не удалось запустить Web Audio API');
-            setLoadingError('Не удалось запустить Web Audio API');
-          }
+          addLog('Не удалось запустить Web Audio API');
+          setLoadingError('Не удалось запустить Web Audio API');
         }
       }
     } catch (error) {

@@ -107,6 +107,22 @@ export const initSoundService = async (): Promise<void> => {
 
   try {
     await preloadSounds();
+    
+    // Проверяем, должен ли быть включен джаз при старте
+    if (isJazzEnabled()) {
+      // Запускаем джаз через генератор, если он доступен
+      setTimeout(() => {
+        try {
+          const jazzGenerator = (window as any).jazzGenerator;
+          if (jazzGenerator && !jazzGenerator.isPlaying) {
+            jazzGenerator.play();
+            console.log('Автоматически запущен фоновый джаз');
+          }
+        } catch (error) {
+          console.warn('Не удалось автоматически запустить джаз:', error);
+        }
+      }, 1000);
+    }
   } catch (e) {
     console.error('Ошибка инициализации аудио:', e);
   }
@@ -126,6 +142,18 @@ export const isSoundEnabled = (): boolean => {
 };
 
 /**
+ * Проверяет, включен ли фоновый джаз в Telegram
+ */
+export const isJazzEnabled = (): boolean => {
+  try {
+    return localStorage.getItem('jazzEnabled') === 'true';
+  } catch (e) {
+    console.error('Ошибка при проверке настроек джаза:', e);
+    return false; // По умолчанию выключено
+  }
+};
+
+/**
  * Включает или выключает звуки
  */
 export const toggleSound = (enabled: boolean): void => {
@@ -134,5 +162,43 @@ export const toggleSound = (enabled: boolean): void => {
     console.log(`Звуки ${enabled ? 'включены' : 'выключены'}`);
   } catch (e) {
     console.error('Ошибка при изменении настроек звука:', e);
+  }
+};
+
+/**
+ * Включает или выключает фоновый джаз
+ */
+export const toggleJazz = (enabled: boolean): void => {
+  try {
+    // Сохраняем состояние в локальное хранилище
+    localStorage.setItem('jazzEnabled', String(enabled));
+    console.log(`Фоновый джаз ${enabled ? 'включен' : 'выключен'}`);
+    
+    // Пробуем управлять музыкой через глобальный генератор джаза
+    try {
+      // Проверяем наличие глобального генератора джаза
+      const jazzGenerator = (window as any).jazzGenerator;
+      if (jazzGenerator) {
+        if (enabled && !jazzGenerator.isPlaying) {
+          jazzGenerator.play();
+        } else if (!enabled && jazzGenerator.isPlaying) {
+          jazzGenerator.stop();
+        }
+      }
+      
+      // Проверяем наличие Telegram плеера (для обратной совместимости)
+      const jazzPlayer = (window as any).jazzPlayer;
+      if (jazzPlayer && typeof jazzPlayer.toggleMusic === 'function') {
+        if (enabled && !jazzPlayer.isPlaying) {
+          jazzPlayer.toggleMusic();
+        } else if (!enabled && jazzPlayer.isPlaying) {
+          jazzPlayer.toggleMusic();
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при управлении джазом через API:', error);
+    }
+  } catch (e) {
+    console.error('Ошибка при изменении настроек джаза:', e);
   }
 };

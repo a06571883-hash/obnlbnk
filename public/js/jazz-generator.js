@@ -1,204 +1,255 @@
-// Скрипт для программного создания джазового аудио
-const fs = require('fs');
-const { execSync } = require('child_process');
+/**
+ * Генератор джазовой музыки на основе Web Audio API
+ * 
+ * Создает плавные джазовые последовательности с использованием осцилляторов
+ * вместо аудиофайлов. Полезно для Telegram WebApp, где воспроизведение 
+ * аудиофайлов может работать некорректно.
+ */
 
-// Создаем текстовый файл с командами для SoX
-const createSoxScript = () => {
-  // Базовый шаблон для создания джазовой мелодии
-  const soxCommands = `
-    # Создаем фоновый аккорд (синусоидальная волна)
-    sox -n -r 44100 -b 16 chord.wav synth 10 sine 261.63 sine 329.63 sine 392.00 fade q 0.1 10 0.1
-
-    # Создаем басовую линию
-    sox -n -r 44100 -b 16 bass.wav synth 10 sine 110 sine 130.81 sine 146.83 fade q 0.1 10 0.1
-
-    # Создаем пианино
-    sox -n -r 44100 -b 16 piano1.wav synth 1 sine 261.63 fade q 0.1 1 0.1
-    sox -n -r 44100 -b 16 piano2.wav synth 1 sine 329.63 fade q 0.1 1 0.1
-    sox -n -r 44100 -b 16 piano3.wav synth 1 sine 392.00 fade q 0.1 1 0.1
-    sox -n -r 44100 -b 16 piano4.wav synth 1 sine 440.00 fade q 0.1 1 0.1
-
-    # Комбинируем все в один файл
-    sox -m chord.wav bass.wav jazz_base.wav
-    sox jazz_base.wav piano1.wav piano2.wav piano3.wav piano4.wav jazz_full.wav
-
-    # Конвертируем в MP3
-    sox jazz_full.wav -C 64 jazz_output.mp3
-
-    # Очистка временных файлов
-    rm chord.wav bass.wav piano1.wav piano2.wav piano3.wav piano4.wav jazz_base.wav jazz_full.wav
-  `;
-
-  fs.writeFileSync('create_jazz.sh', soxCommands);
-  console.log('Created SoX script for jazz generation');
-};
-
-// Генерация синусоидальной волны (простой альтернативный подход)
-const generateSineWave = (freq, duration, sampleRate = 44100) => {
-  const numSamples = Math.floor(duration * sampleRate);
-  const samples = new Float32Array(numSamples);
-  
-  for (let i = 0; i < numSamples; i++) {
-    const t = i / sampleRate;
-    samples[i] = Math.sin(2 * Math.PI * freq * t);
+class JazzGenerator {
+  constructor() {
+    this.audioContext = null;
+    this.masterGain = null;
+    this.oscillators = [];
+    this.isPlaying = false;
+    this.currentTimeout = null;
+    this.maxVolume = 0.05; // Максимальная громкость (очень тихо)
   }
-  
-  return samples;
-};
 
-// Создание HTML5 аудио файла с генерируемой музыкой
-const createHtmlAudio = () => {
-  // Создаем простой HTML файл, который генерирует джаз в браузере
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Jazz Generator</title>
-</head>
-<body>
-  <h1>Jazz Audio Generator</h1>
-  <button id="generateBtn">Generate Jazz</button>
-  <audio id="audioPlayer" controls></audio>
-
-  <script>
-    // Web Audio API для создания джазовой музыки
-    document.getElementById('generateBtn').addEventListener('click', function() {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const masterGain = audioContext.createGain();
-      masterGain.gain.value = 0.1;
-      masterGain.connect(audioContext.destination);
-      
-      // Ноты в джазовой последовательности
-      const notes = [
-        { freq: 261.63, duration: 1 },  // C
-        { freq: 293.66, duration: 0.5 }, // D
-        { freq: 329.63, duration: 0.5 }, // E
-        { freq: 349.23, duration: 1 },  // F
-        { freq: 392.00, duration: 0.5 }, // G
-        { freq: 440.00, duration: 0.5 }, // A
-        { freq: 493.88, duration: 1 },  // B
-        { freq: 523.25, duration: 2 },  // C (октава выше)
-      ];
-      
-      // Создаем аккорды и мелодию
-      let currentTime = audioContext.currentTime;
-      
-      notes.forEach(note => {
-        // Основной тон
-        const oscillator = audioContext.createOscillator();
-        oscillator.type = 'sine';
-        oscillator.frequency.value = note.freq;
-        
-        const gainNode = audioContext.createGain();
-        gainNode.gain.value = 0.1;
-        gainNode.gain.linearRampToValueAtTime(0, currentTime + note.duration);
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(masterGain);
-        
-        oscillator.start(currentTime);
-        oscillator.stop(currentTime + note.duration);
-        
-        // Гармоника (терция)
-        const harmonic = audioContext.createOscillator();
-        harmonic.type = 'sine';
-        harmonic.frequency.value = note.freq * 1.25; // Мажорная терция
-        
-        const harmonicGain = audioContext.createGain();
-        harmonicGain.gain.value = 0.05;
-        harmonicGain.gain.linearRampToValueAtTime(0, currentTime + note.duration);
-        
-        harmonic.connect(harmonicGain);
-        harmonicGain.connect(masterGain);
-        
-        harmonic.start(currentTime);
-        harmonic.stop(currentTime + note.duration);
-        
-        currentTime += note.duration;
-      });
-      
-      // Запись и проигрывание
-      const recording = new MediaRecorder(audioContext.destination.stream);
-      const chunks = [];
-      
-      recording.ondataavailable = function(e) {
-        chunks.push(e.data);
-      };
-      
-      recording.onstop = function() {
-        const blob = new Blob(chunks, { 'type' : 'audio/ogg; codecs=opus' });
-        const audioURL = URL.createObjectURL(blob);
-        document.getElementById('audioPlayer').src = audioURL;
-      };
-      
-      recording.start();
-      setTimeout(() => recording.stop(), currentTime * 1000 + 500);
-    });
-  </script>
-</body>
-</html>
-  `;
-  
-  fs.writeFileSync('jazz_generator.html', htmlContent);
-  console.log('Created HTML5 audio generator');
-};
-
-// Создание простого аудиофайла для тестирования
-const createSimpleAudioFile = () => {
-  // Создаем мелодию из нескольких синусоидальных волн
-  const melody = [
-    { freq: 261.63, duration: 0.5 }, // C4
-    { freq: 293.66, duration: 0.5 }, // D4
-    { freq: 329.63, duration: 0.5 }, // E4
-    { freq: 349.23, duration: 0.5 }, // F4
-    { freq: 392.00, duration: 0.5 }, // G4
-    { freq: 349.23, duration: 0.5 }, // F4
-    { freq: 329.63, duration: 0.5 }, // E4
-    { freq: 293.66, duration: 0.5 }, // D4
-    { freq: 261.63, duration: 1.0 }, // C4
-  ];
-  
-  // Общая длительность
-  const totalDuration = melody.reduce((sum, note) => sum + note.duration, 0);
-  const sampleRate = 44100;
-  const totalSamples = Math.floor(totalDuration * sampleRate);
-  
-  // Создаем буфер для аудиоданных
-  const buffer = new Float32Array(totalSamples);
-  
-  // Заполняем буфер данными синусоидальных волн
-  let currentSample = 0;
-  melody.forEach(note => {
-    const numSamples = Math.floor(note.duration * sampleRate);
-    const amplitude = 0.5; // Громкость
+  /**
+   * Инициализирует аудио контекст
+   */
+  init() {
+    if (this.audioContext) return;
     
-    for (let i = 0; i < numSamples; i++) {
-      const t = i / sampleRate;
-      buffer[currentSample + i] = amplitude * Math.sin(2 * Math.PI * note.freq * t);
+    try {
+      // Создаем аудио контекст
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Создаем главный регулятор громкости
+      this.masterGain = this.audioContext.createGain();
+      this.masterGain.gain.value = this.maxVolume;
+      this.masterGain.connect(this.audioContext.destination);
+      
+      console.log('[JazzGenerator] Инициализация успешна');
+      return true;
+    } catch (error) {
+      console.error('[JazzGenerator] Ошибка инициализации:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Создает и воспроизводит джазовую ноту
+   */
+  playNote(frequency, startTime, duration, type = 'sine') {
+    try {
+      if (!this.audioContext || !this.masterGain) return null;
+      
+      // Создаем осциллятор и регулятор громкости для ноты
+      const oscillator = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      
+      // Настраиваем осциллятор
+      oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      
+      // Настраиваем регулятор громкости с плавным затуханием
+      gain.gain.value = 0;
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+      gain.gain.linearRampToValueAtTime(0.2, startTime + duration * 0.5);
+      gain.gain.linearRampToValueAtTime(0, startTime + duration);
+      
+      // Подключаем осциллятор к регулятору громкости и главному выходу
+      oscillator.connect(gain);
+      gain.connect(this.masterGain);
+      
+      // Запускаем осциллятор
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+      
+      // Сохраняем ссылки на осциллятор и регулятор громкости
+      const oscillatorRef = { osc: oscillator, gain: gain };
+      this.oscillators.push(oscillatorRef);
+      
+      // Настраиваем автоматическое удаление из списка по окончании звучания
+      setTimeout(() => {
+        const index = this.oscillators.indexOf(oscillatorRef);
+        if (index !== -1) {
+          this.oscillators.splice(index, 1);
+        }
+      }, (startTime + duration - this.audioContext.currentTime) * 1000);
+      
+      return oscillatorRef;
+    } catch (error) {
+      console.error('[JazzGenerator] Ошибка при воспроизведении ноты:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Проигрывает джазовый аккорд
+   */
+  playChord(baseFrequency, startTime, duration, type = 'sine') {
+    // Создаем джазовый аккорд из основной ноты и нескольких обертонов
+    const intervals = [1, 1.5, 1.8, 2.0, 2.8]; // Джазовые интервалы
+    
+    intervals.forEach((interval, index) => {
+      const frequency = baseFrequency * interval;
+      const volume = index === 0 ? 0.3 : 0.3 / (index + 1);
+      const noteStartTime = startTime + index * 0.03; // Небольшое смещение для более мягкого звучания
+      
+      this.playNote(frequency, noteStartTime, duration, type);
+    });
+  }
+
+  /**
+   * Проигрывает джазовую последовательность
+   */
+  playJazzSequence() {
+    if (!this.audioContext) {
+      if (!this.init()) return false;
     }
     
-    currentSample += numSamples;
-  });
-  
-  // Выводим в файл (в формате WAV)
-  // Примечание: Создание WAV напрямую в Node.js достаточно сложно, поэтому здесь только псевдокод
-  console.log('Generated audio data of length:', buffer.length);
-  
-  // Запись в текстовый файл для тестирования
-  const bufferStr = buffer.slice(0, 100).join(',');
-  fs.writeFileSync('audio_samples.txt', bufferStr);
-  console.log('Saved first 100 audio samples to audio_samples.txt');
-  
-  // В реальном сценарии сохранение аудио требует библиотек вроде node-wav или ffmpeg
-  console.log('For actual WAV/MP3 creation, you would need to use a library like node-wav or execute ffmpeg');
-};
+    // Джазовые ноты (частоты в герцах)
+    const jazzNotes = [
+      220, 246.94, 261.63, 293.66, 329.63, 349.23, 392, 440,
+      493.88, 523.25, 587.33, 659.25, 698.46, 783.99
+    ];
+    
+    // Запускаем рекурсивное проигрывание джазовых аккордов
+    const playNextChord = (index = 0) => {
+      if (!this.isPlaying) return;
+      
+      const currentTime = this.audioContext.currentTime;
+      const randomNote = jazzNotes[Math.floor(Math.random() * jazzNotes.length)];
+      const duration = 2 + Math.random() * 2; // Длительность от 2 до 4 секунд
+      const waitTime = duration * 0.7; // Следующий аккорд начинается до окончания текущего
+      
+      // Проигрываем аккорд
+      this.playChord(randomNote, currentTime, duration, index % 2 === 0 ? 'sine' : 'triangle');
+      
+      // Планируем следующий аккорд
+      this.currentTimeout = setTimeout(() => {
+        playNextChord(index + 1);
+      }, waitTime * 1000);
+    };
+    
+    // Запускаем последовательность
+    playNextChord();
+    return true;
+  }
 
-// Запуск функций
-try {
-  //createSoxScript();
-  //createHtmlAudio();
-  createSimpleAudioFile();
-  console.log('Done! Audio generation files created.');
-} catch (error) {
-  console.error('Error generating audio files:', error);
+  /**
+   * Запускает воспроизведение джазовой последовательности
+   */
+  play() {
+    if (this.isPlaying) return true;
+    
+    try {
+      this.isPlaying = true;
+      
+      // Инициализируем аудио контекст, если еще не инициализирован
+      if (!this.audioContext) {
+        if (!this.init()) {
+          this.isPlaying = false;
+          return false;
+        }
+      } 
+      // Возобновляем аудио контекст, если он был приостановлен
+      else if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
+      
+      // Запускаем джазовую последовательность
+      this.playJazzSequence();
+      console.log('[JazzGenerator] Воспроизведение запущено');
+      return true;
+    } catch (error) {
+      console.error('[JazzGenerator] Ошибка при запуске:', error);
+      this.isPlaying = false;
+      return false;
+    }
+  }
+
+  /**
+   * Останавливает воспроизведение джазовой последовательности
+   */
+  stop() {
+    this.isPlaying = false;
+    
+    // Останавливаем планирование следующих аккордов
+    if (this.currentTimeout) {
+      clearTimeout(this.currentTimeout);
+      this.currentTimeout = null;
+    }
+    
+    // Останавливаем все активные осцилляторы
+    this.stopAllOscillators();
+    
+    // Приостанавливаем аудио контекст
+    if (this.audioContext && this.audioContext.state === 'running') {
+      this.audioContext.suspend();
+    }
+    
+    console.log('[JazzGenerator] Воспроизведение остановлено');
+  }
+
+  /**
+   * Останавливает все активные осцилляторы
+   */
+  stopAllOscillators() {
+    const currentTime = this.audioContext ? this.audioContext.currentTime : 0;
+    
+    // Плавно отключаем все активные осцилляторы
+    this.oscillators.forEach(({ osc, gain }) => {
+      try {
+        gain.gain.cancelScheduledValues(currentTime);
+        gain.gain.setValueAtTime(gain.gain.value, currentTime);
+        gain.gain.linearRampToValueAtTime(0, currentTime + 0.1);
+        
+        // Полностью отключаем осциллятор через 0.1 секунду
+        setTimeout(() => {
+          try {
+            osc.stop();
+            osc.disconnect();
+            gain.disconnect();
+          } catch (e) {
+            // Игнорируем ошибки при отключении уже остановленных осцилляторов
+          }
+        }, 100);
+      } catch (e) {
+        console.error('[JazzGenerator] Ошибка при остановке осциллятора:', e);
+      }
+    });
+    
+    // Очищаем массив осцилляторов
+    this.oscillators = [];
+  }
+
+  /**
+   * Устанавливает громкость воспроизведения
+   * @param {number} value - значение от 0 до 1
+   */
+  setVolume(value) {
+    if (!this.masterGain) return;
+    
+    // Устанавливаем громкость не больше максимальной
+    const volume = Math.min(value, this.maxVolume);
+    
+    try {
+      const currentTime = this.audioContext.currentTime;
+      this.masterGain.gain.cancelScheduledValues(currentTime);
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, currentTime);
+      this.masterGain.gain.linearRampToValueAtTime(volume, currentTime + 0.1);
+      
+      console.log(`[JazzGenerator] Громкость установлена: ${volume}`);
+    } catch (error) {
+      console.error('[JazzGenerator] Ошибка при изменении громкости:', error);
+    }
+  }
 }
+
+// Создаем глобальный экземпляр генератора джаза
+window.jazzGenerator = new JazzGenerator();

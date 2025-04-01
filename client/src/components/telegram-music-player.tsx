@@ -2,14 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
 import { isTelegramWebApp } from '../lib/telegram-utils';
+import { isJazzEnabled, toggleJazz } from '../lib/sound-service';
 
-// Компонент управления фоновой музыкой для Telegram WebApp
+// Единый компонент управления фоновой музыкой для Telegram WebApp
+// Использует Web Audio API для генерации джазовой музыки без использования файлов
 const TelegramMusicPlayer: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTelegramApp, setIsTelegramApp] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorsRef = useRef<{osc: OscillatorNode, gain: GainNode}[]>([]);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitializedRef = useRef<boolean>(false);
   
   useEffect(() => {
     // Проверяем, запущено ли приложение в Telegram WebApp
@@ -17,6 +20,33 @@ const TelegramMusicPlayer: React.FC = () => {
     
     // Если это не Telegram WebApp, ничего не делаем
     if (!isTelegramWebApp()) return;
+    
+    // Отмечаем, что компонент инициализирован
+    isInitializedRef.current = true;
+    
+    // Проверяем состояние музыки из localStorage
+    const enabled = isJazzEnabled();
+    setIsPlaying(enabled);
+    
+    // Если музыка должна играть - инициализируем и запускаем
+    if (enabled) {
+      try {
+        if (!audioContextRef.current) {
+          audioContextRef.current = new AudioContext();
+          console.log('Автоматически создан AudioContext');
+        }
+        
+        // Запускаем музыку с небольшой задержкой для инициализации
+        setTimeout(() => {
+          if (isInitializedRef.current && enabled) {
+            playJazzProgression();
+            console.log('Автозапуск джазовой последовательности');
+          }
+        }, 1000);
+      } catch (error) {
+        console.error('Ошибка при автозапуске музыки:', error);
+      }
+    }
     
     // Для очистки ресурсов при размонтировании компонента
     return () => {
@@ -27,6 +57,8 @@ const TelegramMusicPlayer: React.FC = () => {
         audioContextRef.current.close().catch(console.error);
         audioContextRef.current = null;
       }
+      
+      isInitializedRef.current = false;
     };
   }, []);
   
@@ -60,10 +92,11 @@ const TelegramMusicPlayer: React.FC = () => {
       }
     });
     
+    // Очищаем массив осцилляторов
     oscillatorsRef.current = [];
   };
   
-  // Функция для воспроизведения ноты
+  // Функция для воспроизведения ноты с очень тихой громкостью
   const playNote = (frequency: number, startTime: number, duration: number) => {
     if (!audioContextRef.current) return;
     
@@ -77,11 +110,12 @@ const TelegramMusicPlayer: React.FC = () => {
       const gainNode = audioContextRef.current.createGain();
       gainNode.gain.value = 0;
       
-      // Настраиваем огибающую (атака, затухание)
+      // Настраиваем очень тихую громкость (0.01 - 1% от максимума)
+      // и плавное затухание для мягкого звучания
       const now = startTime;
       gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(0.05, now + 0.02); // Быстрая атака
-      gainNode.gain.linearRampToValueAtTime(0.03, now + duration * 0.7); // Затухание
+      gainNode.gain.linearRampToValueAtTime(0.01, now + 0.02); // Быстрая атака, низкая громкость
+      gainNode.gain.linearRampToValueAtTime(0.007, now + duration * 0.7); // Затухание
       gainNode.gain.linearRampToValueAtTime(0, now + duration); // Плавное окончание
       
       // Подключаем осциллятор к узлу усиления
@@ -101,9 +135,9 @@ const TelegramMusicPlayer: React.FC = () => {
     }
   };
   
-  // Джазовая прогрессия
+  // Джазовая прогрессия (очень тихая)
   const playJazzProgression = () => {
-    if (!audioContextRef.current) return;
+    if (!audioContextRef.current || !isInitializedRef.current) return;
     
     try {
       const now = audioContextRef.current.currentTime;
@@ -125,12 +159,13 @@ const TelegramMusicPlayer: React.FC = () => {
       playNote(349.23, now + 2.09, 0.8);   // F4
       
       // C major (C-E-G)
-      playNote(261.63, now + 3, 1.0);        // C4
-      playNote(329.63, now + 3.03, 1.0); // E4
-      playNote(392.00, now + 3.06, 1.0); // G4
+      playNote(261.63, now + 3, 1.0);      // C4
+      playNote(329.63, now + 3.03, 1.0);   // E4
+      playNote(392.00, now + 3.06, 1.0);   // G4
       
       // Запланируем следующее воспроизведение через 4 секунды
-      if (isPlaying) {
+      // только если все еще в режиме воспроизведения
+      if (isPlaying && isInitializedRef.current) {
         timeoutRef.current = setTimeout(() => {
           playJazzProgression();
         }, 4000);
@@ -147,6 +182,9 @@ const TelegramMusicPlayer: React.FC = () => {
       stopAllOscillators();
       setIsPlaying(false);
       console.log('Музыка остановлена');
+      
+      // Сохраняем состояние в localStorage
+      toggleJazz(false);
       
       // Приостанавливаем аудиоконтекст для экономии ресурсов
       if (audioContextRef.current?.state === 'running') {
@@ -166,10 +204,15 @@ const TelegramMusicPlayer: React.FC = () => {
         // Запускаем джазовую последовательность
         setIsPlaying(true);
         playJazzProgression();
+        
+        // Сохраняем состояние в localStorage
+        toggleJazz(true);
+        
         console.log('Джазовая последовательность запущена');
       } catch (error) {
         console.error('Ошибка при включении музыки:', error);
         setIsPlaying(false);
+        toggleJazz(false);
       }
     }
   };
