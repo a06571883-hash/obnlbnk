@@ -2,6 +2,11 @@
 
 export type SoundType = 'click' | 'success' | 'error' | 'transfer' | 'notification' | 'silent';
 
+// Предварительная загрузка звуков (пустая функция)
+export const preloadSounds = async (): Promise<void> => {
+  console.log('Звуковой сервис отключен, preloadSounds - заглушка');
+};
+
 // Воспроизвести звук (пустая функция - ничего не делает)
 export const playSound = async (soundName: SoundType): Promise<void> => {
   // Звуки отключены
