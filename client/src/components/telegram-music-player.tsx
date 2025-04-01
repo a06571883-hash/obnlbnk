@@ -16,10 +16,21 @@ const TelegramMusicPlayer: React.FC = () => {
     // Если это не Telegram WebApp, ничего не делаем
     if (!isTelegramWebApp()) return;
     
-    // Создаем аудио элемент
+    // Создаем аудио элемент с запасным файлом
+    // Сначала попробуем основной файл, если не загрузится - используем запасной
     const audio = new Audio('/audio/light-jazz.mp3');
     audio.loop = true;
     audio.volume = 0.1; // 10% громкости (очень тихо)
+    
+    // Обработка ошибки загрузки первого файла
+    audio.addEventListener('error', () => {
+      console.log('Не удалось загрузить основной аудиофайл, пробуем запасной');
+      const fallbackAudio = new Audio('/audio/light-jazz-fallback.mp3');
+      fallbackAudio.loop = true;
+      fallbackAudio.volume = 0.1;
+      setAudioElement(fallbackAudio);
+    }, { once: true });
+    
     setAudioElement(audio);
     
     // Очистка при размонтировании
@@ -33,21 +44,77 @@ const TelegramMusicPlayer: React.FC = () => {
   
   // Функция для переключения воспроизведения музыки
   const toggleMusic = () => {
-    if (!audioElement) return;
+    if (!audioElement) {
+      // Если аудио элемент еще не инициализирован, создаем его заново
+      // Попробуем сразу запасной файл, который гарантированно загружен
+      const audio = new Audio('/audio/light-jazz-fallback.mp3');
+      audio.loop = true;
+      audio.volume = 0.1;
+      setAudioElement(audio);
+      
+      // Предварительная загрузка перед воспроизведением
+      audio.load();
+      
+      // Пробуем воспроизвести после загрузки или сразу после взаимодействия пользователя
+      try {
+        // Попытка воспроизведения сразу после клика пользователя - часто работает
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('Музыка успешно запущена');
+              setIsPlaying(true);
+            })
+            .catch(error => {
+              // Если сразу не получилось, пробуем через событие загрузки
+              console.error('Первая попытка неудачна, ожидаем загрузки:', error);
+              
+              audio.addEventListener('canplaythrough', () => {
+                audio.play()
+                  .then(() => {
+                    console.log('Музыка запущена после загрузки');
+                    setIsPlaying(true);
+                  })
+                  .catch(() => setIsPlaying(false));
+              }, { once: true });
+            });
+        }
+      } catch (error) {
+        console.error('Ошибка воспроизведения музыки:', error);
+        setIsPlaying(false);
+      }
+      
+      return;
+    }
     
     if (isPlaying) {
       audioElement.pause();
+      setIsPlaying(false);
     } else {
-      // При запуске воспроизведения сначала сбрасываем время
-      audioElement.currentTime = 0;
-      // Запускаем воспроизведение с обработкой ошибок
-      audioElement.play().catch(error => {
-        console.error('Ошибка воспроизведения музыки:', error);
-        setIsPlaying(false);
-      });
+      // Удостоверимся, что аудио загружено
+      if (audioElement.readyState < 2) { // HAVE_CURRENT_DATA
+        audioElement.load();
+      }
+      
+      // Пробуем воспроизвести
+      const playPromise = audioElement.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Музыка успешно запущена');
+            setIsPlaying(true);
+          })
+          .catch(error => {
+            console.error('Ошибка воспроизведения музыки:', error);
+            // Еще одна попытка сразу после взаимодействия пользователя
+            setTimeout(() => {
+              audioElement.play()
+                .then(() => setIsPlaying(true))
+                .catch(() => setIsPlaying(false));
+            }, 100);
+          });
+      }
     }
-    
-    setIsPlaying(!isPlaying);
   };
   
   // Если это не Telegram WebApp, не отображаем компонент

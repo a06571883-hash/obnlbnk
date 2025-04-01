@@ -11,6 +11,7 @@ import ProfilePage from "@/pages/profile-page";
 import StatisticsPage from "./pages/statistics-page"; // Added import for StatisticsPage
 import NFTPage from "./pages/nft-page"; // Fix: direct import instead of alias
 import AdminPage from "./pages/admin-page"; // Admin panel page
+import TelegramTestPage from "./pages/telegram-test-page"; // Тестовая страница для Telegram WebApp
 import TelegramMusicPlayer from "./components/telegram-music-player"; // Импорт компонента плеера для Telegram
 
 import { ProtectedRoute } from "./lib/protected-route";
@@ -32,7 +33,7 @@ declare global {
 
 function Router() {
   const [location] = useLocation();
-  const showNav = location !== "/auth";
+  const showNav = location !== "/auth" && location !== "/telegram-test";
 
   return (
     <>
@@ -49,6 +50,7 @@ function Router() {
         <ProtectedRoute path="/marketplace" component={() => <NFTPage />} /> {/* Added direct marketplace route */}
         <ProtectedRoute path="/admin" component={AdminPage} /> {/* Admin panel route */}
         <Route path="/stats" component={StatisticsPage} /> {/* Added route for statistics page */}
+        <Route path="/telegram-test" component={TelegramTestPage} /> {/* Тестовая страница для Telegram WebApp */}
         <Route component={NotFound} />
       </Switch>
       {showNav && <BottomNav />}
