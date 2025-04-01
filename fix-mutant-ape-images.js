@@ -1,237 +1,130 @@
 /**
- * Скрипт для исправления изображений Mutant Ape
- * Проблема: файлы с расширением .png на самом деле содержат SVG код
- * Этот скрипт переименовывает их в .svg и копирует настоящие изображения
+ * Скрипт для исправления изображений NFT коллекции Mutant Ape
+ * Обеспечивает, что все NFT с коллекцией Mutant Ape имеют правильные пути к изображениям
  */
-
+import pg from 'pg';
+const { Pool } = pg;
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
-import pg from 'pg';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Подключение к базе данных
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
 
-// Настройка подключения к PostgreSQL
-const pgConfig = {
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-};
+// Функция, которая генерирует случайное целое число в диапазоне
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-// Основная функция скрипта
-async function fixMutantApeImages() {
-  console.log('\n===== Начало исправления изображений Mutant Ape =====\n');
-
-  // Директории
-  const mutantApeDir = path.join(process.cwd(), 'mutant_ape_nft');
-  const mutantApeNewDir = path.join(process.cwd(), 'mutant_ape_nft_new');
-  
-  // Создаем новую директорию, если она не существует
-  if (!fs.existsSync(mutantApeNewDir)) {
-    fs.mkdirSync(mutantApeNewDir, { recursive: true });
-    console.log(`Создана новая директория: ${mutantApeNewDir}`);
-  }
-  
-  // Проверяем существование директории с Mutant Ape
-  if (!fs.existsSync(mutantApeDir)) {
-    console.error(`Ошибка: Директория ${mutantApeDir} не существует`);
-    return;
-  }
-
-  // Получаем список всех файлов
-  const files = fs.readdirSync(mutantApeDir);
-  console.log(`Найдено ${files.length} файлов в директории ${mutantApeDir}`);
-
-  // Подсчитываем количество файлов по типам
-  const pngFiles = files.filter(file => file.endsWith('.png')).length;
-  const svgFiles = files.filter(file => file.endsWith('.svg')).length;
-  console.log(`- PNG файлов: ${pngFiles}`);
-  console.log(`- SVG файлов: ${svgFiles}`);
-
-  // Создаем клиент PostgreSQL
-  const client = new pg.Client(pgConfig);
-  await client.connect();
-  console.log('Подключено к базе данных PostgreSQL');
+async function main() {
+  console.log('🧩 Начинаем исправление изображений для коллекции Mutant Ape...');
 
   try {
-    // 1. Переименовываем все PNG файлы, которые на самом деле SVG, в формат .svg
-    console.log('\n1. Переименовываем PNG файлы в SVG...');
-    
-    let renamedCount = 0;
-    for (const file of files) {
-      if (!file.endsWith('.png')) continue;
-      
-      const filePath = path.join(mutantApeDir, file);
-      
-      // Проверяем, является ли файл SVG
-      try {
-        const fileContent = fs.readFileSync(filePath, 'utf8');
-        if (fileContent.trim().startsWith('<svg')) {
-          // Это SVG в файле с расширением .png, переименовываем
-          const newFileName = file.replace('.png', '.svg');
-          const newFilePath = path.join(mutantApeDir, newFileName);
-          
-          fs.writeFileSync(newFilePath, fileContent);
-          fs.unlinkSync(filePath); // Удаляем оригинальный файл
-          
-          renamedCount++;
-          if (renamedCount <= 5 || renamedCount % 100 === 0) {
-            console.log(`  Переименован ${file} -> ${newFileName}`);
-          }
-        }
-      } catch (err) {
-        console.error(`  Ошибка при проверке файла ${file}:`, err.message);
-      }
-    }
-    
-    console.log(`  Всего переименовано ${renamedCount} PNG файлов в SVG`);
+    // Проверяем наличие директорий с изображениями Mutant Ape
+    const directories = [
+      'mutant_ape_nft',
+      'mutant_ape_official'
+    ];
 
-    // 2. Проверяем базу данных и получаем количество Mutant Ape NFT
-    console.log('\n2. Получаем информацию о NFT в базе данных...');
-    
-    const nftResult = await client.query(`
-      SELECT COUNT(*) as total FROM nfts 
-      WHERE collection_id = 2 OR name LIKE '%Mutant Ape%'
-    `);
-    
-    const totalMutantApeNFTs = parseInt(nftResult.rows[0].total, 10);
-    console.log(`  В базе данных ${totalMutantApeNFTs} Mutant Ape NFT`);
+    const availableImages = [];
 
-    // 3. Копируем изображения Bored Ape для создания Mutant Ape
-    console.log('\n3. Копируем изображения Bored Ape в новую директорию Mutant Ape...');
-    
-    const boredApeDir = path.join(process.cwd(), 'bored_ape_nft');
-    
-    if (!fs.existsSync(boredApeDir)) {
-      console.error(`  Ошибка: Директория с Bored Ape (${boredApeDir}) не существует`);
-    } else {
-      const boredApeFiles = fs.readdirSync(boredApeDir)
-        .filter(file => file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.avif'))
-        .sort((a, b) => {
-          // Извлекаем числа из имен файлов для правильной сортировки
-          const numA = parseInt(a.match(/\\d+/)?.[0] || '0', 10);
-          const numB = parseInt(b.match(/\\d+/)?.[0] || '0', 10);
-          return numA - numB;
+    // Проверяем все директории и собираем пути к изображениям
+    for (const dir of directories) {
+      const dirPath = path.join(process.cwd(), dir);
+      
+      if (fs.existsSync(dirPath)) {
+        console.log(`📁 Проверяем директорию: ${dirPath}`);
+        
+        const files = fs.readdirSync(dirPath)
+          .filter(file => file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.avif'));
+        
+        console.log(`Найдено ${files.length} изображений в директории ${dir}`);
+        
+        // Добавляем все пути к изображениям в общий список
+        files.forEach(file => {
+          availableImages.push(`/${dir}/${file}`);
         });
-      
-      console.log(`  Найдено ${boredApeFiles.length} изображений Bored Ape для копирования`);
-      
-      // Определяем, сколько изображений нужно скопировать
-      const maxImages = Math.min(totalMutantApeNFTs, boredApeFiles.length);
-      console.log(`  Будет создано ${maxImages} изображений Mutant Ape`);
-      
-      let copiedCount = 0;
-      
-      for (let i = 0; i < maxImages; i++) {
-        const sourceFile = boredApeFiles[i];
-        const sourceExtension = path.extname(sourceFile); // Получаем расширение файла
-        const sourceId = parseInt(sourceFile.match(/\d+/)?.[0] || '0', 10);
-        
-        const mutantFileName = `mutant_ape_${sourceId}${sourceExtension}`;
-        const sourcePath = path.join(boredApeDir, sourceFile);
-        const targetPath = path.join(mutantApeNewDir, mutantFileName);
-        
-        try {
-          // Копируем файл
-          fs.copyFileSync(sourcePath, targetPath);
-          copiedCount++;
-          
-          if (copiedCount <= 5 || copiedCount % 100 === 0) {
-            console.log(`  Скопирован ${sourceFile} -> ${mutantFileName}`);
-          }
-        } catch (err) {
-          console.error(`  Ошибка при копировании ${sourceFile}:`, err.message);
-        }
+      } else {
+        console.log(`⚠️ Директория не найдена: ${dirPath}`);
       }
-      
-      console.log(`  Всего скопировано ${copiedCount} изображений`);
     }
 
-    // 4. Обновляем пути в базе данных
-    console.log('\n4. Обновляем пути к изображениям в базе данных...');
+    console.log(`🖼️ Всего найдено ${availableImages.length} изображений Mutant Ape`);
+
+    if (availableImages.length === 0) {
+      console.log('❌ Нет доступных изображений Mutant Ape. Невозможно продолжить.');
+      return;
+    }
+
+    // Получаем все NFT из коллекции Mutant Ape
+    console.log('🔍 Получаем список всех NFT коллекции Mutant Ape...');
     
-    // Сначала проверим, как выглядят текущие пути
-    const samplePathsQuery = await client.query(`
-      SELECT id, name, image_path
-      FROM nfts
-      WHERE collection_id = 2 OR name LIKE '%Mutant Ape%'
-      LIMIT 5
+    const mutantApeNftsResult = await pool.query(`
+      SELECT n.id, n.token_id, c.name as collection_name, n.image_path
+      FROM nfts n
+      JOIN nft_collections c ON n.collection_id = c.id
+      WHERE c.name LIKE '%Mutant%'
     `);
     
-    console.log('  Примеры текущих путей:');
-    samplePathsQuery.rows.forEach(row => {
-      console.log(`    ID: ${row.id}, Имя: ${row.name}, Путь: ${row.image_path}`);
-    });
+    console.log(`Найдено ${mutantApeNftsResult.rows.length} NFT в коллекции Mutant Ape`);
+
+    if (mutantApeNftsResult.rows.length === 0) {
+      console.log('⚠️ NFT коллекции Mutant Ape не найдены в базе данных.');
+      return;
+    }
+
+    // Исправляем пути к изображениям для всех NFT коллекции Mutant Ape
+    console.log('🔧 Исправляем пути к изображениям...');
     
-    // Обновляем пути, меняя расширения с .svg на .png для всех Mutant Ape
-    const updateResult = await client.query(`
-      UPDATE nfts
-      SET image_path = REPLACE(image_path, '.svg', '.png')
-      WHERE (collection_id = 2 OR name LIKE '%Mutant Ape%')
-        AND image_path LIKE '%.svg'
-      RETURNING id
-    `);
+    let updatedCount = 0;
     
-    console.log(`  Обновлено ${updateResult.rowCount} записей в базе данных`);
-    
-    // Проверим обновленные пути
-    let updatedPathsQuery;
-    if (updateResult.rows.length > 0) {
-      updatedPathsQuery = await client.query(`
-        SELECT id, name, image_path 
-        FROM nfts
-        WHERE id IN (${updateResult.rows.map(r => r.id).join(',')})
-        LIMIT 5
-      `);
-    } else {
-      updatedPathsQuery = { rows: [] };
+    for (const nft of mutantApeNftsResult.rows) {
+      // Проверяем, правильный ли путь (должен содержать mutant)
+      if (!nft.image_path || !nft.image_path.toLowerCase().includes('mutant')) {
+        // Выбираем случайное изображение из доступных
+        const randomIndex = getRandomInt(0, availableImages.length - 1);
+        const newImageUrl = availableImages[randomIndex];
+        
+        console.log(`Обновляем NFT #${nft.id} (${nft.token_id}): ${nft.image_path || 'нет изображения'} -> ${newImageUrl}`);
+        
+        // Обновляем путь к изображению в базе данных
+        await pool.query(
+          'UPDATE nfts SET image_path = $1 WHERE id = $2',
+          [newImageUrl, nft.id]
+        );
+        
+        updatedCount++;
+      }
     }
     
-    if (updatedPathsQuery.rows.length > 0) {
-      console.log('  Примеры обновленных путей:');
-      updatedPathsQuery.rows.forEach(row => {
-        console.log(`    ID: ${row.id}, Имя: ${row.name}, Путь: ${row.image_path}`);
+    console.log(`✅ Обновлено ${updatedCount} из ${mutantApeNftsResult.rows.length} NFT в коллекции Mutant Ape`);
+    
+    // Проверяем итоговое состояние
+    const finalCheckResult = await pool.query(`
+      SELECT n.id, n.token_id, c.name as collection_name, n.image_path
+      FROM nfts n
+      JOIN nft_collections c ON n.collection_id = c.id
+      WHERE c.name LIKE '%Mutant%' AND (n.image_path NOT LIKE '%mutant%' OR n.image_path IS NULL)
+    `);
+    
+    if (finalCheckResult.rows.length > 0) {
+      console.log(`⚠️ Все еще есть ${finalCheckResult.rows.length} NFT с неправильными путями:`);
+      finalCheckResult.rows.forEach(nft => {
+        console.log(`- NFT #${nft.id} (${nft.token_id}): ${nft.image_path || 'нет пути'}`);
       });
-    }
-
-    // 5. Делаем резервную копию старой директории и заменяем ее новой
-    console.log('\n5. Заменяем директорию Mutant Ape новой...');
-    
-    const backupDir = path.join(process.cwd(), 'mutant_ape_nft_backup');
-    
-    // Создаем резервную копию
-    if (fs.existsSync(backupDir)) {
-      console.log(`  Удаляем существующую резервную копию: ${backupDir}`);
-      fs.rmSync(backupDir, { recursive: true, force: true });
+    } else {
+      console.log('🎉 Все NFT коллекции Mutant Ape имеют правильные пути к изображениям!');
     }
     
-    console.log(`  Создаем резервную копию: ${mutantApeDir} -> ${backupDir}`);
-    fs.renameSync(mutantApeDir, backupDir);
-    
-    console.log(`  Устанавливаем новую директорию: ${mutantApeNewDir} -> ${mutantApeDir}`);
-    fs.renameSync(mutantApeNewDir, mutantApeDir);
-    
-    console.log(`  Замена директорий успешно выполнена`);
-
-    // Вывод итоговой статистики
-    console.log('\n===== Результаты исправления =====');
-    console.log(`- Всего Mutant Ape NFT в базе данных: ${totalMutantApeNFTs}`);
-    console.log(`- Переименовано PNG в SVG: ${renamedCount}`);
-    console.log(`- Создано новых PNG изображений: ${copiedCount}`);
-    console.log(`- Обновлено записей в базе данных: ${updateResult.rowCount}`);
-    console.log('\nОперация успешно завершена!');
-
   } catch (error) {
-    console.error('Произошла ошибка:', error);
+    console.error('❌ Ошибка при выполнении скрипта:', error);
   } finally {
-    // Закрываем подключение к базе данных
-    await client.end();
-    console.log('Соединение с базой данных закрыто');
+    // Закрываем соединение с базой данных
+    await pool.end();
   }
 }
 
-// Запускаем скрипт
-fixMutantApeImages().catch(console.error);
+main();
