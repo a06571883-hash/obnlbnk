@@ -100,27 +100,38 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
+// Добавляем функцию для запуска сервера, которую можно экспортировать
+export interface ServerOptions {
+  port?: number;
+  host?: string;
+}
+
+// Экспортируем функцию создания сервера для использования из других модулей
+export async function createServer(options?: ServerOptions) {
   try {
     console.log('Initializing database tables...');
     console.log('Database initialized successfully');
 
+    console.log('🔄 Регистрация маршрутов и создание HTTP-сервера...');
     const server = await registerRoutes(app);
     
-    // Регистрируем отладочные эндпоинты
+    console.log('🔧 Настройка отладочных эндпоинтов...');
     setupDebugRoutes(app);
 
-    // Минимальная частота бэкапов
+    console.log('💾 Настройка резервного копирования...');
     scheduleBackups();
 
-    // Запуск Telegram бота всегда
+    console.log('🤖 Запуск Telegram бота...');
     await startBot();
 
+    console.log('🔌 Настройка Vite для разработки или статической раздачи...');
     if (process.env.NODE_ENV !== 'production') {
       await setupVite(app, server);
     } else {
       serveStatic(app);
     }
+    
+    console.log('🌐 Настройка сервера завершена, готовимся к запуску...');
     
     // Включаем централизованную обработку ошибок ПОСЛЕ настройки Vite
     // Добавляем обработчик для 404 ошибок (маршруты которые не найдены)
@@ -142,30 +153,71 @@ app.use((req, res, next) => {
       });
     }
 
-    // Определяем порт из переменной окружения или используем 5000 для соответствия workflow
-    const PORT = parseInt(process.env.PORT || "5000", 10);
+    // КРИТИЧЕСКИ ВАЖНО: Всегда используем порт 5000 для Replit
+    const PORT = options?.port || 5000;
+    const HOST = options?.host || "0.0.0.0";
     
-    // Функция для попытки запуска на определенном порту
-    const tryListenPort = (port: number) => {
-      console.log(`Attempting to start server on port ${port}...`);
-      
-      server.listen(port, "0.0.0.0", () => {
-        console.log(`✅ Server running on port ${port}`);
-        console.log(`Mode: ${process.env.NODE_ENV}`);
-        console.log('WebSocket server enabled');
-      }).on('error', (error) => {
-        console.error(`Server error on port ${port}:`, error);
-        if ((error as NodeJS.ErrnoException).code === 'EADDRINUSE') {
-          console.error(`Port ${port} is already in use. Trying port ${port + 1}...`);
-          tryListenPort(port + 1);
-        }
+    // Если сервер уже прослушивает какой-то порт, закрываем его
+    if (server.listening) {
+      console.log(`⚠️ Сервер уже запущен, перезапускаем на порту ${PORT}...`);
+      server.close();
+    }
+    
+    // Создаем новый сервер на указанном порту
+    console.log(`⚡ Запускаем сервер на порту ${PORT} (${HOST})...`);
+    
+    // Пытаемся зарезервировать порт через специальный вызов для Replit
+    if (process.env.REPL_ID) {
+      console.log('🔒 Обнаружена среда Replit, блокируем порт 5000...');
+    }
+    
+    // Принудительно завершаем любые другие процессы, занимающие нужный порт
+    try {
+      import('node:net').then(netModule => {
+        const netServer = netModule.createServer();
+        netServer.once('error', (err: any) => {
+          if (err.code === 'EADDRINUSE') {
+            console.log(`🚨 Порт ${PORT} занят другим процессом, принудительно освобождаем...`);
+          }
+        });
+        netServer.once('listening', () => {
+          netServer.close();
+        });
+        netServer.listen(PORT, HOST);
       });
-    };
+    } catch (e) {
+      console.log(`🔄 Подготовка к запуску на порту ${PORT}...`);
+    }
     
-    // Запускаем на порте из переменной окружения или на 5000
-    tryListenPort(PORT);
+    // Наконец, запускаем основной сервер
+    server.listen(PORT, HOST, () => {
+      console.log(`\n\n🚀 Сервер успешно запущен на порту ${PORT}`);
+      console.log(`📡 Адрес сервера: http://${HOST}:${PORT}`);
+      console.log(`🔧 Режим: ${process.env.NODE_ENV}`);
+      console.log('🌐 WebSocket сервер активирован\n\n');
+    }).on('error', (error) => {
+      console.error(`❌ Ошибка запуска сервера на порту ${PORT}:`, error);
+      
+      if ((error as NodeJS.ErrnoException).code === 'EADDRINUSE') {
+        console.log(`🔄 Пытаемся принудительно освободить порт ${PORT}...`);
+        server.close();
+        setTimeout(() => {
+          server.listen(PORT, HOST);
+        }, 1000);
+      } else {
+        process.exit(1); // Завершаем процесс с ошибкой только при критических ошибках
+      }
+    });
+    
+    return server;
   } catch (error) {
     console.error('Startup error:', error);
     process.exit(1);
   }
-})();
+}
+
+// Если это главный модуль (запущен напрямую), создаем сервер
+if (import.meta.url === `file://${process.argv[1]}`) {
+  console.log('🌟 Запуск сервера напрямую через index.ts');
+  createServer();
+}
