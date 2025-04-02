@@ -147,25 +147,30 @@ router.get('/v2', async (req: Request, res: Response) => {
         // Дополнительно проверяем, что imagePath содержит /bored_ape_nft/ для точной фильтрации
         conditions.push(sql`${nfts.imagePath} LIKE '%/bored_ape_nft/%'`);
       } else if (collection.toLowerCase() === 'mutant') {
-        // Фильтруем только "Mutant Ape Yacht Club" с коллекциями ID=2 и ID=11 (официальная коллекция)
-        // Но не применяем фильтр по ID, чтобы показать все Mutant Ape независимо от их внутреннего ID коллекции
-        // Просто фильтруем по пути к изображению и названию
-
-        // ВАЖНО: убираем строгую проверку collectionId для большей гибкости
-        // conditions.push(sql`(
-        //   ${nfts.collectionId} = 2 OR 
-        //   ${nfts.collectionId} = 11
-        // )`);
+        // Строго фильтруем только Mutant Ape NFT
+        // С коллекциями ID=2 и ID=11 (официальная коллекция)
+        // И обязательно проверяем путь к изображению
         
-        // Проверяем, что это Mutant Ape по названию или пути к изображению
+        // Включаем проверку collectionId
         conditions.push(sql`(
-          ${nfts.name} LIKE '%Mutant Ape%' OR
-          ${nfts.imagePath} LIKE '%/mutant_ape%' OR
-          ${nfts.imagePath} LIKE '%/nft_assets/mutant_ape/%'
+          ${nfts.collectionId} = 2 OR 
+          ${nfts.collectionId} = 11
         )`);
         
+        // И дополнительно проверяем, что это Mutant Ape по пути к изображению
+        // ОБЯЗАТЕЛЬНО должен содержать mutant_ape в пути
+        conditions.push(sql`(
+          ${nfts.imagePath} LIKE '%/mutant_ape%'
+        )`);
+        
+        // ИСКЛЮЧАЕМ любые NFT, которые содержат bored_ape в пути
+        conditions.push(sql`${nfts.imagePath} NOT LIKE '%/bored_ape%'`);
+        
+        // ИСКЛЮЧАЕМ любые NFT, имена которых содержат Bored Ape
+        conditions.push(sql`${nfts.name} NOT LIKE '%Bored Ape%'`);
+        
         // Добавляем дополнительное логирование для отладки Mutant Ape
-        console.log('[NFT Marketplace Controller] Применяем расширенный фильтр для Mutant Ape Yacht Club с проверкой путей и имени');
+        console.log('[NFT Marketplace Controller] Применяем СТРОГИЙ фильтр для Mutant Ape Yacht Club: только ID=2/11, путь содержит mutant_ape, нет bored_ape');
       }
     }
     
@@ -267,27 +272,46 @@ router.get('/v2', async (req: Request, res: Response) => {
       id: nft.id,
       tokenId: nft.tokenId,
       collectionName: (() => {
-        // Определяем коллекцию по ID коллекции и пути к изображению
+        // СТРОГО определяем коллекцию по ID коллекции и пути к изображению
         const imagePath = nft.imagePath || '';
         const name = nft.name || '';
         
-        // Проверка на Mutant Ape
-        if (nft.collectionId === 2 || nft.collectionId === 11 || 
-            imagePath.includes('/mutant_ape') || 
-            imagePath.includes('/nft_assets/mutant_ape/') ||
-            name.includes('Mutant Ape')) {
+        // Проверка на Mutant Ape - СТРОГО проверяем collectionId и путь
+        if ((nft.collectionId === 2 || nft.collectionId === 11) && 
+            imagePath.includes('/mutant_ape') && 
+            !imagePath.includes('/bored_ape')) {
           return 'Mutant Ape Yacht Club';
         } 
-        // Проверка на Bored Ape
-        else if (nft.collectionId === 1 || 
-                imagePath.includes('/bored_ape') || 
-                name.includes('Bored Ape')) {
+        // Проверка на Bored Ape - СТРОГО проверяем collectionId и путь
+        else if (nft.collectionId === 1 && 
+                imagePath.includes('/bored_ape') && 
+                !imagePath.includes('/mutant_ape')) {
           return 'Bored Ape Yacht Club';
         }
-        // Если не удалось определить, но в названии есть "Ape", считаем это обезьяной BAYC
-        else if (name.includes('Ape')) {
+        // Если остались не определенные, но в пути есть только mutant_ape
+        else if (imagePath.includes('/mutant_ape') && !imagePath.includes('/bored_ape')) {
+          return 'Mutant Ape Yacht Club';
+        }
+        // Если остались не определенные, но в пути есть только bored_ape
+        else if (imagePath.includes('/bored_ape') && !imagePath.includes('/mutant_ape')) {
           return 'Bored Ape Yacht Club';
         }
+        // Если не удалось определить по пути, смотрим на название
+        else if (name.includes('Mutant Ape') && !name.includes('Bored Ape')) {
+          return 'Mutant Ape Yacht Club';
+        }
+        else if (name.includes('Bored Ape') && !name.includes('Mutant Ape')) {
+          return 'Bored Ape Yacht Club';
+        }
+        // Fallback - возвращаем имя на основе ID коллекции (самый надежный способ)
+        else if (nft.collectionId === 2 || nft.collectionId === 11) {
+          return 'Mutant Ape Yacht Club';
+        }
+        else if (nft.collectionId === 1) {
+          return 'Bored Ape Yacht Club';
+        }
+        
+        // Если всё ещё не определили, возвращаем пустую строку
         return '';
       })(),
       name: nft.name,

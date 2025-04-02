@@ -189789,5 +189789,96 @@
     "btcToUsd": "87181",
     "ethToUsd": "1909.05",
     "updatedAt": "2025-04-02T17:23:56.852Z"
+  },
+  {
+    "id": 27124,
+    "usdToUah": "41.40307",
+    "btcToUsd": "87013",
+    "ethToUsd": "1905.91",
+    "updatedAt": "2025-04-02T17:24:35.665Z"
+  },
+  {
+    "id": 27125,
+    "usdToUah": "41.40307",
+    "btcToUsd": "87013",
+    "ethToUsd": "1905.91",
+    "updatedAt": "2025-04-02T17:25:04.180Z"
+  },
+  {
+    "id": 27126,
+    "usdToUah": "41.40307",
+    "btcToUsd": "87013",
+    "ethToUsd": "1905.91",
+    "updatedAt": "2025-04-02T17:25:34.179Z"
+  },
+  {
+    "id": 27127,
+    "usdToUah": "41.40307",
+    "btcToUsd": "87013",
+    "ethToUsd": "1905.91",
+    "updatedAt": "2025-04-02T17:26:04.179Z"
+  },
+  {
+    "id": 27128,
+    "usdToUah": "41.40307",
+    "btcToUsd": "86505",
+    "ethToUsd": "1891.45",
+    "updatedAt": "2025-04-02T18:15:23.723Z"
+  },
+  {
+    "id": 27129,
+    "usdToUah": "41.40307",
+    "btcToUsd": "86505",
+    "ethToUsd": "1891.45",
+    "updatedAt": "2025-04-02T18:15:51.292Z"
+  },
+  {
+    "id": 27130,
+    "usdToUah": "41.40307",
+    "btcToUsd": "86505",
+    "ethToUsd": "1891.45",
+    "updatedAt": "2025-04-02T18:16:21.293Z"
+  },
+  {
+    "id": 27131,
+    "usdToUah": "41.40307",
+    "btcToUsd": "86505",
+    "ethToUsd": "1891.45",
+    "updatedAt": "2025-04-02T18:16:51.294Z"
+  },
+  {
+    "id": 27132,
+    "usdToUah": "41.40307",
+    "btcToUsd": "86505",
+    "ethToUsd": "1891.45",
+    "updatedAt": "2025-04-02T18:17:21.293Z"
+  },
+  {
+    "id": 27133,
+    "usdToUah": "41.40307",
+    "btcToUsd": "86505",
+    "ethToUsd": "1891.45",
+    "updatedAt": "2025-04-02T18:17:51.294Z"
+  },
+  {
+    "id": 27134,
+    "usdToUah": "41.40307",
+    "btcToUsd": "86505",
+    "ethToUsd": "1891.45",
+    "updatedAt": "2025-04-02T18:18:21.294Z"
+  },
+  {
+    "id": 27135,
+    "usdToUah": "41.40307",
+    "btcToUsd": "86505",
+    "ethToUsd": "1891.45",
+    "updatedAt": "2025-04-02T18:18:51.294Z"
+  },
+  {
+    "id": 27136,
+    "usdToUah": "41.40307",
+    "btcToUsd": "86454",
+    "ethToUsd": "1891.1",
+    "updatedAt": "2025-04-02T18:23:50.770Z"
   }
 ]

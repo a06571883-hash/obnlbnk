@@ -178,17 +178,24 @@ export const NFTMarketplace: React.FC = () => {
       
       // Улучшенная проверка типа обезьяны
       // Используем ИЛИ вместо И, чтобы учесть как коллекцию, так и путь к изображению
+      // СТРОГАЯ проверка на Mutant Ape
       const isMutantApe = (
-        nft.collectionName === 'Mutant Ape Yacht Club' || 
-        (nft.imagePath && (
-          nft.imagePath.includes('/mutant_ape_nft/') || 
-          nft.imagePath.includes('/mutant_ape_official/')
-        ))
+        // Приоритет 1: Имя и путь к изображению должны соответствовать Mutant Ape
+        (nft.collectionName === 'Mutant Ape Yacht Club' && 
+         nft.imagePath && (
+           nft.imagePath.includes('/mutant_ape_nft/') || 
+           nft.imagePath.includes('/mutant_ape_official/')
+         ) && 
+         !nft.imagePath.includes('/bored_ape_nft/'))
       );
       
+      // СТРОГАЯ проверка на Bored Ape
       const isBoredApe = (
-        nft.collectionName === 'Bored Ape Yacht Club' || 
-        (nft.imagePath && nft.imagePath.includes('/bored_ape_nft/'))
+        // Приоритет 1: Имя и путь к изображению должны соответствовать Bored Ape
+        (nft.collectionName === 'Bored Ape Yacht Club' && 
+         nft.imagePath && 
+         nft.imagePath.includes('/bored_ape_nft/') && 
+         !nft.imagePath.includes('/mutant_ape'))
       );
       
       // Проверяем фильтр коллекции
@@ -626,21 +633,21 @@ export const NFTMarketplace: React.FC = () => {
                     )}
                   </div>
                   <CardContent className="p-2 sm:p-3">
-                    {/* Корректируем имя NFT на основе пути к изображению */}
+                    {/* СТРОГАЯ коррекция имени NFT на основе путей к изображению и коллекций */}
                     <h3 className="font-semibold text-xs sm:text-sm truncate">
-                      {nft.imagePath && nft.imagePath.includes('mutant_ape') 
+                      {nft.imagePath && nft.imagePath.includes('mutant_ape') && nft.collectionName === 'Mutant Ape Yacht Club'
                         ? `Mutant Ape #${nft.tokenId}`
-                        : nft.imagePath && nft.imagePath.includes('bored_ape')
+                        : nft.imagePath && nft.imagePath.includes('bored_ape') && nft.collectionName === 'Bored Ape Yacht Club'
                           ? `Bored Ape #${nft.tokenId}`
                           : nft.name}
                     </h3>
-                    {/* Корректное отображение названия коллекции */}
+                    {/* СТРОГОЕ отображение названия коллекции */}
                     <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 mb-0.5 truncate">
-                      {nft.imagePath && nft.imagePath.includes('mutant_ape')
+                      {nft.imagePath && nft.imagePath.includes('mutant_ape') && !nft.imagePath.includes('bored_ape')
                         ? 'Mutant Ape Yacht Club'
-                        : nft.imagePath && nft.imagePath.includes('bored_ape')
+                        : nft.imagePath && nft.imagePath.includes('bored_ape') && !nft.imagePath.includes('mutant_ape')
                           ? 'Bored Ape Yacht Club'
-                          : nft.collectionName || 'Bored Ape Yacht Club'}
+                          : nft.collectionName || ''}
                     </div>
                     <div className="flex justify-between items-center mt-0.5">
                       <span className="text-[10px] sm:text-xs text-muted-foreground">Сила: {calculatePower(nft)}</span>
@@ -786,9 +793,9 @@ export const NFTMarketplace: React.FC = () => {
           <DialogContent className="max-w-[95%] sm:max-w-md max-h-[90vh] overflow-auto p-3 sm:p-6">
             <DialogHeader className="pb-2 sm:pb-4">
               <DialogTitle className="text-base sm:text-lg">
-                {selectedNFT.imagePath && selectedNFT.imagePath.includes('mutant_ape') 
+                {selectedNFT.imagePath && selectedNFT.imagePath.includes('mutant_ape') && !selectedNFT.imagePath.includes('bored_ape') && selectedNFT.collectionName === 'Mutant Ape Yacht Club'
                   ? `Mutant Ape #${selectedNFT.tokenId}`
-                  : selectedNFT.imagePath && selectedNFT.imagePath.includes('bored_ape')
+                  : selectedNFT.imagePath && selectedNFT.imagePath.includes('bored_ape') && !selectedNFT.imagePath.includes('mutant_ape') && selectedNFT.collectionName === 'Bored Ape Yacht Club'
                     ? `Bored Ape #${selectedNFT.tokenId}`
                     : selectedNFT.name}
               </DialogTitle>
@@ -836,11 +843,11 @@ export const NFTMarketplace: React.FC = () => {
                 <div>
                   <h4 className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1">Коллекция</h4>
                   <p className="text-xs text-muted-foreground">
-                    {selectedNFT.imagePath && selectedNFT.imagePath.includes('mutant_ape')
+                    {selectedNFT.imagePath && selectedNFT.imagePath.includes('mutant_ape') && !selectedNFT.imagePath.includes('bored_ape')
                       ? 'Mutant Ape Yacht Club'
-                      : selectedNFT.imagePath && selectedNFT.imagePath.includes('bored_ape')
+                      : selectedNFT.imagePath && selectedNFT.imagePath.includes('bored_ape') && !selectedNFT.imagePath.includes('mutant_ape')
                         ? 'Bored Ape Yacht Club'
-                        : selectedNFT.collectionName || 'Bored Ape Yacht Club'}
+                        : selectedNFT.collectionName || ''}
                   </p>
                 </div>
                 <div>
