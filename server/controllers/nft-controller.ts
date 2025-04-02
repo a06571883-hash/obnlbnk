@@ -340,24 +340,50 @@ router.get('/marketplace', async (req: Request, res: Response) => {
           // Определяем название коллекции
           let collectionName = "Bored Ape Yacht Club"; // Дефолтное название
           
+          // Проверяем наличие ключевых слов в названии и пути к изображению для определения типа коллекции
+          const isMutantApe = nft.name?.toLowerCase().includes('mutant') || 
+                             (nft.imagePath && nft.imagePath.includes('mutant_ape'));
+          
+          if (isMutantApe) {
+            collectionName = "Mutant Ape Yacht Club";
+            log(`NFT #${nft.id} определен как Mutant Ape по имени: ${nft.name} или пути: ${nft.imagePath}`);
+          }
+          
+          // Если коллекция пока не определена, проверяем по ID коллекции
+          if (nft.collectionId === 2) {
+            collectionName = "Mutant Ape Yacht Club";
+            log(`NFT #${nft.id} определен как Mutant Ape по collectionId: ${nft.collectionId}`);
+          }
+          
           // Пробуем получить реальное название коллекции из базы данных
           try {
             const collectionInfo = await db.select().from(nftCollections).where(eq(nftCollections.id, nft.collectionId)).limit(1);
             if (collectionInfo && collectionInfo.length > 0) {
               collectionName = collectionInfo[0].name;
+              log(`NFT #${nft.id} получил название коллекции из БД: "${collectionName}"`);
             }
           } catch (err) {
             console.log('Ошибка при получении названия коллекции:', err);
+          }
+          
+          // Корректируем путь к изображению для Mutant Ape если путь указывает на Bored Ape
+          let imagePath = nft.originalImagePath || nft.imagePath;
+          if (collectionName === "Mutant Ape Yacht Club" && imagePath && imagePath.includes('bored_ape_nft')) {
+            // Заменяем путь на корректный для Mutant Ape
+            const oldPath = imagePath;
+            imagePath = imagePath.replace('/bored_ape_nft/', '/mutant_ape_nft/');
+            log(`Исправлен путь к изображению для Mutant Ape NFT #${nft.id}: ${oldPath} -> ${imagePath}`);
           }
           
           return {
             id: nft.id,
             tokenId: nft.tokenId,
             collectionName: collectionName,
+            collectionId: nft.collectionId,
             name: nft.name,
             description: nft.description || '',
-            imagePath: nft.originalImagePath || nft.imagePath, // Используем оригинальный путь к изображению, если он есть
-            imageUrl: nft.originalImagePath || nft.imagePath, // Для совместимости с фронтендом
+            imagePath: imagePath,
+            imageUrl: imagePath, // Для совместимости с фронтендом
             price: nft.price || "0",
             forSale: nft.forSale,
             ownerId: nft.ownerId,

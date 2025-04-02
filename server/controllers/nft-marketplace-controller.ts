@@ -14,8 +14,8 @@ const router = Router();
 // Добавляем дополнительное логирование для отладки
 const VERBOSE_DEBUG = true;
 
-// Включаем логирование, если нужно
-const DEBUG = process.env.DEBUG === 'true';
+// Принудительно включаем логирование для отладки проблемы с отображением Mutant Apes
+const DEBUG = true;
 function log(...args: any[]) {
   if (DEBUG) {
     console.log('[NFT Marketplace Controller]', ...args);
@@ -92,16 +92,30 @@ router.get('/v2', async (req: Request, res: Response) => {
     if (collection) log(`collection=${collection}`);
     
     // Создаем базовые условия для запроса - NFT на продаже
-    // Добавляем фильтр, чтобы отображать только NFT обезьян (по collection_id)
-    // Добавляем коллекцию с ID 11 - официальная коллекция Mutant Ape
+    // Показываем все NFT на продаже без жесткой фильтрации по collectionId
+    // Особое детальное логирование, если включен режим DEBUG
+    if (DEBUG) {
+      console.log('[NFT Marketplace Controller] Запрос на получение NFT на продаже активирован');
+      console.log('[NFT Marketplace Controller] Текущая фильтрация по коллекции:', collection);
+    }
+  
     let conditions = [
       eq(nfts.forSale, true),
       sql`(
-        ${nfts.collectionId} = 1 OR 
-        ${nfts.collectionId} = 2 OR
-        ${nfts.collectionId} = 11
+        ${nfts.name} LIKE '%Ape%' OR
+        ${nfts.imagePath} LIKE '%ape%' OR
+        ${nfts.collectionId} IN (1, 2, 11)
       )`
     ];
+    
+    // Оторажаем условия в логах, если включен режим отладки
+    if (DEBUG) {
+      console.log('[NFT Marketplace Controller] Базовые условия фильтрации:');
+      console.log('   - forSale = true');
+      console.log('   - name содержит "Ape" ИЛИ');
+      console.log('   - imagePath содержит "ape" ИЛИ');
+      console.log('   - collectionId в (1, 2, 11)');
+    }
     
     // Добавляем условия фильтрации по цене
     if (minPrice !== undefined) {
@@ -134,20 +148,24 @@ router.get('/v2', async (req: Request, res: Response) => {
         conditions.push(sql`${nfts.imagePath} LIKE '%/bored_ape_nft/%'`);
       } else if (collection.toLowerCase() === 'mutant') {
         // Фильтруем только "Mutant Ape Yacht Club" с коллекциями ID=2 и ID=11 (официальная коллекция)
-        conditions.push(sql`(
-          ${nfts.collectionId} = 2 OR 
-          ${nfts.collectionId} = 11
-        )`);
+        // Но не применяем фильтр по ID, чтобы показать все Mutant Ape независимо от их внутреннего ID коллекции
+        // Просто фильтруем по пути к изображению и названию
+
+        // ВАЖНО: убираем строгую проверку collectionId для большей гибкости
+        // conditions.push(sql`(
+        //   ${nfts.collectionId} = 2 OR 
+        //   ${nfts.collectionId} = 11
+        // )`);
         
-        // Убедимся, что путь содержит mutant_ape для точной фильтрации
+        // Проверяем, что это Mutant Ape по названию или пути к изображению
         conditions.push(sql`(
-          ${nfts.imagePath} LIKE '%/mutant_ape_nft/%' OR
-          ${nfts.imagePath} LIKE '%/mutant_ape_official/%' OR
+          ${nfts.name} LIKE '%Mutant Ape%' OR
+          ${nfts.imagePath} LIKE '%/mutant_ape%' OR
           ${nfts.imagePath} LIKE '%/nft_assets/mutant_ape/%'
         )`);
         
         // Добавляем дополнительное логирование для отладки Mutant Ape
-        console.log('[NFT Marketplace Controller] Применяем расширенный фильтр для Mutant Ape Yacht Club с проверкой путей');
+        console.log('[NFT Marketplace Controller] Применяем расширенный фильтр для Mutant Ape Yacht Club с проверкой путей и имени');
       }
     }
     
@@ -219,15 +237,55 @@ router.get('/v2', async (req: Request, res: Response) => {
     // Выполняем запрос
     const results = await finalQuery;
     
+    console.log(`[NFT Marketplace Controller] Найдено ${results.length} NFT по заданным критериям. Коллекция: ${collection || 'все'}`);
+    
+    if (collection === 'mutant' && VERBOSE_DEBUG) {
+      // Выводим информацию о найденных Mutant Ape для отладки
+      const mutantApes = results.filter(nft => 
+        nft.collectionId === 2 || 
+        nft.collectionId === 11 || 
+        (nft.imagePath && (
+          nft.imagePath.includes('/mutant_ape') || 
+          nft.imagePath.includes('/nft_assets/mutant_ape/') ||
+          nft.imagePath.includes('mutant')
+        )) ||
+        (nft.name && nft.name.toLowerCase().includes('mutant'))
+      );
+      
+      console.log(`[NFT Marketplace Controller] В ответе найдено ${mutantApes.length} NFT Mutant Ape из ${results.length}`);
+      
+      // Выводим первые несколько для проверки
+      if (mutantApes.length > 0) {
+        const first3 = mutantApes.slice(0, 3);
+        console.log('[NFT Marketplace Controller] Примеры Mutant Ape NFT:');
+        first3.forEach(nft => console.log(`  - ID: ${nft.id}, Name: ${nft.name}, Path: ${nft.imagePath}, CollectionId: ${nft.collectionId}`));
+      }
+    }
+    
     // Преобразуем результаты в единый формат
     const formattedNFTs = results.map((nft: any) => ({
       id: nft.id,
       tokenId: nft.tokenId,
       collectionName: (() => {
-        // Определяем коллекцию по ID коллекции
-        if (nft.collectionId === 2 || nft.collectionId === 11) {
+        // Определяем коллекцию по ID коллекции и пути к изображению
+        const imagePath = nft.imagePath || '';
+        const name = nft.name || '';
+        
+        // Проверка на Mutant Ape
+        if (nft.collectionId === 2 || nft.collectionId === 11 || 
+            imagePath.includes('/mutant_ape') || 
+            imagePath.includes('/nft_assets/mutant_ape/') ||
+            name.includes('Mutant Ape')) {
           return 'Mutant Ape Yacht Club';
-        } else if (nft.collectionId === 1) {
+        } 
+        // Проверка на Bored Ape
+        else if (nft.collectionId === 1 || 
+                imagePath.includes('/bored_ape') || 
+                name.includes('Bored Ape')) {
+          return 'Bored Ape Yacht Club';
+        }
+        // Если не удалось определить, но в названии есть "Ape", считаем это обезьяной BAYC
+        else if (name.includes('Ape')) {
           return 'Bored Ape Yacht Club';
         }
         return '';

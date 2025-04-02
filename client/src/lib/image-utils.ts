@@ -28,11 +28,30 @@ enum NFTCollectionType {
 function detectCollectionType(imagePath: string): NFTCollectionType {
   if (!imagePath) return NFTCollectionType.OTHER;
   
+  // Проверяем случаи с Mutant Ape с максимальной гибкостью
+  // ВАЖНО: сначала идут самые конкретные проверки
   if (imagePath.includes('mutant_ape_official')) {
     return NFTCollectionType.MUTANT_APE_OFFICIAL;
-  } else if (imagePath.includes('mutant_ape')) {
+  } else if (
+      imagePath.includes('mutant_ape_nft') || 
+      imagePath.includes('mutant_ape/') || 
+      imagePath.includes('/mutant_ape') || 
+      imagePath.includes('nft_assets/mutant_ape')
+  ) {
     return NFTCollectionType.MUTANT_APE;
-  } else if (imagePath.includes('bored_ape_nft') || imagePath.includes('bayc_official')) {
+  } else if (
+      imagePath.includes('bored_ape_nft') || 
+      imagePath.includes('bayc_official') || 
+      imagePath.includes('/bored_ape/')
+  ) {
+    return NFTCollectionType.BORED_APE;
+  }
+  
+  // Дополнительная проверка на основе имени файла
+  // Если в имени файла содержится mutant_ape, то это Mutant Ape
+  if (imagePath.includes('mutant_ape')) {
+    return NFTCollectionType.MUTANT_APE;
+  } else if (imagePath.includes('bored_ape')) {
     return NFTCollectionType.BORED_APE;
   }
   
