@@ -626,10 +626,21 @@ export const NFTMarketplace: React.FC = () => {
                     )}
                   </div>
                   <CardContent className="p-2 sm:p-3">
-                    <h3 className="font-semibold text-xs sm:text-sm truncate">{nft.name}</h3>
-                    {/* Добавляем отображение названия коллекции */}
+                    {/* Корректируем имя NFT на основе пути к изображению */}
+                    <h3 className="font-semibold text-xs sm:text-sm truncate">
+                      {nft.imagePath && nft.imagePath.includes('mutant_ape') 
+                        ? `Mutant Ape #${nft.tokenId}`
+                        : nft.imagePath && nft.imagePath.includes('bored_ape')
+                          ? `Bored Ape #${nft.tokenId}`
+                          : nft.name}
+                    </h3>
+                    {/* Корректное отображение названия коллекции */}
                     <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 mb-0.5 truncate">
-                      {nft.collectionName || 'Bored Ape Yacht Club'}
+                      {nft.imagePath && nft.imagePath.includes('mutant_ape')
+                        ? 'Mutant Ape Yacht Club'
+                        : nft.imagePath && nft.imagePath.includes('bored_ape')
+                          ? 'Bored Ape Yacht Club'
+                          : nft.collectionName || 'Bored Ape Yacht Club'}
                     </div>
                     <div className="flex justify-between items-center mt-0.5">
                       <span className="text-[10px] sm:text-xs text-muted-foreground">Сила: {calculatePower(nft)}</span>
@@ -774,7 +785,13 @@ export const NFTMarketplace: React.FC = () => {
         <Dialog open={!!selectedNFT} onOpenChange={(open) => !open && setSelectedNFT(null)}>
           <DialogContent className="max-w-[95%] sm:max-w-md max-h-[90vh] overflow-auto p-3 sm:p-6">
             <DialogHeader className="pb-2 sm:pb-4">
-              <DialogTitle className="text-base sm:text-lg">{selectedNFT.name}</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">
+                {selectedNFT.imagePath && selectedNFT.imagePath.includes('mutant_ape') 
+                  ? `Mutant Ape #${selectedNFT.tokenId}`
+                  : selectedNFT.imagePath && selectedNFT.imagePath.includes('bored_ape')
+                    ? `Bored Ape #${selectedNFT.tokenId}`
+                    : selectedNFT.name}
+              </DialogTitle>
               <DialogDescription className="text-[10px] sm:text-xs">
                 Token ID: {selectedNFT.tokenId}
               </DialogDescription>
@@ -815,10 +832,16 @@ export const NFTMarketplace: React.FC = () => {
               </div>
               
               <div className="space-y-3 sm:space-y-4">
-                {/* Добавляем отображение названия коллекции */}
+                {/* Корректное отображение названия коллекции */}
                 <div>
                   <h4 className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1">Коллекция</h4>
-                  <p className="text-xs text-muted-foreground">{selectedNFT.collectionName || 'Bored Ape Yacht Club'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedNFT.imagePath && selectedNFT.imagePath.includes('mutant_ape')
+                      ? 'Mutant Ape Yacht Club'
+                      : selectedNFT.imagePath && selectedNFT.imagePath.includes('bored_ape')
+                        ? 'Bored Ape Yacht Club'
+                        : selectedNFT.collectionName || 'Bored Ape Yacht Club'}
+                  </p>
                 </div>
                 <div>
                   <h4 className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1">Описание</h4>
