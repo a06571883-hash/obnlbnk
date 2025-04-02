@@ -139,8 +139,15 @@ router.get('/v2', async (req: Request, res: Response) => {
           ${nfts.collectionId} = 11
         )`);
         
+        // Убедимся, что путь содержит mutant_ape для точной фильтрации
+        conditions.push(sql`(
+          ${nfts.imagePath} LIKE '%/mutant_ape_nft/%' OR
+          ${nfts.imagePath} LIKE '%/mutant_ape_official/%' OR
+          ${nfts.imagePath} LIKE '%/nft_assets/mutant_ape/%'
+        )`);
+        
         // Добавляем дополнительное логирование для отладки Mutant Ape
-        console.log('[NFT Marketplace Controller] Применяем фильтр для Mutant Ape Yacht Club');
+        console.log('[NFT Marketplace Controller] Применяем расширенный фильтр для Mutant Ape Yacht Club с проверкой путей');
       }
     }
     

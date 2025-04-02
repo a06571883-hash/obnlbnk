@@ -331,20 +331,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Если есть запрос для Mutant Ape и есть параметры запроса,
       // создаем обновленный URL с нужными параметрами
-      if (baseUrl.includes('mutant_ape') && queryString) {
+      if ((baseUrl.includes('mutant_ape') || baseUrl.includes('nft_assets/mutant_ape')) && queryString) {
         const params = new URLSearchParams(queryString);
-        // Определяем тип коллекции на основе URL
+        
+        // Определяем тип коллекции и директорию на основе URL
         const isOfficial = baseUrl.includes('mutant_ape_official');
+        const isNftAssets = baseUrl.includes('nft_assets/mutant_ape');
         const collectionType = isOfficial ? 'official' : 'mutant';
+        
+        // Устанавливаем правильную директорию в зависимости от пути и коллекции
+        let dirPath = isOfficial ? 'mutant_ape_official' : 'mutant_ape_nft';
+        if (isNftAssets) {
+          dirPath = 'nft_assets/mutant_ape';
+        }
         
         // Убеждаемся, что параметр collection задан
         if (!params.has('collection')) {
           params.set('collection', collectionType);
         }
         
+        // Устанавливаем параметр dir, если он не задан или нужно обновить
+        if (!params.has('dir') || isNftAssets) {
+          params.set('dir', dirPath);
+        }
+        
         // Создаем обновленный URL с параметрами
         finalPath = `${baseUrl}?${params.toString()}`;
-        console.log(`[NFT Proxy] Создан обновленный URL для Mutant Ape: ${finalPath}`);
+        console.log(`[NFT Proxy] Создан обновленный URL для Mutant Ape: ${finalPath}, dir=${dirPath}`);
       }
       
       const proxyOptions = {

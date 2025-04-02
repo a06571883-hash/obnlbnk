@@ -117,10 +117,18 @@ export function getProxiedImageUrl(imagePath: string): string {
       const isOfficial = collectionType === NFTCollectionType.MUTANT_APE_OFFICIAL;
       
       // Специальные параметры для гарантированной загрузки Mutant Ape NFT
-      const enhancedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&collection=${isOfficial ? 'official' : 'mutant'}&nocache=true&mutant=true&n=${nftNumber}&force=true&dir=${isOfficial ? 'mutant_ape_official' : 'mutant_ape_nft'}`;
+      // Определяем директорию на основе пути и типа коллекции
+      let imageDir = 'mutant_ape_nft';
+      if (isOfficial) {
+        imageDir = 'mutant_ape_official';
+      } else if (imagePath.includes('nft_assets/mutant_ape')) {
+        imageDir = 'nft_assets/mutant_ape';
+      }
+      
+      const enhancedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&collection=${isOfficial ? 'official' : 'mutant'}&nocache=true&mutant=true&n=${nftNumber}&force=true&dir=${imageDir}`;
       
       if (DEBUG_MODE) {
-        console.log(`${isOfficial ? '🔵' : '🟢'} MUTANT APE ${isOfficial ? '(OFFICIAL)' : ''} #${nftNumber}: ${imagePath} -> ${enhancedPath}`);
+        console.log(`${isOfficial ? '🔵' : '🟢'} MUTANT APE ${isOfficial ? '(OFFICIAL)' : ''} #${nftNumber}: ${imagePath} -> ${enhancedPath}, dir=${imageDir}`);
       }
       
       return enhancedPath;
