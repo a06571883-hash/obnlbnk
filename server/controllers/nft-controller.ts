@@ -269,11 +269,23 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       log('Получаем NFT с помощью Drizzle ORM из таблицы nfts...');
       
       // База запроса - NFT на продаже - показываем все NFT
+      // Выбираем NFT, которые выставлены на продажу и относятся к коллекциям Bored Ape или Mutant Ape
+      // Используем SQL для обработки LIKE запросов
       let query = db.select()
         .from(nfts)
-        .where(eq(nfts.forSale, true));
+        .where(and(
+          eq(nfts.forSale, true),
+          sql`(
+            ${nfts.name} LIKE '%Bored Ape%' OR 
+            ${nfts.name} LIKE '%Mutant Ape%' OR
+            ${nfts.imagePath} LIKE '%bored_ape%' OR 
+            ${nfts.imagePath} LIKE '%mutant_ape%' OR
+            ${nfts.originalImagePath} LIKE '%bored_ape%' OR 
+            ${nfts.originalImagePath} LIKE '%mutant_ape%'
+          )`
+        ));
       
-      // Показываем все NFT на продаже, включая те, которые принадлежат текущему пользователю
+      // Показываем все NFT на продаже из обеих коллекций (BAYC и MAYC)
       
       // Выполняем запрос с сортировкой по случайному полю (если оно есть) или по ID
       let nftsForSaleResult;
@@ -380,9 +392,18 @@ router.get('/marketplace', async (req: Request, res: Response) => {
       // Убираем лимит, чтобы получить все NFT
       try {
         // Пробуем использовать сортировку по цене от низкой к высокой
+        // И добавляем фильтр для выбора обезьян Bored Ape и Mutant Ape
         legacyNFTResult = await client`
           SELECT * FROM nft 
           WHERE for_sale = true 
+          AND (
+            name LIKE '%Bored Ape%' OR 
+            name LIKE '%Mutant Ape%' OR
+            image_url LIKE '%bored_ape%' OR 
+            image_url LIKE '%mutant_ape%' OR
+            original_image_path LIKE '%bored_ape%' OR 
+            original_image_path LIKE '%mutant_ape%'
+          )
           ORDER BY cast(price as numeric) ASC
           LIMIT 500
         `;
@@ -393,6 +414,14 @@ router.get('/marketplace', async (req: Request, res: Response) => {
           legacyNFTResult = await client`
             SELECT * FROM nft 
             WHERE for_sale = true 
+            AND (
+              name LIKE '%Bored Ape%' OR 
+              name LIKE '%Mutant Ape%' OR
+              image_url LIKE '%bored_ape%' OR 
+              image_url LIKE '%mutant_ape%' OR
+              original_image_path LIKE '%bored_ape%' OR 
+              original_image_path LIKE '%mutant_ape%'
+            )
             ORDER BY sort_order
             LIMIT 500
           `;
@@ -402,6 +431,14 @@ router.get('/marketplace', async (req: Request, res: Response) => {
           legacyNFTResult = await client`
             SELECT * FROM nft 
             WHERE for_sale = true 
+            AND (
+              name LIKE '%Bored Ape%' OR 
+              name LIKE '%Mutant Ape%' OR
+              image_url LIKE '%bored_ape%' OR 
+              image_url LIKE '%mutant_ape%' OR
+              original_image_path LIKE '%bored_ape%' OR 
+              original_image_path LIKE '%mutant_ape%'
+            )
             ORDER BY RANDOM()
             LIMIT 500
           `;
@@ -530,7 +567,30 @@ router.get('/marketplace', async (req: Request, res: Response) => {
           }));
           
           // Добавляем результаты в общий массив
-          combinedNFTs = [...combinedNFTs, ...formattedServiceNFTs];
+          // Преобразуем к правильному типу CombinedNFT
+          const typedServiceNFTs: CombinedNFT[] = formattedServiceNFTs.map(nft => ({
+            id: nft.id,
+            tokenId: nft.tokenId?.toString() || '',
+            collectionName: nft.collectionName || 'Bored Ape Yacht Club',
+            name: nft.name || '',
+            description: nft.description || '',
+            imagePath: nft.imagePath || '',
+            imageUrl: nft.imageUrl || nft.imagePath || '',
+            price: nft.price?.toString() || '0',
+            forSale: Boolean(nft.forSale),
+            ownerId: nft.ownerId,
+            creatorId: nft.creatorId || nft.ownerId,
+            ownerUsername: nft.ownerUsername || 'Unknown',
+            attributes: nft.attributes || {
+              power: 70, 
+              agility: 65, 
+              wisdom: 60, 
+              luck: 75
+            },
+            rarity: nft.rarity || 'common'
+          }));
+          
+          combinedNFTs = [...combinedNFTs, ...typedServiceNFTs];
           log(`Добавлено ${formattedServiceNFTs.length} NFT из сервиса в общий результат`);
         }
       } catch (serviceError) {

@@ -1,46 +1,37 @@
 #!/bin/bash
-# Скрипт для запуска всех необходимых компонентов системы
 
-# Цвета для вывода
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Script to start both the main application and NFT server together
+echo "🚀 Starting NFT marketplace application with full image server support..."
 
-echo -e "${BLUE}🚀 Запуск всех компонентов системы...${NC}"
+# Create a flag file to indicate the full start mode
+touch .full_startup_mode
 
-# Остановка всех процессов Node.js
-echo -e "${YELLOW}⚠️ Останавливаем все процессы Node.js...${NC}"
-pkill -f "node" || true
-sleep 1
+# Start the NFT server in the background
+echo "📊 Starting NFT image server..."
+node start-nft-server.js &
+NFT_SERVER_PID=$!
+echo "✅ NFT server started with PID: $NFT_SERVER_PID"
 
-# Проверка, что все процессы остановлены
-NODE_PROCESSES=$(pgrep -f "node" | wc -l)
-if [ "$NODE_PROCESSES" -gt 0 ]; then
-  echo -e "${YELLOW}⚠️ Принудительно останавливаем оставшиеся процессы Node.js...${NC}"
-  pkill -9 -f "node" || true
-  sleep 1
-fi
-
-# Установка порта для NFT сервера
-NFT_SERVER_PORT=8081
-echo $NFT_SERVER_PORT > nft-server-port.txt
-echo -e "${GREEN}✅ Установлен порт NFT сервера: ${NFT_SERVER_PORT}${NC}"
-
-# Запуск NFT сервера в фоновом режиме
-echo -e "${BLUE}🚀 Запуск NFT сервера...${NC}"
-node start-nft-server.js > nft-server.log 2>&1 &
-echo -e "${GREEN}✅ NFT сервер запущен в фоне (логи: nft-server.log)${NC}"
-
-# Проверка запуска NFT сервера
+# Wait a moment for the NFT server to initialize
 sleep 2
-if pgrep -f "start-nft-server.js" > /dev/null; then
-  echo -e "${GREEN}✅ NFT сервер успешно запущен${NC}"
-else
-  echo -e "${RED}❌ Не удалось запустить NFT сервер${NC}"
-fi
 
-# Запуск основного сервера
-echo -e "${BLUE}🚀 Запуск основного сервера...${NC}"
+# Start the main application
+echo "🌐 Starting main application..."
 npm run dev
+
+# Cleanup when the script is terminated
+function cleanup() {
+  echo "🛑 Shutting down all servers..."
+  if [ -n "$NFT_SERVER_PID" ]; then
+    kill $NFT_SERVER_PID
+    echo "✅ NFT server stopped"
+  fi
+  rm -f .full_startup_mode
+  exit 0
+}
+
+# Set up signal handlers
+trap cleanup SIGINT SIGTERM
+
+# Wait for the main process to complete
+wait
