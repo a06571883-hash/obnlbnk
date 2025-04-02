@@ -22,6 +22,7 @@ import { nfts, nftCollections } from '@shared/schema';
 import nftRoutes from './controllers/nft-controller';
 import nftImportRoutes from './controllers/nft-import-controller';
 import nftMarketplaceRoutes from './controllers/nft-marketplace-controller';
+import nftServerController from './controllers/nft-server-controller';
 // Импортируем маршрут для статических ресурсов
 import { staticAssetsRouter } from './routes/static-assets';
 
@@ -413,6 +414,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Регистрируем маршруты для импорта NFT
   app.use('/api/nft-import', nftImportRoutes);
+  
+  // Регистрируем маршруты для статуса NFT сервера
+  app.use('/api/nft', nftServerController);
   
   // Добавляем синоним для /api/nft/collections для совместимости с рендер-версией
   app.get('/api/nft-collections', ensureAuthenticated, async (req, res) => {

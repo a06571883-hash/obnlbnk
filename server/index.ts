@@ -10,25 +10,49 @@ import { setupGlobalErrorHandlers, logError, errorHandler, notFoundHandler } fro
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 // Получаем текущую директорию для правильного расчета пути к NFT-серверу
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Запускаем отдельный сервер для NFT изображений через специальный стартер
-const nftImageServerPath = path.join(process.cwd(), 'start-nft-server.js');
-const nftImageServer = spawn('node', [nftImageServerPath]);
+// Функция для запуска NFT сервера с определенным портом
+function startNFTImageServer(port: number = 8081) {
+  console.log(`🚀 Запуск NFT Image Server на порту ${port}...`);
+  
+  // Сначала создаем/обновляем файл с портом для других частей системы
+  try {
+    fs.writeFileSync('./nft-server-port.txt', port.toString(), 'utf8');
+    console.log(`✅ Конфигурация порта NFT сервера обновлена: ${port}`);
+  } catch (err) {
+    console.error('❌ Ошибка при создании файла конфигурации порта NFT:', err);
+  }
+  
+  // Теперь запускаем сервер
+  try {
+    const nftImageServerPath = path.join(process.cwd(), 'run-nft-server.js');
+    const nftImageServer = spawn('node', [nftImageServerPath]);
 
-nftImageServer.stdout.on('data', (data) => {
-  console.log(`[NFT Image Server] ${data}`);
-});
+    nftImageServer.stdout.on('data', (data) => {
+      console.log(`[NFT Image Server] ${data}`);
+    });
 
-nftImageServer.stderr.on('data', (data) => {
-  console.error(`[NFT Image Server ERROR] ${data}`);
-});
+    nftImageServer.stderr.on('data', (data) => {
+      console.error(`[NFT Image Server ERROR] ${data}`);
+    });
 
-nftImageServer.on('close', (code) => {
-  console.log(`NFT Image Server exited with code ${code}`);
-});
+    nftImageServer.on('close', (code) => {
+      console.log(`NFT Image Server exited with code ${code}`);
+    });
+    
+    return nftImageServer;
+  } catch (err) {
+    console.error('❌ Ошибка при запуске NFT Image Server:', err);
+    return null;
+  }
+}
+
+// Эта переменная будет установлена позже в createServer
+let nftImageServer: any = null;
 
 // Устанавливаем глобальные обработчики ошибок
 setupGlobalErrorHandlers();
@@ -104,11 +128,38 @@ app.use((req, res, next) => {
 export interface ServerOptions {
   port?: number;
   host?: string;
+  nftServerPort?: number;
+  environment?: 'development' | 'production';
+  logLevel?: 'debug' | 'info' | 'warn' | 'error';
+  forcePostgres?: boolean;
 }
 
 // Экспортируем функцию создания сервера для использования из других модулей
 export async function createServer(options?: ServerOptions) {
   try {
+    // Устанавливаем режим работы в зависимости от параметров
+    if (options?.environment) {
+      process.env.NODE_ENV = options.environment;
+      console.log(`🔄 Установлен режим работы: ${options.environment}`);
+    }
+    
+    // Устанавливаем уровень логирования
+    if (options?.logLevel) {
+      console.log(`🔄 Установлен уровень логирования: ${options.logLevel}`);
+    }
+    
+    // Запускаем NFT сервер, если это еще не было сделано
+    if (!nftImageServer) {
+      const nftServerPort = options?.nftServerPort || 8081;
+      console.log(`🚀 Запуск NFT сервера на порту ${nftServerPort}...`);
+      nftImageServer = startNFTImageServer(nftServerPort);
+    }
+    
+    // Принудительно используем PostgreSQL, если указано
+    if (options?.forcePostgres) {
+      console.log('🔄 Принудительно используем PostgreSQL для базы данных');
+    }
+  
     console.log('Initializing database tables...');
     console.log('Database initialized successfully');
 
