@@ -1,7 +1,69 @@
 /**
  * Обработка путей к изображениям через прокси для обеспечения
  * правильной доставки и типов MIME
+ * 
+ * ВАЖНОЕ ОБНОВЛЕНИЕ: Полностью переработана логика обработки изображений
+ * Mutant Ape NFT для гарантированного корректного отображения
  */
+
+// Для дебаггинга - включите, если необходимо видеть все преобразования путей в консоли
+const DEBUG_MODE = true;
+
+/**
+ * Определяет тип коллекции NFT на основе пути к изображению
+ */
+enum NFTCollectionType {
+  BORED_APE = 'bored',
+  MUTANT_APE = 'mutant',
+  MUTANT_APE_OFFICIAL = 'official',
+  OTHER = 'other'
+}
+
+/**
+ * Определяет тип коллекции на основе пути к изображению
+ * 
+ * @param imagePath Путь к изображению NFT
+ * @returns Тип коллекции
+ */
+function detectCollectionType(imagePath: string): NFTCollectionType {
+  if (!imagePath) return NFTCollectionType.OTHER;
+  
+  if (imagePath.includes('mutant_ape_official')) {
+    return NFTCollectionType.MUTANT_APE_OFFICIAL;
+  } else if (imagePath.includes('mutant_ape')) {
+    return NFTCollectionType.MUTANT_APE;
+  } else if (imagePath.includes('bored_ape_nft') || imagePath.includes('bayc_official')) {
+    return NFTCollectionType.BORED_APE;
+  }
+  
+  return NFTCollectionType.OTHER;
+}
+
+/**
+ * Извлекает номер NFT из пути к изображению
+ * 
+ * @param imagePath Путь к изображению
+ * @returns Номер NFT или случайное число в случае ошибки
+ */
+function extractNFTNumber(imagePath: string): number {
+  // Различные форматы имен файлов, которые мы поддерживаем
+  const patterns = [
+    /mutant_ape_(\d+)\.png/i,  // mutant_ape_0123.png
+    /bored_ape_(\d+)\.png/i,   // bored_ape_0123.png
+    /ape_(\d+)\.png/i,         // ape_0123.png
+    /nft_(\d+)\.png/i          // nft_0123.png
+  ];
+  
+  for (const pattern of patterns) {
+    const matches = imagePath.match(pattern);
+    if (matches && matches[1]) {
+      return parseInt(matches[1], 10);
+    }
+  }
+  
+  // Если номер не найден, возвращаем случайное число
+  return Math.floor(Math.random() * 1000);
+}
 
 /**
  * Преобразует стандартный путь изображения NFT в прокси-путь
@@ -11,72 +73,79 @@
  * @returns Модифицированный путь через прокси, если это NFT изображение
  */
 export function getProxiedImageUrl(imagePath: string): string {
+  // Защита от null/undefined
   if (!imagePath) {
-    // Для пустого пути используем стандартное изображение
-    console.log('Пустой путь к изображению, используем placeholder');
-    return `/nft-proxy/assets/nft/placeholder.png`;
+    if (DEBUG_MODE) console.log('🚫 Пустой путь к изображению, используем placeholder');
+    return `/nft-proxy/assets/nft/placeholder.png?fallback=true`;
   }
 
-  console.log('Обработка пути к изображению NFT:', imagePath);
+  if (DEBUG_MODE) console.log('🔄 Обработка пути к изображению:', imagePath);
 
   // Абсолютный URL - возвращаем как есть
   if (imagePath.startsWith('http')) {
-    console.log('Это абсолютный URL, возвращаем без изменений:', imagePath);
+    if (DEBUG_MODE) console.log('🌐 Абсолютный URL, возвращаем без изменений:', imagePath);
     return imagePath;
   }
 
   // Если путь относительный, добавляем слэш в начало
   if (!imagePath.startsWith('/')) {
     const newPath = '/' + imagePath;
-    console.log('Преобразование относительного пути:', imagePath, '->', newPath);
+    if (DEBUG_MODE) console.log('🔧 Исправление относительного пути:', imagePath, '->', newPath);
     imagePath = newPath;
   }
 
-  // Перенаправляем через прокси любые NFT изображения с особой обработкой для различных коллекций
-  if (imagePath.includes('bayc_official') || 
-      imagePath.includes('bored_ape_nft') || 
-      imagePath.includes('mutant_ape') ||  // Любой тип Mutant Ape
-      imagePath.includes('new_bored_ape') ||
-      imagePath.includes('nft_assets')) {
-    
-    // Генерируем временную метку для обхода кеша браузера
-    const timestamp = new Date().getTime() + Math.floor(Math.random() * 1000);
-    
-    // Особая обработка для Mutant Ape (оба типа) с усиленным обходом кеша
-    if (imagePath.includes('mutant_ape')) {
-      // Определяем тип коллекции
-      const isOfficial = imagePath.includes('mutant_ape_official');
-      const collectionType = isOfficial ? 'official' : 'regular';
+  // Определяем тип коллекции
+  const collectionType = detectCollectionType(imagePath);
+  
+  // Если это не NFT-изображение, возвращаем как есть
+  if (collectionType === NFTCollectionType.OTHER && 
+      !imagePath.includes('nft_assets') && 
+      !imagePath.includes('new_bored_ape')) {
+    if (DEBUG_MODE) console.log('📷 Обычное изображение, возвращаем как есть:', imagePath);
+    return imagePath;
+  }
+  
+  // Базовые параметры для всех NFT
+  const timestamp = new Date().getTime();
+  const random = Math.floor(Math.random() * 1000000);
+  
+  // Дополнительные специфичные параметры в зависимости от типа коллекции
+  switch (collectionType) {
+    case NFTCollectionType.MUTANT_APE:
+    case NFTCollectionType.MUTANT_APE_OFFICIAL: {
+      const nftNumber = extractNFTNumber(imagePath);
+      const isOfficial = collectionType === NFTCollectionType.MUTANT_APE_OFFICIAL;
       
-      // Разбиваем путь и извлекаем номер обезьяны для более стабильной загрузки изображений
-      const matches = imagePath.match(/mutant_ape_(\d+)\.png/);
-      const apeNumber = matches && matches[1] ? parseInt(matches[1]) : Math.floor(Math.random() * 1000);
+      // Специальные параметры для гарантированной загрузки Mutant Ape NFT
+      const enhancedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&collection=${isOfficial ? 'official' : 'mutant'}&nocache=true&mutant=true&n=${nftNumber}&force=true&dir=${isOfficial ? 'mutant_ape_official' : 'mutant_ape_nft'}`;
       
-      // Добавляем несколько уникальных параметров для гарантированного обхода кеша браузера
-      const timestamp = new Date().getTime();
-      const random = Math.floor(Math.random() * 1000000);
+      if (DEBUG_MODE) {
+        console.log(`${isOfficial ? '🔵' : '🟢'} MUTANT APE ${isOfficial ? '(OFFICIAL)' : ''} #${nftNumber}: ${imagePath} -> ${enhancedPath}`);
+      }
       
-      // Улучшенный формат с дополнительными параметрами
-      const enhancedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&collection=${collectionType}&nocache=true&mutant=true&n=${apeNumber}`;
-      
-      console.log(`${isOfficial ? '🔵' : '🟢'} ${isOfficial ? 'OFFICIAL' : 'REGULAR'} MUTANT APE #${apeNumber}: ${imagePath} -> ${enhancedPath}`);
       return enhancedPath;
     }
     
-    // Для Bored Ape NFT тоже добавляем метку времени и идентификатор коллекции
-    if (imagePath.includes('bored_ape_nft')) {
-      const proxiedPath = `/nft-proxy${imagePath}?v=${timestamp}&collection=bored&nocache=true`;
-      console.log('Проксирование Bored Ape NFT с меткой времени:', imagePath, '->', proxiedPath);
+    case NFTCollectionType.BORED_APE: {
+      const nftNumber = extractNFTNumber(imagePath);
+      const proxiedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&collection=bored&nocache=true&n=${nftNumber}`;
+      
+      if (DEBUG_MODE) {
+        console.log(`🟠 BORED APE #${nftNumber}: ${imagePath} -> ${proxiedPath}`);
+      }
+      
       return proxiedPath;
     }
     
-    // Для остальных NFT используем обычное проксирование с меткой времени
-    const proxiedPath = `/nft-proxy${imagePath}?v=${timestamp}`;
-    console.log('Проксирование NFT изображения:', imagePath, '->', proxiedPath);
-    return proxiedPath;
+    default: {
+      // Для других типов NFT
+      const proxiedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&nocache=true`;
+      
+      if (DEBUG_MODE) {
+        console.log(`⚪ ДРУГОЙ NFT: ${imagePath} -> ${proxiedPath}`);
+      }
+      
+      return proxiedPath;
+    }
   }
-
-  // Для других изображений возвращаем исходный путь
-  console.log('Обычное изображение (не NFT), возвращаем как есть:', imagePath);
-  return imagePath;
 }

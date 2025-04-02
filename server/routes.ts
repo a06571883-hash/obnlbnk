@@ -301,26 +301,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Добавляем логирование для отладки проблем с Mutant Ape с учетом параметра collection
       if (baseUrl.includes('mutant_ape_nft') || baseUrl.includes('mutant_ape_official')) {
         // Определяем тип коллекции на основе URL и параметра collection
-        const urlType = baseUrl.includes('mutant_ape_official') ? 'official' : 'regular';
-        const collectionType = collection ? collection : urlType;
+        const urlType = baseUrl.includes('mutant_ape_official') ? 'official' : 'mutant'; // ИСПРАВЛЕНО: используем 'mutant' вместо 'regular'
+        
+        // ИСПРАВЛЕНО: даем приоритет параметру collection, но проверяем и другие варианты
+        let collectionType = collection;
+        
+        // Если клиент указал параметр mutant=true, то это Mutant Ape
+        if (!collectionType && queryString && new URLSearchParams(queryString).get('mutant') === 'true') {
+          collectionType = 'mutant';
+        }
+        
+        // Если все еще нет типа коллекции, используем тип по URL
+        if (!collectionType) {
+          collectionType = urlType;
+        }
         
         console.log(`[NFT Proxy DEBUG] Обработка запроса изображения Mutant Ape: ${baseUrl}`);
         console.log(`[NFT Proxy DEBUG] Тип коллекции по URL: ${urlType}, параметр collection: ${collection || 'не указан'}`);
         console.log(`[NFT Proxy DEBUG] Итоговый тип коллекции: ${collectionType}`);
         console.log(`[NFT Proxy DEBUG] Полные параметры запроса: ${queryString || 'не указаны'}`);
+        
+        // Удаляем эту часть кода, так как она дублирует функциональность,
+      // которая уже реализована в новом коде выше
       }
       
       // Указываем правильный порт для сервера изображений NFT 
+      // Создаем переменную для хранения обновленного URL, если он был создан
+      let finalPath = proxyUrl;
+      
+      // Если есть запрос для Mutant Ape и есть параметры запроса,
+      // создаем обновленный URL с нужными параметрами
+      if (baseUrl.includes('mutant_ape') && queryString) {
+        const params = new URLSearchParams(queryString);
+        // Определяем тип коллекции на основе URL
+        const isOfficial = baseUrl.includes('mutant_ape_official');
+        const collectionType = isOfficial ? 'official' : 'mutant';
+        
+        // Убеждаемся, что параметр collection задан
+        if (!params.has('collection')) {
+          params.set('collection', collectionType);
+        }
+        
+        // Создаем обновленный URL с параметрами
+        finalPath = `${baseUrl}?${params.toString()}`;
+        console.log(`[NFT Proxy] Создан обновленный URL для Mutant Ape: ${finalPath}`);
+      }
+      
       const proxyOptions = {
         // Используем 127.0.0.1 вместо 0.0.0.0 для гарантированного подключения
         hostname: '127.0.0.1',
         port: nftServerPort,
-        path: proxyUrl, // Используем полный URL с параметрами запроса
+        path: finalPath, // Используем финальный URL с параметрами запроса
         method: req.method,
         headers: { ...req.headers, host: `localhost:${nftServerPort}` }
       };
       
-      console.log(`Proxying NFT request: ${req.url} -> http://127.0.0.1:${nftServerPort}${proxyUrl}`);
+      console.log(`Proxying NFT request: ${req.url} -> http://127.0.0.1:${nftServerPort}${finalPath}`);
       
       // Создаем прокси-запрос на наш NFT сервер
       const proxyReq = http.request(proxyOptions, (proxyRes: any) => {

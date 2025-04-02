@@ -404,9 +404,9 @@ function sendRealNftImage(res, type, originalPath) {
   if (collectionParam === 'official' && (type.includes('mutant') || originalPath.includes('mutant'))) {
     type = 'mutant_ape_official';
     console.log(`[MUTANT DEBUG] Принудительно устанавливаем тип ${type} из-за параметра collection=official`);
-  } else if (collectionParam === 'regular' && (type.includes('mutant') || originalPath.includes('mutant'))) {
+  } else if ((collectionParam === 'regular' || collectionParam === 'mutant') && (type.includes('mutant') || originalPath.includes('mutant'))) {
     type = 'mutant_ape';
-    console.log(`[MUTANT DEBUG] Принудительно устанавливаем тип ${type} из-за параметра collection=regular`);
+    console.log(`[MUTANT DEBUG] Принудительно устанавливаем тип ${type} из-за параметра collection=${collectionParam}`);
   }
   
   // Определяем, относится ли запрос к официальным Mutant Ape,
@@ -417,9 +417,9 @@ function sendRealNftImage(res, type, originalPath) {
   if (collectionParam === 'official') {
     isOfficialMutantApe = true;
     console.log(`[MUTANT DEBUG] Приоритет отдан коллекции 'official' из параметра`);
-  } else if (collectionParam === 'regular') {
+  } else if (collectionParam === 'regular' || collectionParam === 'mutant') {
     isOfficialMutantApe = false;
-    console.log(`[MUTANT DEBUG] Приоритет отдан коллекции 'regular' из параметра`);
+    console.log(`[MUTANT DEBUG] Приоритет отдан коллекции '${collectionParam}' из параметра`);
   }
   
   // Добавляем расширенное логирование
@@ -670,14 +670,15 @@ Object.keys(nftPaths).forEach(route => {
         const reqUrl = req.url || '';
         if (reqUrl.includes('collection=')) {
           const param = reqUrl.includes('collection=official') ? 'official' : 
-                        reqUrl.includes('collection=regular') ? 'regular' : '';
+                        reqUrl.includes('collection=regular') ? 'regular' : 
+                        reqUrl.includes('collection=mutant') ? 'mutant' : '';
           
           if (param === 'official') {
             fallbackType = 'mutant_ape_official';
             console.log(`[MUTANT DEBUG] Переопределяем тип на official из параметра URL: ${reqUrl}`);
-          } else if (param === 'regular') {
+          } else if (param === 'regular' || param === 'mutant') {
             fallbackType = 'mutant_ape';
-            console.log(`[MUTANT DEBUG] Переопределяем тип на regular из параметра URL: ${reqUrl}`);
+            console.log(`[MUTANT DEBUG] Переопределяем тип на ${param} из параметра URL: ${reqUrl}`);
           }
         }
       }
