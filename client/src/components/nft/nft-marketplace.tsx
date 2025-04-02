@@ -123,7 +123,8 @@ export const NFTMarketplace: React.FC = () => {
         
         const mutantCount = data.items?.filter((nft: any) => 
           nft.collectionName === 'Mutant Ape Yacht Club' || 
-          nft.imagePath?.includes('/mutant_ape')
+          nft.imagePath?.includes('/mutant_ape_nft/') ||
+          nft.imagePath?.includes('/mutant_ape_official/')
         ).length || 0;
         
         console.log(`Распределение коллекций в ответе API: Bored Ape=${boredCount}, Mutant Ape=${mutantCount}`);
