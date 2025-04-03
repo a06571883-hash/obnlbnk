@@ -142,35 +142,39 @@ router.get('/v2', async (req: Request, res: Response) => {
     // Добавляем условие фильтрации по коллекции на основе collection_id
     if (collection) {
       if (collection.toLowerCase() === 'bored') {
-        // Фильтруем только "Bored Ape Yacht Club" с коллекцией ID=1
+        // РАДИКАЛЬНЫЙ ФИЛЬТР ТОЛЬКО BORED APE
+        // Используем ТОЛЬКО collection_id для разделения коллекций
         conditions.push(eq(nfts.collectionId, 1));
-        // Дополнительно проверяем, что imagePath содержит /bored_ape_nft/ для точной фильтрации
-        conditions.push(sql`${nfts.imagePath} LIKE '%/bored_ape_nft/%'`);
+        
+        // Полностью исключаем все NFT, которые могут содержать "mutant" в любом виде
+        conditions.push(sql`${nfts.imagePath} NOT LIKE '%mutant%'`);
+        conditions.push(sql`${nfts.name} NOT LIKE '%Mutant%'`);
+        
+        // Для надежности принудительно показываем только те, у которых в пути есть bored_ape
+        conditions.push(sql`(
+          ${nfts.imagePath} LIKE '%bored_ape%' OR
+          ${nfts.imagePath} LIKE '%bayc%'
+        )`);
+        
+        console.log('[NFT Marketplace Controller] Применяем РАДИКАЛЬНЫЙ фильтр для Bored Ape: только ID=1, путь содержит bored_ape или bayc');
+        
       } else if (collection.toLowerCase() === 'mutant') {
-        // Строго фильтруем только Mutant Ape NFT
-        // С коллекциями ID=2 и ID=11 (официальная коллекция)
-        // И обязательно проверяем путь к изображению
+        // РАДИКАЛЬНЫЙ ФИЛЬТР ТОЛЬКО MUTANT APE
+        // Используем ТОЛЬКО collection_id для разделения коллекций
+        conditions.push(eq(nfts.collectionId, 2));
         
-        // Включаем проверку collectionId
-        conditions.push(sql`(
-          ${nfts.collectionId} = 2 OR 
-          ${nfts.collectionId} = 11
-        )`);
+        // Полностью исключаем все NFT, которые могут содержать "bored" в любом виде
+        conditions.push(sql`${nfts.imagePath} NOT LIKE '%bored%'`);
+        conditions.push(sql`${nfts.imagePath} NOT LIKE '%bayc%'`);
+        conditions.push(sql`${nfts.name} NOT LIKE '%Bored%'`);
         
-        // И дополнительно проверяем, что это Mutant Ape по пути к изображению
-        // ОБЯЗАТЕЛЬНО должен содержать mutant_ape в пути
-        conditions.push(sql`(
-          ${nfts.imagePath} LIKE '%/mutant_ape%'
-        )`);
+        // Для надежности принудительно показываем только те, у которых в пути есть mutant_ape
+        conditions.push(sql`${nfts.imagePath} LIKE '%mutant_ape%'`);
         
-        // ИСКЛЮЧАЕМ любые NFT, которые содержат bored_ape в пути
-        conditions.push(sql`${nfts.imagePath} NOT LIKE '%/bored_ape%'`);
+        // Также проверяем, что имя начинается с "Mutant Ape"
+        conditions.push(sql`${nfts.name} LIKE 'Mutant Ape%'`);
         
-        // ИСКЛЮЧАЕМ любые NFT, имена которых содержат Bored Ape
-        conditions.push(sql`${nfts.name} NOT LIKE '%Bored Ape%'`);
-        
-        // Добавляем дополнительное логирование для отладки Mutant Ape
-        console.log('[NFT Marketplace Controller] Применяем СТРОГИЙ фильтр для Mutant Ape Yacht Club: только ID=2/11, путь содержит mutant_ape, нет bored_ape');
+        console.log('[NFT Marketplace Controller] Применяем РАДИКАЛЬНЫЙ фильтр для Mutant Ape: только ID=2, путь содержит mutant_ape, имя начинается с Mutant Ape');
       }
     }
     
