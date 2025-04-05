@@ -6,6 +6,16 @@
  * Mutant Ape NFT для гарантированного корректного отображения
  */
 
+// Вспомогательные функции для работы с путями в браузере
+// Поскольку модуль path недоступен на клиенте
+function getFilenameFromPath(pathStr: string): string {
+  // Обрабатываем случаи с косой чертой в конце
+  const normalizedPath = pathStr.endsWith('/') ? pathStr.slice(0, -1) : pathStr;
+  // Разделяем путь по слешу и берем последний сегмент
+  const segments = normalizedPath.split('/');
+  return segments[segments.length - 1];
+}
+
 // Для дебаггинга - включите, если необходимо видеть все преобразования путей в консоли
 const DEBUG_MODE = true;
 
@@ -144,7 +154,20 @@ export function getProxiedImageUrl(imagePath: string): string {
         imageDir = 'nft_assets/mutant_ape';
       }
       
-      const enhancedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&collection=${isOfficial ? 'official' : 'mutant'}&nocache=true&mutant=true&n=${nftNumber}&force=true&dir=${imageDir}`;
+      // ВАЖНО: Модифицируем путь, чтобы он всегда начинался с правильной директории
+      // Это гарантирует корректную обработку изображений на сервере
+      let modifiedPath = imagePath;
+      if (!imagePath.includes(imageDir)) {
+        // Извлекаем имя файла и используем его с правильной директорией
+        const filename = getFilenameFromPath(imagePath);
+        modifiedPath = `/${imageDir}/${filename}`;
+        
+        if (DEBUG_MODE) {
+          console.log(`🔄 Корректировка пути к Mutant Ape: ${imagePath} -> ${modifiedPath}`);
+        }
+      }
+      
+      const enhancedPath = `/nft-proxy${modifiedPath}?v=${timestamp}&r=${random}&collection=${isOfficial ? 'official' : 'mutant'}&nocache=true&mutant=true&n=${nftNumber}&force=true&dir=${imageDir}`;
       
       if (DEBUG_MODE) {
         console.log(`${isOfficial ? '🔵' : '🟢'} MUTANT APE ${isOfficial ? '(OFFICIAL)' : ''} #${nftNumber}: ${imagePath} -> ${enhancedPath}, dir=${imageDir}`);
