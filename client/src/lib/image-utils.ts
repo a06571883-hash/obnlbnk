@@ -167,10 +167,17 @@ export function getProxiedImageUrl(imagePath: string): string {
         }
       }
       
-      const enhancedPath = `/nft-proxy${modifiedPath}?v=${timestamp}&r=${random}&collection=${isOfficial ? 'official' : 'mutant'}&nocache=true&mutant=true&n=${nftNumber}&force=true&dir=${imageDir}`;
+      // Улучшенная обработка путей для большей устойчивости
+      // Добавляем кеш-бастинг (предотвращение кеширования) и дополнительные параметры для NFT сервера
+      const enhancedPath = `/nft-proxy${modifiedPath}?v=${timestamp}&r=${random}&collection=${isOfficial ? 'official' : 'mutant'}&nocache=true&mutant=true&n=${nftNumber}&force=true&dir=${imageDir}&t=${Date.now()}&retry=3`;
       
       if (DEBUG_MODE) {
         console.log(`${isOfficial ? '🔵' : '🟢'} MUTANT APE ${isOfficial ? '(OFFICIAL)' : ''} #${nftNumber}: ${imagePath} -> ${enhancedPath}, dir=${imageDir}`);
+      }
+      
+      // Проверка на наличие .png в пути, добавляем если нужно
+      if (!enhancedPath.includes('.png') && !enhancedPath.includes('.jpg') && !enhancedPath.includes('.svg')) {
+        return `${enhancedPath}&format=png`;
       }
       
       return enhancedPath;
@@ -178,10 +185,37 @@ export function getProxiedImageUrl(imagePath: string): string {
     
     case NFTCollectionType.BORED_APE: {
       const nftNumber = extractNFTNumber(imagePath);
-      const proxiedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&collection=bored&nocache=true&n=${nftNumber}`;
+      
+      // Определяем директорию на основе пути
+      let imageDir = 'bored_ape_nft';
+      if (imagePath.includes('bayc_official_nft')) {
+        imageDir = 'bayc_official_nft';
+      } else if (imagePath.includes('new_bored_ape_nft')) {
+        imageDir = 'new_bored_ape_nft';
+      }
+      
+      // Модифицируем путь если нужно
+      let modifiedPath = imagePath;
+      if (!imagePath.includes(imageDir)) {
+        // Извлекаем имя файла и используем его с правильной директорией
+        const filename = getFilenameFromPath(imagePath);
+        modifiedPath = `/${imageDir}/${filename}`;
+        
+        if (DEBUG_MODE) {
+          console.log(`🔄 Корректировка пути к Bored Ape: ${imagePath} -> ${modifiedPath}`);
+        }
+      }
+      
+      // Улучшенная обработка путей для Bored Ape
+      const proxiedPath = `/nft-proxy${modifiedPath}?v=${timestamp}&r=${random}&collection=bored&n=${nftNumber}&dir=${imageDir}&t=${Date.now()}&retry=3`;
       
       if (DEBUG_MODE) {
-        console.log(`🟠 BORED APE #${nftNumber}: ${imagePath} -> ${proxiedPath}`);
+        console.log(`🟠 BORED APE #${nftNumber}: ${imagePath} -> ${proxiedPath}, dir=${imageDir}`);
+      }
+      
+      // Проверка на наличие расширения в пути
+      if (!proxiedPath.includes('.png') && !proxiedPath.includes('.jpg') && !proxiedPath.includes('.svg')) {
+        return `${proxiedPath}&format=png`;
       }
       
       return proxiedPath;
@@ -189,7 +223,8 @@ export function getProxiedImageUrl(imagePath: string): string {
     
     default: {
       // Для других типов NFT
-      const proxiedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&nocache=true`;
+      // Более надежная обработка с дополнительными параметрами
+      const proxiedPath = `/nft-proxy${imagePath}?v=${timestamp}&r=${random}&nocache=true&t=${Date.now()}&retry=2`;
       
       if (DEBUG_MODE) {
         console.log(`⚪ ДРУГОЙ NFT: ${imagePath} -> ${proxiedPath}`);

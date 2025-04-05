@@ -113,7 +113,7 @@ export const NFTMarketplace: React.FC = () => {
         if (!res.ok) throw new Error('Ошибка получения NFT');
         return res.json();
       }).then(data => {
-        console.log(`Получено ${data.items?.length || 0} NFT от API. Фильтр: ${selectedCollection || 'все'}`);
+        console.log(`Получено ${data.items?.length || 0} NFT от API. Фильтр: ${selectedCollection || 'все'}`, data);
         
         // Проверяем количество NFT из каждой коллекции для отладки
         const boredCount = data.items?.filter((nft: any) => 
@@ -129,15 +129,17 @@ export const NFTMarketplace: React.FC = () => {
         
         console.log(`Распределение коллекций в ответе API: Bored Ape=${boredCount}, Mutant Ape=${mutantCount}`);
         
-        // Если это Mutant Ape, выводим дополнительные детали для отладки
-        if (selectedCollection === 'mutant' && data.items?.length > 0) {
-          const firstFew = data.items.slice(0, 3);
-          console.log("Примеры Mutant Ape из ответа API:", firstFew.map((nft: any) => ({
+        // Всегда выводим детальную отладочную информацию для полученных данных
+        if (data.items?.length > 0) {
+          const firstFew = data.items.slice(0, 5);
+          console.log(`Первые ${firstFew.length} NFT из ответа API для ${selectedCollection || 'все'}:`, 
+          firstFew.map((nft: any) => ({
             id: nft.id, 
             name: nft.name, 
             collectionName: nft.collectionName,
             imagePath: nft.imagePath,
-            collectionId: nft.collectionId
+            collectionId: nft.collectionId,
+            forSale: nft.forSale
           })));
         }
         

@@ -15,6 +15,55 @@ import fs from 'fs';
 // Получаем текущую директорию для правильного расчета пути к NFT-серверу
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Функция для запуска запасного NFT сервера на отдельном порту
+function startNFTFallbackServer(port: number = 8082) {
+  console.log(`🚀 Запуск NFT Fallback Server на порту ${port}...`);
+  
+  // Создаем/обновляем файл с портом для других частей системы
+  try {
+    fs.writeFileSync('./nft-fallback-port.txt', port.toString(), 'utf8');
+    console.log(`✅ Конфигурация порта NFT Fallback сервера обновлена: ${port}`);
+    
+    // Устанавливаем глобальную переменную для доступа из других частей приложения
+    (global as any).nftFallbackPort = port;
+    console.log(`✅ Глобальная переменная nftFallbackPort установлена: ${port}`);
+  } catch (err) {
+    console.error('❌ Ошибка при создании файла конфигурации порта NFT Fallback:', err);
+  }
+  
+  // Запускаем сервер
+  try {
+    const fallbackServerPath = path.join(process.cwd(), 'nft-fallback-server.js');
+    console.log(`📁 Путь к скрипту NFT Fallback сервера: ${fallbackServerPath}`);
+    
+    // Проверяем, существует ли файл скрипта
+    if (!fs.existsSync(fallbackServerPath)) {
+      console.error(`❌ Файл скрипта NFT Fallback сервера не найден: ${fallbackServerPath}`);
+      return null;
+    }
+    
+    // Запускаем скрипт
+    const nftFallbackServer = spawn('node', [fallbackServerPath]);
+    
+    nftFallbackServer.stdout.on('data', (data) => {
+      console.log(`[NFT Fallback Server] ${data}`);
+    });
+    
+    nftFallbackServer.stderr.on('data', (data) => {
+      console.error(`[NFT Fallback Server ERROR] ${data}`);
+    });
+    
+    nftFallbackServer.on('close', (code) => {
+      console.log(`NFT Fallback Server exited with code ${code}`);
+    });
+    
+    return nftFallbackServer;
+  } catch (err) {
+    console.error('❌ Ошибка при запуске NFT Fallback Server:', err);
+    return null;
+  }
+}
+
 // Функция для запуска NFT сервера с определенным портом
 function startNFTImageServer(port: number = 8081) {
   console.log(`🚀 Запуск NFT Image Server на порту ${port}...`);
@@ -23,6 +72,10 @@ function startNFTImageServer(port: number = 8081) {
   try {
     fs.writeFileSync('./nft-server-port.txt', port.toString(), 'utf8');
     console.log(`✅ Конфигурация порта NFT сервера обновлена: ${port}`);
+    
+    // Устанавливаем глобальную переменную для доступа из других частей приложения
+    (global as any).nftServerPort = port;
+    console.log(`✅ Глобальная переменная nftServerPort установлена: ${port}`);
   } catch (err) {
     console.error('❌ Ошибка при создании файла конфигурации порта NFT:', err);
   }
@@ -30,6 +83,47 @@ function startNFTImageServer(port: number = 8081) {
   // Теперь запускаем сервер
   try {
     const nftImageServerPath = path.join(process.cwd(), 'run-nft-server.js');
+    console.log(`📁 Путь к скрипту NFT сервера: ${nftImageServerPath}`);
+    
+    // Проверяем, существует ли файл скрипта
+    if (!fs.existsSync(nftImageServerPath)) {
+      console.error(`❌ Файл скрипта NFT сервера не найден: ${nftImageServerPath}`);
+      
+      // Используем прямой путь к серверу через server/nft-image-server.js как запасной вариант
+      const fallbackPath = path.join(process.cwd(), 'server', 'nft-image-server.js');
+      console.log(`🔄 Использование запасного пути: ${fallbackPath}`);
+      
+      // Проверяем запасной путь
+      if (fs.existsSync(fallbackPath)) {
+        const nftImageServer = spawn('node', [fallbackPath]);
+        
+        nftImageServer.stdout.on('data', (data) => {
+          console.log(`[NFT Image Server] ${data}`);
+        });
+
+        nftImageServer.stderr.on('data', (data) => {
+          console.error(`[NFT Image Server ERROR] ${data}`);
+        });
+
+        nftImageServer.on('close', (code) => {
+          console.log(`NFT Image Server exited with code ${code}`);
+          console.log(`🔄 NFT сервер завершил работу, запускаем запасной сервер...`);
+          // Запускаем запасной сервер, если основной завершил работу с ошибкой
+          if (code !== 0) {
+            startNFTFallbackServer();
+          }
+        });
+        
+        return nftImageServer;
+      } else {
+        console.error(`❌ Запасной файл скрипта NFT сервера тоже не найден: ${fallbackPath}`);
+        console.log(`🔄 Запускаем запасной NFT сервер вместо основного...`);
+        // Запускаем запасной сервер, так как основной не найден
+        return startNFTFallbackServer();
+      }
+    }
+    
+    // Запускаем основной скрипт
     const nftImageServer = spawn('node', [nftImageServerPath]);
 
     nftImageServer.stdout.on('data', (data) => {
@@ -42,12 +136,19 @@ function startNFTImageServer(port: number = 8081) {
 
     nftImageServer.on('close', (code) => {
       console.log(`NFT Image Server exited with code ${code}`);
+      console.log(`🔄 NFT сервер завершил работу, запускаем запасной сервер...`);
+      // Запускаем запасной сервер, если основной завершил работу с ошибкой
+      if (code !== 0) {
+        startNFTFallbackServer();
+      }
     });
     
     return nftImageServer;
   } catch (err) {
     console.error('❌ Ошибка при запуске NFT Image Server:', err);
-    return null;
+    console.log(`🔄 Запускаем запасной NFT сервер из-за ошибки...`);
+    // Запускаем запасной сервер, так как основной выдал ошибку
+    return startNFTFallbackServer();
   }
 }
 

@@ -251,11 +251,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fs = await import('node:fs');
       
       // Определяем порт NFT-сервера динамически 
-      let nftServerPort = 8080; // порт по умолчанию
+      let nftServerPort = 8081; // порт по умолчанию - обновлен с 8080 на 8081
       
       // Проверяем, доступен ли порт через глобальную переменную
-      if (typeof global.nftServerPort === 'number') {
-        nftServerPort = global.nftServerPort;
+      if (typeof (global as any).nftServerPort === 'number') {
+        nftServerPort = (global as any).nftServerPort;
         console.log(`[NFT Proxy] Using NFT server port from global variable: ${nftServerPort}`);
       } else {
         // Пробуем прочитать порт из файла

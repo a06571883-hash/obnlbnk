@@ -168,13 +168,13 @@ router.get('/v2', async (req: Request, res: Response) => {
         conditions.push(sql`${nfts.imagePath} NOT LIKE '%bayc%'`);
         conditions.push(sql`${nfts.name} NOT LIKE '%Bored%'`);
         
-        // Для надежности принудительно показываем только те, у которых в пути есть mutant_ape
-        conditions.push(sql`${nfts.imagePath} LIKE '%mutant_ape%'`);
+        // Проверяем, что путь содержит "mutant_ape" ИЛИ имя содержит "Mutant"
+        conditions.push(sql`(
+          ${nfts.imagePath} LIKE '%mutant_ape%' OR
+          ${nfts.name} LIKE '%Mutant%'
+        )`);
         
-        // Также проверяем, что имя начинается с "Mutant Ape"
-        conditions.push(sql`${nfts.name} LIKE 'Mutant Ape%'`);
-        
-        console.log('[NFT Marketplace Controller] Применяем РАДИКАЛЬНЫЙ фильтр для Mutant Ape: только ID=2, путь содержит mutant_ape, имя начинается с Mutant Ape');
+        console.log('[NFT Marketplace Controller] Применяем упрощенный фильтр для Mutant Ape: только ID=2, а также путь содержит "mutant_ape" ИЛИ имя содержит "Mutant"');
       }
     }
     
