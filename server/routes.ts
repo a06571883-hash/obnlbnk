@@ -409,14 +409,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Регистрируем маршруты для NFT
   app.use('/api/nft', nftRoutes);
   
-  // Регистрируем маршруты для NFT маркетплейса
+  // Регистрируем маршруты для NFT маркетплейса (не перекрывает другие маршруты с /api/nft)
   app.use('/api/nft/marketplace', nftMarketplaceRoutes);
   
   // Регистрируем маршруты для импорта NFT
   app.use('/api/nft-import', nftImportRoutes);
   
   // Регистрируем маршруты для статуса NFT сервера
-  app.use('/api/nft', nftServerController);
+  app.use('/api/nft-server', nftServerController);
   
   // Добавляем синоним для /api/nft/collections для совместимости с рендер-версией
   app.get('/api/nft-collections', ensureAuthenticated, async (req, res) => {
@@ -1351,7 +1351,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Новые API для работы с продажей и дарением NFT
   
-  // Получение доступных для покупки NFT
+  // ВАЖНО: Маршрут /api/nft/marketplace перенесен в отдельный файл
+  // server/controllers/nft-marketplace-controller.ts
+  // и подключен через app.use('/api/nft/marketplace', nftMarketplaceRoutes);
+  /*
   app.get("/api/nft/marketplace", async (req, res) => {
     try {
       console.log('[API] Запрос на получение NFT маркетплейса');
@@ -1393,6 +1396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ error: "Не удалось получить доступные NFT" });
     }
   });
+  */
   
   // Получение конкретного NFT по ID
   app.get("/api/nft/:id", async (req, res) => {
