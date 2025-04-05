@@ -11,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiRequest } from '@/lib/queryClient';
 
-// Импортируем сервис для звука и утилиты для изображений
+// Импортируем сервис для звука, утилиты для изображений и компонент NFTImage
 import { playSound } from '../../lib/sound-service';
 import { getProxiedImageUrl } from '../../lib/image-utils';
+import { NFTImage } from './nft-image';
 
 // Helper function for sound playback
 const playSoundWithLog = (sound: string) => {
@@ -608,11 +609,10 @@ export const NFTMarketplace: React.FC = () => {
                   }}
                 >
                   <div className="relative aspect-square">
-                    <img 
-                      src={getProxiedImageUrl(nft.imagePath)} 
+                    <NFTImage 
+                      src={nft.imagePath} 
                       alt={nft.name} 
                       className="w-full h-full object-cover"
-                      loading="lazy"
                     />
                     <Badge className={`absolute top-1 right-1 text-[10px] px-1 py-0 sm:text-xs sm:px-2 sm:py-0.5 ${rarityColors[nft.rarity]}`}>
                       {nft.rarity}
@@ -813,8 +813,8 @@ export const NFTMarketplace: React.FC = () => {
             
             <div className="flex flex-col gap-3 sm:gap-4">
               <div className="relative aspect-square rounded-md overflow-hidden">
-                <img 
-                  src={getProxiedImageUrl(selectedNFT.imagePath)} 
+                <NFTImage 
+                  src={selectedNFT.imagePath} 
                   alt={selectedNFT.name} 
                   className="w-full h-full object-cover"
                 />
