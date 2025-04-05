@@ -179,24 +179,28 @@ export const NFTMarketplace: React.FC = () => {
       // РАДИКАЛЬНАЯ проверка типа NFT с АБСОЛЮТНЫМ разделением коллекций
       // Специально разработано для предотвращения смешивания коллекций
       
-      // MUTANT APE: строгая проверка, которая гарантирует, что это ТОЛЬКО Mutant Ape
+      // MUTANT APE: упрощенная проверка для гарантии работы с реальными данными
       const isMutantApe = (
-        // 1. Базовая проверка: должно соответствовать ВСЁ
-        (nft.collectionId === 2) && // ТОЛЬКО коллекция с ID 2
-        (nft.name && nft.name.startsWith('Mutant Ape')) && // ТОЛЬКО имя начинается с Mutant Ape
-        (nft.imagePath && nft.imagePath.includes('/mutant_ape')) && // ТОЛЬКО путь содержит mutant_ape
-        (nft.imagePath && !nft.imagePath.includes('/bored_ape')) && // НЕ содержит bored_ape в пути
-        (nft.collectionName === 'Mutant Ape Yacht Club') // ТОЛЬКО название коллекции Mutant Ape
+        // Достаточно базовой проверки по коллекции и имени
+        (nft.collectionId === 2) && // Коллекция с ID 2
+        (
+          // Либо имя соответствует шаблону
+          (nft.name && nft.name.toLowerCase().includes('mutant')) ||
+          // Либо путь к изображению содержит mutant_ape
+          (nft.imagePath && nft.imagePath.includes('/mutant_ape'))
+        )
       );
       
-      // BORED APE: строгая проверка, которая гарантирует, что это ТОЛЬКО Bored Ape
+      // BORED APE: упрощенная проверка для гарантии работы с реальными данными
       const isBoredApe = (
-        // 1. Базовая проверка: должно соответствовать ВСЁ
-        (nft.collectionId === 1) && // ТОЛЬКО коллекция с ID 1
-        (nft.name && nft.name.startsWith('Bored Ape')) && // ТОЛЬКО имя начинается с Bored Ape
-        (nft.imagePath && (nft.imagePath.includes('/bored_ape') || nft.imagePath.includes('/bayc'))) && // ТОЛЬКО путь содержит bored_ape или bayc
-        (nft.imagePath && !nft.imagePath.includes('/mutant_ape')) && // НЕ содержит mutant_ape в пути
-        (nft.collectionName === 'Bored Ape Yacht Club') // ТОЛЬКО название коллекции Bored Ape
+        // Достаточно базовой проверки по коллекции и имени/пути
+        (nft.collectionId === 1) && // Коллекция с ID 1
+        (
+          // Либо имя соответствует шаблону
+          (nft.name && nft.name.toLowerCase().includes('bored')) ||
+          // Либо путь к изображению содержит bored_ape или bayc
+          (nft.imagePath && (nft.imagePath.includes('/bored_ape') || nft.imagePath.includes('/bayc')))
+        )
       );
       
       // Проверяем фильтр коллекции
