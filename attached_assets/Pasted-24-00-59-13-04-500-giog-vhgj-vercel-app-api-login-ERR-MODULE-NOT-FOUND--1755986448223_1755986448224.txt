@@ -1,0 +1,62 @@
+24 авг. 00:59:13 .04
+ПОЧТА
+500
+giog-vhgj.vercel.app
+/api/login
+Ошибка [ERR_MODULE_NOT_FOUND]: Невозможно найти модуль '/var/task/server/routes-vercel', импортированный из /var/task/api/index.js в finalizeResolution (node:internal/modules/esm/resolve:287:11) в moduleResolve (node:internal/modules/esm/resolve:956:10) в moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) в defaultResolve (node:internal/modules/esm/resolve:1235:79) в ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) в #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) в ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) в ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) в ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/routes-vercel' } Процесс Node.js завершился со статусом выхода: 1. Приведенные выше журналы могут помочь в отладке проблемы.
+24 авг. 00:59:12 .16
+ПОЛУЧАТЬ
+500
+giog-vhgj.vercel.app
+/api/пользователь
+Ошибка [ERR_MODULE_NOT_FOUND]: Невозможно найти модуль '/var/task/server/routes-vercel', импортированный из /var/task/api/index.js в finalizeResolution (node:internal/modules/esm/resolve:287:11) в moduleResolve (node:internal/modules/esm/resolve:956:10) в moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) в defaultResolve (node:internal/modules/esm/resolve:1235:79) в ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) в #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) в ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) в ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) в ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/routes-vercel' } Процесс Node.js завершился со статусом выхода: 1. Приведенные выше журналы могут помочь в отладке проблемы.
+24 авг. 00:59:11 .61
+ПОЧТА
+500
+giog-vhgj.vercel.app
+/api/login
+Ошибка [ERR_MODULE_NOT_FOUND]: Невозможно найти модуль '/var/task/server/routes-vercel', импортированный из /var/task/api/index.js в finalizeResolution (node:internal/modules/esm/resolve:287:11) в moduleResolve (node:internal/modules/esm/resolve:956:10) в moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) в defaultResolve (node:internal/modules/esm/resolve:1235:79) в ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) в #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) в ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) в ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) в ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/routes-vercel' } Процесс Node.js завершился со статусом выхода: 1. Приведенные выше журналы могут помочь в отладке проблемы.
+24 авг. 00:58:56 .78
+ПОЛУЧАТЬ
+500
+giog-vhgj.vercel.app
+/api/пользователь
+Ошибка [ERR_MODULE_NOT_FOUND]: Невозможно найти модуль '/var/task/server/routes-vercel', импортированный из /var/task/api/index.js в finalizeResolution (node:internal/modules/esm/resolve:287:11) в moduleResolve (node:internal/modules/esm/resolve:956:10) в moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) в defaultResolve (node:internal/modules/esm/resolve:1235:79) в ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) в #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) в ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) в ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) в ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/routes-vercel' } Процесс Node.js завершился со статусом выхода: 1. Приведенные выше журналы могут помочь в отладке проблемы.
+24 авг. 00:58:52 .76
+ПОЧТА
+500
+giog-vhgj.vercel.app
+/api/login
+Ошибка [ERR_MODULE_NOT_FOUND]: Невозможно найти модуль '/var/task/server/routes-vercel', импортированный из /var/task/api/index.js в finalizeResolution (node:internal/modules/esm/resolve:287:11) в moduleResolve (node:internal/modules/esm/resolve:956:10) в moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) в defaultResolve (node:internal/modules/esm/resolve:1235:79) в ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) в #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) в ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) в ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) в ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/routes-vercel' } Процесс Node.js завершился со статусом выхода: 1. Приведенные выше журналы могут помочь в отладке проблемы.
+24 авг. 00:58:51 .29
+ПОЧТА
+500
+giog-vhgj.vercel.app
+/api/login
+Ошибка [ERR_MODULE_NOT_FOUND]: Невозможно найти модуль '/var/task/server/routes-vercel', импортированный из /var/task/api/index.js в finalizeResolution (node:internal/modules/esm/resolve:287:11) в moduleResolve (node:internal/modules/esm/resolve:956:10) в moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) в defaultResolve (node:internal/modules/esm/resolve:1235:79) в ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) в #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) в ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) в ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) в ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/routes-vercel' } Процесс Node.js завершился со статусом выхода: 1. Приведенные выше журналы могут помочь в отладке проблемы.
+24 авг. 00:58:41 .31
+ПОЛУЧАТЬ
+500
+giog-vhgj.vercel.app
+/api/пользователь
+Ошибка [ERR_MODULE_NOT_FOUND]: Невозможно найти модуль '/var/task/server/routes-vercel', импортированный из /var/task/api/index.js в finalizeResolution (node:internal/modules/esm/resolve:287:11) в moduleResolve (node:internal/modules/esm/resolve:956:10) в moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) в defaultResolve (node:internal/modules/esm/resolve:1235:79) в ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) в #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) в ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) в ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) в ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/routes-vercel' } Процесс Node.js завершился со статусом выхода: 1. Приведенные выше журналы могут помочь в отладке проблемы.
+24 авг. 00:58:25 .46
+ПОЛУЧАТЬ
+500
+giog-vhgj.vercel.app
+/api/пользователь
+Ошибка [ERR_MODULE_NOT_FOUND]: Невозможно найти модуль '/var/task/server/routes-vercel', импортированный из /var/task/api/index.js в finalizeResolution (node:internal/modules/esm/resolve:287:11) в moduleResolve (node:internal/modules/esm/resolve:956:10) в moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) в defaultResolve (node:internal/modules/esm/resolve:1235:79) в ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) в #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) в ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) в ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) в ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/routes-vercel' } Процесс Node.js завершился со статусом выхода: 1. Приведенные выше журналы могут помочь в отладке проблемы.
+24 авг. 00:58:12 .90
+ПОЛУЧАТЬ
+500
+giog-vhgj-8vfyfxay2-a06571883-hashs-projects.vercel.app
+/api/пользователь
+Ошибка [ERR_MODULE_NOT_FOUND]: Невозможно найти модуль '/var/task/server/routes-vercel', импортированный из /var/task/api/index.js в finalizeResolution (node:internal/modules/esm/resolve:287:11) в moduleResolve (node:internal/modules/esm/resolve:956:10) в moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) в defaultResolve (node:internal/modules/esm/resolve:1235:79) в ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) в #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) в ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) в ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) в ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/routes-vercel' } Процесс Node.js завершился со статусом выхода: 1. Приведенные выше журналы могут помочь в отладке проблемы.
+24 авг. 00:58:12 .33
+ПОЛУЧАТЬ
+500
+giog-vhgj-8vfyfxay2-a06571883-hashs-projects.vercel.app
+/api/пользователь
+Ошибка [ERR_MODULE_NOT_FOUND]: Невозможно найти модуль '/var/task/server/routes-vercel', импортированный из /var/task/api/index.js в finalizeResolution (node:internal/modules/esm/resolve:287:11) в moduleResolve (node:internal/modules/esm/resolve:956:10) в moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) в defaultResolve (node:internal/modules/esm/resolve:1235:79) в ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) в #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) в ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) в ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) в ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/routes-vercel' } Процесс Node.js завершился со статусом выхода: 1. Приведенные выше журналы могут помочь в отладке проблемы.
+Больше нет журналов для отображения в выбранной временной шкале
+

@@ -2,10 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import fs from 'fs';
 import path from 'path';
-import { storage } from "./storage";
-import { exportDatabase, importDatabase } from './database/backup';
-import { setupAuth } from './auth';
-import { startRateUpdates } from './rates';
+import { storage } from "./storage.js";
+import { exportDatabase, importDatabase } from './database/backup.js';
+import { setupAuth } from './auth.js';
+import { startRateUpdates } from './rates.js';
 import express from 'express';
 import fetch from 'node-fetch';
 
@@ -17,23 +17,23 @@ declare global {
     }
   }
 }
-import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
-import { getNews } from './news-service';
-import { seaTableManager } from './utils/seatable';
-import { generateValidAddress, validateCryptoAddress, getSeedPhraseForUser } from './utils/crypto';
-import { hasBlockchainApiKeys } from './utils/blockchain';
-import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase';
-import { generateNFTImage } from './utils/nft-generator';
-import { db } from './db';
+import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service.js';
+import { getNews } from './news-service.js';
+import { seaTableManager } from './utils/seatable.js';
+import { generateValidAddress, validateCryptoAddress, getSeedPhraseForUser } from './utils/crypto.js';
+import { hasBlockchainApiKeys } from './utils/blockchain.js';
+import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase.js';
+import { generateNFTImage } from './utils/nft-generator.js';
+import { db } from './db.js';
 import { eq } from 'drizzle-orm';
 import { nfts, nftCollections } from '@shared/schema';
-import nftRoutes from './controllers/nft-controller';
-import nftImportRoutes from './controllers/nft-import-controller';
-import nftMarketplaceRoutes from './controllers/nft-marketplace-controller';
-import nftServerController from './controllers/nft-server-controller';
-import { staticAssetsRouter } from './routes/static-assets';
-import { serveStatic } from './vite-vercel';
-import { setupDebugRoutes } from "./debug";
+import nftRoutes from './controllers/nft-controller.js';
+import nftImportRoutes from './controllers/nft-import-controller.js';
+import nftMarketplaceRoutes from './controllers/nft-marketplace-controller.js';
+import nftServerController from './controllers/nft-server-controller.js';
+import { staticAssetsRouter } from './routes/static-assets.js';
+import { serveStatic } from './vite-vercel.js';
+import { setupDebugRoutes } from "./debug.js";
 
 // Auth middleware
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {

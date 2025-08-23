@@ -29,32 +29,32 @@ const REGULATOR_USER_ID = 5; // ID администратора
 export async function importBoredApesToMarketplace() {
   try {
     console.log('Начинаем импорт NFT из коллекции Bored Ape Yacht Club в маркетплейс...');
-    
+
     // Директория, где хранятся изображения Bored Ape
     const nftDir = './bored_ape_nft';
-    
+
     // Проверяем существование директории
     if (!fs.existsSync(nftDir)) {
       console.error(`Директория ${nftDir} не существует`);
       return { success: false, error: 'Директория с изображениями не найдена' };
     }
-    
+
     // Получаем список всех файлов в директории
     const files = fs.readdirSync(nftDir);
     console.log(`Найдено ${files.length} файлов в директории ${nftDir}`);
-    
+
     // Фильтруем, оставляя только изображения PNG и AVIF
     const imageFiles = files.filter(file => {
       const ext = path.extname(file).toLowerCase();
       return ext === '.png' || ext === '.avif';
     });
-    
+
     console.log(`Отфильтровано ${imageFiles.length} изображений`);
-    
+
     // Убираем дубликаты (файлы с одинаковым именем, но разными расширениями)
     const uniqueImageFiles = new Set<string>();
     const processedFiles: string[] = [];
-    
+
     imageFiles.forEach(file => {
       const basename = path.basename(file, path.extname(file));
       // Избегаем дубликатов, предпочитая PNG
@@ -63,63 +63,63 @@ export async function importBoredApesToMarketplace() {
         processedFiles.push(file);
       }
     });
-    
+
     console.log(`Уникальных файлов для обработки: ${processedFiles.length}`);
-    
+
     // Получаем или создаем коллекцию NFT для регуляторного аккаунта
     let collection = await getNFTCollectionForUser(REGULATOR_USER_ID);
-    
+
     if (!collection) {
       collection = await createNFTCollectionForUser(REGULATOR_USER_ID);
     }
-    
+
     console.log(`Используем коллекцию ID=${collection.id} пользователя ID=${REGULATOR_USER_ID}`);
-    
+
     // Уже использованные пути к изображениям
     const existingImagePaths = await getExistingImagePaths();
     console.log(`В базе уже ${existingImagePaths.size} записей NFT`);
-    
+
     // Создаем NFT для каждого файла
     let successCount = 0;
     let skipCount = 0;
     let errorCount = 0;
-    
+
     // Разбиваем файлы по категориям редкости
     const categorizedFiles = categorizeByRarity(processedFiles);
-    
+
     // Создаем NFT для каждого файла по категориям
     for (const rarity of Object.keys(categorizedFiles) as NFTRarity[]) {
       const files = categorizedFiles[rarity];
       console.log(`Обрабатываем ${files.length} файлов категории ${rarity}`);
-      
+
       for (const file of files) {
         try {
           // Формируем относительный путь к файлу
           const imagePath = `/bored_ape_nft/${file}`;
-          
+
           // Проверяем, не существует ли уже NFT с таким путем к изображению
           if (existingImagePaths.has(imagePath)) {
             console.log(`Пропускаем ${imagePath} - уже существует в базе`);
             skipCount++;
             continue;
           }
-          
+
           // Определяем цену на основе редкости
           const price = getPriceByRarity(rarity);
-          
+
           // Формируем имя и описание NFT
           const name = generateNFTName(rarity, file);
           const description = generateNFTDescription(rarity);
-          
+
           // Генерируем атрибуты NFT
           const attributes = generateNFTAttributes(rarity);
-          
+
           // Текущая дата для поля mintedAt
           const mintedAt = new Date();
-          
+
           // Генерируем уникальный tokenId
           const tokenId = `BAYC-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-          
+
           // Создаем NFT в базе данных
           await db.insert(nfts).values({
             collectionId: collection.id,
@@ -134,9 +134,9 @@ export async function importBoredApesToMarketplace() {
             mintedAt,
             tokenId
           });
-          
+
           successCount++;
-          
+
           // Логируем каждые 10 NFT
           if (successCount % 10 === 0) {
             console.log(`Создано ${successCount} NFT, пропущено ${skipCount}, ошибок: ${errorCount}`);
@@ -147,9 +147,9 @@ export async function importBoredApesToMarketplace() {
         }
       }
     }
-    
+
     console.log(`Импорт завершен. Создано ${successCount} NFT, пропущено ${skipCount}, ошибок: ${errorCount}`);
-    
+
     return {
       success: true,
       created: successCount,
@@ -177,11 +177,11 @@ async function getNFTCollectionForUser(userId: number) {
   const collections = await db.select()
     .from(nftCollections)
     .where(eq(nftCollections.userId, userId));
-  
+
   if (collections.length > 0) {
     return collections[0];
   }
-  
+
   return null;
 }
 
@@ -201,21 +201,21 @@ async function createNFTCollectionForUser(userId: number) {
         createdAt: new Date()
       })
       .returning();
-    
+
     return result[0];
   } catch (error) {
     console.error('Ошибка при создании коллекции NFT:', error);
-    
+
     // В случае ошибки пробуем найти существующую коллекцию для этого пользователя
     const existingCollections = await db.select()
       .from(nftCollections)
       .where(eq(nftCollections.userId, userId));
-    
+
     if (existingCollections.length > 0) {
       console.log(`Найдена существующая коллекция для пользователя ${userId}, используем её`);
       return existingCollections[0];
     }
-    
+
     throw new Error(`Не удалось создать коллекцию NFT: ${error}`);
   }
 }
@@ -236,12 +236,12 @@ function categorizeByRarity(files: string[]): Record<NFTRarity, string[]> {
     }
     return { file, size };
   });
-  
+
   // Сортируем по размеру (от маленького к большому)
   fileStats.sort((a, b) => a.size - b.size);
-  
+
   const totalFiles = fileStats.length;
-  
+
   // Распределяем по категориям
   const result: Record<NFTRarity, string[]> = {
     common: [],
@@ -250,33 +250,33 @@ function categorizeByRarity(files: string[]): Record<NFTRarity, string[]> {
     epic: [],
     legendary: []
   };
-  
+
   // 40% common
   result.common = fileStats.slice(0, Math.floor(totalFiles * 0.4)).map(f => f.file);
-  
+
   // 30% uncommon
   result.uncommon = fileStats.slice(
     Math.floor(totalFiles * 0.4),
     Math.floor(totalFiles * 0.7)
   ).map(f => f.file);
-  
+
   // 20% rare
   result.rare = fileStats.slice(
     Math.floor(totalFiles * 0.7),
     Math.floor(totalFiles * 0.9)
   ).map(f => f.file);
-  
+
   // 8% epic
   result.epic = fileStats.slice(
     Math.floor(totalFiles * 0.9),
     Math.floor(totalFiles * 0.98)
   ).map(f => f.file);
-  
+
   // 2% legendary
   result.legendary = fileStats.slice(
     Math.floor(totalFiles * 0.98)
   ).map(f => f.file);
-  
+
   return result;
 }
 
@@ -313,7 +313,7 @@ function randomInRange(min: number, max: number): number {
 function generateNFTAttributes(rarity: NFTRarity): NFTAttributes {
   // Базовые значения атрибутов в зависимости от редкости
   let minValue, maxValue;
-  
+
   switch (rarity) {
     case 'common':
       minValue = 10;
@@ -339,7 +339,7 @@ function generateNFTAttributes(rarity: NFTRarity): NFTAttributes {
       minValue = 1;
       maxValue = 99;
   }
-  
+
   // Генерируем случайные значения для каждого атрибута
   return {
     power: randomInRange(minValue, maxValue),
@@ -361,7 +361,7 @@ function generateNFTName(rarity: NFTRarity, filename?: string): string {
     epic: "Эпическая",
     legendary: "Легендарная"
   };
-  
+
   // Используем имя файла без расширения как основу, если оно предоставлено
   let baseName = "";
   if (filename) {
@@ -371,10 +371,10 @@ function generateNFTName(rarity: NFTRarity, filename?: string): string {
       baseName = baseName.substring(0, 15);
     }
   }
-  
+
   // Случайный суффикс для уникальности
   const uniqueSuffix = Math.floor(Math.random() * 10000);
-  
+
   if (baseName) {
     return `${prefix} ${rarityNames[rarity]} #${baseName.substring(0, 5)}${uniqueSuffix}`;
   } else {
@@ -413,7 +413,7 @@ function generateNFTDescription(rarity: NFTRarity): string {
       "Этот легендарный Bored Ape – вершина коллекции. Непревзойденная редкость и ценность."
     ]
   };
-  
+
   // Выбираем случайное описание из массива для данной редкости
   const descriptionArray = descriptions[rarity];
   return descriptionArray[Math.floor(Math.random() * descriptionArray.length)];
@@ -425,15 +425,15 @@ function generateNFTDescription(rarity: NFTRarity): string {
 export async function countBoredApeImages(): Promise<{ total: number, png: number, avif: number }> {
   try {
     const nftDir = './bored_ape_nft';
-    
+
     if (!fs.existsSync(nftDir)) {
       return { total: 0, png: 0, avif: 0 };
     }
-    
+
     const files = fs.readdirSync(nftDir);
     const pngFiles = files.filter(file => file.toLowerCase().endsWith('.png'));
     const avifFiles = files.filter(file => file.toLowerCase().endsWith('.avif'));
-    
+
     return {
       total: files.length,
       png: pngFiles.length,
@@ -444,4 +444,5 @@ export async function countBoredApeImages(): Promise<{ total: number, png: numbe
     return { total: 0, png: 0, avif: 0 };
   }
 }
+
 
