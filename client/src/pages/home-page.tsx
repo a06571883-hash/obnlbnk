@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import CardCarousel from "@/components/card-carousel";
-import { Loader2, Bitcoin, DollarSign, Coins, Truck, BarChart3, MessageSquare, RefreshCw } from "lucide-react";
+import { Loader2, Bitcoin, DollarSign, Coins, Truck, BarChart3, MessageSquare, RefreshCw, Shield, Database, Upload } from "lucide-react";
 
 interface ExchangeRateResponse {
   btcToUsd: string;
@@ -253,6 +253,50 @@ export default function HomePage() {
 
   const cryptoCard = cards.find(card => card.type === 'crypto');
   const hasCryptoWallet = cryptoCard && cryptoCard.btcBalance && cryptoCard.ethBalance && cryptoCard.btcAddress;
+  
+  // Проверяем, является ли пользователь регулятором
+  const isRegulator = user?.is_regulator === true;
+  
+  // Функции регулятора
+  const handleCreateBackup = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/backup");
+      if (!response.ok) {
+        throw new Error("Failed to create backup");
+      }
+      const data = await response.json();
+      toast({
+        title: "Успех",
+        description: "Резервная копия успешно создана",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать резервную копию",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleRestoreBackup = async () => {
+    try {
+      const response = await apiRequest("POST", "/api/restore");
+      if (!response.ok) {
+        throw new Error("Failed to restore backup");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["/api/cards"] });
+      toast({
+        title: "Успех", 
+        description: "Данные успешно восстановлены из резервной копии",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось восстановить данные",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoadingCards) {
     return (
@@ -456,6 +500,53 @@ export default function HomePage() {
                   )}
                 </div>
               </CardUI>
+
+              {/* Панель регулятора */}
+              {isRegulator && (
+                <CardUI className="p-4 backdrop-blur-sm bg-background/80 border-2 border-primary/20">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <Shield className="h-6 w-6 text-primary" />
+                      <h3 className="font-bold text-lg text-primary">Панель регулятора</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Button
+                        onClick={handleCreateBackup}
+                        variant="outline"
+                        className="flex items-center gap-2 p-4 h-auto"
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <Database className="h-6 w-6 text-blue-500" />
+                          <div className="text-center">
+                            <div className="font-medium">Создать резервную копию</div>
+                            <div className="text-sm text-muted-foreground">Сохранить данные</div>
+                          </div>
+                        </div>
+                      </Button>
+                      
+                      <Button
+                        onClick={handleRestoreBackup}
+                        variant="outline"
+                        className="flex items-center gap-2 p-4 h-auto"
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <Upload className="h-6 w-6 text-green-500" />
+                          <div className="text-center">
+                            <div className="font-medium">Восстановить данные</div>
+                            <div className="text-sm text-muted-foreground">Из резервной копии</div>
+                          </div>
+                        </div>
+                      </Button>
+                    </div>
+                    
+                    <div className="text-center text-sm text-muted-foreground">
+                      <Shield className="h-4 w-4 inline mr-1" />
+                      Административные функции доступны только регулятору
+                    </div>
+                  </div>
+                </CardUI>
+              )}
 
             </div>
           </div>
