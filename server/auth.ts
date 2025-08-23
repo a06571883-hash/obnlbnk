@@ -7,8 +7,10 @@ import { User as SelectUser, newUserRegistrationSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+// @ts-ignore
 import Database from 'better-sqlite3';
 import path from 'path';
+import { ethers } from 'ethers';
 
 declare global {
   namespace Express {
