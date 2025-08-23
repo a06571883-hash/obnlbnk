@@ -7,6 +7,7 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import { db } from '../db';
 import { nfts, nftCollections } from '../../shared/schema';
+import { eq } from 'drizzle-orm';
 
 // Тип редкости NFT
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -175,7 +176,7 @@ async function getExistingImagePaths(): Promise<Set<string>> {
 async function getNFTCollectionForUser(userId: number) {
   const collections = await db.select()
     .from(nftCollections)
-    .where(eq => eq(nftCollections.userId, userId));
+    .where(eq(nftCollections.userId, userId));
   
   if (collections.length > 0) {
     return collections[0];
@@ -208,7 +209,7 @@ async function createNFTCollectionForUser(userId: number) {
     // В случае ошибки пробуем найти существующую коллекцию для этого пользователя
     const existingCollections = await db.select()
       .from(nftCollections)
-      .where(eq => eq(nftCollections.userId, userId));
+      .where(eq(nftCollections.userId, userId));
     
     if (existingCollections.length > 0) {
       console.log(`Найдена существующая коллекция для пользователя ${userId}, используем её`);
@@ -444,5 +445,3 @@ export async function countBoredApeImages(): Promise<{ total: number, png: numbe
   }
 }
 
-// Для использования в операциях с базой данных
-import { eq } from 'drizzle-orm';
