@@ -2,7 +2,7 @@
  * Контроллер для импорта NFT из коллекции Bored Ape в маркетплейс
  */
 import express, { Request, Response, NextFunction } from 'express';
-import { importBoredApesToMarketplace, countBoredApeImages } from '../utils/import-bored-apes-to-marketplace';
+import { importBoredApesToMarketplace, countBoredApeImages } from '../utils/import-bored-apes-to-marketplace.js';
 
 const router = express.Router();
 
