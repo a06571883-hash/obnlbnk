@@ -1,0 +1,99 @@
+[02:14:26.165] Running build in Washington, D.C., USA (East) – iad1
+[02:14:26.165] Build machine configuration: 2 cores, 8 GB
+[02:14:26.210] Cloning github.com/a06571883-hash/obnlbnk (Branch: main, Commit: dbfdf3b)
+[02:14:26.335] Previous build caches not available
+[02:14:41.362] Cloning completed: 15.152s
+[02:14:42.024] Found .vercelignore
+[02:14:42.264] Removed 1432 ignored files defined in .vercelignore
+[02:14:42.264]   /.git/config
+[02:14:42.264]   /.git/description
+[02:14:42.264]   /.git/FETCH_HEAD
+[02:14:42.265]   /.git/HEAD
+[02:14:42.265]   /.git/hooks/applypatch-msg.sample
+[02:14:42.265]   /.git/hooks/commit-msg.sample
+[02:14:42.265]   /.git/hooks/fsmonitor-watchman.sample
+[02:14:42.265]   /.git/hooks/post-update.sample
+[02:14:42.265]   /.git/hooks/pre-applypatch.sample
+[02:14:42.266]   /.git/hooks/pre-commit.sample
+[02:14:42.767] Running "vercel build"
+[02:14:43.142] Vercel CLI 46.0.2
+[02:14:44.163] > Installing Builder: @vercel/node@3.0.23
+[02:14:55.542] Running "install" command: `npm install`...
+[02:15:00.491] npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+[02:15:00.636] npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+[02:15:00.742] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[02:15:00.748] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[02:15:00.748] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[02:15:00.809] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[02:15:00.811] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[02:15:00.812] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[02:15:01.770] npm warn deprecated sudo-prompt@9.2.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[02:15:01.977] npm warn deprecated stable@0.1.8: Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility
+[02:15:03.221] npm warn deprecated request@2.88.2: request has been deprecated, see https://github.com/request/request/issues/3142
+[02:15:03.351] npm warn deprecated osenv@0.1.5: This package is no longer supported.
+[02:15:04.190] npm warn deprecated lodash.get@4.4.2: This package is deprecated. Use the optional chaining (?.) operator instead.
+[02:15:05.171] npm warn deprecated har-validator@5.1.5: this library is no longer supported
+[02:15:06.662] npm warn deprecated ethereumjs-wallet@1.0.2: New package name format for new versions: @ethereumjs/wallet. Please update.
+[02:15:07.062] npm warn deprecated abab@2.0.6: Use your platform's native atob() and btoa() methods instead
+[02:15:07.398] npm warn deprecated @xmldom/xmldom@0.7.13: this version is no longer supported, please update to at least 0.8.*
+[02:15:08.346] npm warn deprecated @oclif/screen@3.0.8: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[02:15:08.420] npm warn deprecated @npmcli/move-file@1.1.2: This functionality has been moved to @npmcli/fs
+[02:15:09.789] npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+[02:15:09.880] npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+[02:15:10.302] npm warn deprecated @babel/plugin-proposal-optional-chaining@7.21.0: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-optional-chaining instead.
+[02:15:10.336] npm warn deprecated @babel/plugin-proposal-optional-catch-binding@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-optional-catch-binding instead.
+[02:15:10.339] npm warn deprecated @babel/plugin-proposal-nullish-coalescing-operator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-nullish-coalescing-operator instead.
+[02:15:10.339] npm warn deprecated @babel/plugin-proposal-numeric-separator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-numeric-separator instead.
+[02:15:10.372] npm warn deprecated @babel/plugin-proposal-object-rest-spread@7.20.7: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-object-rest-spread instead.
+[02:15:10.373] npm warn deprecated @babel/plugin-proposal-class-properties@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-class-properties instead.
+[02:15:10.376] npm warn deprecated @babel/plugin-proposal-async-generator-functions@7.20.7: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-async-generator-functions instead.
+[02:15:10.376] npm warn deprecated @babel/plugin-proposal-export-namespace-from@7.18.9: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-export-namespace-from instead.
+[02:15:10.773] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[02:15:10.955] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[02:15:12.043] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[02:15:12.075] npm warn deprecated rimraf@2.4.5: Rimraf versions prior to v4 are no longer supported
+[02:15:12.111] npm warn deprecated glob@6.0.4: Glob versions prior to v9 are no longer supported
+[02:15:12.704] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[02:15:12.799] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[02:15:12.985] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[02:15:13.099] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[02:15:13.159] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[02:15:13.161] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[02:15:13.461] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[02:15:13.957] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[02:15:14.029] npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+[02:15:14.819] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[02:15:14.947] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[02:15:15.179] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[02:15:15.372] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[02:15:15.697] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[02:15:16.228] npm warn deprecated sudo-prompt@8.2.5: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[02:15:36.810] 
+[02:15:36.811] added 2738 packages, and audited 2739 packages in 41s
+[02:15:36.811] 
+[02:15:36.811] 283 packages are looking for funding
+[02:15:36.811]   run `npm fund` for details
+[02:15:36.920] 
+[02:15:36.920] 59 vulnerabilities (11 low, 20 moderate, 22 high, 6 critical)
+[02:15:36.921] 
+[02:15:36.921] To address issues that do not require attention, run:
+[02:15:36.921]   npm audit fix
+[02:15:36.921] 
+[02:15:36.921] To address all issues (including breaking changes), run:
+[02:15:36.921]   npm audit fix --force
+[02:15:36.922] 
+[02:15:36.922] Run `npm audit` for details.
+[02:15:37.200] 
+[02:15:37.201] > rest-express@1.0.0 build
+[02:15:37.201] > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+[02:15:37.201] 
+[02:15:37.421] [36mvite v5.4.10 [32mbuilding for production...[36m[39m
+[02:15:37.451] [32m✓[39m 0 modules transformed.
+[02:15:37.453] [31mx[39m Build failed in 12ms
+[02:15:37.454] [31merror during build:
+[02:15:37.454] [31mCould not resolve entry module "index.html".[31m
+[02:15:37.454]     at getRollupError (file:///vercel/path0/node_modules/rollup/dist/es/shared/parseAst.js:396:41)
+[02:15:37.454]     at error (file:///vercel/path0/node_modules/rollup/dist/es/shared/parseAst.js:392:42)
+[02:15:37.454]     at ModuleLoader.loadEntryModule (file:///vercel/path0/node_modules/rollup/dist/es/shared/node-entry.js:20086:20)
+[02:15:37.454]     at async Promise.all (index 0)[39m
+[02:15:37.468] Error: Command "npm run build" exited with 1
