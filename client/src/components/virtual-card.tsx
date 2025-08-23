@@ -26,6 +26,7 @@ const cardColors = {
   crypto: "bg-gradient-to-br from-violet-700 via-violet-500 to-fuchsia-600 animate-gradient-slow",
   usd: "bg-gradient-to-tr from-emerald-700 via-green-500 to-emerald-600 animate-gradient-slow backdrop-blur-md",
   uah: "bg-gradient-to-tr from-blue-700 via-sky-500 to-blue-600 animate-gradient-slow backdrop-blur-md",
+  kichcoin: "bg-gradient-to-br from-orange-700 via-orange-500 to-amber-600 animate-gradient-slow backdrop-blur-md",
 } as const;
 
 // Utility functions для проверки криптоадресов

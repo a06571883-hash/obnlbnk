@@ -24,8 +24,10 @@ export const cards = pgTable("cards", {
   balance: text("balance").notNull().default("0"),
   btcBalance: text("btc_balance").notNull().default("0"),
   ethBalance: text("eth_balance").notNull().default("0"),
+  kichcoinBalance: text("kichcoin_balance").notNull().default("0"),
   btcAddress: text("btc_address"),
   ethAddress: text("eth_address"),
+  tonAddress: text("ton_address"),
 });
 
 export const transactions = pgTable("transactions", {
@@ -119,8 +121,10 @@ export const insertCardSchema = createInsertSchema(cards, {
   balance: z.string().default("0"),
   btcBalance: z.string().default("0"),
   ethBalance: z.string().default("0"),
+  kichcoinBalance: z.string().default("0"),
   btcAddress: z.string().nullable(),
   ethAddress: z.string().nullable(),
+  tonAddress: z.string().nullable(),
 });
 
 export const insertTransactionSchema = z.object({

@@ -79,8 +79,10 @@ async function createTablesIfNotExist() {
         balance TEXT NOT NULL DEFAULT '0',
         btc_balance TEXT NOT NULL DEFAULT '0',
         eth_balance TEXT NOT NULL DEFAULT '0',
+        kichcoin_balance TEXT NOT NULL DEFAULT '0',
         btc_address TEXT,
-        eth_address TEXT
+        eth_address TEXT,
+        ton_address TEXT
       )
     `;
     
@@ -235,7 +237,24 @@ export async function initializeDatabase() {
     // Проверяем содержимое базы
     await logDatabaseContent();
     
-    console.log('Database initialization completed successfully');
+    // Добавляем новые колонки для KICHCOIN если их нет (для существующих таблиц)
+    try {
+      await client`
+        ALTER TABLE cards 
+        ADD COLUMN IF NOT EXISTS kichcoin_balance TEXT NOT NULL DEFAULT '0'
+      `;
+      
+      await client`
+        ALTER TABLE cards 
+        ADD COLUMN IF NOT EXISTS ton_address TEXT
+      `;
+      
+      console.log('✅ KICHCOIN колонки успешно добавлены в базу данных');
+    } catch (error) {
+      console.log('⚠️ Ошибка при добавлении KICHCOIN колонок:', error);
+    }
+
+console.log('Database initialization completed successfully');
   } catch (error) {
     console.error('Database initialization failed:', error);
     throw error;

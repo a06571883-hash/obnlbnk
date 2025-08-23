@@ -1,18 +1,5 @@
 [
   {
-    "id": 2,
-    "userId": 1,
-    "type": "usd",
-    "number": "4112322062136520",
-    "expiry": "08/28",
-    "cvv": "736",
-    "balance": "0.00000000",
-    "btcBalance": "0.00000000",
-    "ethBalance": "0.00000000",
-    "btcAddress": null,
-    "ethAddress": null
-  },
-  {
     "id": 3,
     "userId": 1,
     "type": "uah",
@@ -22,8 +9,10 @@
     "balance": "0.00000000",
     "btcBalance": "0.00000000",
     "ethBalance": "0.00000000",
+    "kichcoinBalance": "0",
     "btcAddress": null,
-    "ethAddress": null
+    "ethAddress": null,
+    "tonAddress": null
   },
   {
     "id": 1,
@@ -35,21 +24,10 @@
     "balance": "0.00000000",
     "btcBalance": "0.00000000",
     "ethBalance": "0.00000000",
+    "kichcoinBalance": "0",
     "btcAddress": "1GWzB5z23nWRwz952sfMPvdxDsRTkhWyss",
-    "ethAddress": "0x441e217F7C659DFA9C7cf5Cb5D574043b0B865f7"
-  },
-  {
-    "id": 4,
-    "userId": 3,
-    "type": "usd",
-    "number": "4111 6811 2618 7940",
-    "expiry": "08/28",
-    "cvv": "407",
-    "balance": "1000.00000000",
-    "btcBalance": "0.00000000",
-    "ethBalance": "0.00000000",
-    "btcAddress": null,
-    "ethAddress": null
+    "ethAddress": "0x441e217F7C659DFA9C7cf5Cb5D574043b0B865f7",
+    "tonAddress": null
   },
   {
     "id": 5,
@@ -61,8 +39,25 @@
     "balance": "40000.00000000",
     "btcBalance": "0.00000000",
     "ethBalance": "0.00000000",
+    "kichcoinBalance": "0",
     "btcAddress": null,
-    "ethAddress": null
+    "ethAddress": null,
+    "tonAddress": null
+  },
+  {
+    "id": 4,
+    "userId": 3,
+    "type": "usd",
+    "number": "4111 6811 2618 7940",
+    "expiry": "08/28",
+    "cvv": "407",
+    "balance": "1000.00000000",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "kichcoinBalance": "0",
+    "btcAddress": null,
+    "ethAddress": null,
+    "tonAddress": null
   },
   {
     "id": 6,
@@ -72,9 +67,26 @@
     "expiry": "08/28",
     "cvv": "276",
     "balance": "0.00000000",
+    "btcBalance": "937996.72447000",
+    "ethBalance": "36800.78130570",
+    "kichcoinBalance": "0",
+    "btcAddress": "1NeGKbeLmAvNEvg7ZHfE6mgsQQyynTrrMY",
+    "ethAddress": "0xFB734f2527B58d1fe46477042428Ad7dC557afCd",
+    "tonAddress": null
+  },
+  {
+    "id": 2,
+    "userId": 1,
+    "type": "usd",
+    "number": "4112322062136520",
+    "expiry": "08/28",
+    "cvv": "736",
+    "balance": "11500.90000000",
     "btcBalance": "0.00000000",
     "ethBalance": "0.00000000",
-    "btcAddress": "1NeGKbeLmAvNEvg7ZHfE6mgsQQyynTrrMY",
-    "ethAddress": "0xFB734f2527B58d1fe46477042428Ad7dC557afCd"
+    "kichcoinBalance": "0",
+    "btcAddress": null,
+    "ethAddress": null,
+    "tonAddress": null
   }
 ]

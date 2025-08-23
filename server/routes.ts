@@ -591,8 +591,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Если карт нет, создаем новые
         console.log(`Creating new cards for user ${userId}...`);
         
-        // Создаем карты всех типов: USD, UAH, Crypto
-        const cardTypes = ['usd', 'uah', 'crypto'];
+        // Создаем карты всех типов: USD, UAH, Crypto, KICHCOIN
+        const cardTypes = ['usd', 'uah', 'crypto', 'kichcoin'];
         const newCards = [];
         
         for (const type of cardTypes) {
@@ -604,8 +604,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Генерируем криптоадреса только для crypto карт
           let btcAddress = null;
           let ethAddress = null;
+          let tonAddress = null;
           let btcBalance = "0";
           let ethBalance = "0";
+          let kichcoinBalance = "0";
           
           if (type === 'crypto') {
             btcAddress = generateValidAddress('btc', userId);
@@ -615,9 +617,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             console.log(`Generated BTC address: ${btcAddress} for user ${userId}`);
             console.log(`Generated ETH address: ${ethAddress} for user ${userId}`);
+          } else if (type === 'kichcoin') {
+            // Используем предоставленный TON адрес для KICHCOIN карты
+            tonAddress = "EQC8eLIsQ4QLssWiJ_lqxShW1w7T1G11cfh-gFSRnMze64HI";
+            kichcoinBalance = "100.00000000"; // Начальный баланс KICHCOIN
+            
+            console.log(`Set TON address: ${tonAddress} for KICHCOIN card for user ${userId}`);
           }
           
-          const balance = type === 'usd' ? '1000' : (type === 'uah' ? '40000' : '0');
+          const balance = type === 'usd' ? '1000' : (type === 'uah' ? '40000' : (type === 'kichcoin' ? '0' : '0'));
           
           const cardData = {
             userId: userId,
@@ -628,8 +636,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             balance: balance,
             btcBalance: btcBalance,
             ethBalance: ethBalance,
+            kichcoinBalance: kichcoinBalance,
             btcAddress: btcAddress,
-            ethAddress: ethAddress
+            ethAddress: ethAddress,
+            tonAddress: tonAddress
           };
           
           const newCard = await storage.createCard(cardData);
