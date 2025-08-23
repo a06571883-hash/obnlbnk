@@ -23,14 +23,14 @@ import { seaTableManager } from './utils/seatable.js';
 import { generateValidAddress, validateCryptoAddress, getSeedPhraseForUser } from './utils/crypto.js';
 import { hasBlockchainApiKeys } from './utils/blockchain.js';
 import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase.js';
-import { generateNFTImage } from './utils/nft-generator.js';
+// import { generateNFTImage } from './utils/nft-generator.js'; // Исключено для Vercel
 import { db } from './db.js';
 import { eq } from 'drizzle-orm';
 import { nfts, nftCollections } from '@shared/schema';
 import nftRoutes from './controllers/nft-controller.js';
 import nftImportRoutes from './controllers/nft-import-controller.js';
 import nftMarketplaceRoutes from './controllers/nft-marketplace-controller.js';
-import nftServerController from './controllers/nft-server-controller.js';
+// import nftServerController from './controllers/nft-server-controller.js'; // Исключено для Vercel
 import { staticAssetsRouter } from './routes/static-assets.js';
 import { serveStatic } from './vite-vercel.js';
 import { setupDebugRoutes } from "./debug.js";
@@ -64,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/nft', nftRoutes);
   app.use('/api/nft/marketplace', nftMarketplaceRoutes);
   app.use('/api/nft-import', nftImportRoutes);
-  app.use('/api/nft-server', nftServerController);
+  // app.use('/api/nft-server', nftServerController); // Исключено для Vercel (тяжелые зависимости)
 
   // Отладочные маршруты
   setupDebugRoutes(app);

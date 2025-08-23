@@ -1,0 +1,63 @@
+[01:10:56.209] Running build in Washington, D.C., USA (East) – iad1
+[01:10:56.211] Build machine configuration: 2 cores, 8 GB
+[01:10:56.257] Cloning github.com/a06571883-hash/obnlbnk (Branch: main, Commit: 30b4b38)
+[01:11:13.417] Cloning completed: 17.159s
+[01:11:14.174] Found .vercelignore
+[01:11:14.298] Removed 219 ignored files defined in .vercelignore
+[01:11:14.299]   /.git/config
+[01:11:14.299]   /.git/description
+[01:11:14.299]   /.git/FETCH_HEAD
+[01:11:14.299]   /.git/HEAD
+[01:11:14.299]   /.git/hooks/applypatch-msg.sample
+[01:11:14.299]   /.git/hooks/commit-msg.sample
+[01:11:14.299]   /.git/hooks/fsmonitor-watchman.sample
+[01:11:14.299]   /.git/hooks/post-update.sample
+[01:11:14.299]   /.git/hooks/pre-applypatch.sample
+[01:11:14.299]   /.git/hooks/pre-commit.sample
+[01:11:14.440] Restored build cache from previous deployment (5TzRvZVqzhQBEctyumyhahkpYtKo)
+[01:11:15.801] Running "vercel build"
+[01:11:16.211] Vercel CLI 46.0.2
+[01:11:17.913] Running "install" command: `npm install`...
+[01:11:30.214] 
+[01:11:30.215] up to date, audited 2739 packages in 12s
+[01:11:30.216] 
+[01:11:30.216] 283 packages are looking for funding
+[01:11:30.216]   run `npm fund` for details
+[01:11:30.319] 
+[01:11:30.319] 59 vulnerabilities (11 low, 20 moderate, 22 high, 6 critical)
+[01:11:30.320] 
+[01:11:30.320] To address issues that do not require attention, run:
+[01:11:30.320]   npm audit fix
+[01:11:30.320] 
+[01:11:30.321] To address all issues (including breaking changes), run:
+[01:11:30.321]   npm audit fix --force
+[01:11:30.321] 
+[01:11:30.321] Run `npm audit` for details.
+[01:11:30.888] [36mvite v5.4.10 [32mbuilding for production...[36m[39m
+[01:11:30.958] <script src="/assets/nft/fallback/convert-svg-to-png.js"> in "/index.html" can't be bundled without type="module" attribute
+[01:11:30.961] transforming...
+[01:11:31.262] Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+[01:11:31.263]   npx update-browserslist-db@latest
+[01:11:31.263]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[01:11:41.479] [32m✓[39m 3846 modules transformed.
+[01:11:42.398] rendering chunks...
+[01:11:42.417] computing gzip size...
+[01:11:42.450] [2m../dist/public/[22m[32mindex.html                 [39m[1m[2m    2.21 kB[22m[1m[22m[2m │ gzip:   0.98 kB[22m
+[01:11:42.451] [2m../dist/public/[22m[2massets/[22m[35mindex-C1QMhWEC.css  [39m[1m[2m   80.43 kB[22m[1m[22m[2m │ gzip:  13.50 kB[22m
+[01:11:42.451] [2m../dist/public/[22m[2massets/[22m[36mindex-CRM2_L8n.js   [39m[1m[33m1,170.97 kB[39m[22m[2m │ gzip: 345.63 kB[22m
+[01:11:42.451] [33m
+[01:11:42.451] (!) Some chunks are larger than 500 kB after minification. Consider:
+[01:11:42.451] - Using dynamic import() to code-split the application
+[01:11:42.451] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[01:11:42.451] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[01:11:42.452] [32m✓ built in 11.53s[39m
+[01:11:42.670] Installing dependencies...
+[01:11:47.107] 
+[01:11:47.108] up to date in 4s
+[01:11:47.108] 
+[01:11:47.108] 283 packages are looking for funding
+[01:11:47.109]   run `npm fund` for details
+[01:11:47.351] Using TypeScript 5.6.3 (local user-provided)
+[01:12:08.012] Build Completed in /vercel/output [50s]
+[01:12:09.030] Deploying outputs...
+[01:12:32.937] Error: A Serverless Function has exceeded the unzipped maximum size of 250 MB. : https://vercel.link/serverless-function-size
