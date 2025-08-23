@@ -1,0 +1,49 @@
+# Игнорируем файлы, которые не нужны для деплоя на Vercel
+node_modules
+.git
+.env.local
+.env.development
+sqlite.db
+data/
+backup/
+compiled/
+dist/server/
+server-replit.ts
+
+# Временные и кэш файлы
+*.log
+.cache/
+.DS_Store
+.vscode/
+*.swp
+*.swo
+
+# Файлы разработки
+tsconfig.tsbuildinfo
+*.md
+README.md
+
+# Бэкапы и скрипты
+*.sh
+*.sql
+BACKUP_RESTORE_INSTRUCTIONS.md
+DATABASE_BACKUP_RESTORE.md
+DATABASE_INSTRUCTIONS.md
+RENDER_DEPLOYMENT_GUIDE.md
+
+# Скрипты импорта и обработки
+add-*.js
+add-*.cjs
+check-*.js
+clean-*.js
+clean-*.cjs
+import-*.js
+export-*.js
+backup-*.js
+convert-*.js
+create-*.js
+activate-*.js
+auto-*.js
+batch-*.js
+deep-*.js
+complete-*.js
