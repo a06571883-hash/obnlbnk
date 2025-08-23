@@ -1,0 +1,46 @@
+[01:25:35.763] Running build in Washington, D.C., USA (East) – iad1
+[01:25:35.764] Build machine configuration: 2 cores, 8 GB
+[01:25:35.793] Cloning github.com/a06571883-hash/obnlbnk (Branch: main, Commit: 0a8fb66)
+[01:25:52.708] Cloning completed: 16.915s
+[01:25:53.414] Found .vercelignore
+[01:25:53.669] Removed 1432 ignored files defined in .vercelignore
+[01:25:53.669]   /.git/config
+[01:25:53.669]   /.git/description
+[01:25:53.669]   /.git/FETCH_HEAD
+[01:25:53.669]   /.git/HEAD
+[01:25:53.669]   /.git/hooks/applypatch-msg.sample
+[01:25:53.670]   /.git/hooks/commit-msg.sample
+[01:25:53.670]   /.git/hooks/fsmonitor-watchman.sample
+[01:25:53.670]   /.git/hooks/post-update.sample
+[01:25:53.670]   /.git/hooks/pre-applypatch.sample
+[01:25:53.670]   /.git/hooks/pre-commit.sample
+[01:25:53.801] Restored build cache from previous deployment (CKGGEiHmb6QfBwkkj17Tzuy6Riis)
+[01:25:55.072] Running "vercel build"
+[01:25:55.564] Vercel CLI 46.0.2
+[01:25:56.455] > Installing Builder: @vercel/node@3.0.23
+[01:26:14.398] Running "install" command: `npm install`...
+[01:26:23.464] 
+[01:26:23.465] up to date, audited 2739 packages in 9s
+[01:26:23.465] 
+[01:26:23.466] 283 packages are looking for funding
+[01:26:23.466]   run `npm fund` for details
+[01:26:23.552] 
+[01:26:23.553] 59 vulnerabilities (11 low, 20 moderate, 22 high, 6 critical)
+[01:26:23.553] 
+[01:26:23.553] To address issues that do not require attention, run:
+[01:26:23.554]   npm audit fix
+[01:26:23.554] 
+[01:26:23.554] To address all issues (including breaking changes), run:
+[01:26:23.554]   npm audit fix --force
+[01:26:23.554] 
+[01:26:23.554] Run `npm audit` for details.
+[01:26:23.927] [36mvite v5.4.10 [32mbuilding for production...[36m[39m
+[01:26:23.960] [32m✓[39m 0 modules transformed.
+[01:26:23.962] [31mx[39m Build failed in 12ms
+[01:26:23.963] [31merror during build:
+[01:26:23.963] [31mCould not resolve entry module "index.html".[31m
+[01:26:23.963]     at getRollupError (file:///vercel/path0/node_modules/rollup/dist/es/shared/parseAst.js:396:41)
+[01:26:23.963]     at error (file:///vercel/path0/node_modules/rollup/dist/es/shared/parseAst.js:392:42)
+[01:26:23.963]     at ModuleLoader.loadEntryModule (file:///vercel/path0/node_modules/rollup/dist/es/shared/node-entry.js:20086:20)
+[01:26:23.963]     at async Promise.all (index 0)[39m
+[01:26:23.970] Error: Command "vite build" exited with 1
