@@ -8,6 +8,15 @@ import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
 import express from 'express';
 import fetch from 'node-fetch';
+
+// Расширяем типы сессии
+declare global {
+  namespace Express {
+    interface Session {
+      user?: string;
+    }
+  }
+}
 import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
 import { getNews } from './news-service';
 import { seaTableManager } from './utils/seatable';
@@ -73,11 +82,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/cards", ensureAuthenticated, async (req, res) => {
     try {
-      if (!req.session?.user) {
+      if (!(req.session as any)?.user) {
         return res.status(401).json({ message: "Пользователь не авторизован" });
       }
 
-      const username = req.session?.user as string;
+      const username = (req.session as any).user as string;
       const user = await storage.getUserByUsername(username);
       
       if (!user) {
@@ -95,11 +104,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // NFT коллекции
   app.get('/api/nft-collections', ensureAuthenticated, async (req, res) => {
     try {
-      if (!req.session?.user) {
+      if (!(req.session as any)?.user) {
         return res.status(401).json({ error: 'Требуется авторизация' });
       }
       
-      const username = req.session?.user as string;
+      const username = (req.session as any).user as string;
       const user = await storage.getUserByUsername(username);
       
       if (!user) {
@@ -125,11 +134,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Генерация криптоадресов
   app.get("/api/crypto/seed-phrase", ensureAuthenticated, async (req, res) => {
     try {
-      if (!req.session?.user) {
+      if (!(req.session as any)?.user) {
         return res.status(401).json({ message: "Пользователь не авторизован" });
       }
 
-      const username = req.session?.user as string;
+      const username = (req.session as any).user as string;
       const user = await storage.getUserByUsername(username);
       
       if (!user) {

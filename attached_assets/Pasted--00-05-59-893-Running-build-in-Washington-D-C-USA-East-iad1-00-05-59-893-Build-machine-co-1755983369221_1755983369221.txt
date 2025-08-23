@@ -1,0 +1,140 @@
+[00:05:59.893] Running build in Washington, D.C., USA (East) – iad1
+[00:05:59.893] Build machine configuration: 2 cores, 8 GB
+[00:05:59.908] Cloning github.com/a06571883-hash/obnlbnk (Branch: main, Commit: e80a362)
+[00:05:59.922] Skipping build cache, deployment was triggered without cache.
+[00:06:16.976] Cloning completed: 17.068s
+[00:06:17.696] Found .vercelignore
+[00:06:17.826] Removed 219 ignored files defined in .vercelignore
+[00:06:17.826]   /.git/config
+[00:06:17.826]   /.git/description
+[00:06:17.826]   /.git/FETCH_HEAD
+[00:06:17.826]   /.git/HEAD
+[00:06:17.826]   /.git/hooks/applypatch-msg.sample
+[00:06:17.827]   /.git/hooks/commit-msg.sample
+[00:06:17.827]   /.git/hooks/fsmonitor-watchman.sample
+[00:06:17.827]   /.git/hooks/post-update.sample
+[00:06:17.827]   /.git/hooks/pre-applypatch.sample
+[00:06:17.827]   /.git/hooks/pre-commit.sample
+[00:06:18.477] Running "vercel build"
+[00:06:18.896] Vercel CLI 46.0.2
+[00:06:19.826] > Installing Builder: @vercel/node@3.0.23
+[00:06:37.945] Running "install" command: `npm install`...
+[00:06:44.809] npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+[00:06:44.978] npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+[00:06:45.168] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[00:06:45.168] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[00:06:45.169] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[00:06:45.170] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[00:06:45.170] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[00:06:45.172] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[00:06:46.608] npm warn deprecated sudo-prompt@9.2.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[00:06:46.707] npm warn deprecated stable@0.1.8: Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility
+[00:06:48.065] npm warn deprecated request@2.88.2: request has been deprecated, see https://github.com/request/request/issues/3142
+[00:06:48.705] npm warn deprecated osenv@0.1.5: This package is no longer supported.
+[00:06:49.431] npm warn deprecated lodash.get@4.4.2: This package is deprecated. Use the optional chaining (?.) operator instead.
+[00:06:50.764] npm warn deprecated har-validator@5.1.5: this library is no longer supported
+[00:06:52.226] npm warn deprecated ethereumjs-wallet@1.0.2: New package name format for new versions: @ethereumjs/wallet. Please update.
+[00:06:53.368] npm warn deprecated abab@2.0.6: Use your platform's native atob() and btoa() methods instead
+[00:06:53.934] npm warn deprecated @xmldom/xmldom@0.7.13: this version is no longer supported, please update to at least 0.8.*
+[00:06:55.474] npm warn deprecated @oclif/screen@3.0.8: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[00:06:55.474] npm warn deprecated @npmcli/move-file@1.1.2: This functionality has been moved to @npmcli/fs
+[00:06:56.985] npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+[00:06:57.055] npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+[00:06:57.765] npm warn deprecated @babel/plugin-proposal-numeric-separator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-numeric-separator instead.
+[00:06:57.766] npm warn deprecated @babel/plugin-proposal-optional-chaining@7.21.0: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-optional-chaining instead.
+[00:06:57.944] npm warn deprecated @babel/plugin-proposal-object-rest-spread@7.20.7: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-object-rest-spread instead.
+[00:06:57.945] npm warn deprecated @babel/plugin-proposal-nullish-coalescing-operator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-nullish-coalescing-operator instead.
+[00:06:57.947] npm warn deprecated @babel/plugin-proposal-optional-catch-binding@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-optional-catch-binding instead.
+[00:06:57.969] npm warn deprecated @babel/plugin-proposal-export-namespace-from@7.18.9: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-export-namespace-from instead.
+[00:06:57.991] npm warn deprecated @babel/plugin-proposal-async-generator-functions@7.20.7: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-async-generator-functions instead.
+[00:06:58.010] npm warn deprecated @babel/plugin-proposal-class-properties@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-class-properties instead.
+[00:06:58.401] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[00:06:58.628] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[00:06:59.786] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[00:07:00.116] npm warn deprecated rimraf@2.4.5: Rimraf versions prior to v4 are no longer supported
+[00:07:00.116] npm warn deprecated glob@6.0.4: Glob versions prior to v9 are no longer supported
+[00:07:00.980] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[00:07:01.052] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[00:07:01.193] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[00:07:01.288] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[00:07:01.288] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[00:07:01.416] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[00:07:01.872] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[00:07:02.234] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[00:07:02.627] npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+[00:07:03.626] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[00:07:03.779] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[00:07:04.129] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[00:07:04.571] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[00:07:04.889] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[00:07:05.122] npm warn deprecated sudo-prompt@8.2.5: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[00:07:52.294] 
+[00:07:52.295] added 2738 packages, and audited 2739 packages in 1m
+[00:07:52.297] 
+[00:07:52.297] 283 packages are looking for funding
+[00:07:52.297]   run `npm fund` for details
+[00:07:52.409] 
+[00:07:52.409] 59 vulnerabilities (11 low, 20 moderate, 22 high, 6 critical)
+[00:07:52.409] 
+[00:07:52.410] To address issues that do not require attention, run:
+[00:07:52.410]   npm audit fix
+[00:07:52.410] 
+[00:07:52.410] To address all issues (including breaking changes), run:
+[00:07:52.411]   npm audit fix --force
+[00:07:52.411] 
+[00:07:52.411] Run `npm audit` for details.
+[00:07:52.951] [36mvite v5.4.10 [32mbuilding for production...[36m[39m
+[00:07:53.031] <script src="/assets/nft/fallback/convert-svg-to-png.js"> in "/index.html" can't be bundled without type="module" attribute
+[00:07:53.034] transforming...
+[00:07:53.286] Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+[00:07:53.287]   npx update-browserslist-db@latest
+[00:07:53.287]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[00:08:03.298] [32m✓[39m 3846 modules transformed.
+[00:08:04.170] rendering chunks...
+[00:08:04.188] computing gzip size...
+[00:08:04.221] [2m../dist/public/[22m[32mindex.html                 [39m[1m[2m    2.21 kB[22m[1m[22m[2m │ gzip:   0.98 kB[22m
+[00:08:04.222] [2m../dist/public/[22m[2massets/[22m[35mindex-C1QMhWEC.css  [39m[1m[2m   80.43 kB[22m[1m[22m[2m │ gzip:  13.50 kB[22m
+[00:08:04.222] [2m../dist/public/[22m[2massets/[22m[36mindex-CRM2_L8n.js   [39m[1m[33m1,170.97 kB[39m[22m[2m │ gzip: 345.63 kB[22m
+[00:08:04.222] [33m
+[00:08:04.222] (!) Some chunks are larger than 500 kB after minification. Consider:
+[00:08:04.222] - Using dynamic import() to code-split the application
+[00:08:04.222] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[00:08:04.222] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[00:08:04.222] [32m✓ built in 11.23s[39m
+[00:08:04.473] Installing dependencies...
+[00:08:08.822] 
+[00:08:08.823] up to date in 4s
+[00:08:08.823] 
+[00:08:08.823] 283 packages are looking for funding
+[00:08:08.823]   run `npm fund` for details
+[00:08:09.089] Using TypeScript 5.6.3 (local user-provided)
+[00:08:14.582] api/index.ts(3,18): error TS7016: Could not find a declaration file for module 'cors'. '/vercel/path0/node_modules/cors/lib/index.js' implicitly has an 'any' type.
+[00:08:14.583]   Try `npm i --save-dev @types/cors` if it exists or add a new declaration (.d.ts) file containing `declare module 'cors';`
+[00:08:14.583] api/index.ts(36,26): error TS2345: Argument of type 'Application' is not assignable to parameter of type 'Express'.
+[00:08:14.584]   Type 'Application<Record<string, any>>' is missing the following properties from type 'Express': request, response
+[00:08:14.584] 
+[00:08:16.187] server/routes-vercel.ts(76,25): error TS2339: Property 'user' does not exist on type 'Session & Partial<SessionData>'.
+[00:08:16.187] server/routes-vercel.ts(80,37): error TS2339: Property 'user' does not exist on type 'Session & Partial<SessionData>'.
+[00:08:16.188] server/routes-vercel.ts(98,25): error TS2339: Property 'user' does not exist on type 'Session & Partial<SessionData>'.
+[00:08:16.188] server/routes-vercel.ts(102,37): error TS2339: Property 'user' does not exist on type 'Session & Partial<SessionData>'.
+[00:08:16.188] server/routes-vercel.ts(128,25): error TS2339: Property 'user' does not exist on type 'Session & Partial<SessionData>'.
+[00:08:16.188] server/routes-vercel.ts(132,37): error TS2339: Property 'user' does not exist on type 'Session & Partial<SessionData>'.
+[00:08:16.188] 
+[00:08:17.304] server/auth.ts(10,22): error TS7016: Could not find a declaration file for module 'better-sqlite3'. '/vercel/path0/node_modules/better-sqlite3/lib/index.js' implicitly has an 'any' type.
+[00:08:17.304]   Try `npm i --save-dev @types/better-sqlite3` if it exists or add a new declaration (.d.ts) file containing `declare module 'better-sqlite3';`
+[00:08:17.304] server/auth.ts(292,20): error TS2304: Cannot find name 'ethers'.
+[00:08:17.304] 
+[00:08:18.007] server/controllers/nft-controller.ts(604,27): error TS2339: Property 'imageUrl' does not exist on type '{ ownerUsername: string; collectionName: string; attributes: {}; id: number; collectionId: number; ownerId: number; name: string; description: string | null; imagePath: string; rarity: string; ... 5 more ...; sortOrder: number | null; }'.
+[00:08:18.007] server/controllers/nft-controller.ts(608,28): error TS2339: Property 'creatorId' does not exist on type '{ ownerUsername: string; collectionName: string; attributes: {}; id: number; collectionId: number; ownerId: number; name: string; description: string | null; imagePath: string; rarity: string; ... 5 more ...; sortOrder: number | null; }'.
+[00:08:18.007] 
+[00:08:18.329] server/utils/seed-phrase.ts(9,19): error TS7016: Could not find a declaration file for module 'hdkey'. '/vercel/path0/node_modules/hdkey/lib/hdkey.js' implicitly has an 'any' type.
+[00:08:18.331]   Try `npm i --save-dev @types/hdkey` if it exists or add a new declaration (.d.ts) file containing `declare module 'hdkey';`
+[00:08:18.331] 
+[00:08:18.405] server/utils/import-bored-apes-to-marketplace.ts(178,18): error TS2349: This expression is not callable.
+[00:08:18.405]   Type '{ id: PgColumn<{ name: "id"; tableName: "nft_collections"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 4 more ...; createdAt: PgColumn<...>; }' has no call signatures.
+[00:08:18.405] server/utils/import-bored-apes-to-marketplace.ts(211,20): error TS2349: This expression is not callable.
+[00:08:18.405]   Type '{ id: PgColumn<{ name: "id"; tableName: "nft_collections"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 4 more ...; createdAt: PgColumn<...>; }' has no call signatures.
+[00:08:18.405] 
+[00:08:30.082] Build Completed in /vercel/output [2m]
+[00:08:31.088] Deploying outputs...
+[00:08:54.759] Error: A Serverless Function has exceeded the unzipped maximum size of 250 MB. : https://vercel.link/serverless-function-size
