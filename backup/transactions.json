@@ -26,5 +26,61 @@
     "description": "Комиссия за перевод (0.00000001 BTC)",
     "fromCardNumber": "4111 6811 2618 9390",
     "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 3,
+    "fromCardId": 6,
+    "toCardId": 12,
+    "amount": "0.30000000",
+    "convertedAmount": "1423978.10400000",
+    "type": "transfer",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-08-23T15:48:53.739Z",
+    "description": "Перевод 0.30000000 CRYPTO → 1423978.10 UAH (курс: 4746593.68)",
+    "fromCardNumber": "4111 6811 2618 9390",
+    "toCardNumber": "4113086489300030"
+  },
+  {
+    "id": 4,
+    "fromCardId": 6,
+    "toCardId": 3,
+    "amount": "0.00300000",
+    "convertedAmount": "0.00000003",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-08-23T15:48:54.085Z",
+    "description": "Комиссия за перевод (0.00000003 BTC)",
+    "fromCardNumber": "4111 6811 2618 9390",
+    "toCardNumber": "REGULATOR"
+  },
+  {
+    "id": 5,
+    "fromCardId": 12,
+    "toCardId": 10,
+    "amount": "1323978.00000000",
+    "convertedAmount": "0.27893224",
+    "type": "crypto_transfer",
+    "wallet": "17hBLXfBeSTiiMrcbv5ZWbU9DEoS1HnioV",
+    "status": "completed",
+    "createdAt": "2025-08-23T15:50:41.499Z",
+    "description": "Конвертация 1323978.00 UAH → 0.27893224 BTC и отправка на адрес 17hBLXfBeSTiiMrcbv5ZWbU9DEoS1HnioV (внутренний перевод)",
+    "fromCardNumber": "4113086489300030",
+    "toCardNumber": "4111357202311723"
+  },
+  {
+    "id": 6,
+    "fromCardId": 12,
+    "toCardId": 2,
+    "amount": "13239.78000000",
+    "convertedAmount": "0.00278932",
+    "type": "commission",
+    "wallet": null,
+    "status": "completed",
+    "createdAt": "2025-08-23T15:50:41.848Z",
+    "description": "Комиссия за перевод BTC (0.00278932 BTC)",
+    "fromCardNumber": "4113086489300030",
+    "toCardNumber": "REGULATOR"
   }
 ]
