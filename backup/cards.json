@@ -1,18 +1,5 @@
 [
   {
-    "id": 1,
-    "userId": 1,
-    "type": "crypto",
-    "number": "4111681126189854",
-    "expiry": "08/28",
-    "cvv": "165",
-    "balance": "0.00000000",
-    "btcBalance": "0.00000000",
-    "ethBalance": "0.00000000",
-    "btcAddress": "",
-    "ethAddress": ""
-  },
-  {
     "id": 2,
     "userId": 1,
     "type": "usd",
@@ -37,5 +24,18 @@
     "ethBalance": "0.00000000",
     "btcAddress": null,
     "ethAddress": null
+  },
+  {
+    "id": 1,
+    "userId": 1,
+    "type": "crypto",
+    "number": "4111681126189854",
+    "expiry": "08/28",
+    "cvv": "165",
+    "balance": "0.00000000",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "btcAddress": "",
+    "ethAddress": ""
   }
 ]

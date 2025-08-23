@@ -236,5 +236,96 @@
     "btcToUsd": "115064.00",
     "ethToUsd": "4717.14",
     "updatedAt": "2025-08-23T13:30:02.839Z"
+  },
+  {
+    "id": 35,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:30:27.476Z"
+  },
+  {
+    "id": 36,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:30:56.258Z"
+  },
+  {
+    "id": 37,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:31:26.258Z"
+  },
+  {
+    "id": 38,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:31:56.258Z"
+  },
+  {
+    "id": 39,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:32:26.258Z"
+  },
+  {
+    "id": 40,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:32:56.258Z"
+  },
+  {
+    "id": 41,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:33:26.258Z"
+  },
+  {
+    "id": 42,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:33:56.258Z"
+  },
+  {
+    "id": 43,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:34:26.258Z"
+  },
+  {
+    "id": 44,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:34:56.258Z"
+  },
+  {
+    "id": 45,
+    "usdToUah": "41.32",
+    "btcToUsd": "115052.00",
+    "ethToUsd": "4719.61",
+    "updatedAt": "2025-08-23T13:35:26.258Z"
+  },
+  {
+    "id": 46,
+    "usdToUah": "41.32",
+    "btcToUsd": "114926.00",
+    "ethToUsd": "4723.21",
+    "updatedAt": "2025-08-23T13:35:56.414Z"
+  },
+  {
+    "id": 47,
+    "usdToUah": "41.32",
+    "btcToUsd": "114926.00",
+    "ethToUsd": "4723.21",
+    "updatedAt": "2025-08-23T13:36:18.841Z"
   }
 ]

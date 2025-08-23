@@ -21,23 +21,36 @@ const network = bitcoin.networks.bitcoin;
  */
 export function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
   try {
-    // Используем детерминированную генерацию из seed фразы на основе userId
-    const { mnemonic, btcAddress, ethAddress } = generateAddressesForUser(userId);
-    
-    // Сохраняем seed фразу в логи (в реальном приложении её нужно показать пользователю)
-    console.log(`✅ Generated mnemonic phrase for user ${userId}: ${mnemonic}`);
+    console.log(`🔄 Generating ${type.toUpperCase()} address for user ${userId}...`);
     
     if (type === 'btc') {
-      console.log(`✅ Generated REAL BTC address: ${btcAddress} for user: ${userId}`);
-      return btcAddress;
+      // Генерируем детерминированный BTC адрес на основе userId
+      const seed = createHash('sha256').update(`btc-${userId}-salt`).digest();
+      const keyPair = ECPair.fromPrivateKey(seed);
+      const pubKeyBuffer = Buffer.from(keyPair.publicKey);
+      const { address } = bitcoin.payments.p2pkh({ pubkey: pubKeyBuffer, network: network });
+
+      if (!address) {
+        throw new Error("Failed to generate BTC address");
+      }
+
+      console.log(`✅ Generated REAL BTC address: ${address} for user: ${userId}`);
+      return address;
+      
     } else {
-      console.log(`✅ Generated REAL ETH address: ${ethAddress} for user: ${userId}`);
-      return ethAddress;
+      // Генерируем детерминированный ETH адрес на основе userId
+      const seed = createHash('sha256').update(`eth-${userId}-salt`).digest('hex');
+      const privateKey = '0x' + seed;
+      const wallet = new ethers.Wallet(privateKey);
+      
+      console.log(`✅ Generated REAL ETH address: ${wallet.address} for user: ${userId}`);
+      return wallet.address;
     }
+    
   } catch (error) {
     console.error(`Critical error generating ${type} address:`, error);
     
-    // Запасной вариант в случае ошибки - старый метод генерации
+    // Запасной вариант в случае ошибки - случайная генерация
     if (type === 'btc') {
       try {
         // Создаем пару ключей с использованием ECPair
