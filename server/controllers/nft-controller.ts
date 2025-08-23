@@ -601,11 +601,11 @@ router.get('/marketplace', async (req: Request, res: Response) => {
             name: nft.name || '',
             description: nft.description || '',
             imagePath: nft.imagePath || '',
-            imageUrl: nft.imageUrl || nft.imagePath || '',
+            imageUrl: nft.imagePath || '',
             price: nft.price?.toString() || '0',
             forSale: Boolean(nft.forSale),
             ownerId: nft.ownerId,
-            creatorId: nft.creatorId || nft.ownerId,
+            creatorId: nft.ownerId,
             ownerUsername: nft.ownerUsername || 'Unknown',
             attributes: nft.attributes || {
               power: 70, 
