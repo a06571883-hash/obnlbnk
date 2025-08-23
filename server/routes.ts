@@ -502,6 +502,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Генерация карт для пользователя
+  app.post("/api/cards/generate", ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      console.log(`Generating cards for user ${userId}...`);
+      
+      // Проверяем, есть ли уже карты у пользователя
+      const existingCards = await storage.getCardsByUserId(userId);
+      
+      // Если у пользователя уже есть криптокарта, обновляем её криптоадреса
+      const cryptoCard = existingCards.find(card => card.type === 'crypto');
+      
+      if (cryptoCard && (!cryptoCard.btcAddress || !cryptoCard.ethAddress)) {
+        console.log(`Updating crypto addresses for existing card ${cryptoCard.id}...`);
+        
+        // Генерируем новые адреса для пользователя
+        const btcAddress = generateValidAddress('btc', userId);
+        const ethAddress = generateValidAddress('eth', userId);
+        
+        console.log(`Generated BTC address: ${btcAddress} for user ${userId}`);
+        console.log(`Generated ETH address: ${ethAddress} for user ${userId}`);
+        
+        // Обновляем карту в базе данных
+        await storage.updateCardAddresses(cryptoCard.id, btcAddress, ethAddress);
+        
+        console.log(`Successfully updated crypto addresses for card ${cryptoCard.id}`);
+        
+        res.json({
+          success: true,
+          message: "Криптовалютные адреса успешно обновлены"
+        });
+      } else if (existingCards.length === 0) {
+        // Если карт нет, создаем новые
+        console.log(`Creating new cards for user ${userId}...`);
+        
+        // Создаем карты всех типов: USD, UAH, Crypto
+        const cardTypes = ['usd', 'uah', 'crypto'];
+        const newCards = [];
+        
+        for (const type of cardTypes) {
+          // Генерируем номер карты
+          const cardNumber = `4111 6811 2618 ${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+          const expiry = "08/28";
+          const cvv = Math.floor(Math.random() * 900 + 100).toString();
+          
+          // Генерируем криптоадреса только для crypto карт
+          let btcAddress = null;
+          let ethAddress = null;
+          let btcBalance = "0";
+          let ethBalance = "0";
+          
+          if (type === 'crypto') {
+            btcAddress = generateValidAddress('btc', userId);
+            ethAddress = generateValidAddress('eth', userId);
+            btcBalance = "0.00000000";
+            ethBalance = "0.00000000";
+            
+            console.log(`Generated BTC address: ${btcAddress} for user ${userId}`);
+            console.log(`Generated ETH address: ${ethAddress} for user ${userId}`);
+          }
+          
+          const balance = type === 'usd' ? '1000' : (type === 'uah' ? '40000' : '0');
+          
+          const cardData = {
+            userId: userId,
+            type: type,
+            number: cardNumber,
+            expiry: expiry,
+            cvv: cvv,
+            balance: balance,
+            btcBalance: btcBalance,
+            ethBalance: ethBalance,
+            btcAddress: btcAddress,
+            ethAddress: ethAddress
+          };
+          
+          const newCard = await storage.createCard(cardData);
+          newCards.push(newCard);
+          
+          console.log(`Created ${type} card with ID ${newCard.id} for user ${userId}`);
+        }
+        
+        console.log(`Successfully created ${newCards.length} cards for user ${userId}`);
+        
+        res.json({
+          success: true,
+          message: "Мультивалютные карты успешно созданы",
+          cards: newCards
+        });
+      } else {
+        // Карты уже есть и криптоадреса настроены
+        res.json({
+          success: true,
+          message: "Мультивалютные карты уже созданы"
+        });
+      }
+      
+    } catch (error) {
+      console.error("Card generation error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: error instanceof Error ? error.message : "Ошибка при создании карт" 
+      });
+    }
+  });
+
   // Transfer funds
   app.post("/api/transfer", ensureAuthenticated, async (req, res) => {
     try {

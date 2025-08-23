@@ -41,6 +41,7 @@ export interface IStorage {
   updateCardBalance(cardId: number, balance: string): Promise<void>;
   updateCardBtcBalance(cardId: number, balance: string): Promise<void>;
   updateCardEthBalance(cardId: number, balance: string): Promise<void>;
+  updateCardAddresses(cardId: number, btcAddress: string, ethAddress: string): Promise<void>;
   getCardById(cardId: number): Promise<Card | undefined>;
   getCardByNumber(cardNumber: string): Promise<Card | undefined>;
   getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
@@ -157,6 +158,18 @@ export class DatabaseStorage implements IStorage {
         .set({ ethBalance: balance })
         .where(eq(cards.id, cardId));
     }, 'Update card ETH balance');
+  }
+
+  async updateCardAddresses(cardId: number, btcAddress: string, ethAddress: string): Promise<void> {
+    await this.withRetry(async () => {
+      console.log(`Updating card ${cardId} addresses: BTC=${btcAddress}, ETH=${ethAddress}`);
+      await db.update(cards)
+        .set({ 
+          btcAddress: btcAddress,
+          ethAddress: ethAddress
+        })
+        .where(eq(cards.id, cardId));
+    }, 'Update card addresses');
   }
 
   async getCardById(cardId: number): Promise<Card | undefined> {
