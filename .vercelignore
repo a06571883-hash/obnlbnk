@@ -30,6 +30,7 @@ BACKUP_RESTORE_INSTRUCTIONS.md
 DATABASE_BACKUP_RESTORE.md
 DATABASE_INSTRUCTIONS.md
 RENDER_DEPLOYMENT_GUIDE.md
+VERCEL_DEPLOYMENT_GUIDE.md
 
 # Скрипты импорта и обработки
 add-*.js
@@ -47,3 +48,42 @@ auto-*.js
 batch-*.js
 deep-*.js
 complete-*.js
+
+# NFT файлы и изображения (очень тяжелые)
+bored_ape_nft/
+mutant_ape_nft/
+bayc_official_nft/
+nft_assets/
+client/public/assets/nft/
+
+# Frontend файлы не нужны для API
+client/src/
+client/public/
+vite.config.ts
+postcss.config.js
+tailwind.config.js
+theme.json
+
+# React Native и мобильные файлы
+android/
+ios/
+app.json
+eas.json
+
+# Тестовые и вспомогательные файлы
+run-nft-server.js
+server/index.ts
+test-*.js
+
+# Тяжелые утилиты для обработки изображений (не нужны для API)
+server/utils/pixel-nft-generator.ts
+server/utils/image-processor.ts
+server/utils/nft-generator.ts
+server/services/bueno-nft-service.ts
+server/services/bored-ape-nft-service.ts
+
+# Контроллеры NFT генерации (тяжелые зависимости)
+server/controllers/nft-server-controller.ts
+
+# Утилиты импорта (тяжелые операции с файлами)
+server/utils/import-bored-apes-to-marketplace.ts
