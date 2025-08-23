@@ -25,5 +25,14 @@
     "regulator_balance": "45684744.35563001",
     "last_nft_generation": null,
     "nft_generation_count": 0
+  },
+  {
+    "id": 4,
+    "username": "Durov1",
+    "password": "sxy8Mnm3jxiFaVT",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
   }
 ]
