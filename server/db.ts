@@ -119,6 +119,49 @@ async function createTablesIfNotExist() {
         expire TIMESTAMP(6) NOT NULL
       )
     `;
+
+    // Создаем NFT таблицы
+    await client`
+      CREATE TABLE IF NOT EXISTS nft_collections (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        name TEXT NOT NULL,
+        description TEXT,
+        cover_image TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+
+    await client`
+      CREATE TABLE IF NOT EXISTS nfts (
+        id SERIAL PRIMARY KEY,
+        collection_id INTEGER NOT NULL REFERENCES nft_collections(id),
+        owner_id INTEGER NOT NULL REFERENCES users(id),
+        name TEXT NOT NULL,
+        description TEXT,
+        image_path TEXT NOT NULL,
+        attributes JSONB,
+        rarity TEXT NOT NULL DEFAULT 'common',
+        price TEXT DEFAULT '0',
+        for_sale BOOLEAN NOT NULL DEFAULT false,
+        minted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        token_id TEXT NOT NULL,
+        original_image_path TEXT,
+        sort_order INTEGER
+      )
+    `;
+
+    await client`
+      CREATE TABLE IF NOT EXISTS nft_transfers (
+        id SERIAL PRIMARY KEY,
+        nft_id INTEGER NOT NULL REFERENCES nfts(id),
+        from_user_id INTEGER NOT NULL REFERENCES users(id),
+        to_user_id INTEGER NOT NULL REFERENCES users(id),
+        transfer_type TEXT NOT NULL,
+        price TEXT DEFAULT '0',
+        transferred_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
     
     console.log('Database tables created or verified successfully');
     return true;

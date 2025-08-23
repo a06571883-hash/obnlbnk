@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": 1,
+    "username": "maksim88",
+    "password": "zh5S4n7CmpDFBpn",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  }
+]
