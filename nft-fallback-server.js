@@ -3,10 +3,10 @@
  * Запускается автоматически, если основной NFT сервер не работает
  */
 
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const http = require('http');
+import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import http from 'http';
 
 // Настройки сервера
 const PORT = process.env.NFT_FALLBACK_PORT || 8082;
