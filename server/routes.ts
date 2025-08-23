@@ -490,6 +490,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Создание пользователя-регулятора
+  app.post("/api/create-regulator", async (req, res) => {
+    try {
+      const { username, password, balance = "100000" } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Требуется имя пользователя и пароль" 
+        });
+      }
+
+      console.log(`Creating regulator user: ${username}...`);
+      
+      // Проверяем, не существует ли уже такой пользователь
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: `Пользователь ${username} уже существует`
+        });
+      }
+
+      // Создаем пользователя-регулятора
+      const regulatorUser = await storage.createUser({
+        username: username,
+        password: password,
+        is_regulator: true,
+        regulator_balance: balance,
+        nft_generation_count: 0
+      });
+
+      console.log(`Successfully created regulator user: ${username} with ID: ${regulatorUser.id}`);
+
+      res.json({
+        success: true,
+        message: `Пользователь-регулятор ${username} успешно создан`,
+        user: {
+          id: regulatorUser.id,
+          username: regulatorUser.username,
+          is_regulator: regulatorUser.is_regulator,
+          regulator_balance: regulatorUser.regulator_balance
+        }
+      });
+
+    } catch (error) {
+      console.error("Error creating regulator:", error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Ошибка при создании пользователя-регулятора"
+      });
+    }
+  });
+
   // Получение карт пользователя
   app.get("/api/cards", ensureAuthenticated, async (req, res) => {
     try {
