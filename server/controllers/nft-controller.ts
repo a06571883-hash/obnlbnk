@@ -3,11 +3,11 @@
  * Обрабатывает запросы API, связанные с NFT
  */
 import express, { Request, Response, NextFunction } from 'express';
-import * as buenoNftService from '../services/bueno-nft-service';
-import * as boredApeNftService from '../services/bored-ape-nft-service';
-import { storage } from '../storage';
+import * as buenoNftService from '../services/bueno-nft-service.js';
+import * as boredApeNftService from '../services/bored-ape-nft-service.js';
+import { storage } from '../storage.js';
 import { z } from 'zod';
-import { db, client } from '../db';
+import { db, client } from '../db.js';
 import { nfts, nftCollections, nftTransfers, users, cards } from '../../shared/schema';
 import { eq, and, not, or, inArray, sql } from 'drizzle-orm';
 import path from 'path';
@@ -601,11 +601,11 @@ router.get('/marketplace', async (req: Request, res: Response) => {
             name: nft.name || '',
             description: nft.description || '',
             imagePath: nft.imagePath || '',
-            imageUrl: nft.imageUrl || nft.imagePath || '',
+            imageUrl: nft.imagePath || '',
             price: nft.price?.toString() || '0',
             forSale: Boolean(nft.forSale),
             ownerId: nft.ownerId,
-            creatorId: nft.creatorId || nft.ownerId,
+            creatorId: nft.ownerId,
             ownerUsername: nft.ownerUsername || 'Unknown',
             attributes: nft.attributes || {
               power: 70, 
