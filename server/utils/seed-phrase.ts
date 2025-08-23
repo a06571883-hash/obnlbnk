@@ -6,6 +6,7 @@ import * as bip39 from 'bip39';
 import * as bitcoin from 'bitcoinjs-lib';
 import HDWallet from 'ethereumjs-wallet';
 import { ethers } from 'ethers';
+// @ts-ignore
 import HDKey from 'hdkey';
 
 /**
