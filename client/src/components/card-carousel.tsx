@@ -1,4 +1,4 @@
-import { Card } from "../../shared/schema";
+import { Card } from "@shared/schema";
 import {
   Carousel,
   CarouselContent,
