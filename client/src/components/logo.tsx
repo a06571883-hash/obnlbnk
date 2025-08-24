@@ -6,7 +6,7 @@ export default function Logo({ className = "", size = 40 }: { className?: string
       width={size}
       height={size}
       className={`object-contain ${className}`}
-      style={{ imageRendering: 'high-quality' }}
+      style={{ imageRendering: 'auto' }}
     />
   );
 }

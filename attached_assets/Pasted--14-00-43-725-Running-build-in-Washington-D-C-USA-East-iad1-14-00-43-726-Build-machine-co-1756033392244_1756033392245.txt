@@ -1,0 +1,294 @@
+[14:00:43.725] Running build in Washington, D.C., USA (East) – iad1
+[14:00:43.726] Build machine configuration: 2 cores, 8 GB
+[14:00:43.805] Cloning github.com/a06571883-hash/obnlbnk (Branch: yfyjvj, Commit: 185d83b)
+[14:01:00.994] Cloning completed: 17.182s
+[14:01:01.738] Found .vercelignore
+[14:01:01.982] Removed 1313 ignored files defined in .vercelignore
+[14:01:01.982]   /.git/config
+[14:01:01.982]   /.git/description
+[14:01:01.982]   /.git/FETCH_HEAD
+[14:01:01.983]   /.git/HEAD
+[14:01:01.983]   /.git/hooks/applypatch-msg.sample
+[14:01:01.983]   /.git/hooks/commit-msg.sample
+[14:01:01.983]   /.git/hooks/fsmonitor-watchman.sample
+[14:01:01.983]   /.git/hooks/post-update.sample
+[14:01:01.983]   /.git/hooks/pre-applypatch.sample
+[14:01:01.984]   /.git/hooks/pre-commit.sample
+[14:01:02.092] Restored build cache from previous deployment (7mgd79dexj3vuQL1eg8iTRS2Kar7)
+[14:01:03.369] Running "vercel build"
+[14:01:03.767] Vercel CLI 46.0.2
+[14:01:05.417] Running "install" command: `npm install`...
+[14:01:13.694] 
+[14:01:13.694] up to date, audited 2739 packages in 8s
+[14:01:13.695] 
+[14:01:13.695] 283 packages are looking for funding
+[14:01:13.695]   run `npm fund` for details
+[14:01:13.802] 
+[14:01:13.803] 59 vulnerabilities (11 low, 20 moderate, 22 high, 6 critical)
+[14:01:13.804] 
+[14:01:13.804] To address issues that do not require attention, run:
+[14:01:13.805]   npm audit fix
+[14:01:13.805] 
+[14:01:13.805] To address all issues (including breaking changes), run:
+[14:01:13.805]   npm audit fix --force
+[14:01:13.805] 
+[14:01:13.806] Run `npm audit` for details.
+[14:01:13.960] 🚀 Начинаем альтернативную сборку для Vercel...
+[14:01:13.960] 📁 Подготовка директорий...
+[14:01:13.961] ✅ Создана директория: dist
+[14:01:13.961] ✅ Создана директория: dist/public
+[14:01:13.962] 📦 Сборка клиентской части...
+[14:01:13.962] 🔧 Запуск: npx vite build --config vite.config.temp.ts
+[14:01:14.695] [36mvite v5.4.10 [32mbuilding for production...[36m[39m
+[14:01:15.028] transforming...
+[14:01:15.160] Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+[14:01:15.160]   npx update-browserslist-db@latest
+[14:01:15.161]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[14:01:25.201] [32m✓[39m 3846 modules transformed.
+[14:01:26.067] rendering chunks...
+[14:01:26.087] computing gzip size...
+[14:01:26.121] [2m../dist/public/[22m[32mindex.html                 [39m[1m[2m    1.91 kB[22m[1m[22m[2m │ gzip:   0.75 kB[22m
+[14:01:26.122] [2m../dist/public/[22m[2massets/[22m[35mindex-BhmgKcMU.css  [39m[1m[2m   82.23 kB[22m[1m[22m[2m │ gzip:  13.99 kB[22m
+[14:01:26.122] [2m../dist/public/[22m[2massets/[22m[36mindex-CT_l5ZPy.js   [39m[1m[33m1,170.97 kB[39m[22m[2m │ gzip: 345.63 kB[22m
+[14:01:26.122] [33m
+[14:01:26.123] (!) Some chunks are larger than 500 kB after minification. Consider:
+[14:01:26.123] - Using dynamic import() to code-split the application
+[14:01:26.123] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[14:01:26.123] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[14:01:26.124] [32m✓ built in 11.13s[39m
+[14:01:26.179] ✅ Клиентская часть собрана успешно
+[14:01:26.180] 🔧 Сборка серверной части...
+[14:01:26.180] 🔧 Запуск: npx tsc --project . --outDir dist --target ES2020 --module ESNext --moduleResolution node
+[14:01:31.273] client/src/components/NFTServerStatus.tsx(40,43): error TS2558: Expected 0 type arguments, but got 1.
+[14:01:31.273] client/src/components/NFTServerStatus.tsx(41,19): error TS2345: Argument of type 'Response' is not assignable to parameter of type 'SetStateAction<NFTServerStatusResponse | null>'.
+[14:01:31.274] client/src/components/card-carousel.tsx(1,22): error TS2307: Cannot find module '../../shared/schema' or its corresponding type declarations.
+[14:01:31.274] client/src/components/exchange-dialog.tsx(3,10): error TS2395: Individual declarations in merged declaration 'playSoundIfEnabled' must be all exported or all local.
+[14:01:31.274] client/src/components/exchange-dialog.tsx(3,10): error TS2440: Import declaration conflicts with local declaration of 'playSoundIfEnabled'.
+[14:01:31.275] client/src/components/exchange-dialog.tsx(14,3): error TS2448: Block-scoped variable 'playSoundIfEnabled' used before its declaration.
+[14:01:31.275] client/src/components/exchange-dialog.tsx(14,3): error TS2454: Variable 'playSoundIfEnabled' is used before being assigned.
+[14:01:31.275] client/src/components/exchange-dialog.tsx(15,3): error TS2304: Cannot find name 'toast'.
+[14:01:31.275] client/src/components/exchange-dialog.tsx(17,21): error TS2304: Cannot find name 'cryptoAmount'.
+[14:01:31.276] client/src/components/exchange-dialog.tsx(17,37): error TS2304: Cannot find name 'fromCurrency'.
+[14:01:31.277] client/src/components/exchange-dialog.tsx(17,73): error TS2304: Cannot find name 'receivedAmount'.
+[14:01:31.277] client/src/components/exchange-dialog.tsx(19,3): error TS2304: Cannot find name 'setOpen'.
+[14:01:31.277] client/src/components/exchange-dialog.tsx(21,3): error TS2448: Block-scoped variable 'playSoundIfEnabled' used before its declaration.
+[14:01:31.277] client/src/components/exchange-dialog.tsx(21,3): error TS2454: Variable 'playSoundIfEnabled' is used before being assigned.
+[14:01:31.278] client/src/components/exchange-dialog.tsx(30,14): error TS2395: Individual declarations in merged declaration 'playSoundIfEnabled' must be all exported or all local.
+[14:01:31.278] client/src/components/exchange-dialog.tsx(30,36): error TS7006: Parameter 'soundName' implicitly has an 'any' type.
+[14:01:31.278] client/src/components/logo.tsx(9,16): error TS2322: Type '"high-quality"' is not assignable to type 'ImageRendering | undefined'.
+[14:01:31.278] client/src/components/transfer-dialog.tsx(4,10): error TS2724: '"@/components/ui/toast"' has no exported member named 'toast'. Did you mean 'Toast'?
+[14:01:31.279] client/src/components/transfer-dialog.tsx(7,25): error TS7031: Binding element 'open' implicitly has an 'any' type.
+[14:01:31.279] client/src/components/transfer-dialog.tsx(7,31): error TS7031: Binding element 'setOpen' implicitly has an 'any' type.
+[14:01:31.279] client/src/components/transfer-dialog.tsx(7,40): error TS7031: Binding element 'amount' implicitly has an 'any' type.
+[14:01:31.279] client/src/components/transfer-dialog.tsx(7,48): error TS7031: Binding element 'setAmount' implicitly has an 'any' type.
+[14:01:31.284] client/src/components/transfer-dialog.tsx(7,59): error TS7031: Binding element 'currencySymbol' implicitly has an 'any' type.
+[14:01:31.288] client/src/components/transfer-dialog.tsx(7,75): error TS7031: Binding element 'setCurrencySymbol' implicitly has an 'any' type.
+[14:01:31.288] client/src/components/transfer-dialog.tsx(7,94): error TS7031: Binding element 'toCard' implicitly has an 'any' type.
+[14:01:31.289] client/src/components/transfer-dialog.tsx(7,102): error TS7031: Binding element 'setToCard' implicitly has an 'any' type.
+[14:01:31.289] client/src/components/transfer-dialog.tsx(9,31): error TS7006: Parameter 'e' implicitly has an 'any' type.
+[14:01:31.289] client/src/components/transfer-dialog.tsx(41,20): error TS7031: Binding element 'onClick' implicitly has an 'any' type.
+[14:01:31.289] client/src/components/transfer-dialog.tsx(41,29): error TS7031: Binding element 'children' implicitly has an 'any' type.
+[14:01:31.289] client/src/components/transfer-dialog.tsx(43,48): error TS2345: Argument of type '"buttonClick"' is not assignable to parameter of type 'SoundType'.
+[14:01:31.289] client/src/hooks/use-auth.tsx(74,7): error TS2304: Cannot find name 'playSoundIfEnabled'.
+[14:01:31.290] client/src/hooks/use-auth.tsx(82,7): error TS2304: Cannot find name 'playSoundIfEnabled'.
+[14:01:31.290] client/src/hooks/use-auth.tsx(102,7): error TS2304: Cannot find name 'playSoundIfEnabled'.
+[14:01:31.290] client/src/hooks/use-auth.tsx(110,7): error TS2304: Cannot find name 'playSoundIfEnabled'.
+[14:01:31.292] client/src/hooks/use-gyroscope.ts(22,75): error TS2339: Property 'MSStream' does not exist on type 'Window & typeof globalThis'.
+[14:01:31.292] client/src/lib/telegram-utils.ts(4,5): error TS2717: Subsequent property declarations must have the same type.  Property 'Telegram' must be of type '{ WebApp?: { ready: () => void; expand: () => void; backgroundColor?: string | undefined; initData?: string | undefined; initDataUnsafe?: any; version?: string | undefined; } | undefined; } | undefined', but here has type '{ WebApp: { initData: string; colorScheme: string; ready: () => void; expand: () => void; close: () => void; isExpanded: boolean; viewportHeight: number; viewportStableHeight: number; sendData: (data: any) => void; ... 10 more ...; HapticFeedback: { ...; }; }; } | undefined'.
+[14:01:31.295] client/src/lib/telegram-utils.ts(96,20): error TS18048: 'webApp' is possibly 'undefined'.
+[14:01:31.296] client/src/lib/telegram-utils.ts(96,27): error TS2339: Property 'colorScheme' does not exist on type '{ ready: () => void; expand: () => void; backgroundColor?: string | undefined; initData?: string | undefined; initDataUnsafe?: any; version?: string | undefined; }'.
+[14:01:31.296] client/src/lib/telegram-utils.ts(97,19): error TS18048: 'webApp' is possibly 'undefined'.
+[14:01:31.296] client/src/lib/telegram-utils.ts(97,26): error TS2339: Property 'isExpanded' does not exist on type '{ ready: () => void; expand: () => void; backgroundColor?: string | undefined; initData?: string | undefined; initDataUnsafe?: any; version?: string | undefined; }'.
+[14:01:31.296] client/src/lib/telegram-utils.ts(98,23): error TS18048: 'webApp' is possibly 'undefined'.
+[14:01:31.297] client/src/lib/telegram-utils.ts(98,30): error TS2339: Property 'viewportHeight' does not exist on type '{ ready: () => void; expand: () => void; backgroundColor?: string | undefined; initData?: string | undefined; initDataUnsafe?: any; version?: string | undefined; }'.
+[14:01:31.297] client/src/lib/telegram-utils.ts(99,29): error TS18048: 'webApp' is possibly 'undefined'.
+[14:01:31.297] client/src/lib/telegram-utils.ts(99,36): error TS2339: Property 'viewportStableHeight' does not exist on type '{ ready: () => void; expand: () => void; backgroundColor?: string | undefined; initData?: string | undefined; initDataUnsafe?: any; version?: string | undefined; }'.
+[14:01:31.297] client/src/lib/telegram-utils.ts(100,20): error TS18048: 'webApp' is possibly 'undefined'.
+[14:01:31.298] client/src/lib/telegram-utils.ts(122,5): error TS2532: Object is possibly 'undefined'.
+[14:01:31.300] client/src/lib/telegram-utils.ts(122,29): error TS2339: Property 'showAlert' does not exist on type '{ ready: () => void; expand: () => void; backgroundColor?: string | undefined; initData?: string | undefined; initDataUnsafe?: any; version?: string | undefined; }'.
+[14:01:31.300] client/src/lib/telegram-utils.ts(144,5): error TS2532: Object is possibly 'undefined'.
+[14:01:31.300] client/src/lib/telegram-utils.ts(147,10): error TS2532: Object is possibly 'undefined'.
+[14:01:31.301] client/src/lib/telegram-utils.ts(147,34): error TS2339: Property 'isExpanded' does not exist on type '{ ready: () => void; expand: () => void; backgroundColor?: string | undefined; initData?: string | undefined; initDataUnsafe?: any; version?: string | undefined; }'.
+[14:01:31.301] client/src/lib/telegram-utils.ts(148,7): error TS2532: Object is possibly 'undefined'.
+[14:01:31.302] client/src/pages/regulator-page.tsx(64,82): error TS2554: Expected 1-2 arguments, but got 3.
+[14:01:31.302] client/src/pages/regulator-page.tsx(104,52): error TS18046: 'rates' is of type 'unknown'.
+[14:01:31.302] client/src/pages/regulator-page.tsx(108,52): error TS18046: 'rates' is of type 'unknown'.
+[14:01:31.302] client/src/pages/regulator-page.tsx(112,52): error TS18046: 'rates' is of type 'unknown'.
+[14:01:31.303] client/src/pages/regulator-page.tsx(120,10): error TS18046: 'users' is of type 'unknown'.
+[14:01:31.303] client/src/pages/statistics-page.tsx(77,21): error TS2538: Type 'null' cannot be used as an index type.
+[14:01:31.303] client/src/pages/statistics-page.tsx(78,18): error TS2538: Type 'null' cannot be used as an index type.
+[14:01:31.303] client/src/pages/statistics-page.tsx(80,16): error TS2538: Type 'null' cannot be used as an index type.
+[14:01:31.304] client/src/pages/statistics-page.tsx(254,91): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+[14:01:31.304]   Type 'null' is not assignable to type 'string'.
+[14:01:31.304] server/database/repositories/cardRepository.ts(2,23): error TS2307: Cannot find module '../shared/schema.js' or its corresponding type declarations.
+[14:01:31.304] server/database/repositories/cardRepository.ts(4,27): error TS2307: Cannot find module '../shared/schema.js' or its corresponding type declarations.
+[14:01:31.304] server/database/repositories/userRepository.ts(2,23): error TS2307: Cannot find module '../shared/schema.js' or its corresponding type declarations.
+[14:01:31.305] server/database/repositories/userRepository.ts(4,39): error TS2307: Cannot find module '../shared/schema.js' or its corresponding type declarations.
+[14:01:31.305] server/diagnostic-routes.ts(20,3): error TS2614: Module '"./utils/super-transaction-monitor"' has no exported member 'EMOJIS'. Did you mean to use 'import EMOJIS from "./utils/super-transaction-monitor"' instead?
+[14:01:31.305] server/diagnostic-routes.ts(315,40): error TS2339: Property 'length' does not exist on type 'true'.
+[14:01:31.305] server/diagnostic-routes.ts(327,26): error TS2488: Type 'true' must have a '[Symbol.iterator]()' method that returns an iterator.
+[14:01:31.305] server/diagnostic-routes.ts(335,57): error TS2339: Property 'length' does not exist on type 'boolean'.
+[14:01:31.306] server/diagnostic-routes.ts(335,98): error TS2339: Property 'length' does not exist on type 'boolean'.
+[14:01:31.306] server/exchange-service.ts(73,29): error TS18046: 'minAmountData' is of type 'unknown'.
+[14:01:31.306] server/exchange-service.ts(75,42): error TS18046: 'minAmountData' is of type 'unknown'.
+[14:01:31.306] server/exchange-service.ts(112,11): error TS18046: 'result' is of type 'unknown'.
+[14:01:31.307] server/exchange-service.ts(113,15): error TS18046: 'result' is of type 'unknown'.
+[14:01:31.307] server/exchange-service.ts(117,23): error TS18046: 'result' is of type 'unknown'.
+[14:01:31.307] server/exchange-service.ts(118,21): error TS18046: 'result' is of type 'unknown'.
+[14:01:31.307] server/exchange-service.ts(141,24): error TS18046: 'data' is of type 'unknown'.
+[14:01:31.307] server/exchange-service.ts(142,13): error TS18046: 'data' is of type 'unknown'.
+[14:01:31.308] server/exchange-service.ts(161,23): error TS18046: 'error' is of type 'unknown'.
+[14:01:31.308] server/routes.ts(427,24): error TS2339: Property 'user' does not exist on type 'Session & Partial<SessionData>'.
+[14:01:31.308] server/routes.ts(433,36): error TS2339: Property 'user' does not exist on type 'Session & Partial<SessionData>'.
+[14:01:31.308] server/routes.ts(551,52): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.308]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.309] server/routes.ts(566,60): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.309]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.309] server/routes.ts(575,56): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.309]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.309] server/routes.ts(576,56): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.310]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.310] server/routes.ts(613,54): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.310]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.310] server/routes.ts(614,54): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.310]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.310] server/routes.ts(645,52): error TS2345: Argument of type '{ userId: number | undefined; type: string; number: string; expiry: string; cvv: string; balance: string; btcBalance: string; ethBalance: string; kichcoinBalance: string; btcAddress: string | null; ethAddress: string | null; tonAddress: string | null; }' is not assignable to parameter of type 'Omit<{ number: string; type: string; id: number; userId: number; expiry: string; cvv: string; balance: string; btcBalance: string; ethBalance: string; kichcoinBalance: string; btcAddress: string | null; ethAddress: string | null; tonAddress: string | null; }, "id">'.
+[14:01:31.311]   Types of property 'userId' are incompatible.
+[14:01:31.311]     Type 'number | undefined' is not assignable to type 'number'.
+[14:01:31.311]       Type 'undefined' is not assignable to type 'number'.
+[14:01:31.311] server/routes.ts(755,56): error TS18048: 'req.user' is possibly 'undefined'.
+[14:01:31.311] server/routes.ts(755,56): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.311]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.312] server/routes.ts(780,9): error TS2322: Type '{ number: string; type: string; id: number; userId: number; expiry: string; cvv: string; balance: string; btcBalance: string; ethBalance: string; kichcoinBalance: string; btcAddress: string | null; ethAddress: string | null; tonAddress: string | null; }' is not assignable to type '{ btcBalance: string; ethBalance: string; btcAddress: string; }'.
+[14:01:31.312]   Types of property 'btcAddress' are incompatible.
+[14:01:31.312]     Type 'string | null' is not assignable to type 'string'.
+[14:01:31.312]       Type 'null' is not assignable to type 'string'.
+[14:01:31.312] server/routes.ts(809,56): error TS18048: 'req.user' is possibly 'undefined'.
+[14:01:31.312] server/routes.ts(809,56): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.313]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.313] server/routes.ts(975,42): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.313]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.313] server/routes.ts(1010,42): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.313]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.314] server/routes.ts(1044,47): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.314]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.314] server/routes.ts(1047,67): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+[14:01:31.314]   Type 'undefined' is not assignable to type 'number'.
+[14:01:31.314] server/routes.ts(1212,28): error TS2304: Cannot find name 'pool'.
+[14:01:31.317] server/routes.ts(1254,16): error TS7017: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
+[14:01:31.317] server/routes.ts(1318,21): error TS7006: Parameter 'error' implicitly has an 'any' type.
+[14:01:31.317] server/routes.ts(1318,28): error TS7006: Parameter 'stdout' implicitly has an 'any' type.
+[14:01:31.318] server/routes.ts(1318,36): error TS7006: Parameter 'stderr' implicitly has an 'any' type.
+[14:01:31.318] server/routes.ts(1726,85): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string | undefined'.
+[14:01:31.318]   Type 'null' is not assignable to type 'string | undefined'.
+[14:01:31.328] server/services/bueno-nft-service.ts(7,69): error TS2307: Cannot find module '../../../shared/schema' or its corresponding type declarations.
+[14:01:31.328] server/services/bueno-nft-service.ts(434,21): error TS2339: Property 'where' does not exist on type 'Omit<PgSelectBase<any, any, "single", any, false, "where", any[], any>, "where">'.
+[14:01:31.329] server/utils/advanced-image-generator.ts(51,38): error TS2345: Argument of type 'SKRSContext2D' is not assignable to parameter of type 'CanvasRenderingContext2D'.
+[14:01:31.329]   Property 'drawFocusIfNeeded' is missing in type 'SKRSContext2D' but required in type 'CanvasRenderingContext2D'.
+[14:01:31.329] server/utils/advanced-image-generator.ts(54,32): error TS2345: Argument of type 'SKRSContext2D' is not assignable to parameter of type 'CanvasRenderingContext2D'.
+[14:01:31.329]   Property 'drawFocusIfNeeded' is missing in type 'SKRSContext2D' but required in type 'CanvasRenderingContext2D'.
+[14:01:31.329] server/utils/advanced-image-generator.ts(191,41): error TS2345: Argument of type 'Canvas' is not assignable to parameter of type 'CanvasImageSource'.
+[14:01:31.330]   Type 'Canvas' is missing the following properties from type 'HTMLCanvasElement': captureStream, toBlob, transferControlToOffscreen, addEventListener, and 301 more.
+[14:01:31.330] server/utils/advanced-image-generator.ts(339,21): error TS2345: Argument of type 'Canvas' is not assignable to parameter of type 'CanvasImageSource'.
+[14:01:31.330]   Type 'Canvas' is missing the following properties from type 'HTMLCanvasElement': captureStream, toBlob, transferControlToOffscreen, addEventListener, and 301 more.
+[14:01:31.330] server/utils/advanced-image-generator.ts(346,21): error TS2345: Argument of type 'Canvas' is not assignable to parameter of type 'CanvasImageSource'.
+[14:01:31.330]   Type 'Canvas' is missing the following properties from type 'HTMLCanvasElement': captureStream, toBlob, transferControlToOffscreen, addEventListener, and 301 more.
+[14:01:31.331] server/utils/advanced-image-generator.ts(352,21): error TS2345: Argument of type 'Canvas' is not assignable to parameter of type 'CanvasImageSource'.
+[14:01:31.331]   Type 'Canvas' is missing the following properties from type 'HTMLCanvasElement': captureStream, toBlob, transferControlToOffscreen, addEventListener, and 301 more.
+[14:01:31.331] server/utils/advanced-image-generator.ts(357,21): error TS2345: Argument of type 'Canvas' is not assignable to parameter of type 'CanvasImageSource'.
+[14:01:31.331]   Type 'Canvas' is missing the following properties from type 'HTMLCanvasElement': captureStream, toBlob, transferControlToOffscreen, addEventListener, and 301 more.
+[14:01:31.331] server/utils/advanced-image-generator.ts(418,21): error TS2345: Argument of type 'Canvas' is not assignable to parameter of type 'CanvasImageSource'.
+[14:01:31.331]   Type 'Canvas' is missing the following properties from type 'HTMLCanvasElement': captureStream, toBlob, transferControlToOffscreen, addEventListener, and 301 more.
+[14:01:31.332] server/utils/advanced-image-generator.ts(597,25): error TS2769: No overload matches this call.
+[14:01:31.332]   Overload 1 of 3, '(mime: "image/avif", cfg?: AvifConfig | undefined): Buffer', gave the following error.
+[14:01:31.332]     Argument of type '"image/jpeg"' is not assignable to parameter of type '"image/avif"'.
+[14:01:31.332]   Overload 2 of 3, '(mime: "image/jpeg" | "image/webp", quality?: number | undefined): Buffer', gave the following error.
+[14:01:31.332]     Argument of type '{ quality: number; }' is not assignable to parameter of type 'number'.
+[14:01:31.333] server/utils/image-processor.ts(204,11): error TS2322: Type '1' is not assignable to type 'Channels'.
+[14:01:31.333] server/utils/image-processor.ts(216,7): error TS2322: Type 'Buffer' is not assignable to type 'number'.
+[14:01:31.333] server/utils/new_modules/db.ts(3,25): error TS2307: Cannot find module '../shared/schema.js' or its corresponding type declarations.
+[14:01:31.333] server/utils/new_modules/db.ts(139,3): error TS2353: Object literal may only specify known properties, and 'onError' does not exist in type 'Options<{ date: { to: number; from: number[]; serialize: (date: Date) => Date; parse: (date: string) => string; }; }>'.
+[14:01:31.333] server/utils/new_modules/db.ts(139,13): error TS7006: Parameter 'err' implicitly has an 'any' type.
+[14:01:31.333] server/utils/new_modules/db.ts(139,18): error TS7006: Parameter 'sql' implicitly has an 'any' type.
+[14:01:31.334] server/utils/new_modules/db.ts(151,13): error TS7006: Parameter 'count' implicitly has an 'any' type.
+[14:01:31.334] server/utils/new_modules/db.ts(151,20): error TS7006: Parameter 'error' implicitly has an 'any' type.
+[14:01:31.334] server/utils/new_modules/index.ts(2,32): error TS2307: Cannot find module '../routes' or its corresponding type declarations.
+[14:01:31.334] server/utils/new_modules/index.ts(3,40): error TS2307: Cannot find module '../vite' or its corresponding type declarations.
+[14:01:31.334] server/utils/new_modules/index.ts(5,33): error TS2307: Cannot find module '../database/backup' or its corresponding type declarations.
+[14:01:31.334] server/utils/new_modules/index.ts(6,26): error TS2307: Cannot find module '../telegram-bot' or its corresponding type declarations.
+[14:01:31.334] server/utils/new_modules/index.ts(8,34): error TS2307: Cannot find module '../debug' or its corresponding type declarations.
+[14:01:31.334] server/utils/new_modules/index.ts(16,30): error TS2307: Cannot find module '../diagnostic-routes' or its corresponding type declarations.
+[14:01:31.334] server/utils/new_modules/index.ts(126,21): error TS7006: Parameter 'error' implicitly has an 'any' type.
+[14:01:31.335] server/utils/pixel-nft-generator.ts(193,22): error TS2345: Argument of type 'SKRSContext2D' is not assignable to parameter of type 'CanvasRenderingContext2D'.
+[14:01:31.335]   Property 'drawFocusIfNeeded' is missing in type 'SKRSContext2D' but required in type 'CanvasRenderingContext2D'.
+[14:01:31.335] server/utils/pixel-nft-generator.ts(198,20): error TS2345: Argument of type 'SKRSContext2D' is not assignable to parameter of type 'CanvasRenderingContext2D'.
+[14:01:31.335]   Property 'drawFocusIfNeeded' is missing in type 'SKRSContext2D' but required in type 'CanvasRenderingContext2D'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(201,24): error TS2345: Argument of type 'SKRSContext2D' is not assignable to parameter of type 'CanvasRenderingContext2D'.
+[14:01:31.336]   Property 'drawFocusIfNeeded' is missing in type 'SKRSContext2D' but required in type 'CanvasRenderingContext2D'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(204,26): error TS2345: Argument of type 'SKRSContext2D' is not assignable to parameter of type 'CanvasRenderingContext2D'.
+[14:01:31.336]   Property 'drawFocusIfNeeded' is missing in type 'SKRSContext2D' but required in type 'CanvasRenderingContext2D'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(207,26): error TS2345: Argument of type 'SKRSContext2D' is not assignable to parameter of type 'CanvasRenderingContext2D'.
+[14:01:31.336]   Property 'drawFocusIfNeeded' is missing in type 'SKRSContext2D' but required in type 'CanvasRenderingContext2D'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(210,23): error TS2345: Argument of type 'SKRSContext2D' is not assignable to parameter of type 'CanvasRenderingContext2D'.
+[14:01:31.336]   Property 'drawFocusIfNeeded' is missing in type 'SKRSContext2D' but required in type 'CanvasRenderingContext2D'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(215,17): error TS2345: Argument of type 'SKRSContext2D' is not assignable to parameter of type 'CanvasRenderingContext2D'.
+[14:01:31.336]   Property 'drawFocusIfNeeded' is missing in type 'SKRSContext2D' but required in type 'CanvasRenderingContext2D'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(218,18): error TS2345: Argument of type 'SKRSContext2D' is not assignable to parameter of type 'CanvasRenderingContext2D'.
+[14:01:31.336]   Property 'drawFocusIfNeeded' is missing in type 'SKRSContext2D' but required in type 'CanvasRenderingContext2D'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(1229,23): error TS2304: Cannot find name 'headY'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(1229,42): error TS2304: Cannot find name 'headSize'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(1233,9): error TS2304: Cannot find name 'headX'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(1235,9): error TS2304: Cannot find name 'headSize'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(1243,22): error TS2304: Cannot find name 'headX'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(1243,41): error TS2304: Cannot find name 'headSize'.
+[14:01:31.336] server/utils/pixel-nft-generator.ts(1249,35): error TS2304: Cannot find name 'headSize'.
+[14:01:31.337] server/utils/pixel-nft-generator.ts(1250,36): error TS2304: Cannot find name 'headSize'.
+[14:01:31.337] server/utils/pixel-nft-generator.ts(1251,20): error TS2304: Cannot find name 'headX'.
+[14:01:31.337] server/utils/pixel-nft-generator.ts(1251,40): error TS2304: Cannot find name 'headSize'.
+[14:01:31.337] server/utils/pixel-nft-generator.ts(1252,20): error TS2304: Cannot find name 'headY'.
+[14:01:31.337] server/utils/pixel-nft-generator.ts(1252,39): error TS2304: Cannot find name 'headSize'.
+[14:01:31.337] server/utils/problem-solver.ts(9,25): error TS2307: Cannot find module '../shared/schema.js' or its corresponding type declarations.
+[14:01:31.337] server/utils/problem-solver.ts(222,22): error TS7006: Parameter 'sql' implicitly has an 'any' type.
+[14:01:31.337] server/utils/problem-solver.ts(222,22): error TS2345: Argument of type '(sql: any) => any' is not assignable to parameter of type 'SQL<unknown>'.
+[14:01:31.337] server/utils/problem-solver.ts(237,24): error TS7006: Parameter 'sql' implicitly has an 'any' type.
+[14:01:31.337] server/utils/problem-solver.ts(237,24): error TS2345: Argument of type '(sql: any) => any' is not assignable to parameter of type 'SQL<unknown>'.
+[14:01:31.337] server/utils/seatable.ts(1,22): error TS7016: Could not find a declaration file for module 'seatable-api'. '/vercel/path0/node_modules/seatable-api/lib/index.js' implicitly has an 'any' type.
+[14:01:31.337]   Try `npm i --save-dev @types/seatable-api` if it exists or add a new declaration (.d.ts) file containing `declare module 'seatable-api';`
+[14:01:31.337] server/utils/super-transaction-monitor.ts(302,27): error TS2339: Property 'eq' does not exist on type '{ id: PgColumn<{ name: "id"; tableName: "transactions"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 10 more ...; toCardNumber: PgColumn<...>; }'.
+[14:01:31.337] server/utils/super-transaction-monitor.ts(334,52): error TS2345: Argument of type '{ id: number; fromCardId: number; toCardId: number | null; amount: string; convertedAmount: string; type: string; wallet: string | null; status: string; createdAt: Date; description: string; fromCardNumber: string; toCardNumber: string | null; }' is not assignable to parameter of type 'TransactionInfo'.
+[14:01:31.337]   Types of property 'toCardId' are incompatible.
+[14:01:31.337]     Type 'number | null' is not assignable to type 'number | undefined'.
+[14:01:31.337]       Type 'null' is not assignable to type 'number | undefined'.
+[14:01:31.337] server/utils/super-transaction-monitor.ts(635,16): error TS7006: Parameter 'sql' implicitly has an 'any' type.
+[14:01:31.337] server/utils/super-transaction-monitor.ts(635,16): error TS2345: Argument of type '(sql: any) => any' is not assignable to parameter of type 'SQL<unknown>'.
+[14:01:31.337] server/utils/super-transaction-monitor.ts(673,27): error TS2339: Property 'eq' does not exist on type '{ id: PgColumn<{ name: "id"; tableName: "transactions"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 10 more ...; toCardNumber: PgColumn<...>; }'.
+[14:01:31.338] server/utils/super-transaction-monitor.ts(697,52): error TS2345: Argument of type '{ id: number; fromCardId: number; toCardId: number | null; amount: string; convertedAmount: string; type: string; wallet: string | null; status: string; createdAt: Date; description: string; fromCardNumber: string; toCardNumber: string | null; }' is not assignable to parameter of type 'TransactionInfo'.
+[14:01:31.338]   Types of property 'toCardId' are incompatible.
+[14:01:31.338]     Type 'number | null' is not assignable to type 'number | undefined'.
+[14:01:31.338]       Type 'null' is not assignable to type 'number | undefined'.
+[14:01:31.338] server/utils/super-transaction-monitor.ts(736,27): error TS2339: Property 'eq' does not exist on type '{ id: PgColumn<{ name: "id"; tableName: "transactions"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 10 more ...; toCardNumber: PgColumn<...>; }'.
+[14:01:31.338] server/utils/super-transaction-monitor.ts(749,50): error TS2345: Argument of type '{ id: number; fromCardId: number; toCardId: number | null; amount: string; convertedAmount: string; type: string; wallet: string | null; status: string; createdAt: Date; description: string; fromCardNumber: string; toCardNumber: string | null; }' is not assignable to parameter of type 'TransactionInfo'.
+[14:01:31.338]   Types of property 'toCardId' are incompatible.
+[14:01:31.338]     Type 'number | null' is not assignable to type 'number | undefined'.
+[14:01:31.338]       Type 'null' is not assignable to type 'number | undefined'.
+[14:01:31.338] server/utils/transaction-monitor.ts(9,25): error TS2307: Cannot find module '../shared/schema.js' or its corresponding type declarations.
+[14:01:31.338] server/utils/transaction-monitor.ts(227,18): error TS7006: Parameter 'sql' implicitly has an 'any' type.
+[14:01:31.338] server/utils/transaction-monitor.ts(227,18): error TS2345: Argument of type '(sql: any) => any' is not assignable to parameter of type 'SQL<unknown>'.
+[14:01:31.338] vite.config.ts(16,27): error TS2353: Object literal may only specify known properties, and 'hmr' does not exist in type '{ filter?: ((error: Error) => boolean) | undefined; }'.
+[14:01:31.367] ⚠️  Пробуем минимальную сборку...
+[14:01:31.367] ✅ Создана минимальная точка входа сервера
+[14:01:31.367] 🎉 Сборка завершена успешно!
+[14:01:31.367] 📁 Результаты сборки:
+[14:01:31.368]   - dist/public/ - статические файлы клиентской части
+[14:01:31.368]   - dist/index.js - серверный код
+[14:01:31.430] Installing dependencies...
+[14:01:35.503] 
+[14:01:35.503] up to date in 4s
+[14:01:35.503] 
+[14:01:35.503] 283 packages are looking for funding
+[14:01:35.503]   run `npm fund` for details
+[14:01:35.802] Using TypeScript 5.6.3 (local user-provided)
+[14:01:55.302] Build Completed in /vercel/output [50s]
+[14:01:56.089] Deploying outputs...
+[14:02:27.657] Deployment completed
+[14:02:28.588] Creating build cache...

@@ -1,34 +1,60 @@
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { playSoundIfEnabled } from "@/lib/sound-service"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { playSoundIfEnabled } from "@/lib/sound-service";
+import { useToast } from "@/hooks/use-toast";
 
-// ... rest of the component code ...
-
-// Example usage within a button component:
-<Button onClick={() => {playSoundIfEnabled('buttonClick'); /* other button logic */}}>Click Me</Button>
-
-
-// Example usage within the exchange logic:
-try {
-  // ... exchange logic ...
-  playSoundIfEnabled('transfer')
-  toast({
-    title: "Обмен выполнен",
-    description: `${cryptoAmount} ${fromCurrency} успешно обменено на ${receivedAmount.toFixed(2)} UAH`,
-  })
-  setOpen(false)
-} catch (error) {
-  playSoundIfEnabled('error')
-  // ... error handling ...
+interface ExchangeDialogProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  amount: string;
+  setAmount: (amount: string) => void;
+  currencySymbol: string;
+  setCurrencySymbol: (symbol: string) => void;
+  toCard: any;
+  setToCard: (card: any) => void;
 }
 
-// ... rest of the component code ...
+export function ExchangeDialog({ 
+  open, 
+  setOpen, 
+  amount, 
+  setAmount, 
+  currencySymbol, 
+  setCurrencySymbol, 
+  toCard, 
+  setToCard 
+}: ExchangeDialogProps) {
+  const { toast } = useToast();
 
+  const handleExchange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // Exchange logic here
+      playSoundIfEnabled('transfer');
+      toast({
+        title: "Обмен выполнен",
+        description: `${amount} ${currencySymbol} успешно обменено`,
+      });
+      setOpen(false);
+    } catch (error) {
+      playSoundIfEnabled('error');
+      toast({
+        title: "Ошибка обмена",
+        description: "Попробуйте еще раз",
+        variant: "destructive"
+      });
+    }
+  };
 
-// Placeholder for sound-service.js (needs actual implementation)
-// "@/lib/sound-service.js"
-export const playSoundIfEnabled = (soundName) => {
-  // Add your sound playing logic here.  This is a placeholder.
-  //  This should check if sound is enabled in settings, load the correct audio file, and play it.
-  console.log(`Playing sound: ${soundName}`);
-};
+  return (
+    <div>
+      {/* Exchange dialog content */}
+      <Button onClick={handleExchange}>
+        Выполнить обмен
+      </Button>
+    </div>
+  );
+}
+
+export default ExchangeDialog;

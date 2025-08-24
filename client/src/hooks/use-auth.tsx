@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "./use-toast";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
+import { playSoundIfEnabled } from "@/lib/sound-service";
 
 type LoginData = Pick<InsertUser, "username" | "password">;
 
