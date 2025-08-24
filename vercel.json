@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "node build-vercel-simple.js",
+  "buildCommand": "node build-minimal.cjs",
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
   "functions": {
