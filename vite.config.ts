@@ -1,8 +1,12 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
-import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   root: path.resolve(__dirname, "client"), // корень фронта
@@ -19,9 +23,7 @@ export default defineConfig({
     themePlugin(),
     ...(process.env.NODE_ENV !== "production" && process.env.REPL_ID
       ? [
-          // динамический импорт плагина для Replit
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          require("@replit/vite-plugin-cartographer").cartographer(),
+          (await import("@replit/vite-plugin-cartographer")).cartographer(),
         ]
       : []),
   ],
@@ -35,7 +37,7 @@ export default defineConfig({
     outDir: path.resolve(__dirname, "dist/public"), // для Express
     emptyOutDir: true,
     rollupOptions: {
-      input: path.resolve(__dirname, "client/index.html"), // явно указываем точку входа
+      input: path.resolve(__dirname, "client/index.html"), // явная точка входа
     },
   },
 });
