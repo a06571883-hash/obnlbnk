@@ -1,5 +1,5 @@
 import express from "express";
-import { registerRoutes } from "../server/routes-vercel.js";
+import registerRoutes from "../server/routes-vercel.js";
 import type { Request, Response } from "express";
 
 // CORS настройки для Vercel
