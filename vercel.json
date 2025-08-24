@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "node build-fallback.js",
+  "outputDirectory": "dist/public",
   "installCommand": "npm install",
   "functions": {
     "api/index.ts": {
