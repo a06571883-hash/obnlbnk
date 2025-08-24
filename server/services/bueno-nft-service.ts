@@ -4,7 +4,7 @@
  */
 import { generateNFTImage } from '../utils/nft-generator';
 import { db } from '../db';
-import { nfts, nftCollections, nftTransfers, insertNftSchema } from '../../shared/schema';
+import { nfts, nftCollections, nftTransfers, insertNftSchema } from '../../../shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { getBuenoNFT } from '../utils/bueno-nft-fetcher';
 import * as crypto from 'crypto';
