@@ -16,6 +16,12 @@ Error [ERR_REQUIRE_ASYNC_MODULE]: require() cannot be used on an ESM graph with 
 В настройках проекта Vercel измените команду сборки на:
 
 ```bash
+node build-vercel-simple.js
+```
+
+**ВАЖНО:** Если предыдущая сборка не прошла, попробуйте также:
+
+```bash
 node build-fallback.js
 ```
 
@@ -33,12 +39,12 @@ node build-fallback.js
 
 ### 3. Использование файла vercel.json
 
-Создайте файл `vercel.json` в корне проекта:
+Файл `vercel.json` уже настроен с командой:
 
 ```json
 {
-  "buildCommand": "node build-fallback.js",
-  "framework": null,
+  "buildCommand": "node build-vercel-simple.js",
+  "outputDirectory": "dist/public",
   "installCommand": "npm install"
 }
 ```
@@ -48,7 +54,7 @@ node build-fallback.js
 1. ✅ **CSS переменные** - Добавлены все необходимые CSS переменные в `client/src/index.css`
 2. ✅ **Tailwind классы** - Заменены `@apply` директивы на прямые CSS значения
 3. ✅ **Конфигурация Tailwind** - Исправлены пути и импорты в `tailwind.config.ts`
-4. ✅ **Альтернативная сборка** - Создан `build-fallback.js` для обхода проблем ESM
+4. ✅ **Альтернативная сборка** - Создано два скрипта: `build-fallback.js` и `build-vercel-simple.js`
 
 ## ✅ Проверка - РЕШЕНО!
 
@@ -69,7 +75,8 @@ cd client/src && npx tailwindcss -i index.css -o ../test.css
 
 ## Рекомендации
 
-1. Используйте `build-fallback.js` для сборки на Vercel
+1. Используйте `build-vercel-simple.js` для сборки на Vercel (приоритетный метод)
+2. Если не работает, попробуйте `build-fallback.js`
 2. Если проблема не решается, попробуйте временно изменить `"type": "module"` на `"type": "commonjs"` в package.json
 3. Убедитесь, что все зависимости установлены корректно
 

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "node build-fallback.js",
+  "buildCommand": "node build-vercel-simple.js",
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
   "functions": {
