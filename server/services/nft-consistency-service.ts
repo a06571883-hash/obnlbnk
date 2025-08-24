@@ -4,7 +4,7 @@
  */
 
 import { db } from '../db';
-import { nfts, nftTransfers } from '../shared/schema.js';
+import { nfts, nftTransfers } from '../../shared/schema.js';
 import { eq, sql } from 'drizzle-orm';
 
 /**
