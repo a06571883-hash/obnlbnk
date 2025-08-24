@@ -20,10 +20,6 @@
     {
       "source": "/ws",
       "destination": "/api/index.ts"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
     }
   ],
   "headers": [
