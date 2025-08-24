@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Альтернативный скрипт сборки для обхода проблем с ESM и top-level await
+ * Альтернативный скрипт сборки для обхода проблем с ESM и top-level await в Vite
  */
 
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import fs from 'fs';
+import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,28 +32,90 @@ function runCommand(command, args, options = {}) {
   });
 }
 
+async function prepareDirs() {
+  console.log('📁 Подготовка директорий...');
+  
+  const dirsToCreate = ['dist', 'dist/public'];
+  
+  for (const dir of dirsToCreate) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`✅ Создана директория: ${dir}`);
+    }
+  }
+}
+
 async function buildClient() {
   console.log('📦 Сборка клиентской части...');
   
-  // Пробуем сборку через esbuild напрямую для Tailwind
   try {
-    await runCommand('npx', ['tailwindcss', '-i', 'client/src/index.css', '-o', 'client/dist/styles.css', '--minify'], {
-      cwd: __dirname
-    });
-    console.log('✅ CSS скомпилирован успешно');
-  } catch (error) {
-    console.log('⚠️  Проблема с Tailwind, продолжаем без CSS...');
-  }
+    // Создание временного vite.config.ts без top-level await
+    const tempViteConfig = `
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
+import path, { dirname } from "path";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { fileURLToPath } from "url";
 
-  // Сборка JS через esbuild
-  try {
-    await runCommand('npx', ['esbuild', 'client/src/main.tsx', '--bundle', '--outfile=dist/public/main.js', '--format=esm', '--platform=browser', '--jsx=automatic'], {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export default defineConfig({
+  plugins: [
+    react({
+      fastRefresh: true
+    }),
+    runtimeErrorOverlay({
+      hmr: {
+        overlay: false
+      }
+    }),
+    themePlugin(),
+  ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "client", "src"),
+      "@shared": path.resolve(__dirname, "shared"),
+    },
+  },
+  root: path.resolve(__dirname, "client"),
+  build: {
+    outDir: path.resolve(__dirname, "dist/public"),
+    emptyOutDir: false,
+  },
+});`;
+
+    fs.writeFileSync('vite.config.temp.ts', tempViteConfig);
+    
+    // Сборка через временный конфиг
+    await runCommand('npx', ['vite', 'build', '--config', 'vite.config.temp.ts'], {
       cwd: __dirname
     });
-    console.log('✅ JavaScript скомпилирован успешно');
+    
+    // Удаление временного файла
+    fs.unlinkSync('vite.config.temp.ts');
+    
+    console.log('✅ Клиентская часть собрана успешно');
   } catch (error) {
-    console.log('⚠️  Проблема с JavaScript сборкой');
-    throw error;
+    console.log('⚠️  Ошибка сборки клиентской части:', error.message);
+    
+    // Попытка альтернативной сборки
+    console.log('🔄 Пробуем альтернативный способ...');
+    try {
+      await runCommand('npx', ['esbuild', 'client/src/main.tsx', '--bundle', '--outfile=dist/public/main.js', '--format=esm', '--platform=browser', '--jsx=automatic', '--define:process.env.NODE_ENV="production"'], {
+        cwd: __dirname
+      });
+      
+      // Копирование HTML
+      if (fs.existsSync('client/index.html')) {
+        fs.copyFileSync('client/index.html', 'dist/public/index.html');
+      }
+      
+      console.log('✅ Альтернативная сборка клиентской части успешна');
+    } catch (altError) {
+      throw new Error(`Все способы сборки клиентской части провалились: ${altError.message}`);
+    }
   }
 }
 
@@ -64,19 +128,24 @@ async function buildServer() {
     });
     console.log('✅ Сервер скомпилирован успешно');
   } catch (error) {
-    console.log('⚠️  Проблема с сборкой сервера');
+    console.log('⚠️  Проблема с сборкой сервера:', error.message);
     throw error;
   }
 }
 
 async function main() {
   try {
-    console.log('🚀 Начинаем альтернативную сборку...');
+    console.log('🚀 Начинаем альтернативную сборку для Vercel...');
     
+    await prepareDirs();
     await buildClient();
     await buildServer();
     
     console.log('🎉 Сборка завершена успешно!');
+    console.log('📁 Результаты сборки:');
+    console.log('  - dist/public/ - статические файлы клиентской части');
+    console.log('  - dist/index.js - серверный код');
+    
   } catch (error) {
     console.error('❌ Ошибка сборки:', error.message);
     process.exit(1);
