@@ -1,8 +1,10 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
+import typography from "@tailwindcss/typography";
 
-export default {
+const config: Config = {
   darkMode: ["class"],
-  content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
       borderRadius: {
@@ -68,10 +70,10 @@ export default {
         'safe-bottom': 'env(safe-area-inset-bottom)',
       },
       minHeight: {
-        screen: ['100vh', '100dvh'],
+        screen: '100dvh',
       },
       height: {
-        screen: ['100vh', '100dvh'],
+        screen: '100dvh',
       },
       keyframes: {
         "accordion-down": {
@@ -105,5 +107,7 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
-} satisfies Config;
+  plugins: [tailwindcssAnimate, typography],
+};
+
+export default config;
