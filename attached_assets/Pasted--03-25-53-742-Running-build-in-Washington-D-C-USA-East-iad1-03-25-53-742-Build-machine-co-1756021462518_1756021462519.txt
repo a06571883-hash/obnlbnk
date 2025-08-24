@@ -1,0 +1,135 @@
+[03:25:53.742] Running build in Washington, D.C., USA (East) – iad1
+[03:25:53.742] Build machine configuration: 2 cores, 8 GB
+[03:25:53.759] Cloning github.com/a06571883-hash/obnlbnk (Branch: main, Commit: e1d4580)
+[03:25:53.768] Skipping build cache, deployment was triggered without cache.
+[03:26:08.751] Cloning completed: 14.992s
+[03:26:09.616] Found .vercelignore
+[03:26:09.750] Removed 219 ignored files defined in .vercelignore
+[03:26:09.751]   /.git/config
+[03:26:09.751]   /.git/description
+[03:26:09.751]   /.git/FETCH_HEAD
+[03:26:09.751]   /.git/HEAD
+[03:26:09.751]   /.git/hooks/applypatch-msg.sample
+[03:26:09.752]   /.git/hooks/commit-msg.sample
+[03:26:09.752]   /.git/hooks/fsmonitor-watchman.sample
+[03:26:09.752]   /.git/hooks/post-update.sample
+[03:26:09.752]   /.git/hooks/pre-applypatch.sample
+[03:26:09.752]   /.git/hooks/pre-commit.sample
+[03:26:10.407] Running "vercel build"
+[03:26:10.893] Vercel CLI 46.0.2
+[03:26:11.837] > Installing Builder: @vercel/node@3.0.23
+[03:26:23.661] Running "install" command: `npm install`...
+[03:26:30.818] npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+[03:26:31.019] npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+[03:26:31.239] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[03:26:31.240] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[03:26:31.248] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[03:26:31.289] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[03:26:31.290] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[03:26:31.290] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[03:26:32.926] npm warn deprecated stable@0.1.8: Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility
+[03:26:32.993] npm warn deprecated sudo-prompt@9.2.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[03:26:34.652] npm warn deprecated osenv@0.1.5: This package is no longer supported.
+[03:26:34.897] npm warn deprecated request@2.88.2: request has been deprecated, see https://github.com/request/request/issues/3142
+[03:26:35.696] npm warn deprecated lodash.get@4.4.2: This package is deprecated. Use the optional chaining (?.) operator instead.
+[03:26:37.016] npm warn deprecated har-validator@5.1.5: this library is no longer supported
+[03:26:39.010] npm warn deprecated ethereumjs-wallet@1.0.2: New package name format for new versions: @ethereumjs/wallet. Please update.
+[03:26:39.572] npm warn deprecated abab@2.0.6: Use your platform's native atob() and btoa() methods instead
+[03:26:39.989] npm warn deprecated @xmldom/xmldom@0.7.13: this version is no longer supported, please update to at least 0.8.*
+[03:26:41.151] npm warn deprecated @oclif/screen@3.0.8: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[03:26:41.201] npm warn deprecated @npmcli/move-file@1.1.2: This functionality has been moved to @npmcli/fs
+[03:26:42.859] npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+[03:26:43.104] npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+[03:26:43.447] npm warn deprecated @babel/plugin-proposal-export-namespace-from@7.18.9: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-export-namespace-from instead.
+[03:26:43.448] npm warn deprecated @babel/plugin-proposal-numeric-separator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-numeric-separator instead.
+[03:26:43.486] npm warn deprecated @babel/plugin-proposal-object-rest-spread@7.20.7: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-object-rest-spread instead.
+[03:26:43.487] npm warn deprecated @babel/plugin-proposal-optional-catch-binding@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-optional-catch-binding instead.
+[03:26:43.487] npm warn deprecated @babel/plugin-proposal-nullish-coalescing-operator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-nullish-coalescing-operator instead.
+[03:26:43.488] npm warn deprecated @babel/plugin-proposal-class-properties@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-class-properties instead.
+[03:26:43.537] npm warn deprecated @babel/plugin-proposal-async-generator-functions@7.20.7: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-async-generator-functions instead.
+[03:26:43.537] npm warn deprecated @babel/plugin-proposal-optional-chaining@7.21.0: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-optional-chaining instead.
+[03:26:44.171] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[03:26:44.426] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[03:26:45.682] npm warn deprecated rimraf@2.4.5: Rimraf versions prior to v4 are no longer supported
+[03:26:45.682] npm warn deprecated glob@6.0.4: Glob versions prior to v9 are no longer supported
+[03:26:45.742] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[03:26:46.783] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[03:26:46.834] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[03:26:46.921] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[03:26:47.254] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[03:26:47.422] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[03:26:47.424] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[03:26:47.575] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[03:26:48.292] npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+[03:26:48.368] npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+[03:26:49.184] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[03:26:49.344] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[03:26:49.752] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[03:26:50.255] npm warn deprecated sudo-prompt@9.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[03:26:50.410] npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+[03:26:50.907] npm warn deprecated sudo-prompt@8.2.5: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+[03:27:16.809] 
+[03:27:16.810] added 2738 packages, and audited 2739 packages in 53s
+[03:27:16.810] 
+[03:27:16.810] 283 packages are looking for funding
+[03:27:16.811]   run `npm fund` for details
+[03:27:16.915] 
+[03:27:16.916] 59 vulnerabilities (11 low, 20 moderate, 22 high, 6 critical)
+[03:27:16.916] 
+[03:27:16.916] To address issues that do not require attention, run:
+[03:27:16.917]   npm audit fix
+[03:27:16.917] 
+[03:27:16.917] To address all issues (including breaking changes), run:
+[03:27:16.917]   npm audit fix --force
+[03:27:16.918] 
+[03:27:16.918] Run `npm audit` for details.
+[03:27:17.447] [36mvite v5.4.10 [32mbuilding for production...[36m[39m
+[03:27:17.511] <script src="/assets/nft/fallback/convert-svg-to-png.js"> in "/index.html" can't be bundled without type="module" attribute
+[03:27:17.516] transforming...
+[03:27:17.769] Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+[03:27:17.770]   npx update-browserslist-db@latest
+[03:27:17.770]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[03:27:27.360] [32m✓[39m 3846 modules transformed.
+[03:27:28.216] rendering chunks...
+[03:27:28.230] computing gzip size...
+[03:27:28.262] [2m../dist/public/[22m[32mindex.html                 [39m[1m[2m    2.21 kB[22m[1m[22m[2m │ gzip:   0.98 kB[22m
+[03:27:28.262] [2m../dist/public/[22m[2massets/[22m[35mindex-C1QMhWEC.css  [39m[1m[2m   80.43 kB[22m[1m[22m[2m │ gzip:  13.50 kB[22m
+[03:27:28.262] [2m../dist/public/[22m[2massets/[22m[36mindex-CRM2_L8n.js   [39m[1m[33m1,170.97 kB[39m[22m[2m │ gzip: 345.63 kB[22m
+[03:27:28.263] [33m
+[03:27:28.263] (!) Some chunks are larger than 500 kB after minification. Consider:
+[03:27:28.263] - Using dynamic import() to code-split the application
+[03:27:28.263] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[03:27:28.263] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[03:27:28.263] [32m✓ built in 10.79s[39m
+[03:27:28.505] Installing dependencies...
+[03:27:32.879] 
+[03:27:32.880] up to date in 4s
+[03:27:32.880] 
+[03:27:32.880] 283 packages are looking for funding
+[03:27:32.880]   run `npm fund` for details
+[03:27:33.144] Using TypeScript 5.6.3 (local user-provided)
+[03:27:38.548] api/index.ts(2,10): error TS2614: Module '"../server/routes-vercel.js"' has no exported member 'registerRoutes'. Did you mean to use 'import registerRoutes from "../server/routes-vercel.js"' instead?
+[03:27:38.549] 
+[03:27:39.563] server/routes-vercel.ts(6,34): error TS2307: Cannot find module '../services/bueno-nft-service' or its corresponding type declarations.
+[03:27:39.564] server/routes-vercel.ts(7,37): error TS2307: Cannot find module '../services/bored-ape-nft-service' or its corresponding type declarations.
+[03:27:39.564] server/routes-vercel.ts(8,25): error TS2307: Cannot find module '../storage' or its corresponding type declarations.
+[03:27:39.564] server/routes-vercel.ts(10,28): error TS2307: Cannot find module '../db' or its corresponding type declarations.
+[03:27:39.565] server/routes-vercel.ts(11,66): error TS2307: Cannot find module '../../shared/schema' or its corresponding type declarations.
+[03:27:39.565] server/routes-vercel.ts(321,53): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:27:39.565] server/routes-vercel.ts(337,71): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:27:39.565] server/routes-vercel.ts(479,57): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:27:39.565] server/routes-vercel.ts(499,83): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:27:39.566] server/routes-vercel.ts(545,56): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:27:39.566] server/routes-vercel.ts(563,87): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:27:39.566] server/routes-vercel.ts(597,76): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:27:39.566] server/routes-vercel.ts(884,71): error TS7006: Parameter 'transfer' implicitly has an 'any' type.
+[03:27:39.566] server/routes-vercel.ts(928,74): error TS7006: Parameter 'collection' implicitly has an 'any' type.
+[03:27:39.567] server/routes-vercel.ts(1140,35): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:27:39.567] 
+[03:27:40.951] Build Completed in /vercel/output [1m]
+[03:27:41.302] Deploying outputs...
+[03:27:46.146] Deployment completed
+[03:27:47.017] Creating build cache...
+[03:28:52.795] Created build cache: 1:05.772 (m:ss.mmm)
+[03:28:52.796] Uploading build cache [286.86 MB]
+[03:28:56.615] Build cache uploaded: 3.825s
