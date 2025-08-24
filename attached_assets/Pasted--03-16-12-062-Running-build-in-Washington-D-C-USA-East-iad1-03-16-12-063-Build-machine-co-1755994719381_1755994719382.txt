@@ -1,0 +1,85 @@
+[03:16:12.062] Running build in Washington, D.C., USA (East) – iad1
+[03:16:12.063] Build machine configuration: 2 cores, 8 GB
+[03:16:12.079] Cloning github.com/a06571883-hash/obnlbnk (Branch: main, Commit: e1d4580)
+[03:16:29.100] Cloning completed: 17.020s
+[03:16:29.822] Found .vercelignore
+[03:16:29.947] Removed 219 ignored files defined in .vercelignore
+[03:16:29.947]   /.git/config
+[03:16:29.947]   /.git/description
+[03:16:29.947]   /.git/FETCH_HEAD
+[03:16:29.947]   /.git/HEAD
+[03:16:29.947]   /.git/hooks/applypatch-msg.sample
+[03:16:29.947]   /.git/hooks/commit-msg.sample
+[03:16:29.947]   /.git/hooks/fsmonitor-watchman.sample
+[03:16:29.947]   /.git/hooks/post-update.sample
+[03:16:29.947]   /.git/hooks/pre-applypatch.sample
+[03:16:29.948]   /.git/hooks/pre-commit.sample
+[03:16:30.061] Restored build cache from previous deployment (E9PqpQxhbM2Qc2ZtLxQnm1Hwu4io)
+[03:16:31.302] Running "vercel build"
+[03:16:31.705] Vercel CLI 46.0.2
+[03:16:33.369] Running "install" command: `npm install`...
+[03:16:41.794] 
+[03:16:41.794] up to date, audited 2739 packages in 8s
+[03:16:41.795] 
+[03:16:41.795] 283 packages are looking for funding
+[03:16:41.795]   run `npm fund` for details
+[03:16:41.898] 
+[03:16:41.899] 59 vulnerabilities (11 low, 20 moderate, 22 high, 6 critical)
+[03:16:41.899] 
+[03:16:41.899] To address issues that do not require attention, run:
+[03:16:41.900]   npm audit fix
+[03:16:41.900] 
+[03:16:41.900] To address all issues (including breaking changes), run:
+[03:16:41.900]   npm audit fix --force
+[03:16:41.900] 
+[03:16:41.901] Run `npm audit` for details.
+[03:16:42.467] [36mvite v5.4.10 [32mbuilding for production...[36m[39m
+[03:16:42.790] <script src="/assets/nft/fallback/convert-svg-to-png.js"> in "/index.html" can't be bundled without type="module" attribute
+[03:16:42.793] transforming...
+[03:16:42.865] Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+[03:16:42.866]   npx update-browserslist-db@latest
+[03:16:42.866]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[03:16:52.815] [32m✓[39m 3846 modules transformed.
+[03:16:54.123] rendering chunks...
+[03:16:54.141] computing gzip size...
+[03:16:54.175] [2m../dist/public/[22m[32mindex.html                 [39m[1m[2m    2.21 kB[22m[1m[22m[2m │ gzip:   0.98 kB[22m
+[03:16:54.176] [2m../dist/public/[22m[2massets/[22m[35mindex-C1QMhWEC.css  [39m[1m[2m   80.43 kB[22m[1m[22m[2m │ gzip:  13.50 kB[22m
+[03:16:54.176] [2m../dist/public/[22m[2massets/[22m[36mindex-CRM2_L8n.js   [39m[1m[33m1,170.97 kB[39m[22m[2m │ gzip: 345.63 kB[22m
+[03:16:54.176] [33m
+[03:16:54.176] (!) Some chunks are larger than 500 kB after minification. Consider:
+[03:16:54.176] - Using dynamic import() to code-split the application
+[03:16:54.176] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[03:16:54.176] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[03:16:54.177] [32m✓ built in 11.43s[39m
+[03:16:54.362] Installing dependencies...
+[03:16:59.002] 
+[03:16:59.003] up to date in 4s
+[03:16:59.005] 
+[03:16:59.005] 283 packages are looking for funding
+[03:16:59.005]   run `npm fund` for details
+[03:16:59.232] Using TypeScript 5.6.3 (local user-provided)
+[03:17:05.102] api/index.ts(2,10): error TS2614: Module '"../server/routes-vercel.js"' has no exported member 'registerRoutes'. Did you mean to use 'import registerRoutes from "../server/routes-vercel.js"' instead?
+[03:17:05.102] 
+[03:17:06.165] server/routes-vercel.ts(6,34): error TS2307: Cannot find module '../services/bueno-nft-service' or its corresponding type declarations.
+[03:17:06.165] server/routes-vercel.ts(7,37): error TS2307: Cannot find module '../services/bored-ape-nft-service' or its corresponding type declarations.
+[03:17:06.165] server/routes-vercel.ts(8,25): error TS2307: Cannot find module '../storage' or its corresponding type declarations.
+[03:17:06.165] server/routes-vercel.ts(10,28): error TS2307: Cannot find module '../db' or its corresponding type declarations.
+[03:17:06.165] server/routes-vercel.ts(11,66): error TS2307: Cannot find module '../../shared/schema' or its corresponding type declarations.
+[03:17:06.166] server/routes-vercel.ts(321,53): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:17:06.166] server/routes-vercel.ts(337,71): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:17:06.166] server/routes-vercel.ts(479,57): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:17:06.166] server/routes-vercel.ts(499,83): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:17:06.166] server/routes-vercel.ts(545,56): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:17:06.166] server/routes-vercel.ts(563,87): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:17:06.167] server/routes-vercel.ts(597,76): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:17:06.167] server/routes-vercel.ts(884,71): error TS7006: Parameter 'transfer' implicitly has an 'any' type.
+[03:17:06.167] server/routes-vercel.ts(928,74): error TS7006: Parameter 'collection' implicitly has an 'any' type.
+[03:17:06.167] server/routes-vercel.ts(1140,35): error TS7006: Parameter 'nft' implicitly has an 'any' type.
+[03:17:06.168] 
+[03:17:07.610] Build Completed in /vercel/output [34s]
+[03:17:07.997] Deploying outputs...
+[03:17:14.882] Deployment completed
+[03:17:15.759] Creating build cache...
+[03:18:23.489] Created build cache: 1:07.725 (m:ss.mmm)
+[03:18:23.490] Uploading build cache [286.86 MB]
+[03:18:26.422] Build cache uploaded: 2.937s
