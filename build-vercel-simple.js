@@ -86,30 +86,27 @@ export default defineConfig({
     
     console.log('✅ Клиентская часть собрана');
     
-    console.log('🔧 Создание точки входа сервера...');
+    console.log('🔧 Компиляция сервера через TypeScript...');
     
-    // Создание минимальной точки входа для сервера
-    const serverEntry = `
-// Vercel serverless function
-import { createServer } from 'http';
-
-export default function handler(req, res) {
-  // Простой обработчик для проверки
-  if (req.url?.startsWith('/api/')) {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ 
-      message: 'Server is running', 
-      status: 'ok',
-      timestamp: new Date().toISOString()
-    }));
-  } else {
-    // Статические файлы обрабатываются Vercel автоматически
-    res.writeHead(404);
-    res.end('Not found');
-  }
-}
-`;
+    // Копируем исходники сервера и shared
+    if (!fs.existsSync('dist/server')) {
+      fs.mkdirSync('dist/server', { recursive: true });
+    }
+    if (!fs.existsSync('dist/shared')) {
+      fs.mkdirSync('dist/shared', { recursive: true });
+    }
     
+    // Копируем папки
+    await runCommand('cp', ['-r', 'server/', 'dist/'], { cwd: __dirname });
+    await runCommand('cp', ['-r', 'shared/', 'dist/'], { cwd: __dirname });
+    
+    // Компилируем TypeScript в JavaScript
+    await runCommand('npx', ['tsc', '--target', 'ES2020', '--module', 'ESNext', '--moduleResolution', 'node', '--outDir', 'dist', '--allowSyntheticDefaultImports', '--esModuleInterop'], {
+      cwd: __dirname
+    });
+    
+    // Создаем точку входа для Vercel
+    const serverEntry = `import './server/index.js';`;
     fs.writeFileSync('dist/index.js', serverEntry);
     
     console.log('🎉 Сборка завершена успешно!');
