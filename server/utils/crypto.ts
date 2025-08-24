@@ -4,7 +4,7 @@ import * as ecc from 'tiny-secp256k1';
 import ECPairFactory from 'ecpair';
 import { randomBytes, createHash } from 'crypto';
 import * as Bip39 from 'bip39';
-import { generateAddressesForUser, generateMnemonic, getAddressesFromMnemonic } from './seed-phrase';
+import { generateAddressesForUser, generateMnemonic, getAddressesFromMnemonic } from './seed-phrase.js';
 
 // Корректная инициализация ECPair с поддержкой tiny-secp256k1
 const ECPair = ECPairFactory(ecc);
