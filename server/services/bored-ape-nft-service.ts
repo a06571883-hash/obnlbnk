@@ -4,7 +4,7 @@
  */
 // Используем getBoredApeNFT вместо generateNFTImage
 import { db } from '../db';
-import { nfts, nftCollections, nftTransfers, insertNftSchema, users, cards, transactions } from '../../shared/schema';
+import { nfts, nftCollections, nftTransfers, insertNftSchema, users, cards, transactions } from '../../shared/schema.js';
 import { eq, and, not, or, inArray } from 'drizzle-orm';
 import { getBoredApeNFT, checkBoredApeNFTFiles } from '../utils/bored-ape-nft-loader';
 import * as crypto from 'crypto';
