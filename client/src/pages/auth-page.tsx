@@ -251,7 +251,7 @@ function RegisterForm() {
           <h3 className="font-semibold text-sm mb-1 text-primary">Правила регистрации:</h3>
           <ul className="list-disc list-inside space-y-1">
             <li>Имя пользователя: 3-20 символов, только латинские буквы, цифры и знак подчеркивания (_)</li>
-            <li>Пароль: минимум 6 символов</li>
+            <li>Пароль: минимум 6 символов, обязательна хотя бы одна заглавная буква и одна цифра</li>
           </ul>
         </div>
 

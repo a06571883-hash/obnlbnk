@@ -1,0 +1,37 @@
+Aug 24 14:23:54.58
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/server/utils/seed-phrase' imported from /var/task/server/utils/crypto.js at finalizeResolution (node:internal/modules/esm/resolve:287:11) at moduleResolve (node:internal/modules/esm/resolve:956:10) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/utils/seed-phrase' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 14:23:48.72
+POST
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/register
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/server/utils/seed-phrase' imported from /var/task/server/utils/crypto.js at finalizeResolution (node:internal/modules/esm/resolve:287:11) at moduleResolve (node:internal/modules/esm/resolve:956:10) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/utils/seed-phrase' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 14:23:47.29
+POST
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/register
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/server/utils/seed-phrase' imported from /var/task/server/utils/crypto.js at finalizeResolution (node:internal/modules/esm/resolve:287:11) at moduleResolve (node:internal/modules/esm/resolve:956:10) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/utils/seed-phrase' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 14:23:38.85
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/server/utils/seed-phrase' imported from /var/task/server/utils/crypto.js at finalizeResolution (node:internal/modules/esm/resolve:287:11) at moduleResolve (node:internal/modules/esm/resolve:956:10) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/utils/seed-phrase' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 14:23:37.10
+GET
+500
+obnlbnk-ntnuchdh2-nikitahr555-6694s-projects.vercel.app
+/api/user
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/server/utils/seed-phrase' imported from /var/task/server/utils/crypto.js at finalizeResolution (node:internal/modules/esm/resolve:287:11) at moduleResolve (node:internal/modules/esm/resolve:956:10) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/utils/seed-phrase' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue. Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/server/utils/seed-phrase' imported from /var/task/server/utils/crypto.js at finalizeResolution (node:internal/modules/esm/resolve:287:11) at moduleResolve (node:internal/modules/esm/resolve:956:10) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/utils/seed-phrase' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 14:23:37.03
+GET
+500
+obnlbnk-ntnuchdh2-nikitahr555-6694s-projects.vercel.app
+/api/user
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/server/utils/seed-phrase' imported from /var/task/server/utils/crypto.js at finalizeResolution (node:internal/modules/esm/resolve:287:11) at moduleResolve (node:internal/modules/esm/resolve:956:10) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND', url: 'file:///var/task/server/utils/seed-phrase' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+No more logs to show within selected timeline
