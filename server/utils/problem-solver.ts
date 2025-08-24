@@ -6,7 +6,7 @@
 import axios from 'axios';
 import { AppError, logError } from './error-handler';
 import { withDatabaseRetry } from './new_modules/db';
-import * as schema from '@shared/schema';
+import * as schema from '../shared/schema.js';
 import { client, db } from './new_modules/db';
 
 /**
