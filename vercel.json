@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "node build-minimal.cjs",
+  "buildCommand": "node build-fallback.js",
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
   "functions": {
