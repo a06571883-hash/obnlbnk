@@ -37,8 +37,9 @@ export function NFTServerStatus() {
     const fetchStatus = async () => {
       try {
         setLoading(true);
-        const response = await apiRequest<NFTServerStatusResponse>('/api/nft/server-status');
-        setStatus(response);
+        const response = await apiRequest('GET', '/api/nft/server-status');
+        const data = await response.json() as NFTServerStatusResponse;
+        setStatus(data);
         setError(null);
       } catch (err) {
         console.error('Error fetching NFT server status:', err);
