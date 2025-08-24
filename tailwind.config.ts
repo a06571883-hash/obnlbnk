@@ -41,9 +41,9 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        border: "hsl(var(--border))",
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -62,16 +62,30 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+
+      // 👇 Генерация утилитарных классов
+      borderColor: theme => ({
+        ...theme("colors"),
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+      }),
+      ringColor: {
+        ring: "hsl(var(--ring))",
+      },
+      divideColor: {
+        border: "hsl(var(--border))",
+      },
+
       spacing: {
-        'safe': 'env(safe-area-inset-bottom)',
-        'safe-top': 'env(safe-area-inset-top)',
-        'safe-bottom': 'env(safe-area-inset-bottom)',
+        safe: "env(safe-area-inset-bottom)",
+        "safe-top": "env(safe-area-inset-top)",
+        "safe-bottom": "env(safe-area-inset-bottom)",
       },
       minHeight: {
-        screen: ['100vh', '100dvh'],
+        screen: ["100vh", "100dvh"],
       },
       height: {
-        screen: ['100vh', '100dvh'],
+        screen: ["100vh", "100dvh"],
       },
       keyframes: {
         "accordion-down": {
@@ -82,7 +96,7 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "shimmer": {
+        shimmer: {
           "0%": { backgroundPosition: "0 0" },
           "50%": { backgroundPosition: "100% 0" },
           "100%": { backgroundPosition: "0 0" },
@@ -96,7 +110,7 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "shimmer": "shimmer 3s linear infinite",
+        shimmer: "shimmer 3s linear infinite",
         "gradient-slow": "gradient-shift 6s ease infinite",
         "gradient-fast": "gradient-shift 3s ease infinite",
       },
