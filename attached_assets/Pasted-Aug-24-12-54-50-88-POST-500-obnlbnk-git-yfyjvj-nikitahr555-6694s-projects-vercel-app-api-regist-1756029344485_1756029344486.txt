@@ -1,0 +1,55 @@
+Aug 24 12:54:50.88
+POST
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/register
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@shared/schema' imported from /var/task/server/storage.js at packageResolve (node:internal/modules/esm/resolve:877:9) at moduleResolve (node:internal/modules/esm/resolve:950:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 12:54:49.47
+POST
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/register
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@shared/schema' imported from /var/task/server/storage.js at packageResolve (node:internal/modules/esm/resolve:877:9) at moduleResolve (node:internal/modules/esm/resolve:950:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 12:54:46.78
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@shared/schema' imported from /var/task/server/storage.js at packageResolve (node:internal/modules/esm/resolve:877:9) at moduleResolve (node:internal/modules/esm/resolve:950:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 12:54:40.64
+POST
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/login
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@shared/schema' imported from /var/task/server/storage.js at packageResolve (node:internal/modules/esm/resolve:877:9) at moduleResolve (node:internal/modules/esm/resolve:950:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 12:54:39.13
+POST
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/login
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@shared/schema' imported from /var/task/server/storage.js at packageResolve (node:internal/modules/esm/resolve:877:9) at moduleResolve (node:internal/modules/esm/resolve:950:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 12:54:31.34
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@shared/schema' imported from /var/task/server/storage.js at packageResolve (node:internal/modules/esm/resolve:877:9) at moduleResolve (node:internal/modules/esm/resolve:950:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 12:54:15.74
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@shared/schema' imported from /var/task/server/storage.js at packageResolve (node:internal/modules/esm/resolve:877:9) at moduleResolve (node:internal/modules/esm/resolve:950:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 12:54:11.05
+GET
+500
+obnlbnk-50hejwrvd-nikitahr555-6694s-projects.vercel.app
+/api/user
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@shared/schema' imported from /var/task/server/storage.js at packageResolve (node:internal/modules/esm/resolve:877:9) at moduleResolve (node:internal/modules/esm/resolve:950:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue. Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@shared/schema' imported from /var/task/server/storage.js at packageResolve (node:internal/modules/esm/resolve:877:9) at moduleResolve (node:internal/modules/esm/resolve:950:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Aug 24 12:54:11.04
+GET
+500
+obnlbnk-50hejwrvd-nikitahr555-6694s-projects.vercel.app
+/api/user
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@shared/schema' imported from /var/task/server/storage.js at packageResolve (node:internal/modules/esm/resolve:877:9) at moduleResolve (node:internal/modules/esm/resolve:950:18) at moduleResolveWithNodePath (node:internal/modules/esm/resolve:1192:14) at defaultResolve (node:internal/modules/esm/resolve:1235:79) at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12) at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25) at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38) at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38) at ModuleJob._link (node:internal/modules/esm/module_job:130:49) { code: 'ERR_MODULE_NOT_FOUND' } Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+No more logs to show within selected timeline

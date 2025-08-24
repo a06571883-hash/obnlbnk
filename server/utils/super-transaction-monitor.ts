@@ -8,7 +8,7 @@
 import { EventEmitter } from 'events';
 import { checkTransactionStatus } from './blockchain';
 import { db } from '../db';
-import * as schema from '@shared/schema';
+import * as schema from '../shared/schema.js';
 import { logSystemError } from './health-monitor';
 import { AppError, logError } from './error-handler';
 import * as readline from 'readline';
