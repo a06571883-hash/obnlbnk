@@ -1,16 +1,8 @@
-# Игнорируем файлы, которые не нужны для деплоя на Vercel
+# =========================
+# Базовое
+# =========================
 node_modules
 .git
-.env.local
-.env.development
-sqlite.db
-data/
-backup/
-compiled/
-dist/server/
-server-replit.ts
-
-# Временные и кэш файлы
 *.log
 .cache/
 .DS_Store
@@ -18,12 +10,18 @@ server-replit.ts
 *.swp
 *.swo
 
-# Файлы разработки
+# =========================
+# Env и конфиги
+# =========================
+.env.local
+.env.development
 tsconfig.tsbuildinfo
+
+# =========================
+# Документация и скрипты
+# =========================
 *.md
 README.md
-
-# Бэкапы и скрипты
 *.sh
 *.sql
 BACKUP_RESTORE_INSTRUCTIONS.md
@@ -32,7 +30,17 @@ DATABASE_INSTRUCTIONS.md
 RENDER_DEPLOYMENT_GUIDE.md
 VERCEL_DEPLOYMENT_GUIDE.md
 
-# Скрипты импорта и обработки
+# =========================
+# Базы и бэкапы
+# =========================
+sqlite.db
+data/
+backup/
+compiled/
+
+# =========================
+# Генераторы и утилиты (не нужны в продакшне API)
+# =========================
 add-*.js
 add-*.cjs
 check-*.js
@@ -49,41 +57,30 @@ batch-*.js
 deep-*.js
 complete-*.js
 
-# NFT файлы и изображения (очень тяжелые)
+# =========================
+# Ассеты (тяжёлые NFT картинки)
+# =========================
 bored_ape_nft/
 mutant_ape_nft/
 bayc_official_nft/
 nft_assets/
 client/public/assets/nft/
 
-# Frontend файлы не нужны для API
-client/src/
-client/public/
-vite.config.ts
-postcss.config.js
-tailwind.config.js
-theme.json
-
-# React Native и мобильные файлы
+# =========================
+# Mobile (React Native)
+# =========================
 android/
 ios/
 app.json
 eas.json
 
-# Тестовые и вспомогательные файлы
-run-nft-server.js
+# =========================
+# Не используемые файлы сервера
+# =========================
+server-replit.ts
 server/index.ts
-test-*.js
 
-# Тяжелые утилиты для обработки изображений (не нужны для API)
-server/utils/pixel-nft-generator.ts
-server/utils/image-processor.ts
-server/utils/nft-generator.ts
-server/services/bueno-nft-service.ts
-server/services/bored-ape-nft-service.ts
-
-# Контроллеры NFT генерации (тяжелые зависимости)
-server/controllers/nft-server-controller.ts
-
-# Утилиты импорта (тяжелые операции с файлами)
-server/utils/import-bored-apes-to-marketplace.ts
+# =========================
+# ⚠️ НЕ игнорируем client/src и server/services/bored-ape-nft-service.ts
+# потому что они нужны для билда и рантайма
+# =========================
