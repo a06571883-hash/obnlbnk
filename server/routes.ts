@@ -18,7 +18,7 @@ import { generateNFTImage } from './utils/nft-generator';
 import { Telegraf } from 'telegraf';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
-import { nfts, nftCollections } from '@shared/schema';
+import { nfts, nftCollections } from '../shared/schema.js';
 import nftRoutes from './controllers/nft-controller';
 import nftImportRoutes from './controllers/nft-import-controller';
 import nftMarketplaceRoutes from './controllers/nft-marketplace-controller';
