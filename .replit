@@ -40,6 +40,7 @@ localPort = 8082
 externalPort = 3003
 
 [workflows]
+runButton = "Free 24/7 Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -68,6 +69,15 @@ waitForPort = 5000
 [[workflows.workflow]]
 name = "Dev Server"
 author = 40638592
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Free 24/7 Server"
+author = 46816141
 mode = "sequential"
 
 [[workflows.workflow.tasks]]
