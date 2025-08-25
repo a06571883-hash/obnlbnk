@@ -1,6 +1,6 @@
 import session from "express-session";
 import { MemoryStore } from 'express-session';
-import { db, client } from "./db";
+import { db, client } from "./db.js";
 import { cards, users, transactions, exchangeRates, nftCollections, nfts, nftTransfers } from "../shared/schema";
 import type { 
   User, Card, InsertUser, Transaction, ExchangeRate,
