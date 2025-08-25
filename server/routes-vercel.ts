@@ -2,10 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import fs from 'fs';
 import path from 'path';
-import { storage } from "./storage";
-import { exportDatabase, importDatabase } from './database/backup';
-import { setupAuth } from './auth';
-import { startRateUpdates } from './rates';
+import { storage } from "./storage.js";
+import { exportDatabase, importDatabase } from './database/backup.js';
+import { setupAuth } from './auth.js';
+import { startRateUpdates } from './rates.js';
 import express from 'express';
 import fetch from 'node-fetch';
 
@@ -17,23 +17,24 @@ declare global {
     }
   }
 }
-import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
-import { getNews } from './news-service';
-import { seaTableManager } from './utils/seatable';
-import { generateValidAddress, validateCryptoAddress, getSeedPhraseForUser } from './utils/crypto';
-import { hasBlockchainApiKeys } from './utils/blockchain';
-import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase';
+
+import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service.js';
+import { getNews } from './news-service.js';
+import { seaTableManager } from './utils/seatable.js';
+import { generateValidAddress, validateCryptoAddress, getSeedPhraseForUser } from './utils/crypto.js';
+import { hasBlockchainApiKeys } from './utils/blockchain.js';
+import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase.js';
 // import { generateNFTImage } from './utils/nft-generator.js'; // Исключено для Vercel
-import { db } from './db';
+import { db } from './db.js';
 import { eq } from 'drizzle-orm';
-import { nfts, nftCollections } from '../shared/schema';
-import nftRoutes from './controllers/nft-controller';
-import nftImportRoutes from './controllers/nft-import-controller';
-import nftMarketplaceRoutes from './controllers/nft-marketplace-controller';
+import { nfts, nftCollections } from '../shared/schema.js';
+import nftRoutes from './controllers/nft-controller.js';
+import nftImportRoutes from './controllers/nft-import-controller.js';
+import nftMarketplaceRoutes from './controllers/nft-marketplace-controller.js';
 // import nftServerController from './controllers/nft-server-controller.js'; // Исключено для Vercel
-import { staticAssetsRouter } from './routes/static-assets';
-import { serveStatic } from './vite-vercel';
-import { setupDebugRoutes } from "./debug";
+import { staticAssetsRouter } from './routes/static-assets.js';
+import { serveStatic } from './vite-vercel.js';
+import { setupDebugRoutes } from "./debug.js";
 
 // Auth middleware
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -43,18 +44,16 @@ function ensureAuthenticated(req: express.Request, res: express.Response, next: 
   res.status(401).json({ message: "Необходима авторизация" });
 }
 
-// Vercel-совместимая версия registerRoutes (без WebSocket и сложных серверных функций)
+// Vercel-совместимая версия registerRoutes
 export async function registerRoutes(app: Express): Promise<Server> {
   console.log('🔧 Регистрация маршрутов для Vercel...');
 
-  // Базовая конфигурация Express
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  // Настройка авторизации
   setupAuth(app);
 
-  // Статические ресурсы для NFT
+  // Статические ресурсы
   app.use('/bored_ape_nft', express.static(path.join(process.cwd(), 'bored_ape_nft')));
   app.use('/public/assets/nft', express.static(path.join(process.cwd(), 'client/public/assets/nft')));
   app.use('/bayc_official', express.static(path.join(process.cwd(), 'client/public/bayc_official')));
@@ -64,9 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/nft', nftRoutes);
   app.use('/api/nft/marketplace', nftMarketplaceRoutes);
   app.use('/api/nft-import', nftImportRoutes);
-  // app.use('/api/nft-server', nftServerController); // Исключено для Vercel (тяжелые зависимости)
 
-  // Отладочные маршруты
   setupDebugRoutes(app);
 
   // Основные API endpoints
@@ -82,16 +79,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/cards", ensureAuthenticated, async (req, res) => {
     try {
-      if (!(req.session as any)?.user) {
-        return res.status(401).json({ message: "Пользователь не авторизован" });
-      }
+      const username = (req.session as any)?.user as string;
+      if (!username) return res.status(401).json({ message: "Пользователь не авторизован" });
 
-      const username = (req.session as any).user as string;
       const user = await storage.getUserByUsername(username);
-      
-      if (!user) {
-        return res.status(404).json({ message: "Пользователь не найден" });
-      }
+      if (!user) return res.status(404).json({ message: "Пользователь не найден" });
 
       const cards = await storage.getCardsByUserId(user.id);
       res.json(cards);
@@ -101,29 +93,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // NFT коллекции
   app.get('/api/nft-collections', ensureAuthenticated, async (req, res) => {
     try {
-      if (!(req.session as any)?.user) {
-        return res.status(401).json({ error: 'Требуется авторизация' });
-      }
-      
-      const username = (req.session as any).user as string;
+      const username = (req.session as any)?.user as string;
+      if (!username) return res.status(401).json({ error: 'Требуется авторизация' });
+
       const user = await storage.getUserByUsername(username);
-      
-      if (!user) {
-        return res.status(404).json({ error: 'Пользователь не найден' });
-      }
-      
+      if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+
       const collections = await db.select().from(nftCollections);
       const collectionsWithNFTs = await Promise.all(collections.map(async (collection) => {
         const collectionNFTs = await db.select().from(nfts).where(eq(nfts.collectionId, collection.id));
-        return {
-          ...collection,
-          nfts: collectionNFTs
-        };
+        return { ...collection, nfts: collectionNFTs };
       }));
-      
+
       res.status(200).json(collectionsWithNFTs);
     } catch (error) {
       console.error('Ошибка при получении коллекций NFT:', error);
@@ -131,19 +114,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Генерация криптоадресов
   app.get("/api/crypto/seed-phrase", ensureAuthenticated, async (req, res) => {
     try {
-      if (!(req.session as any)?.user) {
-        return res.status(401).json({ message: "Пользователь не авторизован" });
-      }
+      const username = (req.session as any)?.user as string;
+      if (!username) return res.status(401).json({ message: "Пользователь не авторизован" });
 
-      const username = (req.session as any).user as string;
       const user = await storage.getUserByUsername(username);
-      
-      if (!user) {
-        return res.status(404).json({ message: "Пользователь не найден" });
-      }
+      if (!user) return res.status(404).json({ message: "Пользователь не найден" });
 
       const seedPhrase = getSeedPhraseForUser(user.id);
       res.json({ seedPhrase });
@@ -153,16 +130,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Настройка статических файлов для production
   if (process.env.NODE_ENV === 'production') {
     serveStatic(app);
   }
 
   console.log('✅ Маршруты зарегистрированы для Vercel');
-  
-  // Возвращаем mock server для совместимости
   return createServer(app);
 }
 
-// Default export для Vercel API
 export default registerRoutes;
