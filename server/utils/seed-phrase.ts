@@ -31,7 +31,7 @@ export function isValidMnemonic(mnemonic: string): boolean {
  * @param {string} mnemonic Мнемоническая фраза
  * @returns {string} Bitcoin-адрес
  */
-export function getBitcoinAddressFromMnemonic(mnemonic: string): string {
+export async function getBitcoinAddressFromMnemonic(mnemonic: string): Promise<string> {
   try {
     const seed = bip39.mnemonicToSeedSync(mnemonic);
     const hdMaster = HDKey.fromMasterSeed(seed);
@@ -40,7 +40,7 @@ export function getBitcoinAddressFromMnemonic(mnemonic: string): string {
     // Инициализируем ECPair с поддержкой tiny-secp256k1
     const ecc = require('tiny-secp256k1');
     const ECPairFactory = require('ecpair');
-    const ECPair = ECPairFactory.default(ecc);
+    const ECPair = ECPairFactory.default ? ECPairFactory.default(ecc) : ECPairFactory(ecc);
     
     // Создаем пару ключей из приватного ключа
     const keyPair = ECPair.fromPrivateKey(Buffer.from(childKey.privateKey));
@@ -85,8 +85,8 @@ export function getEthereumAddressFromMnemonic(mnemonic: string): string {
  * @param {string} mnemonic Мнемоническая фраза
  * @returns {{ btcAddress: string, ethAddress: string }} Объект с адресами
  */
-export function getAddressesFromMnemonic(mnemonic: string): { btcAddress: string, ethAddress: string } {
-  const btcAddress = getBitcoinAddressFromMnemonic(mnemonic);
+export async function getAddressesFromMnemonic(mnemonic: string): Promise<{ btcAddress: string, ethAddress: string }> {
+  const btcAddress = await getBitcoinAddressFromMnemonic(mnemonic);
   const ethAddress = getEthereumAddressFromMnemonic(mnemonic);
   
   return { btcAddress, ethAddress };
@@ -117,9 +117,9 @@ export function generateDeterministicMnemonicFromUserId(userId: number): string 
  * @param {number} userId ID пользователя
  * @returns {{ mnemonic: string, btcAddress: string, ethAddress: string }} Мнемоническая фраза и адреса
  */
-export function generateAddressesForUser(userId: number): { mnemonic: string, btcAddress: string, ethAddress: string } {
+export async function generateAddressesForUser(userId: number): Promise<{ mnemonic: string, btcAddress: string, ethAddress: string }> {
   const mnemonic = generateDeterministicMnemonicFromUserId(userId);
-  const { btcAddress, ethAddress } = getAddressesFromMnemonic(mnemonic);
+  const { btcAddress, ethAddress } = await getAddressesFromMnemonic(mnemonic);
   
   return { mnemonic, btcAddress, ethAddress };
 }
