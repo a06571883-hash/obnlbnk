@@ -57,11 +57,11 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Отключаем secure для разработки, чтобы cookies работали через HTTP
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       path: '/',
-      httpOnly: true
+      httpOnly: false // Временно отключаем httpOnly для отладки
     },
     name: 'bnal.sid'
   }));
