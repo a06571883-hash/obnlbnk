@@ -2,11 +2,11 @@
  * Сервис для работы с NFT из коллекции Bueno Art
  * Обеспечивает интеграцию с https://bueno.art/rhg0bfyr/ooo-bnal-bank
  */
-import { generateNFTImage } from '../utils/nft-generator';
-import { db } from '../db';
-import { nfts, nftCollections, nftTransfers, insertNftSchema } from '../../../shared/schema';
+import { generateNFTImage } from '../utils/nft-generator.js';
+import { db } from '../db.js';
+import { nfts, nftCollections, nftTransfers, insertNftSchema } from '../../../shared/schema.js';
 import { eq, and } from 'drizzle-orm';
-import { getBuenoNFT } from '../utils/bueno-nft-fetcher';
+import { getBuenoNFT } from '../utils/bueno-nft-fetcher.js';
 import * as crypto from 'crypto';
 
 // Тип редкости NFT
