@@ -13,29 +13,29 @@ declare module "express-session" {
     };
   }
 }
-import { storage } from "./storage";
-import { exportDatabase, importDatabase } from './database/backup';
-import { setupAuth } from './auth';
-import { startRateUpdates } from './rates';
+import { storage } from "./storage.js";
+import { exportDatabase, importDatabase } from './database/backup.js';
+import { setupAuth } from './auth.js';
+import { startRateUpdates } from './rates.js';
 import express from 'express';
 import fetch from 'node-fetch';
-import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
-import { getNews } from './news-service';
-import { seaTableManager } from './utils/seatable';
-import { generateValidAddress, validateCryptoAddress, getSeedPhraseForUser } from './utils/crypto';
-import { hasBlockchainApiKeys } from './utils/blockchain';
-import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase';
-import { generateNFTImage } from './utils/nft-generator';
+import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service.js';
+import { getNews } from './news-service.js';
+import { seaTableManager } from './utils/seatable.js';
+import { generateValidAddress, validateCryptoAddress, getSeedPhraseForUser } from './utils/crypto.js';
+import { hasBlockchainApiKeys } from './utils/blockchain.js';
+import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase.js';
+import { generateNFTImage } from './utils/nft-generator.js';
 import { Telegraf } from 'telegraf';
-import { db } from './db';
+import { db } from './db.js';
 import { eq } from 'drizzle-orm';
 import { nfts, nftCollections } from '../shared/schema';
-import nftRoutes from './controllers/nft-controller';
-import nftImportRoutes from './controllers/nft-import-controller';
-import nftMarketplaceRoutes from './controllers/nft-marketplace-controller';
-import nftServerController from './controllers/nft-server-controller';
+import nftRoutes from './controllers/nft-controller.js';
+import nftImportRoutes from './controllers/nft-import-controller.js';
+import nftMarketplaceRoutes from './controllers/nft-marketplace-controller.js';
+import nftServerController from './controllers/nft-server-controller.js';
 // Импортируем маршрут для статических ресурсов
-import { staticAssetsRouter } from './routes/static-assets';
+import { staticAssetsRouter } from './routes/static-assets.js';
 
 // Вспомогательные функции для генерации NFT
 function generateNFTRarity(): string {
@@ -578,7 +578,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Генерация карт для пользователя
   app.post("/api/cards/generate", ensureAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.user!.id!;
       console.log(`Generating cards for user ${userId}...`);
       
       // Проверяем, есть ли уже карты у пользователя
@@ -796,7 +796,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         toCurrency,
         fromAmount,
         address: cleanCardNumber,
-        cryptoCard: userCryptoCard
+        cryptoCard: {
+          btcBalance: userCryptoCard.btcBalance,
+          ethBalance: userCryptoCard.ethBalance,
+          btcAddress: userCryptoCard.btcAddress ?? ''
+        }
       });
 
       res.json(transaction);
@@ -991,7 +995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/backup", ensureAuthenticated, async (req, res) => {
     try {
       // Проверяем, что пользователь имеет права регулятора
-      const user = await storage.getUser(req.user!.id);
+      const user = await storage.getUser(req.user!.id!);
       if (!user || !user.is_regulator) {
         return res.status(403).json({ 
           message: "Только регулятор может создавать резервные копии" 
@@ -1026,7 +1030,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/restore", ensureAuthenticated, async (req, res) => {
     try {
       // Проверяем, что пользователь имеет права регулятора
-      const user = await storage.getUser(req.user!.id);
+      const user = await storage.getUser(req.user!.id!);
       if (!user || !user.is_regulator) {
         return res.status(403).json({ 
           message: "Только регулятор может восстанавливать из резервных копий"
@@ -1057,7 +1061,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/crypto/seed-phrase", ensureAuthenticated, async (req, res) => {
     try {
       // В middleware ensureAuthenticated мы уже проверили что req.user существует
-      const userId = req.user!.id;
+      const userId = req.user!.id!;
       
       // Получаем seed-фразу по ID пользователя
       const seedPhrase = getSeedPhraseForUser(userId);
@@ -1228,6 +1232,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const imageInfo = await countBoredApeImages();
       
       // Получаем количество уже импортированных NFT
+      const { Pool } = require('pg');
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL
+      });
       const client = await pool.connect();
       try {
         const result = await client.query(`
@@ -1270,7 +1278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const pool = new Pool({
           connectionString: process.env.DATABASE_URL
         });
-        global.pool = pool;
+        (global as any).pool = pool;
         
         const { importBoredApesToMarketplace } = require('./utils/import-bored-apes-to-marketplace');
         const result = await importBoredApesToMarketplace();
@@ -1334,7 +1342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Выполняем скрипт через child_process
       const { exec } = require('child_process');
       
-      exec(script, (error, stdout, stderr) => {
+      exec(script, (error: any, stdout: any, stderr: any) => {
         if (error) {
           console.error(`Ошибка выполнения скрипта: ${error}`);
           return res.status(500).json({
@@ -1605,7 +1613,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transferHistory = await storage.getNFTTransferHistory(nftId);
       
       // Обогащаем историю передач именами пользователей
-      const userIds = [...new Set([...transferHistory.map(t => t.fromUserId), ...transferHistory.map(t => t.toUserId)])];
+      const userIdsSet = new Set([...transferHistory.map(t => t.fromUserId), ...transferHistory.map(t => t.toUserId)]);
+      const userIds = Array.from(userIdsSet);
       const users = await Promise.all(userIds.map(id => storage.getUser(id)));
       const userMap = users.reduce((map, user) => {
         if (user) map[user.id] = user;
@@ -1742,7 +1751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // TODO: В будущем добавить реальную оплату через карту
       
       // Передаем NFT новому владельцу
-      const result = await storage.transferNFT(nftId, nft.ownerId, buyerId, 'sale', nft.price);
+      const result = await storage.transferNFT(nftId, nft.ownerId, buyerId, 'sale', nft.price || undefined);
       
       return res.json({
         success: true,

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { validateCryptoAddress } from './crypto';
+import { validateCryptoAddress } from './crypto.js';
 
 // Получаем API ключ из переменных окружения
 const BLOCKDAEMON_API_KEY = process.env.BLOCKDAEMON_API_KEY;

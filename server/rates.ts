@@ -1,4 +1,4 @@
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { WebSocket, WebSocketServer } from 'ws';
 import { parse } from 'url';
 import { IncomingMessage } from 'http';
