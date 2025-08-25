@@ -3,12 +3,12 @@
  * Обеспечивает интеграцию с загруженной из ZIP-архива коллекцией
  */
 // Используем getBoredApeNFT вместо generateNFTImage
-import { db } from '../db';
-import { nfts, nftCollections, nftTransfers, insertNftSchema, users, cards, transactions } from '../../shared/schema';
+import { db } from '../db.js';
+import { nfts, nftCollections, nftTransfers, insertNftSchema, users, cards, transactions } from '../../shared/schema.js';
 import { eq, and, not, or, inArray } from 'drizzle-orm';
-import { getBoredApeNFT, checkBoredApeNFTFiles } from '../utils/bored-ape-nft-loader';
+import { getBoredApeNFT, checkBoredApeNFTFiles } from '../utils/bored-ape-nft-loader.js';
 import * as crypto from 'crypto';
-import { storage } from '../storage';
+import { storage } from '../storage.js';
 
 // Тип редкости NFT
 type NFTRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
