@@ -73,17 +73,10 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    // Используем PostgreSQL для хранения сессий
-    this.sessionStore = new PostgresStore({
-      conObject: {
-        connectionString: DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
-      },
-      tableName: 'session',
-      createTableIfMissing: true
-    });
+    // Временно используем MemoryStore для сессий из-за проблем с переполнением соединений
+    this.sessionStore = new MemoryStore();
     
-    console.log('Session store initialized with PostgreSQL');
+    console.log('Session store initialized with MemoryStore (temporary fallback)');
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -810,8 +803,10 @@ export class DatabaseStorage implements IStorage {
           error.code === 'ECONNRESET' || 
           error.code === 'ETIMEDOUT' || 
           error.code === 'ECONNREFUSED' ||
+          error.code === 'XX000' || // Max client connections reached
           error.message.includes('connection') ||
           error.message.includes('timeout') ||
+          error.message.includes('Max client connections reached') ||
           error.code === '40P01'; // Deadlock detected
         
         // Для временных ошибок делаем больше попыток
