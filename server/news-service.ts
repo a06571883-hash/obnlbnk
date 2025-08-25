@@ -13,9 +13,60 @@ interface NewsItem {
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 const CRYPTO_COMPARE_KEY = process.env.CRYPTO_COMPARE_KEY;
 
+// Fallback новости, если API ключи отсутствуют
+function getFallbackNews(): NewsItem[] {
+  return [
+    {
+      id: 1,
+      title: "Bitcoin достиг нового исторического максимума",
+      content: "Крупнейшая криптовалюта мира продолжает демонстрировать рост на фоне увеличения институционального интереса...",
+      date: new Date().toLocaleDateString('en-US'),
+      category: 'crypto',
+      source: 'Demo News'
+    },
+    {
+      id: 2,
+      title: "Центральные банки изучают цифровые валюты",
+      content: "Множество центральных банков по всему миру активно исследуют возможности внедрения цифровых валют центробанков...",
+      date: new Date(Date.now() - 86400000).toLocaleDateString('en-US'),
+      category: 'fiat',
+      source: 'Demo News'
+    },
+    {
+      id: 3,
+      title: "Новые инновации в блокчейн технологиях",
+      content: "Разработчики представили новые решения для масштабирования блокчейн сетей, что может значительно улучшить производительность...",
+      date: new Date(Date.now() - 2*86400000).toLocaleDateString('en-US'),
+      category: 'crypto',
+      source: 'Demo News'
+    },
+    {
+      id: 4,
+      title: "Регулирование криптовалют: новые правила",
+      content: "Правительства разных стран продолжают работу над созданием четкого правового поля для криптовалютного рынка...",
+      date: new Date(Date.now() - 3*86400000).toLocaleDateString('en-US'),
+      category: 'fiat',
+      source: 'Demo News'
+    },
+    {
+      id: 5,
+      title: "NFT рынок показывает стабильный рост",
+      content: "Рынок невзаимозаменяемых токенов продолжает развиваться, привлекая внимание художников, коллекционеров и инвесторов...",
+      date: new Date(Date.now() - 4*86400000).toLocaleDateString('en-US'),
+      category: 'crypto',
+      source: 'Demo News'
+    }
+  ];
+}
+
 
 async function fetchCryptoNews(): Promise<NewsItem[]> {
   try {
+    if (!CRYPTO_COMPARE_KEY) {
+      console.log('CRYPTO_COMPARE_KEY не найден, используем demo новости');
+      return getFallbackNews().filter(item => item.category === 'crypto');
+    }
+
     const response = await axios.get(`https://min-api.cryptocompare.com/data/v2/news/?lang=EN&api_key=${CRYPTO_COMPARE_KEY}`);
 
     const newsItems = response.data.Data.slice(0, 10).map((item: any, index: number) => ({
@@ -30,12 +81,17 @@ async function fetchCryptoNews(): Promise<NewsItem[]> {
     return newsItems;
   } catch (error) {
     console.error('Error fetching crypto news:', error);
-    return [];
+    return getFallbackNews().filter(item => item.category === 'crypto');
   }
 }
 
 async function fetchFinanceNews(): Promise<NewsItem[]> {
   try {
+    if (!NEWS_API_KEY) {
+      console.log('NEWS_API_KEY не найден, используем demo новости');
+      return getFallbackNews().filter(item => item.category === 'fiat');
+    }
+
     const response = await axios.get(
       `https://newsapi.org/v2/everything?` + 
       `q=finance OR banking OR economy OR cryptocurrency&` +
@@ -48,7 +104,7 @@ async function fetchFinanceNews(): Promise<NewsItem[]> {
 
     if (!response.data.articles || !Array.isArray(response.data.articles)) {
       console.error('Invalid response from NewsAPI:', response.data);
-      return [];
+      return getFallbackNews().filter(item => item.category === 'fiat');
     }
 
     // Filter out unwanted sources
@@ -73,7 +129,7 @@ async function fetchFinanceNews(): Promise<NewsItem[]> {
     if (axios.isAxiosError(error) && error.response) {
       console.error('NewsAPI error details:', error.response.data);
     }
-    return [];
+    return getFallbackNews().filter(item => item.category === 'fiat');
   }
 }
 
