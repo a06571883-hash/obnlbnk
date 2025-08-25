@@ -190,23 +190,7 @@ const app = express();
 app.use(express.json({ limit: '128kb' }));
 app.use(express.urlencoded({ extended: false, limit: '128kb' }));
 
-// Настраиваем статическую раздачу файлов из папки public
-// ВАЖНО: Это должно идти ДО других middleware для корректной обработки изображений
-app.use(express.static('public', {
-  index: false, // Не использовать index.html
-  etag: true,   // Включить ETag для кеширования
-  lastModified: true, // Включить Last-Modified для кеширования
-  setHeaders: (res, path) => {
-    // Устанавливаем правильные mime-типы для изображений
-    if (path.endsWith('.png')) {
-      res.setHeader('Content-Type', 'image/png');
-    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/jpeg');
-    } else if (path.endsWith('.avif')) {
-      res.setHeader('Content-Type', 'image/avif');
-    }
-  }
-}));
+// УБИРАЕМ статические файлы отсюда - они будут добавлены ПОСЛЕ API роутов
 
 // Специальный обработчик для BAYC NFT изображений
 app.use('/bayc_official', (req, res, next) => {
@@ -263,6 +247,12 @@ export async function createServer(options?: ServerOptions) {
 
     console.log('Initializing database tables...');
     console.log('Database initialized successfully');
+
+    // DEBUG: Добавляем тестовый роут прямо здесь
+    app.get('/debug-test', (req, res) => {
+      console.log('🟢 DEBUG: Тестовый роут из index.ts работает!');
+      res.json({ message: 'Debug route from index.ts works!', timestamp: new Date() });
+    });
 
     console.log('🔄 Регистрация маршрутов и создание HTTP-сервера...');
     const server = await registerRoutes(app);
