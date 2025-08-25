@@ -1,12 +1,12 @@
 import session from "express-session";
 import { MemoryStore } from 'express-session';
 import { db, client } from "./db.js";
-import { cards, users, transactions, exchangeRates, nftCollections, nfts, nftTransfers } from "../shared/schema.js";
+import { cards, users, transactions, exchangeRates, nftCollections, nfts, nftTransfers } from "../shared/schema";
 import type { 
   User, Card, InsertUser, Transaction, ExchangeRate,
   NftCollection, Nft, InsertNftCollection, InsertNft,
   NftTransfer, InsertNftTransfer
-} from "../shared/schema.js";
+} from "../shared/schema";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
 import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';

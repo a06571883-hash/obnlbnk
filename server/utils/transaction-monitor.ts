@@ -6,7 +6,7 @@
 import { EventEmitter } from 'events';
 import { checkTransactionStatus } from './blockchain';
 import { db } from '../db';
-import * as schema from '../shared/schema.js';
+import * as schema from '../../shared/schema';
 import { logSystemError } from './health-monitor';
 import { AppError, logError } from './error-handler';
 

@@ -26,7 +26,7 @@ import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } f
 // import { generateNFTImage } from './utils/nft-generator.js'; // Исключено для Vercel
 import { db } from './db.js';
 import { eq } from 'drizzle-orm';
-import { nfts, nftCollections } from '../shared/schema.js';
+import { nfts, nftCollections } from '../shared/schema';
 import nftRoutes from './controllers/nft-controller.js';
 import nftImportRoutes from './controllers/nft-import-controller.js';
 import nftMarketplaceRoutes from './controllers/nft-marketplace-controller.js';
@@ -164,4 +164,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return createServer(app);
 }
 
-// Функция уже экспортирована выше как export async function
+// Default export для Vercel API
+export default registerRoutes;
