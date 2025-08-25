@@ -3,8 +3,8 @@
  * Обеспечивает, что NFT сохраняют свои оригинальные изображения при передаче между пользователями
  */
 
-import { db } from '../db';
-import { nfts, nftTransfers } from '../../shared/schema';
+import { db } from '../db.js';
+import { nfts, nftTransfers } from '../../shared/schema.js';
 import { eq, sql } from 'drizzle-orm';
 
 /**
