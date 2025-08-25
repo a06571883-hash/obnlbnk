@@ -24,9 +24,9 @@ console.log('Connecting to PostgreSQL database...');
 // Создаем клиент подключения к PostgreSQL с параметрами для надежного соединения
 export const client = postgres(DATABASE_URL, { 
   ssl: { rejectUnauthorized: false }, // Необходимо для подключения к Neon PostgreSQL
-  max: 10, // Максимальное количество соединений в пуле
-  idle_timeout: 20, // Timeout для неиспользуемых соединений
-  connect_timeout: 30, // Увеличиваем timeout для подключения
+  max: 3, // Уменьшаем количество соединений для предотвращения переполнения
+  idle_timeout: 10, // Быстрее закрываем неиспользуемые соединения
+  connect_timeout: 10, // Уменьшаем timeout для подключения
   
   // Кастомные типы данных
   types: {
