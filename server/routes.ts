@@ -29,7 +29,7 @@ import { generateNFTImage } from './utils/nft-generator.js';
 import { Telegraf } from 'telegraf';
 import { db } from './db.js';
 import { eq } from 'drizzle-orm';
-import { nfts, nftCollections } from '../shared/schema';
+import { nfts, nftCollections } from '../shared/schema.js';
 import nftRoutes from './controllers/nft-controller.js';
 import nftImportRoutes from './controllers/nft-import-controller.js';
 import nftMarketplaceRoutes from './controllers/nft-marketplace-controller.js';
@@ -591,8 +591,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Updating crypto addresses for existing card ${cryptoCard.id}...`);
         
         // Генерируем новые адреса для пользователя
-        const btcAddress = generateValidAddress('btc', userId);
-        const ethAddress = generateValidAddress('eth', userId);
+        const btcAddress = await generateValidAddress('btc', userId);
+        const ethAddress = await generateValidAddress('eth', userId);
         
         console.log(`Generated BTC address: ${btcAddress} for user ${userId}`);
         console.log(`Generated ETH address: ${ethAddress} for user ${userId}`);
@@ -629,8 +629,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let kichcoinBalance = "0";
           
           if (type === 'crypto') {
-            btcAddress = generateValidAddress('btc', userId);
-            ethAddress = generateValidAddress('eth', userId);
+            btcAddress = await generateValidAddress('btc', userId);
+            ethAddress = await generateValidAddress('eth', userId);
             btcBalance = "0.00000000";
             ethBalance = "0.00000000";
             
@@ -1064,10 +1064,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id!;
       
       // Получаем seed-фразу по ID пользователя
-      const seedPhrase = getSeedPhraseForUser(userId);
+      const seedPhrase = await getSeedPhraseForUser(userId);
       
       // Возвращаем seed-фразу и генерируемые из нее адреса
-      const { btcAddress, ethAddress } = generateAddressesForUser(userId);
+      const { btcAddress, ethAddress } = await generateAddressesForUser(userId);
       
       res.json({
         seedPhrase,
@@ -1098,7 +1098,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Получаем адреса из seed-фразы
-      const { btcAddress, ethAddress } = getAddressesFromMnemonic(seedPhrase);
+      const { btcAddress, ethAddress } = await getAddressesFromMnemonic(seedPhrase);
       
       res.json({
         valid: true,
