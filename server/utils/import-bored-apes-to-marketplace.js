@@ -3,7 +3,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { pool } = require('../db');
+const { pool } = require('../db.js');
 
 /**
  * Подсчитывает количество PNG и AVIF файлов в директории NFT
@@ -11,7 +11,7 @@ const { pool } = require('../db');
  */
 async function countBoredApeImages() {
   try {
-    const nftDir = path.join(__dirname, '../../bored_ape_nft');
+    const nftDir = path.join(__dirname, '../../bored_ape_nft.js');
     
     if (!fs.existsSync(nftDir)) {
       console.error(`Директория ${nftDir} не существует!`);
