@@ -1060,8 +1060,8 @@ export class DatabaseStorage implements IStorage {
       // Generate crypto addresses with retry limit
       let btcAddress: string, ethAddress: string;
       try {
-        btcAddress = generateValidAddress('btc', userId);
-        ethAddress = generateValidAddress('eth', userId);
+        btcAddress = await generateValidAddress('btc', userId);
+        ethAddress = await generateValidAddress('eth', userId);
         console.log('Generated crypto addresses:', { btcAddress, ethAddress });
       } catch (error) {
         console.error('Failed to generate valid crypto addresses:', error);
