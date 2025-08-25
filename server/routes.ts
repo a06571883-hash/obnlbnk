@@ -145,7 +145,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.urlencoded({ extended: true }));
 
   setupAuth(app);
-  startRateUpdates(httpServer, '/ws');
+  // Временно отключаем автоматическое обновление курсов из-за проблем с БД
+  // startRateUpdates(httpServer, '/ws');
   
   // Делаем папку с NFT доступной как статический контент
   // Статические пути для NFT ресурсов
