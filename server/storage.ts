@@ -1,16 +1,16 @@
 import session from "express-session";
 import { MemoryStore } from 'express-session';
 import { db, client } from "./db.js";
-import { cards, users, transactions, exchangeRates, nftCollections, nfts, nftTransfers } from "../shared/schema";
+import { cards, users, transactions, exchangeRates, nftCollections, nfts, nftTransfers } from "../shared/schema.js";
 import type { 
   User, Card, InsertUser, Transaction, ExchangeRate,
   NftCollection, Nft, InsertNftCollection, InsertNft,
   NftTransfer, InsertNftTransfer
-} from "../shared/schema";
+} from "../shared/schema.js";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
-import { randomUUID, randomBytes } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto.js';
 import * as bcrypt from 'bcryptjs';
-import { generateValidAddress, validateCryptoAddress } from './utils/crypto';
+import { generateValidAddress, validateCryptoAddress } from './utils/crypto.js';
 import { 
   hasBlockchainApiKeys, 
   sendBitcoinTransaction, 
@@ -18,7 +18,7 @@ import {
   getBitcoinBalance,
   getEthereumBalance,
   checkTransactionStatus
-} from './utils/blockchain';
+} from './utils/blockchain.js';
 import path from 'path';
 import pgSession from 'connect-pg-simple';
 
