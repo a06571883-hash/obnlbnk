@@ -8,7 +8,7 @@ import * as boredApeNftService from '../services/bored-ape-nft-service.js';
 import { storage } from '../storage.js';
 import { z } from 'zod';
 import { db, client } from '../db.js';
-import { nfts, nftCollections, nftTransfers, users, cards } from '../../shared/schema';
+import { nfts, nftCollections, nftTransfers, users, cards } from '../../shared/schema.js';
 import { eq, and, not, or, inArray, sql } from 'drizzle-orm';
 import path from 'path';
 import fs from 'fs';
