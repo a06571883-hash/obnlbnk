@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import fs from 'fs';
 import path from 'path';
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { exportDatabase, importDatabase } from './database/backup';
 import { setupAuth } from './auth';
 import { startRateUpdates } from './rates';
