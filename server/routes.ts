@@ -843,13 +843,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Добавляем обработчик который логирует ВСЕ запросы к API
+  app.use('/api', (req, res, next) => {
+    console.log(`🔍 API запрос: ${req.method} ${req.originalUrl} - IP: ${req.ip}`);
+    next();
+  });
+
+  // Тестовый роут для проверки
+  app.get("/api/news-test", (req, res) => {
+    console.log('✅ Test route works!');
+    res.json({ message: "Test route works!" });
+  });
+
   // Добавляем эндпоинт для получения новостей
   app.get("/api/news", async (req, res) => {
     try {
-      const news = await getNews();
-      res.json(news);
+      console.log('📰 GET /api/news - Запрос новостей получен');
+      // Пока что возвращаем статичные данные для тестирования
+      const fallbackNews = [
+        {
+          id: 1,
+          title: "Bitcoin достиг нового исторического максимума",
+          content: "Крупнейшая криптовалюта мира продолжает демонстрировать рост...",
+          date: new Date().toLocaleDateString('en-US'),
+          category: 'crypto',
+          source: 'Demo News'
+        },
+        {
+          id: 2,
+          title: "Центральные банки изучают цифровые валюты",
+          content: "Множество центральных банков по всему миру активно исследуют возможности внедрения цифровых валют центробанков...",
+          date: new Date(Date.now() - 86400000).toLocaleDateString('en-US'),
+          category: 'fiat',
+          source: 'Demo News'
+        }
+      ];
+      console.log(`📰 Новостей получено: ${fallbackNews.length}`);
+      res.json(fallbackNews);
     } catch (error) {
-      console.error("Error fetching news:", error);
+      console.error("❌ Error fetching news:", error);
       res.status(500).json({ message: "Ошибка при получении новостей" });
     }
   });
@@ -1815,6 +1847,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ error: "Не удалось подарить NFT" });
     }
   });
+
+  // Добавляем статические файлы ПОСЛЕ всех API роутов
+  app.use(express.static('public', {
+    index: false, // Не использовать index.html
+    etag: true,   // Включить ETag для кеширования
+    lastModified: true, // Включить Last-Modified для кеширования
+    setHeaders: (res, path) => {
+      // Устанавливаем правильные mime-типы для изображений
+      if (path.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (path.endsWith('.avif')) {
+        res.setHeader('Content-Type', 'image/avif');
+      }
+    }
+  }));
 
   app.use(express.static('dist/client'));
 
