@@ -3,11 +3,11 @@
  * Обрабатывает запросы API, связанные с NFT
  */
 import express, { Request, Response, NextFunction } from 'express';
-import * as buenoNftService from '../services/bueno-nft-service.js';
-import * as boredApeNftService from '../services/bored-ape-nft-service.js';
-import { storage } from '../storage.js';
+import * as buenoNftService from '../services/bueno-nft-service';
+import * as boredApeNftService from '../services/bored-ape-nft-service';
+import { storage } from '../storage';
 import { z } from 'zod';
-import { db, client } from '../db.js';
+import { db, client } from '../db';
 import { nfts, nftCollections, nftTransfers, users, cards } from '../../shared/schema';
 import { eq, and, not, or, inArray, sql } from 'drizzle-orm';
 import path from 'path';

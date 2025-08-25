@@ -1,5 +1,5 @@
 import { Base } from 'seatable-api';
-import { SEATABLE_CONFIG } from '../../shared/seatable.config.js';
+import { SEATABLE_CONFIG } from '../../shared/seatable.config';
 
 class SeaTableManager {
   private static instance: SeaTableManager;
