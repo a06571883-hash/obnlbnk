@@ -1,11 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "../routes";
-import { setupVite, serveStatic } from "../vite";
-import { initializeDatabase } from "./db";
-import { scheduleBackups } from "../database/backup";
-import { startBot } from "../telegram-bot";
+import { registerRoutes } from "../routes.js";
+import { setupVite, serveStatic } from "../vite.js";
+import { initializeDatabase } from "./db.js";
+import { scheduleBackups } from "../database/backup.js";
+import { startBot } from "../telegram-bot.js";
 import * as NodeJS from 'node:process';
-import { setupDebugRoutes } from "../debug";
+import { setupDebugRoutes } from "../debug.js";
 import { 
   setupGlobalErrorHandlers, 
   logError, 
@@ -13,8 +13,8 @@ import {
   notFoundHandler, 
   registerErrorHandlers 
 } from "../error-handler";
-import diagnosticRoutes from "../diagnostic-routes";
-import { startTransactionMonitoring } from "../transaction-monitor";
+import diagnosticRoutes from "../diagnostic-routes.js";
+import { startTransactionMonitoring } from "../transaction-monitor.js";
 
 // Устанавливаем глобальные обработчики ошибок
 setupGlobalErrorHandlers();
