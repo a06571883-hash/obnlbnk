@@ -1,13 +1,25 @@
 import { ethers } from 'ethers';
 import * as bitcoin from 'bitcoinjs-lib';
-import * as ecc from 'tiny-secp256k1';
-import ECPairFactory from 'ecpair';
 import { randomBytes, createHash } from 'crypto';
 import * as Bip39 from 'bip39';
 import { generateAddressesForUser, generateMnemonic, getAddressesFromMnemonic } from './seed-phrase.js';
 
-// Корректная инициализация ECPair с поддержкой tiny-secp256k1
-const ECPair = ECPairFactory(ecc);
+// Динамическая инициализация ECPair для совместимости с Vercel
+let ECPair: any = null;
+
+async function initECPair() {
+  if (!ECPair) {
+    try {
+      const ecc = require('tiny-secp256k1');
+      const ECPairFactory = require('ecpair');
+      ECPair = ECPairFactory.default ? ECPairFactory.default(ecc) : ECPairFactory(ecc);
+    } catch (error) {
+      console.error('Failed to initialize ECPair:', error);
+      throw error;
+    }
+  }
+  return ECPair;
+}
 
 // Предотвращаем строгую проверку сети, которая может быть проблемой в некоторых версиях bitcoinjs-lib
 const network = bitcoin.networks.bitcoin;
@@ -19,14 +31,17 @@ const network = bitcoin.networks.bitcoin;
  * @param userId ID пользователя
  * @returns Сгенерированный адрес
  */
-export function generateValidAddress(type: 'btc' | 'eth', userId: number): string {
+export async function generateValidAddress(type: 'btc' | 'eth', userId: number): Promise<string> {
   try {
     console.log(`🔄 Generating ${type.toUpperCase()} address for user ${userId}...`);
     
     if (type === 'btc') {
+      // Инициализируем ECPair
+      const ecpair = await initECPair();
+      
       // Генерируем детерминированный BTC адрес на основе userId
       const seed = createHash('sha256').update(`btc-${userId}-salt`).digest();
-      const keyPair = ECPair.fromPrivateKey(seed);
+      const keyPair = ecpair.fromPrivateKey(seed);
       const pubKeyBuffer = Buffer.from(keyPair.publicKey);
       const { address } = bitcoin.payments.p2pkh({ pubkey: pubKeyBuffer, network: network });
 
@@ -53,8 +68,11 @@ export function generateValidAddress(type: 'btc' | 'eth', userId: number): strin
     // Запасной вариант в случае ошибки - случайная генерация
     if (type === 'btc') {
       try {
+        // Инициализируем ECPair для fallback
+        const ecpair = await initECPair();
+        
         // Создаем пару ключей с использованием ECPair
-        const keyPair = ECPair.makeRandom();
+        const keyPair = ecpair.makeRandom();
         const pubKeyBuffer = Buffer.from(keyPair.publicKey);
         const { address } = bitcoin.payments.p2pkh({ pubkey: pubKeyBuffer, network: network });
 
@@ -87,8 +105,8 @@ export function generateValidAddress(type: 'btc' | 'eth', userId: number): strin
  * @param userId ID пользователя
  * @returns Мнемоническая фраза
  */
-export function getSeedPhraseForUser(userId: number): string {
-  const { mnemonic } = generateAddressesForUser(userId);
+export async function getSeedPhraseForUser(userId: number): Promise<string> {
+  const { mnemonic } = await generateAddressesForUser(userId);
   return mnemonic;
 }
 
