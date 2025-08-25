@@ -8,7 +8,7 @@ import type {
   NftTransfer, InsertNftTransfer
 } from "../shared/schema.js";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
-import { randomUUID, randomBytes } from 'crypto.js';
+import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { generateValidAddress, validateCryptoAddress } from './utils/crypto.js';
 import { 
