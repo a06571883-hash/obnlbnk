@@ -6,15 +6,27 @@
 
 import { ethers } from 'ethers';
 import { db } from '../server/db.js';
-import { cards } from "../shared/schema"';
+import { cards } from "../shared/schema.js";
 import { eq } from 'drizzle-orm';
 import { validateCryptoAddress } from '../server/utils/crypto.js';
 import * as bitcoin from 'bitcoinjs-lib';
-import * as ecc from 'tiny-secp256k1';
-import ECPairFactory from 'ecpair';
 
-// Создаем ECPair с поддержкой tiny-secp256k1
-const ECPair = ECPairFactory(ecc);
+// Динамическая инициализация ECPair для совместимости с Vercel
+let ECPair: any = null;
+
+async function initECPair() {
+  if (!ECPair) {
+    try {
+      const ecc = require('tiny-secp256k1');
+      const ECPairFactory = require('ecpair');
+      ECPair = ECPairFactory.default ? ECPairFactory.default(ecc) : ECPairFactory(ecc);
+    } catch (error) {
+      console.error('Failed to initialize ECPair:', error);
+      throw error;
+    }
+  }
+  return ECPair;
+}
 
 // Инициализируем сеть Bitcoin
 const network = bitcoin.networks.bitcoin;
@@ -23,10 +35,13 @@ const network = bitcoin.networks.bitcoin;
  * Создает настоящий Bitcoin-адрес для пользователя
  * Использует bitcoinjs-lib для создания реального адреса
  */
-function generateBitcoinAddress(userId: number): string {
+async function generateBitcoinAddress(userId: number): Promise<string> {
   try {
+    // Инициализируем ECPair
+    const ecpair = await initECPair();
+    
     // Создаем пару ключей с использованием ECPair
-    const keyPair = ECPair.makeRandom();
+    const keyPair = ecpair.makeRandom();
 
     // Конвертируем публичный ключ в Buffer для bitcoinjs-lib
     const pubKeyBuffer = Buffer.from(keyPair.publicKey);
@@ -87,7 +102,7 @@ async function fixCryptoAddresses() {
       try {
         // Генерируем новые криптоадреса
         console.log(`🔑 Генерируем новые адреса...`);
-        const btcAddress = generateBitcoinAddress(card.userId);
+        const btcAddress = await generateBitcoinAddress(card.userId);
         const ethAddress = generateEthereumAddress(card.userId);
 
         // Проверяем валидность новых адресов
