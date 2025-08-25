@@ -1,5 +1,5 @@
 import { db } from '../server/db.js';
-import { cards } from '../shared/schema.js';
+import { cards } from "../shared/schema"';
 import { eq } from 'drizzle-orm';
 
 /**

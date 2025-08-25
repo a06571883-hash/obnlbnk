@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { db } from '../db';
-import { users, cards, transactions, exchangeRates } from '../../shared/schema.js';
+import { users, cards, transactions, exchangeRates } from '../../shared/schema';
 import { Pool } from 'pg';
 import JSZip from 'jszip';
 

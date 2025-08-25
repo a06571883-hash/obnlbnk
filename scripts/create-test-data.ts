@@ -5,7 +5,7 @@
 
 import bcrypt from 'bcryptjs';
 import { db } from '../server/db.js';
-import { users, cards } from '../shared/schema.js';
+import { users, cards } from "../shared/schema"';
 import { generateValidAddress } from '../server/utils/crypto.js';
 import { eq } from 'drizzle-orm';
 
