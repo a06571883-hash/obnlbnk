@@ -5,8 +5,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { db } from '../db';
-import { nfts, nftCollections } from '../../shared/schema';
+import { db } from '../db.js';
+import { nfts, nftCollections } from '../../shared/schema.js';
 import { eq } from 'drizzle-orm';
 
 // Тип редкости NFT
