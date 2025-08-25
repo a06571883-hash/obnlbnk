@@ -5,7 +5,7 @@
 
 import { Request, Response, Router } from 'express';
 import { storage } from '../storage.js';
-import { nfts } from '../../shared/schema';
+import { nfts } from '../../shared/schema.js';
 import { eq, and, gte, lte, like, sql, desc, asc } from 'drizzle-orm';
 import { db } from '../db.js';
 
