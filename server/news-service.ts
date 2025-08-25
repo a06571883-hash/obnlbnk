@@ -135,21 +135,22 @@ async function fetchFinanceNews(): Promise<NewsItem[]> {
 
 export async function getNews(): Promise<NewsItem[]> {
   try {
-    console.log('Загрузка новостей...');
+    console.log('📰 Загрузка новостей...');
     const [cryptoNews, financeNews] = await Promise.all([
       fetchCryptoNews(),
       fetchFinanceNews()
     ]);
 
-    console.log(`Получено ${cryptoNews.length} крипто-новостей и ${financeNews.length} финансовых новостей`);
+    console.log(`📰 Получено ${cryptoNews.length} крипто-новостей и ${financeNews.length} финансовых новостей`);
 
     const allNews = [...cryptoNews, ...financeNews].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
+    console.log(`📰 Итого новостей для отправки: ${allNews.length}`);
     return allNews;
   } catch (error) {
-    console.error('Ошибка агрегации новостей:', error);
-    return [];
+    console.error('❌ Ошибка агрегации новостей:', error);
+    return getFallbackNews();
   }
 }
