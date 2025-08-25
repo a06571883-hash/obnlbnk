@@ -1,56 +1,63 @@
-// Расширяем типы для Telegram WebApp API
+// Полная типизация Telegram WebApp API
+interface TelegramWebApp {
+  initData: string;
+  colorScheme: string;
+  ready: () => void;
+  expand: () => void;
+  close: () => void;
+  isExpanded: boolean;
+  viewportHeight: number;
+  viewportStableHeight: number;
+  sendData: (data: any) => void;
+  openTelegramLink: (url: string) => void;
+  openLink: (url: string) => void;
+  setBackgroundColor: (color: string) => void;
+  backgroundColor?: string;
+  initDataUnsafe?: any;
+  version?: string;
+  enableClosingConfirmation: () => void;
+  disableClosingConfirmation: () => void;
+  showPopup: (params: any, callback: (id: string) => void) => void;
+  showAlert: (message: string, callback?: () => void) => void;
+  showConfirm: (message: string, callback: (confirmed: boolean) => void) => void;
+  MainButton: {
+    text: string;
+    color: string;
+    textColor: string;
+    isVisible: boolean;
+    isActive: boolean;
+    isProgressVisible: boolean;
+    setText: (text: string) => void;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
+    setParams: (params: any) => void;
+    show: () => void;
+    hide: () => void;
+    enable: () => void;
+    disable: () => void;
+    showProgress: (leaveActive: boolean) => void;
+    hideProgress: () => void;
+  };
+  BackButton: {
+    isVisible: boolean;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
+    show: () => void;
+    hide: () => void;
+  };
+  HapticFeedback: {
+    impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+    notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+    selectionChanged: () => void;
+  };
+}
+
+// Объявляем глобальный тип только если его еще нет
 declare global {
   interface Window {
+    TelegramWebApp?: TelegramWebApp;
     Telegram?: {
-      WebApp: {
-        initData: string;
-        colorScheme: string;
-        ready: () => void;
-        expand: () => void;
-        close: () => void;
-        isExpanded: boolean;
-        viewportHeight: number;
-        viewportStableHeight: number;
-        sendData: (data: any) => void;
-        openTelegramLink: (url: string) => void;
-        openLink: (url: string) => void;
-        setBackgroundColor: (color: string) => void;
-        enableClosingConfirmation: () => void;
-        disableClosingConfirmation: () => void;
-        showPopup: (params: any, callback: (id: string) => void) => void;
-        showAlert: (message: string, callback?: () => void) => void;
-        showConfirm: (message: string, callback: (confirmed: boolean) => void) => void;
-        MainButton: {
-          text: string;
-          color: string;
-          textColor: string;
-          isVisible: boolean;
-          isActive: boolean;
-          isProgressVisible: boolean;
-          setText: (text: string) => void;
-          onClick: (callback: () => void) => void;
-          offClick: (callback: () => void) => void;
-          setParams: (params: any) => void;
-          show: () => void;
-          hide: () => void;
-          enable: () => void;
-          disable: () => void;
-          showProgress: (leaveActive: boolean) => void;
-          hideProgress: () => void;
-        };
-        BackButton: {
-          isVisible: boolean;
-          onClick: (callback: () => void) => void;
-          offClick: (callback: () => void) => void;
-          show: () => void;
-          hide: () => void;
-        };
-        HapticFeedback: {
-          impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
-          notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
-          selectionChanged: () => void;
-        };
-      };
+      WebApp?: TelegramWebApp;
     };
   }
 }
@@ -91,7 +98,9 @@ export const getTelegramWebAppParams = (): any => {
   
   try {
     // В реальном режиме Telegram получаем данные из WebApp API
-    const webApp = window.Telegram!.WebApp;
+    const webApp = window.Telegram?.WebApp;
+    if (!webApp) return null;
+    
     return {
       colorScheme: webApp.colorScheme || 'light',
       isExpanded: webApp.isExpanded || false,
@@ -119,7 +128,12 @@ export const showTelegramAlert = (message: string): void => {
   }
   
   try {
-    window.Telegram!.WebApp.showAlert(message);
+    const webApp = window.Telegram?.WebApp;
+    if (webApp) {
+      webApp.showAlert(message);
+    } else {
+      alert(message);
+    }
   } catch (error) {
     console.error('Ошибка при отображении уведомления Telegram:', error);
     // Запасной вариант на случай ошибки
@@ -141,11 +155,14 @@ export const initTelegramWebApp = (): void => {
   
   try {
     // Сообщаем Telegram, что WebApp готов
-    window.Telegram!.WebApp.ready();
+    const webApp = window.Telegram?.WebApp;
+    if (!webApp) return;
+    
+    webApp.ready();
     
     // Расширяем WebApp на весь экран
-    if (!window.Telegram!.WebApp.isExpanded) {
-      window.Telegram!.WebApp.expand();
+    if (!webApp.isExpanded) {
+      webApp.expand();
     }
     
     console.log('Telegram WebApp инициализирован');

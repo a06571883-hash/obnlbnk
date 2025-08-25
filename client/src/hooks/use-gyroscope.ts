@@ -19,7 +19,7 @@ export function useGyroscope() {
     const minUpdateInterval = 16; // ~60fps
 
     // Определяем iOS устройство
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
     const requestPermission = async () => {

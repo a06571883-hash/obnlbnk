@@ -25,13 +25,13 @@ export default function RegulatorPage() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch exchange rates
-  const { data: rates = {} } = useQuery({
+  const { data: rates = {} } = useQuery<Record<string, string>>({
     queryKey: ["/api/rates"],
     refetchInterval: 30000,
   });
 
   // Fetch all users
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/users"],
     enabled: user?.is_regulator,
     refetchInterval: 5000
@@ -61,12 +61,14 @@ export default function RegulatorPage() {
   ) => {
     try {
       setIsProcessing(true);
-      const response = await apiRequest("POST", "/api/regulator/adjust-balance", {
-        userId,
-        cardId,
-        amount,
-        operation,
-        cardType
+      const response = await apiRequest("/api/regulator/adjust-balance", {
+        method: "POST",
+        body: JSON.stringify({
+          userId,
+          cardId,
+          amount,
+          operation
+        })
       });
 
       if (!response.ok) {
@@ -101,15 +103,15 @@ export default function RegulatorPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
             <div className="p-3 rounded-lg bg-primary-foreground/10">
               <div className="text-sm opacity-90">BTC/USD</div>
-              <div className="text-xl font-bold">${rates.btcToUsd}</div>
+              <div className="text-xl font-bold">${(rates as any).btcToUsd || 'N/A'}</div>
             </div>
             <div className="p-3 rounded-lg bg-primary-foreground/10">
               <div className="text-sm opacity-90">ETH/USD</div>
-              <div className="text-xl font-bold">${rates.ethToUsd}</div>
+              <div className="text-xl font-bold">${(rates as any).ethToUsd || 'N/A'}</div>
             </div>
             <div className="p-3 rounded-lg bg-primary-foreground/10">
               <div className="text-sm opacity-90">USD/UAH</div>
-              <div className="text-xl font-bold">₴{rates.usdToUah}</div>
+              <div className="text-xl font-bold">₴{(rates as any).usdToUah || 'N/A'}</div>
             </div>
           </div>
         </CardHeader>

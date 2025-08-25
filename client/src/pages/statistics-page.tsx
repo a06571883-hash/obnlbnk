@@ -73,7 +73,7 @@ export default function StatisticsPage() {
       if (tx.type !== 'transfer') return;
       
       // Для входящих транзакций
-      if (tx.toCardNumber !== 'REGULATOR') {
+      if (tx.toCardNumber && tx.toCardNumber !== 'REGULATOR') {
         if (!byCard[tx.toCardNumber]) {
           byCard[tx.toCardNumber] = { in: 0, out: 0 };
         }
@@ -81,7 +81,7 @@ export default function StatisticsPage() {
       }
       
       // Для исходящих транзакций
-      if (tx.fromCardNumber !== 'REGULATOR') {
+      if (tx.fromCardNumber && tx.fromCardNumber !== 'REGULATOR') {
         if (!byCard[tx.fromCardNumber]) {
           byCard[tx.fromCardNumber] = { in: 0, out: 0 };
         }
@@ -251,7 +251,7 @@ export default function StatisticsPage() {
                                 {tx.amount}
                               </div>
                               <div className="text-xs text-muted-foreground text-right">
-                                {formatCardNumber(tx.fromCardNumber)} → {formatCardNumber(tx.toCardNumber)}
+                                {formatCardNumber(tx.fromCardNumber)} → {tx.toCardNumber ? formatCardNumber(tx.toCardNumber) : 'External'}
                               </div>
                             </div>
                           </div>

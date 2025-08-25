@@ -1,7 +1,8 @@
+
 import { db } from '../connection';
-import { users } from '../shared/schema.js';
+import { users } from '../../../shared/schema';
 import { eq } from 'drizzle-orm';
-import type { User, InsertUser } from '../shared/schema.js';
+import type { User, InsertUser } from '../../../shared/schema';
 
 export class UserRepository {
   static async getById(id: number): Promise<User | undefined> {

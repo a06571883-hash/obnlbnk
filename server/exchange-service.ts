@@ -69,7 +69,7 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       throw new Error('Не удалось получить минимальную сумму обмена. Пожалуйста, попробуйте позже.');
     }
 
-    const minAmountData = await minAmountResponse.json();
+    const minAmountData = await minAmountResponse.json() as { minAmount: string };
     if (amount < parseFloat(minAmountData.minAmount)) {
       throw new Error(
         `Минимальная сумма для обмена: ${minAmountData.minAmount} ${params.fromCurrency.toUpperCase()}`
@@ -106,7 +106,12 @@ export async function createExchangeTransaction(params: CreateTransaction) {
       throw new Error('Ошибка при создании обмена. Пожалуйста, попробуйте позже.');
     }
 
-    const result = await response.json();
+    const result = await response.json() as {
+      id: string;
+      status: string;
+      expectedReceiveAmount: string;
+      payinAddress: string;
+    };
 
     return {
       id: result.id,
@@ -136,7 +141,10 @@ export async function getExchangeRate(fromCurrency: string, toCurrency: string, 
       throw new Error('Не удалось получить курс обмена');
     }
 
-    const data = await response.json();
+    const data = await response.json() as {
+      estimatedAmount: string;
+      rate: string;
+    };
     return {
       estimatedAmount: data.estimatedAmount,
       rate: data.rate,
@@ -157,7 +165,7 @@ export async function getTransactionStatus(id: string) {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
+      const error = await response.json().catch(() => ({ message: response.statusText })) as { message?: string };
       throw new Error(error.message || 'Failed to get transaction status');
     }
 

@@ -8,7 +8,8 @@
 import { EventEmitter } from 'events';
 import { checkTransactionStatus } from './blockchain';
 import { db } from '../db';
-import * as schema from '@shared/schema';
+import * as schema from '../../shared/schema';
+import { eq } from 'drizzle-orm';
 import { logSystemError } from './health-monitor';
 import { AppError, logError } from './error-handler';
 import * as readline from 'readline';
@@ -632,7 +633,7 @@ class SuperTransactionMonitor extends EventEmitter {
     try {
       await db.update(schema.transactions)
         .set({ status })
-        .where(sql => sql.eq(schema.transactions.id, transactionId));
+        .where(eq(schema.transactions.id, transactionId));
       
       const statusEmoji = status === 'completed' ? EMOJIS.party : 
                           status === 'failed' ? EMOJIS.error : 

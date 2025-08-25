@@ -2,6 +2,17 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import fs from 'fs';
 import path from 'path';
+
+// Расширяем типы для сессии
+declare module "express-session" {
+  interface SessionData {
+    user?: {
+      id: number;
+      username: string;
+      is_regulator: boolean;
+    };
+  }
+}
 import { storage } from "./storage";
 import { exportDatabase, importDatabase } from './database/backup';
 import { setupAuth } from './auth';
@@ -18,7 +29,7 @@ import { generateNFTImage } from './utils/nft-generator';
 import { Telegraf } from 'telegraf';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
-import { nfts, nftCollections } from '../shared/schema.js';
+import { nfts, nftCollections } from '../shared/schema';
 import nftRoutes from './controllers/nft-controller';
 import nftImportRoutes from './controllers/nft-import-controller';
 import nftMarketplaceRoutes from './controllers/nft-marketplace-controller';
@@ -112,10 +123,18 @@ function generateNFTDescription(rarity: string): string {
 
 // Auth middleware to ensure session is valid
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated() && req.user) {
     return next();
   }
   res.status(401).json({ message: "Необходима авторизация" });
+}
+
+// Helper function to safely get user ID
+function getUserId(req: express.Request): number {
+  if (!req.user || typeof (req.user as any).id !== 'number') {
+    throw new Error('User not authenticated');
+  }
+  return (req.user as any).id;
 }
 
 // Register routes
@@ -431,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Получаем ID пользователя
       const username = req.session.user;
-      const user = await storage.getUserByUsername(username);
+      const user = await storage.getUserByUsername(req.body.username);
       
       if (!user) {
         console.log('Пользователь не найден при получении коллекций');
@@ -548,7 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cards", ensureAuthenticated, async (req, res) => {
     try {
       // В middleware ensureAuthenticated мы уже проверили что req.user существует
-      const cards = await storage.getCardsByUserId(req.user!.id);
+      const cards = await storage.getCardsByUserId(getUserId(req));
       res.json(cards);
     } catch (error) {
       console.error("Cards fetch error:", error);
@@ -752,7 +771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get user's cards and verify crypto card ownership
-      const userCards = await storage.getCardsByUserId(req.user.id);
+      const userCards = await storage.getCardsByUserId(getUserId(req));
       const userCryptoCard = userCards.find(card =>
         card.type === 'crypto' &&
         card.id === cryptoCard.id
@@ -806,7 +825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/transactions", ensureAuthenticated, async (req, res) => {
     try {
       // Get all user's cards
-      const userCards = await storage.getCardsByUserId(req.user.id);
+      const userCards = await storage.getCardsByUserId(getUserId(req));
       const cardIds = userCards.map(card => card.id);
 
       // Get all transactions related to user's cards

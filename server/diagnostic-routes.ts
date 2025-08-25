@@ -17,9 +17,38 @@ import {
   checkTransactionWithEffects,
   getPendingTransactionsWithStyle,
   showTransactionsHelp,
-  EMOJIS,
   COLORS
 } from './utils/super-transaction-monitor';
+
+// Локальное определение EMOJIS
+const EMOJIS = {
+  pending: '⏳',
+  completed: '✅',
+  failed: '❌',
+  checking: '🔍',
+  money: '💰',
+  bitcoin: '₿',
+  ethereum: '⟠',
+  rocket: '🚀',
+  fire: '🔥',
+  sparkles: '✨',
+  warning: '⚠️',
+  error: '💥',
+  party: '🎉',
+  lightning: '⚡',
+  time: '⌛',
+  database: '🗄️',
+  chain: '⛓️',
+  refresh: '🔄',
+  info: 'ℹ️',
+  magic: '✨',
+  sun: '☀️',
+  moon: '🌙',
+  star: '⭐',
+  confirmed: '🔐',
+  unconfirmed: '🔓',
+  clock: ['🕐','🕑','🕒','🕓','🕔','🕕','🕖','🕗','🕘','🕙','🕚','🕛']
+};
 import { hasBlockchainApiKeys } from './utils/blockchain';
 import { AppError, NotFoundError } from './utils/error-handler';
 
@@ -312,7 +341,7 @@ router.post('/transactions/fix-stuck', requireAdmin, async (req: Request, res: R
     
     if (useSuper) {
       // Показываем ASCII-арт для успешно исправленных транзакций
-      if (result.fixed && result.fixed.length > 0) {
+      if (result.fixed && Array.isArray(result.fixed) && result.fixed.length > 0) {
         console.log(`
     ${COLORS.green}  ______ _               _   _ 
     ${COLORS.green} |  ____(_)             | | | |
@@ -324,7 +353,7 @@ router.post('/transactions/fix-stuck', requireAdmin, async (req: Request, res: R
         `);
         
         // Печатаем информацию с эффектами
-        for (const tx of result.fixed) {
+        for (const tx of (result.fixed || [])) {
           console.log(`${COLORS.cyan}${EMOJIS.sparkles} Исправлена транзакция #${tx.id} ${tx.type.includes('btc') ? EMOJIS.bitcoin : EMOJIS.ethereum} (${tx.amount})${COLORS.reset}`);
         }
       }
@@ -332,7 +361,7 @@ router.post('/transactions/fix-stuck', requireAdmin, async (req: Request, res: R
       res.json({
         status: 'success',
         data: result,
-        message: `🛠️ УСПЕХ! Исправлено ${result.fixed?.length || 0} транзакций! ${result.fixed?.length ? '🎉' : ''}`,
+        message: `🛠️ УСПЕХ! Исправлено ${(result.fixed && Array.isArray(result.fixed)) ? result.fixed.length : 0} транзакций! ${(result.fixed && Array.isArray(result.fixed) && result.fixed.length > 0) ? '🎉' : ''}`,
         fixType: 'super'
       });
     } else {

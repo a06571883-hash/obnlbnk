@@ -1,20 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// Declare global Telegram object for TypeScript
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        ready: () => void;
-        expand: () => void;
-        backgroundColor?: string;
-        initData?: string;
-        initDataUnsafe?: any;
-        version?: string;
-      };
-    };
-  }
-}
+// Типы Telegram импортируются из telegram-utils
 
 export default function TelegramBackground() {
   const [isTelegram, setIsTelegram] = useState(false);

@@ -1,7 +1,8 @@
+
 import { db } from '../connection';
-import { cards } from '../shared/schema.js';
+import { cards } from '../../../shared/schema';
 import { eq } from 'drizzle-orm';
-import type { Card } from '../shared/schema.js';
+import type { Card } from '../../../shared/schema';
 
 export class CardRepository {
   static async getById(id: number): Promise<Card | undefined> {
