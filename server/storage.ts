@@ -21,6 +21,8 @@ import {
 } from './utils/blockchain.js';
 import path from 'path';
 import pgSession from 'connect-pg-simple';
+import pkg from 'pg';
+const { Pool } = pkg;
 
 // Используем PostgreSQL для хранения сессий
 const PostgresStore = pgSession(session);
@@ -73,23 +75,32 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    // Используем PostgreSQL для хранения сессий, но с более осторожными параметрами
+    // Правильно настраиваем PostgreSQL сессии с правильным SSL
     if (DATABASE_URL) {
       try {
-           // Правильная конфигурация SSL для PostgreSQL сессий через connection string
-        const sslConnectionUrl = DATABASE_URL + (DATABASE_URL.includes('?') ? '&' : '?') + 'sslmode=require&sslrootcert=/dev/null';
+        // Создаем правильные SSL параметры для pg
+        
+        const pool = new Pool({
+          connectionString: DATABASE_URL,
+          ssl: {
+            rejectUnauthorized: false,
+            ca: false,
+            key: false,
+            cert: false
+          }
+        });
         
         this.sessionStore = new PostgresStore({
-          conString: sslConnectionUrl,
+          pool: pool,
           createTableIfMissing: true,
           tableName: 'session',
-          ttl: 7 * 24 * 60 * 60, // 7 дней
-          pruneSessionInterval: 60 * 15, // Очистка каждые 15 минут
+          ttl: 7 * 24 * 60 * 60,
+          pruneSessionInterval: 60 * 15,
           errorLog: (error: any) => {
             console.error('Session store error:', error);
           }
         });
-        console.log('Session store initialized with PostgreSQL');
+        console.log('PostgreSQL session store initialized successfully');
       } catch (error) {
         console.error('Failed to initialize PostgreSQL session store:', error);
         console.log('Falling back to MemoryStore');
