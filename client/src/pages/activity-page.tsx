@@ -52,6 +52,9 @@ export default function ActivityPage() {
   const { data: cards = [] } = useQuery<Card[]>({
     queryKey: ["/api/cards"],
     enabled: !!user,
+    retry: false, // Не повторяем запрос при ошибке
+    refetchOnMount: true,
+    staleTime: 0
   });
 
   const { data: transactions = [] } = useQuery<Transaction[]>({
@@ -63,6 +66,8 @@ export default function ActivityPage() {
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   const filterTransactions = (type: 'all' | 'incoming' | 'outgoing') => {
+    if (!cards || !Array.isArray(cards)) return [];
+    
     return transactions.filter((tx) => {
       if (type === 'all') return true;
 
@@ -89,6 +94,8 @@ export default function ActivityPage() {
   };
 
   const getTransactionType = (tx: Transaction) => {
+    if (!cards || !Array.isArray(cards)) return { type: 'Unknown', iconColor: 'text-gray-500' };
+    
     const fromCard = cards.find(c => c.id === tx.fromCardId);
     const toCard = cards.find(c => c.id === tx.toCardId);
 
@@ -189,14 +196,14 @@ export default function ActivityPage() {
             type: getTransactionType(selectedTx).type,
             amount: selectedTx.amount,
             convertedAmount: selectedTx.convertedAmount,
-            currency: cards.find(c => c.id === selectedTx.fromCardId)?.type || 'Unknown',
+            currency: cards?.find(c => c.id === selectedTx.fromCardId)?.type || 'Unknown',
             date: selectedTx.createdAt,
             status: selectedTx.status || 'completed',
             from: selectedTx.fromCardNumber,
             to: selectedTx.toCardNumber,
             description: selectedTx.description,
-            fromCard: cards.find(c => c.id === selectedTx.fromCardId),
-            toCard: cards.find(c => c.id === selectedTx.toCardId),
+            fromCard: cards?.find(c => c.id === selectedTx.fromCardId),
+            toCard: cards?.find(c => c.id === selectedTx.toCardId),
             wallet: selectedTx.wallet
           }}
           open={!!selectedTx}
@@ -234,8 +241,8 @@ function TransactionList({
     <div className="space-y-1">
       {transactions.map((tx) => {
         const { type } = getTransactionType(tx);
-        const fromCard = cards.find(c => c.id === tx.fromCardId);
-        const toCard = cards.find(c => c.id === tx.toCardId);
+        const fromCard = cards?.find(c => c.id === tx.fromCardId);
+        const toCard = cards?.find(c => c.id === tx.toCardId);
         const fromCurrency = fromCard?.type || 'unknown';
         const toCurrency = toCard?.type || 'unknown';
 
