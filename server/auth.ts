@@ -2,10 +2,11 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { storage } from "./storage.js";
+import { storage } from "./storage";
 import { User as SelectUser, newUserRegistrationSchema } from "../shared/schema.js";
 import { ZodError } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import crypto from "crypto";
 import { promisify } from "util";
 // @ts-ignore
 import Database from 'better-sqlite3';
@@ -67,7 +68,7 @@ export function setupAuth(app: Express) {
     rolling: true, // Продлевать сессию при каждом запросе
     // Принудительно сохраняем сессию
     genid: () => {
-      return require('crypto').randomUUID();
+      return crypto.randomUUID();
     }
   }));
 
