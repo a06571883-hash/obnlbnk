@@ -9,19 +9,22 @@ export function ProtectedRoute({
   path: string;
   component: () => React.JSX.Element;
 }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, error } = useAuth();
 
   if (isLoading) {
     return (
       <Route path={path}>
         <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Загрузка...</span>
         </div>
       </Route>
     );
   }
 
-  if (!user) {
+  // Если есть ошибка и нет пользователя, перенаправляем на авторизацию
+  if ((error && !user) || !user) {
+    console.log('Protected route: redirecting to auth, user:', !!user, 'error:', !!error);
     return <Redirect to="/auth" />;
   }
 
