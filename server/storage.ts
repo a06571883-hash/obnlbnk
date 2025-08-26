@@ -83,19 +83,22 @@ export class DatabaseStorage implements IStorage {
         const pool = new Pool({
           connectionString: DATABASE_URL,
           ssl: {
-            rejectUnauthorized: false,
-            ca: false,
-            key: false,
-            cert: false
-          }
+            rejectUnauthorized: false
+          },
+          // Оптимизируем настройки для Vercel
+          max: 5, // Максимальное количество подключений
+          connectionTimeoutMillis: 5000, // 5 секунд на подключение
+          idleTimeoutMillis: 30000, // 30 секунд перед закрытием неактивного соединения
+          query_timeout: 10000, // 10 секунд на выполнение запроса
+          statement_timeout: 10000 // 10 секунд на выполнение statement
         });
         
         this.sessionStore = new PostgresStore({
           pool: pool,
-          createTableIfMissing: true,
+          createTableIfMissing: false, // Отключаем автосоздание таблицы
           tableName: 'session',
           ttl: 7 * 24 * 60 * 60,
-          pruneSessionInterval: 60 * 15,
+          pruneSessionInterval: false, // Отключаем автоочистку для производительности
           errorLog: (error: any) => {
             console.error('Session store error:', error);
           }
