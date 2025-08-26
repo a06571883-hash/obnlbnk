@@ -57,13 +57,14 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false, // Отключаем secure для разработки, чтобы cookies работали через HTTP
+      secure: false, // Для production изменить на true при использовании HTTPS
       sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
       path: '/',
-      httpOnly: false // Временно отключаем httpOnly для отладки
+      httpOnly: true // Включаем httpOnly для безопасности
     },
-    name: 'bnal.sid'
+    name: 'bnal.sid',
+    rolling: true // Продлевать сессию при каждом запросе
   }));
 
   app.use(passport.initialize());
@@ -205,9 +206,12 @@ export function setupAuth(app: Express) {
         }
         if (user) {
           console.log(`User ${user.id} registered and logged in successfully`);
-          return res.status(201).json({
-            success: true,
-            user
+          // Убедимся, что сессия сохранена перед ответом
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('Session save error after registration:', saveErr);
+            }
+            return res.status(201).json(user);
           });
         } else {
           return res.status(500).json({
@@ -238,19 +242,25 @@ export function setupAuth(app: Express) {
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
         console.error("Login error:", err);
-        return next(err);
+        return res.status(500).json({ message: "Ошибка сервера при входе" });
       }
       if (!user) {
         console.log("Login failed for user:", req.body.username);
         return res.status(401).json({ message: "Неверное имя пользователя или пароль" });
       }
-      req.logIn(user, (err) => {
-        if (err) {
-          console.error("Login session error:", err);
-          return next(err);
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error("Login session error:", loginErr);
+          return res.status(500).json({ message: "Ошибка создания сессии" });
         }
         console.log("User logged in successfully:", user.username);
-        res.json(user);
+        // Убедимся, что сессия сохранена перед ответом
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('Session save error after login:', saveErr);
+          }
+          res.json(user);
+        });
       });
     })(req, res, next);
   });
@@ -276,8 +286,15 @@ export function setupAuth(app: Express) {
         console.error("Logout error:", err);
         return res.status(500).json({ message: "Logout error" });
       }
-      console.log("User logged out:", username);
-      res.sendStatus(200);
+      // Уничтожаем сессию полностью
+      req.session.destroy((destroyErr) => {
+        if (destroyErr) {
+          console.error('Session destroy error:', destroyErr);
+        }
+        console.log("User logged out:", username);
+        res.clearCookie('bnal.sid');
+        res.sendStatus(200);
+      });
     });
   });
 }
