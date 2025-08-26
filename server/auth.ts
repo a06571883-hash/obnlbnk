@@ -127,11 +127,16 @@ export function setupAuth(app: Express) {
     try {
       console.log('🔄 Deserializing user ID:', id);
       
-      // Используем таймаут для быстрого отказа
+      // Увеличиваем таймаут и добавляем попытки повторного подключения
       const user = await Promise.race([
-        storage.getUser(id),
+        storage.getUser(id).catch(async (error) => {
+          console.log('🔄 First attempt failed, retrying...', error.message);
+          // Повторная попытка через короткую задержку
+          await new Promise(resolve => setTimeout(resolve, 200));
+          return storage.getUser(id);
+        }),
         new Promise<undefined>((_, reject) => 
-          setTimeout(() => reject(new Error('Deserialization timeout')), 1500)
+          setTimeout(() => reject(new Error('Deserialization timeout')), 5000)
         )
       ]);
       
