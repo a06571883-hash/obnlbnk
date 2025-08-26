@@ -59,12 +59,16 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: false, // Для production изменить на true при использовании HTTPS
       sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней (уменьшено для стабильности)
       path: '/',
-      httpOnly: true // Включаем httpOnly для безопасности
+      httpOnly: false // Отключаем httpOnly для отладки сессий
     },
     name: 'bnal.sid',
-    rolling: true // Продлевать сессию при каждом запросе
+    rolling: true, // Продлевать сессию при каждом запросе
+    // Принудительно сохраняем сессию
+    genid: () => {
+      return require('crypto').randomUUID();
+    }
   }));
 
   app.use(passport.initialize());
@@ -121,7 +125,15 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       console.log('🔄 Deserializing user ID:', id);
-      const user = await storage.getUser(id);
+      
+      // Используем таймаут для быстрого отказа
+      const user = await Promise.race([
+        storage.getUser(id),
+        new Promise<undefined>((_, reject) => 
+          setTimeout(() => reject(new Error('Deserialization timeout')), 1500)
+        )
+      ]);
+      
       if (!user) {
         console.log('❌ User not found during deserialization:', id);
         return done(null, false);
@@ -130,7 +142,8 @@ export function setupAuth(app: Express) {
       done(null, user);
     } catch (error) {
       console.error("❌ Deserialization error:", error);
-      done(error);
+      // Не передаём ошибку, возвращаем false для анонимного доступа
+      done(null, false);
     }
   });
 
