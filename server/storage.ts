@@ -76,11 +76,16 @@ export class DatabaseStorage implements IStorage {
     // Используем PostgreSQL для хранения сессий, но с более осторожными параметрами
     if (DATABASE_URL) {
       try {
+        // Добавляем SSL параметры к connection string
+        const sslConnectionUrl = DATABASE_URL.includes('sslmode=') 
+          ? DATABASE_URL 
+          : DATABASE_URL + (DATABASE_URL.includes('?') ? '&' : '?') + 'sslmode=require';
+        
         this.sessionStore = new PostgresStore({
-          conString: DATABASE_URL,
+          conString: sslConnectionUrl,
           createTableIfMissing: true,
           tableName: 'session',
-          ttl: 7 * 24 * 60 * 60, // 7 дней вместо 30
+          ttl: 7 * 24 * 60 * 60, // 7 дней
           pruneSessionInterval: 60 * 15, // Очистка каждые 15 минут
           errorLog: (error: any) => {
             console.error('Session store error:', error);
