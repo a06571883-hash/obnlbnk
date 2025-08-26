@@ -9,11 +9,15 @@ async function throwIfResNotOk(res: Response) {
     } catch {
       // Handle authentication errors
       if (res.status === 401) {
-        // Redirect to auth page on session expiry
-        window.location.href = '/auth';
-        throw new Error('Сессия истекла. Пожалуйста, войдите снова.');
+        errorMessage = 'Сессия истекла. Пожалуйста, войдите снова.';
       }
     }
+    
+    // Для 401 ошибок не редиректим автоматически, пусть компоненты сами решают
+    if (res.status === 401) {
+      throw new Error(errorMessage);
+    }
+    
     throw new Error(errorMessage);
   }
 }
@@ -68,15 +72,27 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
+      queryFn: getQueryFn({ on401: "returnNull" }),
       refetchInterval: false,
-      refetchOnWindowFocus: true,
-      staleTime: 0, // Always fetch fresh data
-      retry: 1, // Retry once on failure
-      gcTime: 0, // Disable garbage collection
+      refetchOnWindowFocus: false, // Отключаем автообновление при фокусе
+      staleTime: 5 * 60 * 1000, // 5 минут
+      retry: (failureCount, error) => {
+        // Не повторяем запросы при 401 ошибках
+        if (error instanceof Error && (error.message.includes('401') || error.message.includes('Сессия истекла'))) {
+          return false;
+        }
+        return failureCount < 1;
+      },
+      gcTime: 10 * 60 * 1000, // 10 минут
     },
     mutations: {
-      retry: 1, // Retry once on failure
+      retry: (failureCount, error) => {
+        // Не повторяем мутации при 401 ошибках
+        if (error instanceof Error && (error.message.includes('401') || error.message.includes('Сессия истекла'))) {
+          return false;
+        }
+        return failureCount < 1;
+      },
     },
   },
 });
