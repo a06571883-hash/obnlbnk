@@ -114,9 +114,17 @@ export class DatabaseStorage implements IStorage {
 
   async getUser(id: number): Promise<User | undefined> {
     return this.withRetry(async () => {
-      const [user] = await db.select().from(users).where(eq(users.id, id));
+      console.log('🔍 Querying database for user ID:', id);
+      const result = await Promise.race([
+        db.select().from(users).where(eq(users.id, id)),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database query timeout')), 10000)
+        )
+      ]) as User[];
+      const [user] = result;
+      console.log('📊 Query result for user ID', id, ':', user ? 'found' : 'not found');
       return user;
-    }, 'Get user');
+    }, 'Get user', 2); // Уменьшаем количество попыток
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
