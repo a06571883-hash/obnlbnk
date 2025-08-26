@@ -21,31 +21,36 @@ if (!DATABASE_URL) {
 
 console.log('Connecting to PostgreSQL database...');
 
-// Создаем клиент подключения к PostgreSQL с параметрами для надежного соединения
-export const client = postgres(DATABASE_URL, { 
-  ssl: { rejectUnauthorized: false }, // Необходимо для подключения к Neon PostgreSQL
-  max: 3, // Уменьшаем количество соединений для предотвращения переполнения
-  idle_timeout: 10, // Быстрее закрываем неиспользуемые соединения
-  connect_timeout: 10, // Уменьшаем timeout для подключения
-  
-  // Кастомные типы данных
-  types: {
-    date: {
-      to: 1184,
-      from: [1082, 1083, 1114, 1184],
-      serialize: (date: Date) => date,
-      parse: (date: string) => date
-    }
+// Создаем общий клиент подключения к PostgreSQL - синглтон
+let _client: any = null;
+
+function getDbClient() {
+  if (!_client) {
+    _client = postgres(DATABASE_URL, { 
+      ssl: { rejectUnauthorized: false },
+      max: 1, // Одно соединение для всего приложения
+      idle_timeout: 30,
+      connect_timeout: 30,
+      
+      types: {
+        date: {
+          to: 1184,
+          from: [1082, 1083, 1114, 1184],
+          serialize: (date: Date) => date,
+          parse: (date: string) => date
+        }
+      },
+      
+      onnotice: () => {},
+      transform: {
+        undefined: null
+      }
+    });
   }
-  
-  // Дополнительные параметры доступны, но могут вызывать ошибки TypeScript
-  // max_lifetime: 60 * 60, // Максимальное время жизни соединения (1 час)
-  // connection_limit: 15, // Увеличенный предел соединений
-  // connection_timeout: 30, // Таймаут соединения
-  // onError: (err, query) => { ... },
-  // onRetry: (count, error) => { ... },
-  // retryLimit: 5,
-});
+  return _client;
+}
+
+export const client = getDbClient();
 
 // Создаем экземпляр Drizzle ORM
 export const db = drizzle(client, { schema });
@@ -272,5 +277,24 @@ process.on('SIGINT', async () => {
   await client.end();
 });
 
-// Initialize the database connection
-initializeDatabase().catch(console.error);
+// Initialize the database connection with retry logic
+async function initializeWithRetry() {
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      await initializeDatabase();
+      console.log('Database successfully initialized');
+      return;
+    } catch (error) {
+      retries--;
+      console.error(`Database initialization failed (${3 - retries}/3):`, error);
+      if (retries > 0) {
+        console.log(`Retrying in 2 seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+  }
+  console.error('Failed to initialize database after 3 attempts');
+}
+
+initializeWithRetry();
