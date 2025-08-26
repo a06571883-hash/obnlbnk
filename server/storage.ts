@@ -73,10 +73,29 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    // Временно используем MemoryStore для сессий из-за проблем с переполнением соединений
-    this.sessionStore = new MemoryStore();
-    
-    console.log('Session store initialized with MemoryStore (temporary fallback)');
+    // Используем PostgreSQL для хранения сессий, но с более осторожными параметрами
+    if (DATABASE_URL) {
+      try {
+        this.sessionStore = new PostgresStore({
+          conString: DATABASE_URL,
+          createTableIfMissing: true,
+          tableName: 'session',
+          ttl: 7 * 24 * 60 * 60, // 7 дней вместо 30
+          pruneSessionInterval: 60 * 15, // Очистка каждые 15 минут
+          errorLog: (error: any) => {
+            console.error('Session store error:', error);
+          }
+        });
+        console.log('Session store initialized with PostgreSQL');
+      } catch (error) {
+        console.error('Failed to initialize PostgreSQL session store:', error);
+        console.log('Falling back to MemoryStore');
+        this.sessionStore = new MemoryStore();
+      }
+    } else {
+      console.log('No DATABASE_URL provided, using MemoryStore');
+      this.sessionStore = new MemoryStore();
+    }
   }
 
   async getUser(id: number): Promise<User | undefined> {
