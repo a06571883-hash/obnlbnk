@@ -123,10 +123,20 @@ function generateNFTDescription(rarity: string): string {
 
 // Auth middleware to ensure session is valid
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (req.isAuthenticated() && req.user) {
-    return next();
+  try {
+    console.log('🔐 Auth check - Session ID:', req.sessionID, 'User:', req.user?.username || 'none');
+    
+    if (req.isAuthenticated() && req.user) {
+      console.log('✅ Authentication successful for user:', req.user.username);
+      return next();
+    }
+    
+    console.log('❌ Authentication failed - isAuthenticated:', req.isAuthenticated(), 'user:', !!req.user);
+    res.status(401).json({ message: "Необходима авторизация" });
+  } catch (error) {
+    console.error('❌ Authentication middleware error:', error);
+    res.status(500).json({ message: "Ошибка авторизации" });
   }
-  res.status(401).json({ message: "Необходима авторизация" });
 }
 
 // Helper function to safely get user ID
