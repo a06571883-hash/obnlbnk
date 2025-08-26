@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast.js";
 import { useQuery } from "@tanstack/react-query";
-import type { Card } from "@shared/schema";
+import type { Card } from "@shared/schema.js";
 import { Card as CardUI } from "@/components/ui/card";
 import TelegramBackground from "@/components/telegram-background";
 import {
@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient.js";
 import CardCarousel from "@/components/card-carousel";
 import { Loader2, Bitcoin, DollarSign, Coins, Truck, BarChart3, MessageSquare, RefreshCw, Shield, Database, Upload } from "lucide-react";
 
@@ -32,7 +32,7 @@ const handleExchange = async (formData: FormData, cards: Card[], toast: any) => 
 
     console.log('Available cards:', cards); 
 
-    const cryptoCard = cards.find(card => card.type === 'crypto');
+    const cryptoCard = cards?.find(card => card.type === 'crypto');
     console.log('Looking for crypto card. Found:', cryptoCard); 
 
     if (!cryptoCard) {
@@ -251,7 +251,7 @@ export default function HomePage() {
     }
   };
 
-  const cryptoCard = cards.find(card => card.type === 'crypto');
+  const cryptoCard = cards?.find(card => card.type === 'crypto');
   const hasCryptoWallet = cryptoCard && cryptoCard.btcBalance && cryptoCard.ethBalance && cryptoCard.btcAddress;
   
   // Проверяем, является ли пользователь регулятором
