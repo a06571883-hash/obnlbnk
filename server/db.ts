@@ -28,11 +28,14 @@ console.log('Connecting to PostgreSQL database...');
 export const client = postgres(databaseUrl, { 
   ssl: { rejectUnauthorized: false }, // Принимаем самоподписанные сертификаты
   max: 1, // Строго одно соединение для всего приложения
-  idle_timeout: 30, // Уменьшаем время ожидания для Vercel
-  connect_timeout: 10, // Меньше времени на подключение для быстрого отказа
-  max_lifetime: 0, // Не ограничиваем время жизни соединения
+  idle_timeout: 10, // Агрессивно короткий таймаут для Vercel
+  connect_timeout: 5, // Быстрое подключение или отказ
+  max_lifetime: 300, // 5 минут максимум для соединения
   // Добавляем настройки для предотвращения таймаутов
   prepare: false, // Отключаем prepared statements для лучшей совместимости
+  transform: {
+    undefined: null
+  },
   
   types: {
     date: {
