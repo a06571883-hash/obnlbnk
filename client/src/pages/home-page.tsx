@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth.js";
+import { Button } from "@/components/ui/button.js";
 import { useToast } from "@/hooks/use-toast.js";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query.js";
 import type { Card } from "@shared/schema.js";
-import { Card as CardUI } from "@/components/ui/card";
-import TelegramBackground from "@/components/telegram-background";
+import { Card as CardUI } from "@/components/ui/card.js";
+import TelegramBackground from "@/components/telegram-background.js";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.js";
 import { queryClient, apiRequest } from "@/lib/queryClient.js";
-import CardCarousel from "@/components/card-carousel";
+import CardCarousel from "@/components/card-carousel.js";
 import { Loader2, Bitcoin, DollarSign, Coins, Truck, BarChart3, MessageSquare, RefreshCw, Shield, Database, Upload } from "lucide-react";
 
 interface ExchangeRateResponse {
