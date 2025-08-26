@@ -26,7 +26,7 @@ console.log('Connecting to PostgreSQL database...');
 
 // Создаем единственный глобальный клиент подключения к PostgreSQL
 export const client = postgres(databaseUrl, { 
-  ssl: 'require', // Требуем SSL соединение
+  ssl: { rejectUnauthorized: false }, // Принимаем самоподписанные сертификаты
   max: 1, // Строго одно соединение для всего приложения
   idle_timeout: 60, // Увеличиваем время ожидания
   connect_timeout: 30, // Больше времени на подключение
