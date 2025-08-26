@@ -19,38 +19,36 @@ if (!DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set');
 }
 
+// Проверяем что DATABASE_URL не undefined
+const databaseUrl: string = DATABASE_URL;
+
 console.log('Connecting to PostgreSQL database...');
 
-// Создаем общий клиент подключения к PostgreSQL - синглтон
-let _client: any = null;
-
-function getDbClient() {
-  if (!_client) {
-    _client = postgres(DATABASE_URL, { 
-      ssl: { rejectUnauthorized: false },
-      max: 1, // Одно соединение для всего приложения
-      idle_timeout: 30,
-      connect_timeout: 30,
-      
-      types: {
-        date: {
-          to: 1184,
-          from: [1082, 1083, 1114, 1184],
-          serialize: (date: Date) => date,
-          parse: (date: string) => date
-        }
-      },
-      
-      onnotice: () => {},
-      transform: {
-        undefined: null
-      }
-    });
-  }
-  return _client;
-}
-
-export const client = getDbClient();
+// Создаем единственный глобальный клиент подключения к PostgreSQL
+export const client = postgres(databaseUrl, { 
+  ssl: 'require', // Требуем SSL соединение
+  max: 1, // Строго одно соединение для всего приложения
+  idle_timeout: 60, // Увеличиваем время ожидания
+  connect_timeout: 30, // Больше времени на подключение
+  max_lifetime: 0, // Не ограничиваем время жизни соединения
+  
+  types: {
+    date: {
+      to: 1184,
+      from: [1082, 1083, 1114, 1184],
+      serialize: (date: Date) => date,
+      parse: (date: string) => date
+    }
+  },
+  
+  onnotice: () => {}, // Отключаем notices
+  transform: {
+    undefined: null
+  },
+  
+  // Минимальные логи для предотвращения спама
+  debug: false
+});
 
 // Создаем экземпляр Drizzle ORM
 export const db = drizzle(client, { schema });
@@ -269,32 +267,33 @@ console.log('Database initialization completed successfully');
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('Received SIGTERM. Closing database connection...');
-  await client.end();
+  try {
+    await client.end();
+  } catch (e) {
+    console.error('Error closing database:', e);
+  }
 });
 
 process.on('SIGINT', async () => {
   console.log('Received SIGINT. Closing database connection...');
-  await client.end();
+  try {
+    await client.end();
+  } catch (e) {
+    console.error('Error closing database:', e);
+  }
 });
 
-// Initialize the database connection with retry logic
+// Initialize the database connection with simpler logic
 async function initializeWithRetry() {
-  let retries = 3;
-  while (retries > 0) {
-    try {
-      await initializeDatabase();
-      console.log('Database successfully initialized');
-      return;
-    } catch (error) {
-      retries--;
-      console.error(`Database initialization failed (${3 - retries}/3):`, error);
-      if (retries > 0) {
-        console.log(`Retrying in 2 seconds...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
+  try {
+    console.log('Initializing database tables...');
+    await initializeDatabase();
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Database initialization failed:', error);
+    // Не паникуем, продолжаем работу - таблицы могут уже существовать
   }
-  console.error('Failed to initialize database after 3 attempts');
 }
 
+// Запускаем инициализацию без блокировки
 initializeWithRetry();
