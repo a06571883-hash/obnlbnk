@@ -75,30 +75,28 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    // Правильно настраиваем PostgreSQL сессии с правильным SSL
+    // Правильно настраиваем PostgreSQL сессии с оптимизированными настройками
     if (DATABASE_URL) {
       try {
-        // Создаем правильные SSL параметры для pg
-        
         const pool = new Pool({
           connectionString: DATABASE_URL,
           ssl: {
             rejectUnauthorized: false
           },
-          // Оптимизируем настройки для Vercel
-          max: 5, // Максимальное количество подключений
-          connectionTimeoutMillis: 5000, // 5 секунд на подключение
-          idleTimeoutMillis: 30000, // 30 секунд перед закрытием неактивного соединения
-          query_timeout: 10000, // 10 секунд на выполнение запроса
-          statement_timeout: 10000 // 10 секунд на выполнение statement
+          // Агрессивные настройки для быстрой работы на Vercel
+          max: 2,
+          connectionTimeoutMillis: 3000,
+          idleTimeoutMillis: 10000,
+          query_timeout: 5000,
+          statement_timeout: 5000
         });
         
         this.sessionStore = new PostgresStore({
           pool: pool,
-          createTableIfMissing: false, // Отключаем автосоздание таблицы
+          createTableIfMissing: true,
           tableName: 'session',
-          ttl: 7 * 24 * 60 * 60,
-          pruneSessionInterval: false, // Отключаем автоочистку для производительности
+          ttl: 24 * 60 * 60, // 1 день
+          pruneSessionInterval: false,
           errorLog: (error: any) => {
             console.error('Session store error:', error);
           }
@@ -121,13 +119,13 @@ export class DatabaseStorage implements IStorage {
       const result = await Promise.race([
         db.select().from(users).where(eq(users.id, id)),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database query timeout')), 10000)
+          setTimeout(() => reject(new Error('Database query timeout')), 3000)
         )
       ]) as User[];
       const [user] = result;
       console.log('📊 Query result for user ID', id, ':', user ? 'found' : 'not found');
       return user;
-    }, 'Get user', 2); // Уменьшаем количество попыток
+    }, 'Get user', 1); // Одна попытка для быстрого отказа
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
