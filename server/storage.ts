@@ -76,10 +76,8 @@ export class DatabaseStorage implements IStorage {
     // Используем PostgreSQL для хранения сессий, но с более осторожными параметрами
     if (DATABASE_URL) {
       try {
-        // Добавляем SSL параметры к connection string
-        const sslConnectionUrl = DATABASE_URL.includes('sslmode=') 
-          ? DATABASE_URL 
-          : DATABASE_URL + (DATABASE_URL.includes('?') ? '&' : '?') + 'sslmode=require';
+           // Правильная конфигурация SSL для PostgreSQL сессий через connection string
+        const sslConnectionUrl = DATABASE_URL + (DATABASE_URL.includes('?') ? '&' : '?') + 'sslmode=require&sslrootcert=/dev/null';
         
         this.sessionStore = new PostgresStore({
           conString: sslConnectionUrl,
