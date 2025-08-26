@@ -83,20 +83,26 @@ export class DatabaseStorage implements IStorage {
           ssl: {
             rejectUnauthorized: false
           },
-          // Агрессивные настройки для быстрой работы на Vercel
-          max: 2,
-          connectionTimeoutMillis: 3000,
-          idleTimeoutMillis: 10000,
-          query_timeout: 5000,
-          statement_timeout: 5000
+          // Оптимизированные настройки для стабильной работы сессий
+          max: 5,
+          min: 1,
+          connectionTimeoutMillis: 8000,
+          idleTimeoutMillis: 30000,
+          query_timeout: 10000,
+          statement_timeout: 10000,
+          // Дополнительные настройки для стабильности
+          allowExitOnIdle: false,
+          keepAlive: true,
+          keepAliveInitialDelayMillis: 10000
         });
         
         this.sessionStore = new PostgresStore({
           pool: pool,
           createTableIfMissing: true,
           tableName: 'session',
-          ttl: 24 * 60 * 60, // 1 день
-          pruneSessionInterval: false,
+          ttl: 7 * 24 * 60 * 60, // 7 дней
+          pruneSessionInterval: 60 * 60, // 1 час
+          disableTouch: false,
           errorLog: (error: any) => {
             console.error('Session store error:', error);
           }
@@ -119,7 +125,7 @@ export class DatabaseStorage implements IStorage {
       const result = await Promise.race([
         db.select().from(users).where(eq(users.id, id)),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database query timeout')), 2000)
+          setTimeout(() => reject(new Error('Database query timeout')), 8000)
         )
       ]) as User[];
       const [user] = result;
@@ -130,9 +136,17 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return this.withRetry(async () => {
-      const [user] = await db.select().from(users).where(eq(users.username, username));
+      console.log('🔍 Querying database for username:', username);
+      const result = await Promise.race([
+        db.select().from(users).where(eq(users.username, username)),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database query timeout')), 8000)
+        )
+      ]) as User[];
+      const [user] = result;
+      console.log('📊 Query result for username', username, ':', user ? 'found' : 'not found');
       return user;
-    }, 'Get user by username');
+    }, 'Get user by username', 2); // 2 попытки для критических операций аутентификации
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
