@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth.js";
 import { Button } from "@/components/ui/button.js";
 import { useToast } from "@/hooks/use-toast.js";
-import { useQuery } from "@tanstack/react-query.js";
+import { useQuery } from "@tanstack/react-query";
 import type { Card } from "@shared/schema.js";
 import { Card as CardUI } from "@/components/ui/card.js";
 import TelegramBackground from "@/components/telegram-background.js";
