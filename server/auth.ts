@@ -19,6 +19,11 @@ declare global {
     interface User extends Partial<SelectUser> {
       id?: number;
     }
+    interface Session {
+      passport?: {
+        user?: number;
+      };
+    }
   }
 }
 
@@ -56,11 +61,13 @@ export function setupAuth(app: Express) {
   // Добавляем поддержку куки для резервного механизма
   app.use(cookieParser());
 
-  // На Vercel НЕ используем PostgreSQL session store - только куки для аутентификации
+  // На Vercel используем только cookie-based аутентификацию без сессий
   const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
   
   if (IS_VERCEL) {
-    console.log('🔧 Vercel detected: using memory store for sessions to avoid DB connection limit');
+    console.log('🔧 Vercel detected: using cookie-only authentication to avoid memory store warnings');
+    
+    // Minimal session setup для совместимости с passport, но без store
     app.use(session({
       secret: sessionSecret,
       resave: false,
@@ -68,12 +75,12 @@ export function setupAuth(app: Express) {
       cookie: {
         secure: true, // HTTPS на Vercel
         sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 часа
+        maxAge: 1000, // Очень короткая жизнь сессии - 1 секунда
         path: '/',
         httpOnly: true
       },
-      name: 'bnal.sid',
-      // Используем memory store на Vercel (без БД)
+      name: 'temp.sid',
+      // Минимальная сессия только для инициализации passport
     }));
   } else {
     // На локальном/Replit используем PostgreSQL session store
@@ -104,7 +111,7 @@ export function setupAuth(app: Express) {
         sessionID: req.sessionID,
         hasSession: !!req.session,
         sessionData: req.session ? Object.keys(req.session) : [],
-        passportUser: req.session?.passport?.user,
+        passportUser: (req.session as any)?.passport?.user,
         cookies: req.headers.cookie ? req.headers.cookie.includes('bnal.sid') : false,
         url: req.url,
         method: req.method
@@ -124,14 +131,14 @@ export function setupAuth(app: Express) {
         hasUser: !!req.user,
         userID: req.user?.id,
         username: req.user?.username,
-        sessionPassport: req.session?.passport
+        sessionPassport: (req.session as any)?.passport
       });
       
       // ПРИНУДИТЕЛЬНО загружаем пользователя если его нет, но есть ID в сессии
-      if (!req.user && req.session?.passport?.user) {
+      if (!req.user && (req.session as any)?.passport?.user) {
         try {
-          console.log('🔄 Force loading user from session ID:', req.session.passport.user);
-          const userId = req.session.passport.user;
+          console.log('🔄 Force loading user from session ID:', (req.session as any).passport.user);
+          const userId = (req.session as any).passport.user;
           const user = await storage.getUser(userId);
           if (user) {
             console.log('✅ Force loaded user:', user.username);
@@ -144,26 +151,32 @@ export function setupAuth(app: Express) {
         }
       }
       
-      // РЕЗЕРВНЫЙ МЕХАНИЗМ: загружаем из куки если сессия не работает
+      // ОСНОВНОЙ МЕХАНИЗМ ДЛЯ VERCEL: загружаем из куки вместо сессии
       if (!req.user && req.cookies?.user_data) {
         try {
-          console.log('🔄 Trying backup cookie auth for Vercel');
           const userData = JSON.parse(Buffer.from(req.cookies.user_data, 'base64').toString());
           
           // Проверяем что токен не старше 7 дней
           if (Date.now() - userData.timestamp < 7 * 24 * 60 * 60 * 1000) {
             const user = await storage.getUser(userData.id);
             if (user && user.username === userData.username) {
-              console.log('✅ Backup cookie auth successful:', user.username);
+              console.log('✅ Cookie auth successful for Vercel:', user.username);
               req.user = user;
-              // Восстанавливаем сессию
-              if (!req.session.passport) {
-                req.session.passport = { user: user.id };
+              
+              // Для Vercel устанавливаем минимальную сессию только для passport совместимости
+              const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+              if (IS_VERCEL && !(req.session as any).passport) {
+                (req.session as any).passport = { user: user.id };
               }
             }
+          } else {
+            console.log('🔄 Cookie token expired, clearing');
+            // Очищаем истёкший токен
+            res.clearCookie('user_data');
           }
         } catch (error) {
-          console.error('❌ Backup cookie auth error:', error);
+          console.error('❌ Cookie auth error:', error);
+          res.clearCookie('user_data');
         }
       }
     }
@@ -339,17 +352,37 @@ export function setupAuth(app: Express) {
         if (user) {
           console.log(`User ${user.id} registered and logged in successfully`);
           // Принудительно сохраняем сессию и ждем завершения
-          req.session.save((saveErr) => {
-            if (saveErr) {
-              console.error('❌ Session save error after registration:', saveErr);
-              return res.status(500).json({ message: "Ошибка сохранения сессии" });
-            }
-            console.log('✅ Session saved successfully for new user:', user?.username);
-            // Дополнительно ждем немного для Vercel serverless
-            setTimeout(() => {
-              return res.status(201).json(user);
-            }, 100);
+          const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+          
+          // Устанавливаем cookie для аутентификации нового пользователя
+          const userToken = Buffer.from(JSON.stringify({
+            id: user.id,
+            username: user.username,
+            timestamp: Date.now()
+          })).toString('base64');
+          
+          res.cookie('user_data', userToken, {
+            httpOnly: true,
+            secure: IS_VERCEL,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            sameSite: 'lax'
           });
+          
+          if (IS_VERCEL) {
+            // Для Vercel используем только cookies
+            console.log('✅ Vercel registration successful - using cookie auth');
+            return res.status(201).json(user);
+          } else {
+            // Для обычного деплоя сохраняем сессию
+            req.session.save((saveErr) => {
+              if (saveErr) {
+                console.error('❌ Session save error after registration:', saveErr);
+                return res.status(500).json({ message: "Ошибка сохранения сессии" });
+              }
+              console.log('✅ Session saved successfully for new user:', user?.username);
+              return res.status(201).json(user);
+            });
+          }
         } else {
           return res.status(500).json({
             success: false,
@@ -391,39 +424,42 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ message: "Ошибка создания сессии" });
         }
         console.log("User logged in successfully:", user.username);
-        console.log('🔍 Passport session after login:', req.session.passport);
-        console.log('🔍 User ID in session:', req.session.passport?.user);
+        console.log('🔍 Passport session after login:', (req.session as any).passport);
+        console.log('🔍 User ID in session:', (req.session as any).passport?.user);
         
-        // Принудительно сохраняем сессию и ждем завершения
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error('❌ Session save error after login:', saveErr);
-            return res.status(500).json({ message: "Ошибка сохранения сессии" });
-          }
-          console.log('✅ Session saved successfully for user:', user.username);
-          console.log('🔍 Final session passport data:', req.session.passport);
-          
-          // ДОПОЛНИТЕЛЬНО: сохраняем пользователя прямо в куки для Vercel
-          const userToken = Buffer.from(JSON.stringify({
-            id: user.id,
-            username: user.username,
-            timestamp: Date.now()
-          })).toString('base64');
-          
-          res.cookie('user_data', userToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            sameSite: 'lax'
-          });
-          
-          console.log('✅ Backup user cookie set for Vercel');
-          
-          // Дополнительно ждем немного для Vercel serverless
-          setTimeout(() => {
-            res.json(user);
-          }, 200);
+        const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+        
+        // Устанавливаем основной cookie для аутентификации
+        const userToken = Buffer.from(JSON.stringify({
+          id: user.id,
+          username: user.username,
+          timestamp: Date.now()
+        })).toString('base64');
+        
+        res.cookie('user_data', userToken, {
+          httpOnly: true,
+          secure: IS_VERCEL,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          sameSite: 'lax'
         });
+        
+        console.log('✅ User cookie set for authentication');
+        
+        if (IS_VERCEL) {
+          // Для Vercel используем только cookies, минимальная сессия
+          console.log('✅ Vercel login successful - using cookie auth');
+          res.json(user);
+        } else {
+          // Для обычного деплоя сохраняем сессию
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('❌ Session save error after login:', saveErr);
+              return res.status(500).json({ message: "Ошибка сохранения сессии" });
+            }
+            console.log('✅ Session saved successfully for user:', user.username);
+            res.json(user);
+          });
+        }
       });
     })(req, res, next);
   });
@@ -467,20 +503,34 @@ export function setupAuth(app: Express) {
 
   app.post("/api/logout", (req, res) => {
     const username = req.user?.username;
+    const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+    
     req.logout((err) => {
       if (err) {
         console.error("Logout error:", err);
         return res.status(500).json({ message: "Logout error" });
       }
-      // Уничтожаем сессию полностью
-      req.session.destroy((destroyErr) => {
-        if (destroyErr) {
-          console.error('Session destroy error:', destroyErr);
-        }
-        console.log("User logged out:", username);
-        res.clearCookie('bnal.sid');
+      
+      console.log("User logged out:", username);
+      
+      // Очищаем все cookie аутентификации
+      res.clearCookie('user_data');
+      res.clearCookie('bnal.sid');
+      res.clearCookie('temp.sid');
+      
+      if (IS_VERCEL) {
+        // Для Vercel просто очищаем cookies
+        console.log('✅ Vercel logout - cookies cleared');
         res.sendStatus(200);
-      });
+      } else {
+        // Для обычного деплоя уничтожаем сессию
+        req.session.destroy((destroyErr) => {
+          if (destroyErr) {
+            console.error('Session destroy error:', destroyErr);
+          }
+          res.sendStatus(200);
+        });
+      }
     });
   });
 }

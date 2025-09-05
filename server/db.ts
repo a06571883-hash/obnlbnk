@@ -28,15 +28,16 @@ console.log('Connecting to PostgreSQL database...');
 const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 
 // Создаем единственный глобальный клиент подключения к PostgreSQL
-// КРИТИЧЕСКИ ВАЖНО: Используем минимальные настройки для предотвращения превышения лимита
+// Оптимизированные настройки для Vercel serverless
 export const client = postgres(databaseUrl, { 
   ssl: { rejectUnauthorized: false }, // Принимаем самоподписанные сертификаты
-  max: 1, // ВСЕГДА используем только 1 подключение
-  idle_timeout: 1, // Быстро закрываем неактивные подключения
-  connect_timeout: 30, // Увеличиваем таймаут подключения для стабильности
-  max_lifetime: 60, // Короткий lifetime подключений
+  max: IS_VERCEL ? 1 : 3, // На Vercel только 1 подключение, локально больше
+  idle_timeout: IS_VERCEL ? 10 : 30, // Увеличиваем idle_timeout для Vercel
+  connect_timeout: IS_VERCEL ? 15 : 30, // Уменьшаем connect_timeout для Vercel
+  max_lifetime: IS_VERCEL ? 300 : 600, // Увеличиваем lifetime для лучшей производительности
   // Добавляем настройки для предотвращения таймаутов
   prepare: false, // Отключаем prepared statements для лучшей совместимости
+  no_prepare: true, // Дополнительная защита от prepared statements
   transform: {
     undefined: null
   },

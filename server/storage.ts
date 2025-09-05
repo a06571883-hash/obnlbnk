@@ -64,21 +64,26 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    // Используем PostgreSQL для хранения сессий
-    this.sessionStore = new PostgresStore({
-      conObject: {
-        connectionString: DATABASE_URL,
-        ssl: { rejectUnauthorized: false } // Всегда используем SSL для внешних БД
-      },
-      tableName: 'session',
-      createTableIfMissing: true,
-      // Дополнительные настройки для Vercel serverless
-      schemaName: 'public',
-      ttl: 7 * 24 * 60 * 60, // 7 дней в секундах
-      disableTouch: false, // Разрешить обновление TTL
-      pruneSessionInterval: 60 * 15, // Очистка каждые 15 минут
-      errorLog: (error: any) => console.error('PostgreSQL session error:', error)
-    });
+    // Определяем, запущено ли приложение на Vercel
+    const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+    
+    // Используем PostgreSQL для хранения сессий (только не на Vercel)
+    this.sessionStore = IS_VERCEL ? 
+      new MemoryStore() : // На Vercel используем MemoryStore для сессий
+      new PostgresStore({
+        conObject: {
+          connectionString: DATABASE_URL,
+          ssl: { rejectUnauthorized: false }
+        },
+        tableName: 'session',
+        createTableIfMissing: true,
+        // Оптимизированные настройки для локального использования
+        schemaName: 'public',
+        ttl: 7 * 24 * 60 * 60, // 7 дней в секундах
+        disableTouch: false, // Разрешить обновление TTL
+        pruneSessionInterval: 60 * 15, // Очистка каждые 15 минут
+        errorLog: (error: any) => console.error('PostgreSQL session error:', error)
+      });
     
     console.log('Session store initialized with PostgreSQL for', process.env.NODE_ENV || 'development');
   }
