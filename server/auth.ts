@@ -91,15 +91,33 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
   
-  // Дополнительное логирование после passport
-  app.use((req, res, next) => {
-    if (req.url === '/api/user') {
+  // Дополнительное логирование и принудительная загрузка пользователя
+  app.use(async (req, res, next) => {
+    if (req.url.includes('/api/') && req.url !== '/api/login' && req.url !== '/api/register') {
       console.log('🔐 After passport middleware:', {
         isAuthenticated: req.isAuthenticated(),
         hasUser: !!req.user,
         userID: req.user?.id,
-        username: req.user?.username
+        username: req.user?.username,
+        sessionPassport: req.session?.passport
       });
+      
+      // ПРИНУДИТЕЛЬНО загружаем пользователя если его нет, но есть ID в сессии
+      if (!req.user && req.session?.passport?.user) {
+        try {
+          console.log('🔄 Force loading user from session ID:', req.session.passport.user);
+          const userId = req.session.passport.user;
+          const user = await storage.getUser(userId);
+          if (user) {
+            console.log('✅ Force loaded user:', user.username);
+            req.user = user;
+            // Помечаем как аутентифицированного
+            (req as any)._passport = { instance: passport, session: { user: userId } };
+          }
+        } catch (error) {
+          console.error('❌ Force load user error:', error);
+        }
+      }
     }
     next();
   });
