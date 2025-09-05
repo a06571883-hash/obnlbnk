@@ -1,0 +1,707 @@
+Sep 06 00:26:16.42
+GET
+401
+obnlbnk-7tv05c6er-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:26:16.42
+GET
+200
+obnlbnk-7tv05c6er-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:26:16.36
+GET
+200
+obnlbnk-7tv05c6er-nikitahr555-6694s-projects.vercel.app
+/api/user
+6
+✅ User session active and verified: regulator
+Sep 06 00:26:13.50
+POST
+200
+obnlbnk-7tv05c6er-nikitahr555-6694s-projects.vercel.app
+/api/login
+20
+✅ Backup user cookie set for Vercel
+Sep 06 00:25:41.14
+GET
+401
+obnlbnk-7tv05c6er-nikitahr555-6694s-projects.vercel.app
+/api/user
+19
+❌ Authentication failed - returning 401
+Sep 06 00:25:20.85
+POST
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/login
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:19.46
+POST
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/login
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.45
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.43
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.43
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.43
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.36
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.36
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.36
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.36
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.29
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.23
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.23
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.23
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.23
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.23
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.19
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.18
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.16
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.16
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.15
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.15
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.15
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.15
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.15
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.15
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.15
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.11
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.11
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.11
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.11
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.11
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.09
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.09
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.09
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:11.05
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.97
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.96
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+5
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.88
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.82
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.82
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.73
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.65
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.55
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.50
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.43
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.43
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.43
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.43
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.43
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.27
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.27
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.27
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.24
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.21
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+5
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+5
+error: Max client connections reached at /var/task/api/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:95:5) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:321:21) at async PGStore._rawEnsureSessionStoreTable (/var/task/api/node_modules/connect-pg-simple/index.js:176:19) at async PGStore._asyncQuery (/var/task/api/node_modules/connect-pg-simple/index.js:314:7) { length: 58, severity: 'FATAL', code: 'XX000', detail: undefined, hint: undefined, position: undefined, internalPosition: undefined, internalQuery: undefined, where: undefined, schema: undefined, table: undefined, column: undefined, dataType: undefined, constraint: undefined, file: undefined, line: undefined, routine: undefined }
+Sep 06 00:25:10.20
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+erro

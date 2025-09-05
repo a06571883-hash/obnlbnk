@@ -27,7 +27,7 @@ import { hasBlockchainApiKeys } from './utils/blockchain.js';
 import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase.js';
 import { generateNFTImage } from './utils/nft-generator.js';
 import { Telegraf } from 'telegraf';
-import { db } from './db.js';
+import { db, closeConnectionsOnVercel } from './db.js';
 import { eq } from 'drizzle-orm';
 import { nfts, nftCollections } from '../shared/schema.js';
 import nftRoutes from './controllers/nft-controller.js';
@@ -155,6 +155,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.urlencoded({ extended: true }));
 
   setupAuth(app);
+  
+  // Middleware для автоматического закрытия DB подключений на Vercel после API запросов
+  app.use('/api', (req, res, next) => {
+    // Сохраняем оригинальный метод res.end
+    const originalEnd = res.end.bind(res);
+    
+    // Переопределяем res.end для закрытия подключений на Vercel
+    res.end = function(...args: any[]) {
+      // Вызываем оригинальный метод
+      originalEnd(...args);
+      
+      // Закрываем подключения на Vercel
+      closeConnectionsOnVercel();
+    } as any;
+    
+    next();
+  });
+  
   // Временно отключаем автоматическое обновление курсов из-за проблем с БД
   // startRateUpdates(httpServer, '/ws');
   

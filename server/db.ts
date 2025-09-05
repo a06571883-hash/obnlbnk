@@ -24,13 +24,17 @@ const databaseUrl: string = DATABASE_URL;
 
 console.log('Connecting to PostgreSQL database...');
 
+// Определяем, запущено ли приложение на Vercel
+const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+
 // Создаем единственный глобальный клиент подключения к PostgreSQL
+// КРИТИЧЕСКИ ВАЖНО: Используем минимальные настройки для предотвращения превышения лимита
 export const client = postgres(databaseUrl, { 
   ssl: { rejectUnauthorized: false }, // Принимаем самоподписанные сертификаты
-  max: 3, // Увеличиваем до 3 соединений для лучшей производительности
-  idle_timeout: 20, // Увеличиваем таймаут простоя
-  connect_timeout: 10, // Увеличиваем таймаут подключения  
-  max_lifetime: 600, // 10 минут максимум для соединения
+  max: 1, // ВСЕГДА используем только 1 подключение
+  idle_timeout: 1, // Быстро закрываем неактивные подключения
+  connect_timeout: 30, // Увеличиваем таймаут подключения для стабильности
+  max_lifetime: 60, // Короткий lifetime подключений
   // Добавляем настройки для предотвращения таймаутов
   prepare: false, // Отключаем prepared statements для лучшей совместимости
   transform: {
@@ -49,7 +53,12 @@ export const client = postgres(databaseUrl, {
   onnotice: () => {}, // Отключаем notices
   
   // Минимальные логи для предотвращения спама
-  debug: false
+  debug: false,
+  
+  // Принудительно контролируем подключения
+  connection: {
+    application_name: IS_VERCEL ? 'vercel-serverless' : 'replit-dev'
+  }
 });
 
 // Создаем экземпляр Drizzle ORM
@@ -264,6 +273,13 @@ console.log('Database initialization completed successfully');
     console.error('Database initialization failed:', error);
     throw error;
   }
+}
+
+// Функция для принудительного закрытия подключений на Vercel
+export async function closeConnectionsOnVercel() {
+  // ОТКЛЮЧАЕМ автоматическое закрытие - это создавало больше проблем
+  // Вместо этого полагаемся на настройки connection pooling
+  return;
 }
 
 // Handle graceful shutdown

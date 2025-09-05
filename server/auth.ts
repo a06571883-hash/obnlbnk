@@ -56,25 +56,46 @@ export function setupAuth(app: Express) {
   // Добавляем поддержку куки для резервного механизма
   app.use(cookieParser());
 
-  app.use(session({
-    secret: sessionSecret,
-    resave: true, // Принудительно пересохраняем для serverless
-    saveUninitialized: true, // Создаем сессию для каждого запроса
-    store: storage.sessionStore,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production', // HTTPS только для продакшен
-      sameSite: 'lax', // Более совместимая настройка
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
-      path: '/',
-      httpOnly: true // Безопасность - включаем httpOnly
-    },
-    name: 'bnal.sid',
-    rolling: true, // Продлевать сессию при каждом запросе
-    // Принудительно сохраняем сессию
-    genid: () => {
-      return crypto.randomUUID();
-    }
-  }));
+  // На Vercel НЕ используем PostgreSQL session store - только куки для аутентификации
+  const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  
+  if (IS_VERCEL) {
+    console.log('🔧 Vercel detected: using memory store for sessions to avoid DB connection limit');
+    app.use(session({
+      secret: sessionSecret,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: true, // HTTPS на Vercel
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24 часа
+        path: '/',
+        httpOnly: true
+      },
+      name: 'bnal.sid',
+      // Используем memory store на Vercel (без БД)
+    }));
+  } else {
+    // На локальном/Replit используем PostgreSQL session store
+    app.use(session({
+      secret: sessionSecret,
+      resave: true,
+      saveUninitialized: true,
+      store: storage.sessionStore,
+      cookie: {
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
+        path: '/',
+        httpOnly: true
+      },
+      name: 'bnal.sid',
+      rolling: true,
+      genid: () => {
+        return crypto.randomUUID();
+      }
+    }));
+  }
 
   // Middleware для отладки сессий
   app.use((req, res, next) => {
