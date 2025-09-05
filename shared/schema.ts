@@ -93,15 +93,7 @@ export const nftTransfers = pgTable("nft_transfers", {
 });
 
 // Базовые схемы
-export const insertUserSchema = createInsertSchema(users, {
-  id: undefined,
-  username: z.string(),
-  password: z.string(),
-  regulator_balance: z.string().default("0"),
-  is_regulator: z.boolean().default(false),
-  last_nft_generation: z.date().optional(),
-  nft_generation_count: z.number().default(0),
-});
+export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 
 // Расширенная схема только для новых пользователей
 export const newUserRegistrationSchema = insertUserSchema.extend({
@@ -116,16 +108,7 @@ export const newUserRegistrationSchema = insertUserSchema.extend({
     .regex(/.*[0-9].*/, 'Пароль должен содержать хотя бы одну цифру'),
 });
 
-export const insertCardSchema = createInsertSchema(cards, {
-  id: undefined,
-  balance: z.string().default("0"),
-  btcBalance: z.string().default("0"),
-  ethBalance: z.string().default("0"),
-  kichcoinBalance: z.string().default("0"),
-  btcAddress: z.string().nullable(),
-  ethAddress: z.string().nullable(),
-  tonAddress: z.string().nullable(),
-});
+export const insertCardSchema = createInsertSchema(cards).omit({ id: true });
 
 export const insertTransactionSchema = z.object({
   fromCardId: z.number(),
@@ -141,20 +124,11 @@ export const insertTransactionSchema = z.object({
   createdAt: z.date().optional(),
 });
 
-export const insertNftCollectionSchema = createInsertSchema(nftCollections, {
-  id: undefined,
-  createdAt: undefined,
-});
+export const insertNftCollectionSchema = createInsertSchema(nftCollections).omit({ id: true, createdAt: true });
 
-export const insertNftSchema = createInsertSchema(nfts, {
-  id: undefined,
-  mintedAt: undefined,
-});
+export const insertNftSchema = createInsertSchema(nfts).omit({ id: true, mintedAt: true });
 
-export const insertNftTransferSchema = createInsertSchema(nftTransfers, {
-  id: undefined,
-  transferredAt: undefined,
-});
+export const insertNftTransferSchema = createInsertSchema(nftTransfers).omit({ id: true, transferredAt: true });
 
 // Экспорт типов
 export type User = typeof users.$inferSelect;

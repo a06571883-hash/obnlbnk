@@ -54,13 +54,13 @@ export function setupAuth(app: Express) {
 
   app.use(session({
     secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Для Vercel принудительно пересохраняем
+    saveUninitialized: true, // Создаем сессию даже для неаутентифицированных
     store: storage.sessionStore,
     cookie: {
-      secure: false, // Для production изменить на true при использовании HTTPS
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней (уменьшено для стабильности)
+      secure: process.env.VERCEL ? true : false, // HTTPS для Vercel
+      sameSite: process.env.VERCEL ? 'none' : 'lax', // Для кросс-доменности
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
       path: '/',
       httpOnly: false // Отключаем httpOnly для отладки сессий
     },

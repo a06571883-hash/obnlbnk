@@ -1,0 +1,450 @@
+Sep 05 18:14:50.95
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.93
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.92
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.92
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.92
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.92
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.92
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.92
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.92
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.92
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.92
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.92
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.90
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.88
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.85
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.85
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.85
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.83
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.82
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.82
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.82
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.78
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.78
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.78
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.77
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.76
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.74
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.72
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.67
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.67
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.66
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.64
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.63
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.61
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.57
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.57
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.57
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.57
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.57
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.56
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.55
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.52
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.52
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.50
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.50
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.46
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.44
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.38
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.38
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.37
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.33
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.33
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.32
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.32
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.28
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.28
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.27
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.26
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.23
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.23
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.16
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.16
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.15
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.13
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.10
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.10
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.10
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.10
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.09
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.07
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.05
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.04
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.03
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.00
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+Sep 05 18:14:50.00
+GET
+500
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+TypeError: Cannot read properties of undefined (reading 'optional') at c (file:///var/task/api/node_modules/drizzle-zod/index.mjs:1:673) at <anonymous> (/vercel/path0/api/shared/schema.ts:96:33) at ModuleJob.run (node:internal/modules/esm/module_job:263:25) at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) at async d (/opt/rust/nodejs.js:16:20671) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.

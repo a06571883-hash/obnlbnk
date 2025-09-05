@@ -77,7 +77,9 @@ BLOCKDAEMON_API_KEY=your_api_key (если используете)
 1. Убедитесь что они включены в репозиторий
 2. Или используйте внешнее хранилище изображений (S3, Cloudinary)
 
-### 4. ИСПРАВЛЕНА ПРОБЛЕМА: ERR_MODULE_NOT_FOUND
+### 4. ИСПРАВЛЕННЫЕ ПРОБЛЕМЫ
+
+#### ✅ ERR_MODULE_NOT_FOUND
 
 **Проблема**: `Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/server/storage'`
 
@@ -90,6 +92,46 @@ BLOCKDAEMON_API_KEY=your_api_key (если используете)
 2. ✅ **Упрощена сборка** - теперь файлы копируются напрямую без сложного bundling
 3. ✅ **Создан `api/package.json`** с правильными настройками модулей
 4. ✅ **Исправлен `build-fallback.js`** для корректной подготовки файлов
+
+#### ✅ Ошибки drizzle-zod схем
+
+**Проблема**: `TypeError: Cannot read properties of undefined (property 'omit')`
+
+**Причина**: Неправильный синтаксис `createInsertSchema` в `shared/schema.ts`
+
+**РЕШЕНИЕ (уже применено)**:
+1. ✅ **Исправлены все схемы с неправильным синтаксисом**
+```typescript
+// Старый (неправильный) синтаксис:
+export const insertUserSchema = createInsertSchema(users, {
+  id: undefined,
+  username: z.string(),
+  // ...
+});
+
+// Новый (правильный) синтаксис:
+export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+```
+
+#### ✅ Проблемы с аутентификацией на Vercel
+
+**Проблема**: Пользователь регистрируется, но получает 401 при последующих запросах
+
+**Причина**: Serverless функции Vercel теряют состояние сессий между запросами
+
+**РЕШЕНИЕ (уже применено)**:
+1. ✅ **Обновлены настройки сессий для Vercel**:
+```typescript
+{
+  resave: true, // Принудительно пересохраняем для Vercel
+  saveUninitialized: true, // Создаем сессию для всех
+  cookie: {
+    secure: process.env.VERCEL ? true : false, // HTTPS для Vercel
+    sameSite: process.env.VERCEL ? 'none' : 'lax' // Для кросс-доменности
+  }
+}
+```
+2. ✅ **Настроен PostgreSQL session store** с `connect-pg-simple` для постоянного хранения
 
 **Теперь структура деплоя**:
 ```
