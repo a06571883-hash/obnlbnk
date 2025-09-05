@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
-import session from "express-session";
+import session, { MemoryStore } from "express-session";
 import cookieParser from "cookie-parser";
 import { storage } from "./storage.js";
 import { User as SelectUser, newUserRegistrationSchema } from "../shared/schema.js";
@@ -65,13 +65,49 @@ export function setupAuth(app: Express) {
   const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
   
   if (IS_VERCEL) {
-    console.log('🔧 Vercel detected: using cookie-only authentication to avoid memory store warnings');
+    console.log('🔧 Vercel detected: using cookie-only authentication without session store');
     
-    // Minimal session setup для совместимости с passport, но без store
+    // Создаем пустую сессию store которая ничего не делает
+    class NoopStore extends MemoryStore {
+      constructor() {
+        super();
+      }
+      
+      all(callback: (err?: any, obj?: any) => void): void {
+        callback(null, {});
+      }
+      
+      destroy(sid: string, callback?: (err?: any) => void): void {
+        if (callback) callback();
+      }
+      
+      clear(callback?: (err?: any) => void): void {
+        if (callback) callback();
+      }
+      
+      length(callback: (err: any, length: number) => void): void {
+        callback(null, 0);
+      }
+      
+      get(sid: string, callback: (err: any, session?: any) => void): void {
+        // Возвращаем минимальную сессию для passport
+        callback(null, { cookie: { maxAge: 1000 } });
+      }
+      
+      set(sid: string, session: any, callback?: (err?: any) => void): void {
+        if (callback) callback();
+      }
+      
+      touch(sid: string, session: any, callback?: (err?: any) => void): void {
+        if (callback) callback();
+      }
+    }
+    
     app.use(session({
       secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
+      store: new NoopStore(), // Пустая store без предупреждений
       cookie: {
         secure: true, // HTTPS на Vercel
         sameSite: 'lax',
@@ -79,8 +115,7 @@ export function setupAuth(app: Express) {
         path: '/',
         httpOnly: true
       },
-      name: 'temp.sid',
-      // Минимальная сессия только для инициализации passport
+      name: 'temp.sid'
     }));
   } else {
     // На локальном/Replit используем PostgreSQL session store

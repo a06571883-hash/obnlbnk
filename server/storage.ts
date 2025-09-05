@@ -60,6 +60,19 @@ export interface IStorage {
   executeRawQuery(query: string): Promise<any>;
 }
 
+// Функция для добавления таймаута к операции базы данных
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 10000): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error(`Database operation timed out after ${timeoutMs}ms`)), timeoutMs);
+  });
+  
+  return Promise.race([promise, timeoutPromise]);
+}
+
+// Определяем среду для таймаутов
+const IS_VERCEL = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+const DB_TIMEOUT = IS_VERCEL ? 5000 : 15000; // 5 сек для Vercel, 15 сек для локальной разработки
+
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
@@ -449,7 +462,8 @@ export class DatabaseStorage implements IStorage {
     let attempt = 0;
     while (attempt < maxRetries) {
       try {
-        return await operation();
+        // Добавляем таймаут для каждой операции
+        return await withTimeout(operation(), DB_TIMEOUT);
       } catch (error) {
         attempt++;
         console.error(`${operationName} failed on attempt ${attempt}:`, error);
@@ -458,7 +472,8 @@ export class DatabaseStorage implements IStorage {
           throw error;
         }
         
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        // Уменьшаем задержку для Vercel
+        const delay = IS_VERCEL ? 100 : Math.min(1000 * Math.pow(2, attempt - 1), 5000);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }

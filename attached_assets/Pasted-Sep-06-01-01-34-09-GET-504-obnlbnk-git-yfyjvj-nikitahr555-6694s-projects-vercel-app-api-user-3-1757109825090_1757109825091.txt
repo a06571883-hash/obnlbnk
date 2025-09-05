@@ -1,0 +1,295 @@
+Sep 06 01:01:34.09
+GET
+504
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+3
+Vercel Runtime Timeout Error: Task timed out after 60 seconds
+Sep 06 01:00:51.99
+GET
+504
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/cards
+3
+Vercel Runtime Timeout Error: Task timed out after 60 seconds
+Sep 06 01:00:49.96
+POST
+504
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/cards/generate
+3
+Vercel Runtime Timeout Error: Task timed out after 60 seconds
+Sep 06 01:00:45.44
+GET
+504
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+Vercel Runtime Timeout Error: Task timed out after 60 seconds
+Sep 06 01:00:45.43
+GET
+401
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/cards
+28
+Warning: connect.session() MemoryStore is not designed for a production environment, as it will leak memory, and will not scale past a single process.
+Sep 06 01:00:45.39
+GET
+504
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/user
+5
+Vercel Runtime Timeout Error: Task timed out after 60 seconds
+Sep 06 01:00:42.40
+POST
+200
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/login
+28
+Warning: connect.session() MemoryStore is not designed for a production environment, as it will leak memory, and will not scale past a single process.
+Sep 06 01:00:31.70
+POST
+401
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/login
+5
+Login failed for user: regulator
+Sep 06 01:00:29.28
+POST
+401
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/login
+5
+Login failed for user: regulator
+Sep 06 00:59:54.15
+GET
+401
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/user
+4
+❌ Authentication failed - returning 401
+Sep 06 00:59:50.06
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:49.96
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+8
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:59:49.40
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:48.76
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:48.12
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:47.45
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:46.74
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:46.06
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:45.38
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:44.53
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:44.52
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+8
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:59:43.86
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:43.21
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:42.51
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:41.82
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:41.45
+POST
+504
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards/generate
+4
+Vercel Runtime Timeout Error: Task timed out after 60 seconds
+Sep 06 00:59:41.14
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:40.44
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:39.28
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:38.84
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+8
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:59:38.57
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:38.29
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/nft/user
+11
+[NFT Controller] Отправляем 0 NFT клиенту
+Sep 06 00:59:37.82
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+5
+✅ User session active and verified: regulator
+Sep 06 00:59:37.66
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:36.95
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:36.13
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:35.45
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:34.80
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:34.14
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:32.19
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+✅ Cookie auth successful for Vercel: regulator
+Sep 06 00:59:31.84
+GET
+401
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/user
+24
+Warning: connect.session() MemoryStore is not designed for a production environment, as it will leak memory, and will not scale past a single process.
+Sep 06 00:59:31.75
+GET
+401
+obnlbnk-65wguu8px-nikitahr555-6694s-projects.vercel.app
+/api/user
+4
+❌ Authentication failed - returning 401
+No

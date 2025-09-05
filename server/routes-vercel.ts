@@ -92,13 +92,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/cards", ensureAuthenticated, async (req, res) => {
     try {
-      const username = (req.session as any)?.user as string;
-      if (!username) return res.status(401).json({ message: "Пользователь не авторизован" });
+      if (!req.user) return res.status(401).json({ message: "Пользователь не авторизован" });
 
-      const user = await storage.getUserByUsername(username);
-      if (!user) return res.status(404).json({ message: "Пользователь не найден" });
-
-      const cards = await storage.getCardsByUserId(user.id);
+      const cards = await storage.getCardsByUserId(req.user.id);
       res.json(cards);
     } catch (error) {
       console.error("Ошибка получения карт:", error);
@@ -108,11 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/nft-collections', ensureAuthenticated, async (req, res) => {
     try {
-      const username = (req.session as any)?.user as string;
-      if (!username) return res.status(401).json({ error: 'Требуется авторизация' });
-
-      const user = await storage.getUserByUsername(username);
-      if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+      if (!req.user) return res.status(401).json({ error: 'Требуется авторизация' });
 
       const collections = await db.select().from(nftCollections);
       const collectionsWithNFTs = await Promise.all(collections.map(async (collection) => {
@@ -129,13 +121,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/crypto/seed-phrase", ensureAuthenticated, async (req, res) => {
     try {
-      const username = (req.session as any)?.user as string;
-      if (!username) return res.status(401).json({ message: "Пользователь не авторизован" });
+      if (!req.user) return res.status(401).json({ message: "Пользователь не авторизован" });
 
-      const user = await storage.getUserByUsername(username);
-      if (!user) return res.status(404).json({ message: "Пользователь не найден" });
-
-      const seedPhrase = getSeedPhraseForUser(user.id);
+      const seedPhrase = getSeedPhraseForUser(req.user.id);
       res.json({ seedPhrase });
     } catch (error) {
       console.error("Ошибка генерации seed-фразы:", error);
