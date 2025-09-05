@@ -1,0 +1,1345 @@
+Sep 06 00:34:30.94
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/transactions
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:30.71
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:30.40
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:30.11
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:30.06
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:29.82
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:29.80
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:29.22
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:28.63
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:28.35
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:28.08
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:27.55
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:26.65
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:26.03
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:25.82
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:25.50
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:25.18
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:25.11
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:24.40
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+21
+Warning: connect.session() MemoryStore is not designed for a production environment, as it will leak memory, and will not scale past a single process.
+Sep 06 00:34:24.40
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+21
+Warning: connect.session() MemoryStore is not designed for a production environment, as it will leak memory, and will not scale past a single process.
+Sep 06 00:34:24.40
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:24.40
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:23.70
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:23.70
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:23.04
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:22.43
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:22.43
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:22.37
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:21.92
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:21.68
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:21.52
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:21.12
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:21.02
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:20.38
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:19.85
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:19.72
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:19.48
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:19.15
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:19.07
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:19.07
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:18.38
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:18.23
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:17.87
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:17.72
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:17.46
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:16.97
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:16.61
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:16.37
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:16.22
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:15.82
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/news
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:15.63
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:14.93
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:14.44
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:14.28
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+3
+🔄 Trying backup cookie auth for Vercel
+Sep 06 00:34:14.28
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:13.60
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:13.48
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:12.81
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:12.14
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:12.06
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:11.45
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:11.14
+GET
+504
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+Vercel Runtime Timeout Error: Task timed out after 30 seconds
+Sep 06 00:34:11.14
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:10.17
+GET
+504
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+Vercel Runtime Timeout Error: Task timed out after 30 seconds
+Sep 06 00:34:10.17
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:09.73
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:34:09.59
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:08.95
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:08.25
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:04.31
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+22
+Vercel Runtime Timeout Error: Task timed out after 30 seconds
+Sep 06 00:34:04.28
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:34:03.66
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:03.01
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:02.38
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:01.68
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:01.00
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:34:00.36
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:59.72
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:59.04
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:58.69
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:33:58.36
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:57.71
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:56.97
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:56.22
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:55.58
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:54.92
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:54.62
+POST
+504
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards/generate
+5
+Vercel Runtime Timeout Error: Task timed out after 30 seconds
+Sep 06 00:33:54.25
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:53.58
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:53.23
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:33:52.80
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:52.09
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:51.41
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:49.57
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:48.92
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:48.22
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:47.51
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:46.83
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:46.12
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:45.46
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:44.77
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:44.10
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:43.45
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:42.80
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:42.13
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:41.48
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:40.84
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:40.20
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:39.47
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:38.82
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:38.17
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:37.51
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:36.87
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:36.23
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:35.57
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:34.85
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:34.17
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:33.50
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:32.85
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:32.09
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:31.41
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:30.67
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:30.01
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:29.29
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:28.54
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:27.85
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:27.19
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:26.50
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:25.75
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:25.09
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:24.44
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:23.65
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:22.91
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:22.52
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:33:22.02
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:21.34
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:20.69
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:20.04
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:19.17
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:19.16
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:33:18.51
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:17.86
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:17.15
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:16.50
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:15.83
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:15.18
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:14.53
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:13.73
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:13.65
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:33:13.08
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:12.44
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:11.78
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:11.08
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:10.41
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:09.76
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:09.12
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:08.26
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:08.25
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:33:07.53
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:06.84
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:06.07
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:05.37
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:04.71
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:04.06
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:03.38
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:02.56
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:33:02.51
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:01.85
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:01.20
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:33:00.53
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:59.85
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:59.19
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:58.53
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:57.87
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:57.01
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:56.34
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:55.65
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:55.00
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:54.30
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:53.63
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:52.97
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:52.31
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:51.63
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:50.97
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:49.14
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+4
+✅ Backup cookie auth successful: regulator
+Sep 06 00:32:24.14
+GET
+504
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+4
+Vercel Runtime Timeout Error: Task timed out after 30 seconds
+Sep 06 00:32:20.74
+POST
+504
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards/generate
+4
+Vercel Runtime Timeout Error: Task timed out after 30 seconds
+Sep 06 00:32:18.65
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+9
+✅ [VERCEL] Authentication successful for user: regulator
+Sep 06 00:32:18.65
+GET
+504
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+22
+Vercel Runtime Timeout Error: Task timed out after 30 seconds
+Sep 06 00:32:15.99
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+9
+✅ User session active and verified: regulator
+Sep 06 00:32:14.29
+GET
+401
+obnlbnk-gg3yopv62-nikitahr555-6694s-projects.vercel.app
+/api/user
+21
+Warning: connect.session() MemoryStore is not designed for a production environment, as it will leak memory, and will not scale past a single process.
+Sep 06 00:32:14.27
+GET
+401
+obnlbnk-gg3yopv62-nikitahr555-6694s-projects.vercel.app
+/api/user
+4
+❌ Authentication failed - returning 401
+No more l
