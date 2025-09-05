@@ -120,39 +120,97 @@ export default defineConfig({
 }
 
 async function buildServer() {
-  console.log('🔧 Сборка серверной части...');
+  console.log('🔧 Сборка серверной части для Vercel...');
   
-  // Используем простой TypeScript компилятор без bundling
   try {
-    // Компилируем TypeScript в JavaScript без bundling
-    await runCommand('npx', ['tsc', '--project', '.', '--outDir', 'dist', '--target', 'ES2020', '--module', 'ESNext', '--moduleResolution', 'node'], {
+    // Компилируем только необходимые файлы для Vercel
+    await runCommand('npx', ['esbuild', 
+      'server/storage.ts',
+      'server/auth.ts', 
+      'server/db.ts',
+      'server/debug.ts',
+      'server/routes-vercel.ts',
+      'server/vite-vercel.ts',
+      'server/exchange-service.ts',
+      'server/news-service.ts',
+      'server/rates.ts',
+      'shared/schema.ts',
+      '--bundle', 
+      '--platform=node', 
+      '--packages=external',
+      '--format=esm',
+      '--outdir=api',
+      '--out-extension:.js=.js',
+      '--target=node18',
+      '--resolve-extensions=.ts,.js'
+    ], {
       cwd: __dirname
     });
     
-    console.log('✅ Сервер скомпилирован успешно через TypeScript');
+    console.log('✅ Сервер скомпилирован для Vercel');
     
-    // Создаем простую точку входа для Vercel
-    const serverEntry = `import './server/index.js';`;
-    fs.writeFileSync('dist/index.js', serverEntry);
+    // Копируем необходимые папки для Vercel
+    await copyDirectory('server/utils', 'api/server/utils');
+    await copyDirectory('server/controllers', 'api/server/controllers');
+    await copyDirectory('server/routes', 'api/server/routes');
+    await copyDirectory('server/database', 'api/server/database');
+    await copyDirectory('server/services', 'api/server/services');
+    
+    console.log('✅ Скопированы вспомогательные папки');
     
   } catch (error) {
-    console.log('⚠️  Пробуем минимальную сборку...');
+    console.log('⚠️  Ошибка сборки сервера:', error.message);
+    console.log('🔄 Пробуем простую компиляцию...');
     
-    // Создаем минимальную точку входа без компиляции
     try {
-      const minimalEntry = `
-// Минимальная точка входа для Vercel
-export default function handler(req, res) {
-  res.status(200).json({ message: 'Server is running', status: 'ok' });
-}
-`;
-      fs.writeFileSync('dist/index.js', minimalEntry);
-      console.log('✅ Создана минимальная точка входа сервера');
+      // Простая компиляция без bundling
+      await runCommand('npx', ['tsc', 
+        'server/storage.ts',
+        'server/routes-vercel.ts',
+        '--target', 'ES2020', 
+        '--module', 'ESNext', 
+        '--moduleResolution', 'node',
+        '--outDir', 'api',
+        '--allowJs'
+      ], {
+        cwd: __dirname
+      });
+      
+      console.log('✅ Простая компиляция завершена');
       
     } catch (altError) {
-      throw new Error(`Не удалось создать точку входа сервера: ${altError.message}`);
+      throw new Error(`Все способы сборки сервера провалились: ${altError.message}`);
     }
   }
+}
+
+// Функция для копирования директорий
+async function copyDirectory(src, dest) {
+  if (!fs.existsSync(src)) {
+    console.log(`⚠️  Директория ${src} не найдена, пропускаем`);
+    return;
+  }
+  
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+  
+  const items = fs.readdirSync(src);
+  
+  for (const item of items) {
+    const srcPath = path.join(src, item);
+    const destPath = path.join(dest, item);
+    
+    const stat = fs.statSync(srcPath);
+    
+    if (stat.isDirectory()) {
+      await copyDirectory(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+  
+  console.log(`📁 Скопирована директория: ${src} -> ${dest}`);
 }
 
 async function main() {
