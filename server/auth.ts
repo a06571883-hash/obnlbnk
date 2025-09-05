@@ -72,8 +72,35 @@ export function setupAuth(app: Express) {
     }
   }));
 
+  // Middleware для отладки сессий
+  app.use((req, res, next) => {
+    console.log('🔍 Session Debug:', {
+      sessionID: req.sessionID,
+      hasSession: !!req.session,
+      sessionData: req.session ? Object.keys(req.session) : [],
+      cookies: req.headers.cookie ? req.headers.cookie.includes('bnal.sid') : false,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      url: req.url,
+      method: req.method
+    });
+    next();
+  });
+
   app.use(passport.initialize());
   app.use(passport.session());
+  
+  // Дополнительное логирование после passport
+  app.use((req, res, next) => {
+    if (req.url === '/api/user') {
+      console.log('🔐 After passport middleware:', {
+        isAuthenticated: req.isAuthenticated(),
+        hasUser: !!req.user,
+        userID: req.user?.id,
+        username: req.user?.username
+      });
+    }
+    next();
+  });
 
   passport.use(new LocalStrategy(async (username, password, done) => {
     try {
@@ -119,41 +146,52 @@ export function setupAuth(app: Express) {
   }));
 
   passport.serializeUser((user: any, done) => {
-    console.log('✅ Serializing user:', user.id, user.username);
-    done(null, user.id);
+    console.log('✅ Serializing user:', user.id, user.username, 'ID type:', typeof user.id);
+    // Убедимся что ID число
+    const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+    done(null, userId);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
-      console.log('🔄 Deserializing user ID:', id);
+      console.log('🔄 Deserializing user ID:', id, 'type:', typeof id);
       
-      // Проверяем валидность ID
-      if (!id || typeof id !== 'number') {
-        console.log('❌ Invalid user ID during deserialization:', id);
+      // Проверяем валидность ID - возможно ID приходит как строка
+      const userId = typeof id === 'string' ? parseInt(id, 10) : id;
+      if (!userId || isNaN(userId)) {
+        console.log('❌ Invalid user ID during deserialization:', id, 'parsed:', userId);
         return done(null, false);
       }
       
-      // Увеличиваем таймаут и добавляем попытки повторного подключения
-      const user = await Promise.race([
-        storage.getUser(id).catch(async (error) => {
-          console.log('🔄 First attempt failed, retrying...', error.message);
-          // Повторная попытка через короткую задержку
-          await new Promise(resolve => setTimeout(resolve, 300));
-          return storage.getUser(id);
-        }),
-        new Promise<undefined>((_, reject) => 
-          setTimeout(() => reject(new Error('Deserialization timeout')), 8000)
-        )
-      ]);
+      console.log('🔍 Looking for user with ID:', userId);
+      
+      // Попробуем получить пользователя с улучшенной обработкой ошибок
+      let user;
+      try {
+        user = await storage.getUser(userId);
+        console.log('🔍 Database query result:', user ? 'Found user' : 'User not found');
+      } catch (dbError) {
+        console.error('💥 Database error during deserialization:', dbError);
+        // Попробуем повторить запрос
+        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+          user = await storage.getUser(userId);
+          console.log('🔄 Retry successful, user found:', !!user);
+        } catch (retryError) {
+          console.error('💥 Retry also failed:', retryError);
+          return done(null, false);
+        }
+      }
       
       if (!user) {
-        console.log('❌ User not found during deserialization:', id);
+        console.log('❌ User not found in database during deserialization:', userId);
         return done(null, false);
       }
+      
       console.log('✅ User deserialized successfully:', user.id, user.username);
       done(null, user);
     } catch (error) {
-      console.error("❌ Deserialization error:", error);
+      console.error("❌ Unexpected deserialization error:", error);
       // Не передаём ошибку, возвращаем false для анонимного доступа
       done(null, false);
     }

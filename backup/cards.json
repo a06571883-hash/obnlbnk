@@ -255,21 +255,6 @@
     "tonAddress": null
   },
   {
-    "id": 20,
-    "userId": 8,
-    "type": "usd",
-    "number": "4112196478210712",
-    "expiry": "08/28",
-    "cvv": "972",
-    "balance": "0.00000000",
-    "btcBalance": "0.00000000",
-    "ethBalance": "0.00000000",
-    "kichcoinBalance": "0",
-    "btcAddress": null,
-    "ethAddress": null,
-    "tonAddress": null
-  },
-  {
     "id": 21,
     "userId": 8,
     "type": "uah",
@@ -435,21 +420,6 @@
     "tonAddress": null
   },
   {
-    "id": 19,
-    "userId": 8,
-    "type": "crypto",
-    "number": "4111782618637997",
-    "expiry": "08/28",
-    "cvv": "237",
-    "balance": "0.00000000",
-    "btcBalance": "5.00000000",
-    "ethBalance": "0.00000000",
-    "kichcoinBalance": "0",
-    "btcAddress": "1F8361N5i1iUw2CxYgeKo7UuqUqRyUo1nh",
-    "ethAddress": "0x0396325a90F99D9A29bDb0e7F2C27846A2588a14",
-    "tonAddress": null
-  },
-  {
     "id": 31,
     "userId": 14,
     "type": "virtual",
@@ -507,6 +477,36 @@
     "kichcoinBalance": "50",
     "btcAddress": "14bca9fe653308c54e05543ef3ee95e701",
     "ethAddress": "0x9B2810A1e3c45735885542EaEc2E82A632850dEb",
+    "tonAddress": null
+  },
+  {
+    "id": 19,
+    "userId": 8,
+    "type": "crypto",
+    "number": "4111782618637997",
+    "expiry": "08/28",
+    "cvv": "237",
+    "balance": "0.00000000",
+    "btcBalance": "2.98000000",
+    "ethBalance": "0.00000000",
+    "kichcoinBalance": "0",
+    "btcAddress": "1F8361N5i1iUw2CxYgeKo7UuqUqRyUo1nh",
+    "ethAddress": "0x0396325a90F99D9A29bDb0e7F2C27846A2588a14",
+    "tonAddress": null
+  },
+  {
+    "id": 20,
+    "userId": 8,
+    "type": "usd",
+    "number": "4112196478210712",
+    "expiry": "08/28",
+    "cvv": "972",
+    "balance": "222784.00000000",
+    "btcBalance": "0.00000000",
+    "ethBalance": "0.00000000",
+    "kichcoinBalance": "0",
+    "btcAddress": null,
+    "ethAddress": null,
     "tonAddress": null
   }
 ]
