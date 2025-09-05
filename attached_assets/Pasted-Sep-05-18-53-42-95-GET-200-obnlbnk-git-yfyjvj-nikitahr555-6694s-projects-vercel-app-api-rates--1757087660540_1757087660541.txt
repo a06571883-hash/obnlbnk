@@ -1,0 +1,120 @@
+Sep 05 18:53:42.95
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+Sep 05 18:53:37.60
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+Sep 05 18:53:37.55
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+Sep 05 18:53:37.52
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+GET /api/user - Session details: { id: '644577fa-d81f-44c6-b0e6-7fdc6fb9e60b', isAuthenticated: false, user: undefined }
+Sep 05 18:53:34.14
+POST
+201
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/register
+10
+User 15 registered and logged in successfully
+Sep 05 18:53:12.95
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+Sep 05 18:52:42.95
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+Sep 05 18:52:11.73
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/ws
+📄 Возвращаем index.html для SPA роутинга: /ws
+Sep 05 18:52:11.65
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+Sep 05 18:52:11.65
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+Sep 05 18:52:11.65
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+GET /api/user - Session details: { id: '7e6e37f2-909a-4384-a07e-956c39d9d8fe', isAuthenticated: false, user: undefined }
+Sep 05 18:52:10.55
+POST
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/login
+5
+User logged in successfully: regulator
+Sep 05 18:52:03.83
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+Sep 05 18:52:03.83
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+23
+Database initialized successfully
+Sep 05 18:52:03.80
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+GET /api/user - Session details: { id: 'eba31dd7-b51c-48a2-a0cc-a3168313137c', isAuthenticated: false, user: undefined }
+Sep 05 18:52:02.09
+POST
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/login
+8
+User logged in successfully: regulator
+Sep 05 18:51:43.77
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+6
+GET /api/user - Session details: { id: '2da7e4ba-8b3a-4c42-a32d-387a62acdbaa', isAuthenticated: false, user: undefined }
+Sep 05 18:51:17.77
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+GET /api/user - Session details: { id: '2da7e4ba-8b3a-4c42-a32d-387a62acdbaa', isAuthenticated: false, user: undefined }
+Sep 05 18:51:14.79
+GET
+401
+obnlbnk-qqmo1k38q-nikitahr555-6694s-projects.vercel.app
+/api/user
+19
+GET /api/user - Session details: { id: '9a7456f1-3db7-42a4-814f-75cd0220e188', isAuthenticated: false, user: undefined }
+Sep 05 18:51:14.72
+GET
+401
+obnlbnk-qqmo1k38q-nikitahr555-6694s-projects.vercel.app
+/api/user
+16
+GET /api/user - Session details: { id: '3483f0bb-5869-4a3e-a587-f17f91b68ce9', isAuthenticated: false, user: undefined }
+No more logs to show within selecte
