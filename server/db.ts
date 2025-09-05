@@ -24,9 +24,10 @@ console.log('Connecting to PostgreSQL database...');
 // Создаем клиент подключения к PostgreSQL с параметрами для надежного соединения
 export const client = postgres(DATABASE_URL, { 
   ssl: { rejectUnauthorized: false }, // Необходимо для подключения к Neon PostgreSQL
-  max: 10, // Максимальное количество соединений в пуле
-  idle_timeout: 20, // Timeout для неиспользуемых соединений
-  connect_timeout: 30, // Увеличиваем timeout для подключения
+  max: 20, // Увеличиваем максимальное количество соединений для Vercel
+  idle_timeout: 60, // Увеличиваем timeout для неиспользуемых соединений
+  connect_timeout: 60, // Увеличиваем timeout для подключения для Vercel
+  max_lifetime: 10 * 60, // 10 минут максимальное время жизни соединения
   
   // Кастомные типы данных
   types: {
@@ -37,14 +38,6 @@ export const client = postgres(DATABASE_URL, {
       parse: (date: string) => date
     }
   }
-  
-  // Дополнительные параметры доступны, но могут вызывать ошибки TypeScript
-  // max_lifetime: 60 * 60, // Максимальное время жизни соединения (1 час)
-  // connection_limit: 15, // Увеличенный предел соединений
-  // connection_timeout: 30, // Таймаут соединения
-  // onError: (err, query) => { ... },
-  // onRetry: (count, error) => { ... },
-  // retryLimit: 5,
 });
 
 // Создаем экземпляр Drizzle ORM
