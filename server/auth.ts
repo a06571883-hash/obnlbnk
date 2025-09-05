@@ -74,15 +74,17 @@ export function setupAuth(app: Express) {
 
   // Middleware для отладки сессий
   app.use((req, res, next) => {
-    console.log('🔍 Session Debug:', {
-      sessionID: req.sessionID,
-      hasSession: !!req.session,
-      sessionData: req.session ? Object.keys(req.session) : [],
-      cookies: req.headers.cookie ? req.headers.cookie.includes('bnal.sid') : false,
-      userAgent: req.headers['user-agent']?.substring(0, 50),
-      url: req.url,
-      method: req.method
-    });
+    if (req.url.includes('/api/')) {
+      console.log('🔍 Session Debug:', {
+        sessionID: req.sessionID,
+        hasSession: !!req.session,
+        sessionData: req.session ? Object.keys(req.session) : [],
+        passportUser: req.session?.passport?.user,
+        cookies: req.headers.cookie ? req.headers.cookie.includes('bnal.sid') : false,
+        url: req.url,
+        method: req.method
+      });
+    }
     next();
   });
 
@@ -149,6 +151,7 @@ export function setupAuth(app: Express) {
     console.log('✅ Serializing user:', user.id, user.username, 'ID type:', typeof user.id);
     // Убедимся что ID число
     const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+    console.log('✅ Serializing with userId:', userId);
     done(null, userId);
   });
 
@@ -322,6 +325,9 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ message: "Ошибка создания сессии" });
         }
         console.log("User logged in successfully:", user.username);
+        console.log('🔍 Passport session after login:', req.session.passport);
+        console.log('🔍 User ID in session:', req.session.passport?.user);
+        
         // Принудительно сохраняем сессию и ждем завершения
         req.session.save((saveErr) => {
           if (saveErr) {
@@ -329,10 +335,12 @@ export function setupAuth(app: Express) {
             return res.status(500).json({ message: "Ошибка сохранения сессии" });
           }
           console.log('✅ Session saved successfully for user:', user.username);
+          console.log('🔍 Final session passport data:', req.session.passport);
+          
           // Дополнительно ждем немного для Vercel serverless
           setTimeout(() => {
             res.json(user);
-          }, 100);
+          }, 200);
         });
       });
     })(req, res, next);
