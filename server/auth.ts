@@ -2,6 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
+import cookieParser from "cookie-parser";
 import { storage } from "./storage.js";
 import { User as SelectUser, newUserRegistrationSchema } from "../shared/schema.js";
 import { ZodError } from "zod";
@@ -51,6 +52,9 @@ async function getAdminFromSqlite(username: string) {
 export function setupAuth(app: Express) {
   const sessionSecret = process.env.SESSION_SECRET || 'default_secret';
   console.log("Setting up auth with session secret length:", sessionSecret.length);
+  
+  // Добавляем поддержку куки для резервного механизма
+  app.use(cookieParser());
 
   app.use(session({
     secret: sessionSecret,
@@ -116,6 +120,29 @@ export function setupAuth(app: Express) {
           }
         } catch (error) {
           console.error('❌ Force load user error:', error);
+        }
+      }
+      
+      // РЕЗЕРВНЫЙ МЕХАНИЗМ: загружаем из куки если сессия не работает
+      if (!req.user && req.cookies?.user_data) {
+        try {
+          console.log('🔄 Trying backup cookie auth for Vercel');
+          const userData = JSON.parse(Buffer.from(req.cookies.user_data, 'base64').toString());
+          
+          // Проверяем что токен не старше 7 дней
+          if (Date.now() - userData.timestamp < 7 * 24 * 60 * 60 * 1000) {
+            const user = await storage.getUser(userData.id);
+            if (user && user.username === userData.username) {
+              console.log('✅ Backup cookie auth successful:', user.username);
+              req.user = user;
+              // Восстанавливаем сессию
+              if (!req.session.passport) {
+                req.session.passport = { user: user.id };
+              }
+            }
+          }
+        } catch (error) {
+          console.error('❌ Backup cookie auth error:', error);
         }
       }
     }
@@ -354,6 +381,22 @@ export function setupAuth(app: Express) {
           }
           console.log('✅ Session saved successfully for user:', user.username);
           console.log('🔍 Final session passport data:', req.session.passport);
+          
+          // ДОПОЛНИТЕЛЬНО: сохраняем пользователя прямо в куки для Vercel
+          const userToken = Buffer.from(JSON.stringify({
+            id: user.id,
+            username: user.username,
+            timestamp: Date.now()
+          })).toString('base64');
+          
+          res.cookie('user_data', userToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            sameSite: 'lax'
+          });
+          
+          console.log('✅ Backup user cookie set for Vercel');
           
           // Дополнительно ждем немного для Vercel serverless
           setTimeout(() => {
