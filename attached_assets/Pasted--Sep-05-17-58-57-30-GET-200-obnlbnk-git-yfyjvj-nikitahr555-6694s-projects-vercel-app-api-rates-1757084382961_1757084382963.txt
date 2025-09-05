@@ -1,0 +1,238 @@
+
+Sep 05 17:58:57.30
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:56.44
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:55.58
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:54.72
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:53.86
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:53.10
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:53.00
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:52.15
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:51.29
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:50.43
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:49.57
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:48.58
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:47.72
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:47.48
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:46.87
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:46.00
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:45.15
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:44.26
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:43.40
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:42.54
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:41.86
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:41.59
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:40.72
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:39.86
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:39.00
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:38.14
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:37.91
+POST
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards/generate
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:35.55
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/cards
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:35.55
+GET
+200
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/rates
+2
+✅ User deserialized successfully: 14 UJijiecjdi
+Sep 05 17:58:35.50
+GET
+---
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+4
+User session active: UJijiecjdi
+Sep 05 17:58:31.77
+POST
+201
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/register
+13
+User 14 registered and logged in successfully
+Sep 05 17:58:10.76
+GET
+401
+obnlbnk-git-yfyjvj-nikitahr555-6694s-projects.vercel.app
+/api/user
+GET /api/user - Session details: { id: 'e49654fa-4368-458f-a293-8ce5ef28deb5', isAuthenticated: false, user: undefined }
+Sep 05 17:58:09.11
+GET
+401
+obnlbnk-28tisjoi1-nikitahr555-6694s-projects.vercel.app
+/api/user
+GET /api/user - Session details: { id: '13c73a3c-0e86-4cef-8698-55a0e458f508', isAuthenticated: false, user: undefined }
+Sep 05 17:58:08.35
+GET
+401
+obnlbnk-28tisjoi1-nikitahr555-6694s-projects.vercel.app
+/api/user
+16
+GET /api/user - Session details: { id: '193c836f-584c-4b56-909b-9b2c745a1ff8', isAuthenticated: false, user: undefined }
+No more

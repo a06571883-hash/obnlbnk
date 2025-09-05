@@ -123,40 +123,16 @@ async function buildServer() {
   console.log('🔧 Сборка серверной части для Vercel...');
   
   try {
-    // Компилируем только необходимые файлы для Vercel
-    await runCommand('npx', ['esbuild', 
-      'server/storage.ts',
-      'server/auth.ts', 
-      'server/db.ts',
-      'server/debug.ts',
-      'server/routes-vercel.ts',
-      'server/vite-vercel.ts',
-      'server/exchange-service.ts',
-      'server/news-service.ts',
-      'server/rates.ts',
-      'shared/schema.ts',
-      '--bundle', 
-      '--platform=node', 
-      '--packages=external',
-      '--format=esm',
-      '--outdir=api',
-      '--out-extension:.js=.js',
-      '--target=node18',
-      '--resolve-extensions=.ts,.js'
-    ], {
-      cwd: __dirname
-    });
+    // Не будем собирать отдельно, просто скопируем файлы
+    console.log('📁 Копирование серверных файлов...');
     
-    console.log('✅ Сервер скомпилирован для Vercel');
+    // Создаем директории
+    const serverDirs = ['server', 'shared'];
+    for (const dir of serverDirs) {
+      await copyDirectory(dir, `api/${dir}`);
+    }
     
-    // Копируем необходимые папки для Vercel
-    await copyDirectory('server/utils', 'api/server/utils');
-    await copyDirectory('server/controllers', 'api/server/controllers');
-    await copyDirectory('server/routes', 'api/server/routes');
-    await copyDirectory('server/database', 'api/server/database');
-    await copyDirectory('server/services', 'api/server/services');
-    
-    console.log('✅ Скопированы вспомогательные папки');
+    console.log('✅ Серверные файлы скопированы в api/');
     
   } catch (error) {
     console.log('⚠️  Ошибка сборки сервера:', error.message);

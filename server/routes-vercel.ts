@@ -2,10 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import fs from 'fs';
 import path from 'path';
-import { storage } from "./storage";
-import { exportDatabase, importDatabase } from './database/backup';
-import { setupAuth } from './auth';
-import { startRateUpdates } from './rates';
+import { storage } from "./storage.js";
+import { exportDatabase, importDatabase } from './database/backup.js';
+import { setupAuth } from './auth.js';
+import { startRateUpdates } from './rates.js';
 import express from 'express';
 import fetch from 'node-fetch';
 
@@ -18,14 +18,14 @@ declare global {
   }
 }
 
-import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service';
-import { getNews } from './news-service';
+import { getExchangeRate, createExchangeTransaction, getTransactionStatus } from './exchange-service.js';
+import { getNews } from './news-service.js';
 import { seaTableManager } from './utils/seatable.js';
 import { generateValidAddress, validateCryptoAddress, getSeedPhraseForUser } from './utils/crypto.js';
 import { hasBlockchainApiKeys } from './utils/blockchain.js';
 import { generateAddressesForUser, isValidMnemonic, getAddressesFromMnemonic } from './utils/seed-phrase.js';
 // import { generateNFTImage } from './utils/nft-generator.js'; // Исключено для Vercel
-import { db } from './db';
+import { db } from './db.js';
 import { eq } from 'drizzle-orm';
 import { nfts, nftCollections } from '../shared/schema.js';
 import nftRoutes from './controllers/nft-controller.js';
