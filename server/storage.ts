@@ -1,376 +1,475 @@
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
 import session from "express-session";
-import { storage } from "./storage";
-import { User as SelectUser, newUserRegistrationSchema } from "../shared/schema.js";
-import { ZodError } from "zod";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import crypto from "crypto";
-import { promisify } from "util";
-// @ts-ignore
-import Database from 'better-sqlite3';
+import { MemoryStore } from 'express-session';
+import { db, client } from "./db.js";
+import { cards, users, transactions, exchangeRates, nftCollections, nfts } from "../shared/schema.js";
+import type { 
+  User, Card, InsertUser, Transaction, ExchangeRate,
+  NftCollection, Nft, InsertNftCollection, InsertNft
+} from "../shared/schema.js";
+import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
+import { randomUUID, randomBytes } from 'crypto';
+import * as bcrypt from 'bcryptjs';
+import { generateValidAddress, validateCryptoAddress } from './utils/crypto.js';
+import { 
+  hasBlockchainApiKeys, 
+  sendBitcoinTransaction, 
+  sendEthereumTransaction,
+  getBitcoinBalance,
+  getEthereumBalance,
+  checkTransactionStatus
+} from './utils/blockchain.js';
 import path from 'path';
-import { ethers } from 'ethers';
+import pgSession from 'connect-pg-simple';
 
-declare global {
-  namespace Express {
-    interface User extends Partial<SelectUser> {
-      id?: number;
-    }
+// Используем PostgreSQL для хранения сессий
+const PostgresStore = pgSession(session);
+
+// Получаем DATABASE_URL из переменных окружения
+const DATABASE_URL = process.env.DATABASE_URL;
+console.log('PostgreSQL session store enabled');
+
+export interface IStorage {
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  getCardsByUserId(userId: number): Promise<Card[]>;
+  createCard(card: Omit<Card, "id">): Promise<Card>;
+  sessionStore: session.Store;
+  getAllUsers(): Promise<User[]>;
+  updateRegulatorBalance(userId: number, balance: string): Promise<void>;
+  updateCardBalance(cardId: number, balance: string): Promise<void>;
+  updateCardBtcBalance(cardId: number, balance: string): Promise<void>;
+  updateCardEthBalance(cardId: number, balance: string): Promise<void>;
+  getCardById(cardId: number): Promise<Card | undefined>;
+  getCardByNumber(cardNumber: string): Promise<Card | undefined>;
+  getTransactionsByCardId(cardId: number): Promise<Transaction[]>;
+  createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction>;
+  transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  getLatestExchangeRates(): Promise<ExchangeRate | undefined>;
+  updateExchangeRates(rates: { usdToUah: number; btcToUsd: number; ethToUsd: number }): Promise<ExchangeRate>;
+  createNFTCollection(userId: number, name: string, description: string): Promise<NftCollection>;
+  createNFT(data: InsertNft): Promise<Nft>;
+  getNFTsByUserId(userId: number): Promise<Nft[]>;
+  getNFTCollectionsByUserId(userId: number): Promise<NftCollection[]>;
+  canGenerateNFT(userId: number): Promise<boolean>;
+  updateUserNFTGeneration(userId: number): Promise<void>;
+  getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]>;
+  createDefaultCardsForUser(userId: number): Promise<void>;
+  deleteUser(userId: number): Promise<void>;
+  executeRawQuery(query: string): Promise<any>;
+}
+
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+
+  constructor() {
+    // Используем PostgreSQL для хранения сессий
+    this.sessionStore = new PostgresStore({
+      conObject: {
+        connectionString: DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      },
+      tableName: 'session',
+      createTableIfMissing: true
+    });
+    
+    console.log('Session store initialized with PostgreSQL');
   }
-}
 
-const scryptAsync = promisify(scrypt);
-
-// Асинхронная функция для проверки пароля с использованием scrypt
-async function comparePasswordsScrypt(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split('.');
-  const hashedBuf = Buffer.from(hashed, 'hex');
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
-}
-
-// Проверка пароля для обычных пользователей (без хеширования)
-async function comparePasswords(supplied: string, stored: string) {
-  return supplied === stored;
-}
-
-// Функция для получения админа из SQLite
-async function getAdminFromSqlite(username: string) {
-  const dbPath = path.join(process.cwd(), 'sqlite.db');
-  const db = new Database(dbPath);
-  try {
-    const user = db.prepare('SELECT * FROM users WHERE username = ? AND is_regulator = 1').get(username);
-    return user || null;
-  } finally {
-    db.close();
+  async getUser(id: number): Promise<User | undefined> {
+    return this.withRetry(async () => {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    }, 'Get user');
   }
-}
 
-export function setupAuth(app: Express) {
-  const sessionSecret = process.env.SESSION_SECRET || 'default_secret';
-  console.log("Setting up auth with session secret length:", sessionSecret.length);
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return this.withRetry(async () => {
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      return user;
+    }, 'Get user by username');
+  }
 
-  app.use(session({
-    secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    store: storage.sessionStore,
-    cookie: {
-      secure: false, // Для production изменить на true при использовании HTTPS
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней (уменьшено для стабильности)
-      path: '/',
-      httpOnly: false // Отключаем httpOnly для отладки сессий
-    },
-    name: 'bnal.sid',
-    rolling: true, // Продлевать сессию при каждом запросе
-    // Принудительно сохраняем сессию
-    genid: () => {
-      return crypto.randomUUID();
-    }
-  }));
+  async createUser(insertUser: InsertUser): Promise<User> {
+    return this.withRetry(async () => {
+      const [user] = await db.insert(users).values(insertUser).returning();
+      return user;
+    }, 'Create user');
+  }
 
-  app.use(passport.initialize());
-  app.use(passport.session());
+  async getCardsByUserId(userId: number): Promise<Card[]> {
+    return this.withRetry(async () => {
+      return await db.select().from(cards).where(eq(cards.userId, userId));
+    }, 'Get cards by user ID');
+  }
 
-  passport.use(new LocalStrategy(async (username, password, done) => {
-    try {
-      console.log('LocalStrategy - Attempting login for user:', username);
+  async createCard(card: Omit<Card, "id">): Promise<Card> {
+    return this.withRetry(async () => {
+      const [result] = await db.insert(cards).values(card).returning();
+      return result;
+    }, 'Create card');
+  }
 
-      // Специальная обработка для админа
-      if (username === 'admin') {
-        const adminUser = await getAdminFromSqlite(username);
-        if (!adminUser) {
-          console.log('Login failed: Admin not found');
-          return done(null, false, { message: "Invalid username or password" });
-        }
+  async getAllUsers(): Promise<User[]> {
+    return this.withRetry(async () => {
+      return await db.select().from(users);
+    }, 'Get all users');
+  }
 
-        const isValid = await comparePasswordsScrypt(password, adminUser.password);
-        if (!isValid) {
-          console.log('Login failed: Invalid admin password');
-          return done(null, false, { message: "Invalid username or password" });
-        }
+  async updateRegulatorBalance(userId: number, balance: string): Promise<void> {
+    await this.withRetry(async () => {
+      await db.update(users)
+        .set({ regulator_balance: balance })
+        .where(eq(users.id, userId));
+    }, 'Update regulator balance');
+  }
 
-        console.log('Admin login successful');
-        return done(null, adminUser);
-      }
+  async updateCardBalance(cardId: number, balance: string): Promise<void> {
+    await this.withRetry(async () => {
+      await db.update(cards)
+        .set({ balance })
+        .where(eq(cards.id, cardId));
+    }, 'Update card balance');
+  }
 
-      // Стандартная обработка для обычных пользователей
-      const user = await storage.getUserByUsername(username);
-      if (!user) {
-        console.log('Login failed: User not found:', username);
-        return done(null, false, { message: "Invalid username or password" });
-      }
+  async updateCardBtcBalance(cardId: number, balance: string): Promise<void> {
+    await this.withRetry(async () => {
+      await db.update(cards)
+        .set({ btcBalance: balance })
+        .where(eq(cards.id, cardId));
+    }, 'Update BTC balance');
+  }
 
-      const isValid = await comparePasswords(password, user.password);
-      if (!isValid) {
-        console.log('Login failed: Invalid password for user:', username);
-        return done(null, false, { message: "Invalid username or password" });
-      }
+  async updateCardEthBalance(cardId: number, balance: string): Promise<void> {
+    await this.withRetry(async () => {
+      await db.update(cards)
+        .set({ ethBalance: balance })
+        .where(eq(cards.id, cardId));
+    }, 'Update ETH balance');
+  }
 
-      console.log('Login successful for user:', username);
-      return done(null, user);
-    } catch (error) {
-      console.error("Authentication error:", error);
-      return done(error);
-    }
-  }));
+  async getCardById(cardId: number): Promise<Card | undefined> {
+    return this.withRetry(async () => {
+      const [card] = await db.select().from(cards).where(eq(cards.id, cardId));
+      return card;
+    }, 'Get card by ID');
+  }
 
-  passport.serializeUser((user: any, done) => {
-    console.log('✅ Serializing user:', user.id, user.username);
-    done(null, user.id);
-  });
+  async getCardByNumber(cardNumber: string): Promise<Card | undefined> {
+    return this.withRetry(async () => {
+      const [card] = await db.select().from(cards).where(eq(cards.number, cardNumber));
+      return card;
+    }, 'Get card by number');
+  }
 
-  passport.deserializeUser(async (id: number, done) => {
-    try {
-      console.log('🔄 Deserializing user ID:', id);
-      
-      // Добавляем более агрессивную стратегию повторных попыток
-      let attempts = 0;
-      const maxAttempts = 3;
-      
-      while (attempts < maxAttempts) {
-        try {
-          const user = await Promise.race([
-            storage.getUser(id),
-            new Promise<undefined>((_, reject) => 
-              setTimeout(() => reject(new Error('Deserialization timeout')), 8000)
-            )
-          ]);
-          
-          if (!user) {
-            console.log('❌ User not found during deserialization:', id);
-            return done(null, false);
-          }
-          console.log('✅ User deserialized successfully:', user.id, user.username);
-          return done(null, user);
-        } catch (error) {
-          attempts++;
-          console.log(`🔄 Deserialization attempt ${attempts}/${maxAttempts} failed:`, (error as Error).message);
-          
-          if (attempts >= maxAttempts) {
-            throw error;
-          }
-          
-          // Экспоненциальная задержка между попытками
-          const delay = Math.min(1000 * Math.pow(2, attempts - 1), 3000);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-    } catch (error) {
-      console.error("❌ Deserialization error after all attempts:", error);
-      // Не передаём ошибку, возвращаем false для анонимного доступа
-      done(null, false);
-    }
-  });
+  async getTransactionsByCardId(cardId: number): Promise<Transaction[]> {
+    return this.withRetry(async () => {
+      return await db.select()
+        .from(transactions)
+        .where(or(eq(transactions.fromCardId, cardId), eq(transactions.toCardId, cardId)))
+        .orderBy(desc(transactions.createdAt));
+    }, 'Get transactions by card ID');
+  }
 
-  app.post("/api/register", async (req, res) => {
-    console.log("Starting registration process...");
-    let user: SelectUser | null = null;
+  async createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction> {
+    return this.withRetry(async () => {
+      const [result] = await db.insert(transactions).values(transaction).returning();
+      return result;
+    }, 'Create transaction');
+  }
 
-    try {
-      const { username, password } = req.body;
-
-      if (!username || !password) {
-        return res.status(400).json({
-          success: false,
-          message: "Имя пользователя и пароль обязательны"
-        });
-      }
-
+  async transferMoney(fromCardId: number, toCardNumber: string, amount: number): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
+    return this.withRetry(async () => {
       try {
-        newUserRegistrationSchema.parse(req.body);
+        const fromCard = await this.getCardById(fromCardId);
+        if (!fromCard) {
+          return { success: false, error: "Карта отправителя не найдена" };
+        }
+
+        const toCard = await this.getCardByNumber(toCardNumber);
+        if (!toCard) {
+          return { success: false, error: "Карта получателя не найдена" };
+        }
+
+        const fromBalance = parseFloat(fromCard.balance);
+        if (fromBalance < amount) {
+          return { success: false, error: "Недостаточно средств" };
+        }
+
+        const toBalance = parseFloat(toCard.balance);
+
+        await this.updateCardBalance(fromCardId, (fromBalance - amount).toString());
+        await this.updateCardBalance(toCard.id, (toBalance + amount).toString());
+
+        const transaction = await this.createTransaction({
+          fromCardId,
+          toCardId: toCard.id,
+          amount: amount.toString(),
+          convertedAmount: amount.toString(),
+          type: "transfer",
+          wallet: null,
+          status: "completed",
+          description: `Перевод с карты ${fromCard.number} на карту ${toCard.number}`,
+          fromCardNumber: fromCard.number,
+          toCardNumber: toCard.number,
+          createdAt: new Date()
+        });
+
+        return { success: true, transaction };
       } catch (error) {
-        if (error instanceof ZodError) {
-          const errorMessage = error.errors[0]?.message || "Ошибка валидации";
-          console.log("Registration validation error:", errorMessage);
-          return res.status(400).json({
-            success: false,
-            message: errorMessage
-          });
-        }
-        throw error;
+        console.error("Transfer error:", error);
+        return { success: false, error: "Ошибка при выполнении перевода" };
       }
+    }, 'Transfer money');
+  }
 
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          message: "Пользователь с таким именем уже существует"
-        });
-      }
-
-      // Сохраняем пароль в открытом виде
-      user = await storage.createUser({
-        username,
-        password, // Пароль сохраняется как есть, без хеширования
-        is_regulator: false,
-        regulator_balance: "0",
-        nft_generation_count: 0
-      });
-
-      console.log(`User created with ID: ${user.id}`);
-
+  async transferCrypto(fromCardId: number, recipientAddress: string, amount: number, cryptoType: 'btc' | 'eth'): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
+    return this.withRetry(async () => {
       try {
-        await storage.createDefaultCardsForUser(user.id);
-        console.log(`Default cards created for user ${user.id}`);
-      } catch (cardError) {
-        console.error(`Failed to create cards for user ${user.id}:`, cardError);
-        if (user) {
-          await storage.deleteUser(user.id);
-          console.log(`Cleaned up user ${user.id} after card creation failure`);
+        const fromCard = await this.getCardById(fromCardId);
+        if (!fromCard) {
+          return { success: false, error: "Карта отправителя не найдена" };
         }
-        return res.status(500).json({
-          success: false,
-          message: "Failed to create user cards"
-        });
-      }
 
-      req.login(user, (loginErr) => {
-        if (loginErr) {
-          console.error("Login after registration failed:", loginErr);
-          return res.status(500).json({
-            success: false,
-            message: "Registration successful but login failed"
-          });
+        if (!validateCryptoAddress(recipientAddress, cryptoType)) {
+          return { success: false, error: "Неверный адрес получателя" };
         }
-        if (user) {
-          console.log(`User ${user.id} registered and logged in successfully`);
-          // Убедимся, что сессия сохранена перед ответом
-          req.session.save((saveErr) => {
-            if (saveErr) {
-              console.error('Session save error after registration:', saveErr);
-            }
-            return res.status(201).json(user);
-          });
+
+        const currentBalance = cryptoType === 'btc' 
+          ? parseFloat(fromCard.btcBalance) 
+          : parseFloat(fromCard.ethBalance);
+
+        if (currentBalance < amount) {
+          return { success: false, error: "Недостаточно средств" };
+        }
+
+        const newBalance = (currentBalance - amount).toString();
+
+        if (cryptoType === 'btc') {
+          await this.updateCardBtcBalance(fromCardId, newBalance);
         } else {
-          return res.status(500).json({
-            success: false,
-            message: "User registration error"
-          });
+          await this.updateCardEthBalance(fromCardId, newBalance);
         }
-      });
 
-    } catch (error) {
-      console.error("Registration process failed:", error);
-      if (user !== null) {
-        const userId = (user as SelectUser).id;
-        if (userId) {
-          await storage.deleteUser(userId);
-        }
-      }
-      return res.status(500).json({
-        success: false,
-        message: "Registration failed"
-      });
-    }
-  });
-
-  app.post("/api/login", (req, res, next) => {
-    console.log("Login attempt for username:", req.body.username);
-
-    passport.authenticate("local", (err: any, user: any, info: any) => {
-      if (err) {
-        console.error("Login error:", err);
-        return res.status(500).json({ message: "Ошибка сервера при входе" });
-      }
-      if (!user) {
-        console.log("Login failed for user:", req.body.username);
-        return res.status(401).json({ message: "Неверное имя пользователя или пароль" });
-      }
-      req.logIn(user, (loginErr) => {
-        if (loginErr) {
-          console.error("Login session error:", loginErr);
-          return res.status(500).json({ message: "Ошибка создания сессии" });
-        }
-        console.log("User logged in successfully:", user.username);
-        // Убедимся, что сессия сохранена перед ответом
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error('Session save error after login:', saveErr);
-          }
-          res.json(user);
+        const transaction = await this.createTransaction({
+          fromCardId,
+          toCardId: null,
+          amount: amount.toString(),
+          convertedAmount: amount.toString(),
+          type: cryptoType === 'btc' ? "bitcoin_transfer" : "ethereum_transfer",
+          wallet: recipientAddress,
+          status: "completed",
+          description: `Перевод ${amount} ${cryptoType.toUpperCase()} на адрес ${recipientAddress}`,
+          fromCardNumber: fromCard.number,
+          toCardNumber: null,
+          createdAt: new Date()
         });
-      });
-    })(req, res, next);
-  });
 
-  app.get("/api/user", (req, res) => {
-    console.log('GET /api/user - Session details:', {
-      id: req.sessionID,
-      isAuthenticated: req.isAuthenticated(),
-      user: req.user?.username
-    });
-
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    console.log("User session active:", req.user.username);
-    res.json(req.user);
-  });
-
-  app.post("/api/logout", (req, res) => {
-    const username = req.user?.username;
-    req.logout((err) => {
-      if (err) {
-        console.error("Logout error:", err);
-        return res.status(500).json({ message: "Logout error" });
+        return { success: true, transaction };
+      } catch (error) {
+        console.error("Crypto transfer error:", error);
+        return { success: false, error: "Ошибка при выполнении криптоперевода" };
       }
-      // Уничтожаем сессию полностью
-      req.session.destroy((destroyErr) => {
-        if (destroyErr) {
-          console.error('Session destroy error:', destroyErr);
-        }
-        console.log("User logged out:", username);
-        res.clearCookie('bnal.sid');
-        res.sendStatus(200);
+    }, 'Transfer crypto');
+  }
+
+  async getLatestExchangeRates(): Promise<ExchangeRate | undefined> {
+    return this.withRetry(async () => {
+      const [rates] = await db.select()
+        .from(exchangeRates)
+        .orderBy(desc(exchangeRates.updatedAt))
+        .limit(1);
+      return rates;
+    }, 'Get latest exchange rates');
+  }
+
+  async updateExchangeRates(rates: { usdToUah: number; btcToUsd: number; ethToUsd: number }): Promise<ExchangeRate> {
+    return this.withRetry(async () => {
+      const [result] = await db.insert(exchangeRates).values({
+        usdToUah: rates.usdToUah.toString(),
+        btcToUsd: rates.btcToUsd.toString(),
+        ethToUsd: rates.ethToUsd.toString(),
+        updatedAt: new Date()
+      }).returning();
+      return result;
+    }, 'Update exchange rates');
+  }
+
+  async createNFTCollection(userId: number, name: string, description: string): Promise<NftCollection> {
+    return this.withRetry(async () => {
+      const [collection] = await db.insert(nftCollections).values({
+        userId,
+        name,
+        description,
+        coverImage: null,
+        createdAt: new Date()
+      }).returning();
+      return collection;
+    }, 'Create NFT collection');
+  }
+
+  async createNFT(data: InsertNft): Promise<Nft> {
+    return this.withRetry(async () => {
+      const [nft] = await db.insert(nfts).values(data).returning();
+      return nft;
+    }, 'Create NFT');
+  }
+
+  async getNFTsByUserId(userId: number): Promise<Nft[]> {
+    return this.withRetry(async () => {
+      return await db.select()
+        .from(nfts)
+        .where(eq(nfts.ownerId, userId))
+        .orderBy(desc(nfts.mintedAt));
+    }, 'Get NFTs by user ID');
+  }
+
+  async getNFTCollectionsByUserId(userId: number): Promise<NftCollection[]> {
+    return this.withRetry(async () => {
+      return await db.select()
+        .from(nftCollections)
+        .where(eq(nftCollections.userId, userId))
+        .orderBy(desc(nftCollections.createdAt));
+    }, 'Get NFT collections by user ID');
+  }
+
+  async canGenerateNFT(userId: number): Promise<boolean> {
+    return this.withRetry(async () => {
+      const user = await this.getUser(userId);
+      if (!user) return false;
+
+      const now = new Date();
+      const lastGeneration = user.last_nft_generation;
+      
+      if (!lastGeneration) return true;
+
+      const timeDiff = now.getTime() - lastGeneration.getTime();
+      const hoursDiff = timeDiff / (1000 * 60 * 60);
+      
+      return hoursDiff >= 24 && user.nft_generation_count < 3;
+    }, 'Check if user can generate NFT');
+  }
+
+  async updateUserNFTGeneration(userId: number): Promise<void> {
+    await this.withRetry(async () => {
+      const user = await this.getUser(userId);
+      if (!user) throw new Error("User not found");
+
+      const now = new Date();
+      const newCount = user.nft_generation_count + 1;
+
+      await db.update(users)
+        .set({ 
+          last_nft_generation: now,
+          nft_generation_count: newCount
+        })
+        .where(eq(users.id, userId));
+    }, 'Update user NFT generation');
+  }
+
+  async getTransactionsByCardIds(cardIds: number[]): Promise<Transaction[]> {
+    return this.withRetry(async () => {
+      if (cardIds.length === 0) return [];
+      
+      return await db.select()
+        .from(transactions)
+        .where(or(
+          inArray(transactions.fromCardId, cardIds),
+          inArray(transactions.toCardId, cardIds)
+        ))
+        .orderBy(desc(transactions.createdAt));
+    }, 'Get transactions by card IDs');
+  }
+
+  async createDefaultCardsForUser(userId: number): Promise<void> {
+    await this.withRetry(async () => {
+      const btcAddress = await generateValidAddress('btc', userId);
+      const ethAddress = await generateValidAddress('eth', userId);
+      
+      const virtualCard = await this.createCard({
+        userId,
+        type: "virtual",
+        number: this.generateCardNumber(),
+        expiry: this.generateExpiryDate(),
+        cvv: this.generateCVV(),
+        balance: "1000",
+        btcBalance: "0",
+        ethBalance: "0",
+        kichcoinBalance: "100",
+        btcAddress: null,
+        ethAddress: null,
+        tonAddress: null
       });
-    });
-  });
-}
 
-// Simple card number validation - only checks format
-function validateCardFormat(cardNumber: string): boolean {
-  const cleanNumber = cardNumber.replace(/\s+/g, '');
-  return /^\d{16}$/.test(cleanNumber);
-}
+      const cryptoCard = await this.createCard({
+        userId,
+        type: "crypto",
+        number: this.generateCardNumber(),
+        expiry: this.generateExpiryDate(),
+        cvv: this.generateCVV(),
+        balance: "0",
+        btcBalance: "0.001",
+        ethBalance: "0.01",
+        kichcoinBalance: "50",
+        btcAddress: btcAddress,
+        ethAddress: ethAddress,
+        tonAddress: null
+      });
 
-// Generate valid crypto addresses - produces legacy BTC address and valid ETH address
-async function generateCryptoAddresses(): Promise<{ btcAddress: string; ethAddress: string }> {
-  try {
-    const wallet = ethers.Wallet.createRandom();
+      console.log(`Created virtual card ${virtualCard.id} and crypto card ${cryptoCard.id} for user ${userId}`);
+    }, 'Create default cards for user');
+  }
 
-    // Legacy BTC address format (starting with 1)
-    const btcAddress = "1" + randomBytes(32).toString("hex").slice(0, 33);
+  async deleteUser(userId: number): Promise<void> {
+    await this.withRetry(async () => {
+      await db.delete(cards).where(eq(cards.userId, userId));
+      await db.delete(users).where(eq(users.id, userId));
+    }, 'Delete user');
+  }
 
-    return {
-      btcAddress,
-      ethAddress: wallet.address
-    };
-  } catch (error) {
-    console.error("Error generating crypto addresses:", error);
-    // Fallback to simple address format if ethers fails
-    return {
-      btcAddress: "1" + randomBytes(32).toString("hex").slice(0, 33),
-      ethAddress: "0x" + randomBytes(20).toString("hex")
-    };
+  async executeRawQuery(query: string): Promise<any> {
+    return this.withRetry(async () => {
+      return await client.unsafe(query);
+    }, 'Execute raw query');
+  }
+
+  private async withRetry<T>(operation: () => Promise<T>, operationName: string, maxRetries: number = 3): Promise<T> {
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        return await operation();
+      } catch (error) {
+        attempt++;
+        console.error(`${operationName} failed on attempt ${attempt}:`, error);
+        
+        if (attempt >= maxRetries) {
+          throw error;
+        }
+        
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    throw new Error(`Operation failed after ${maxRetries} attempts`);
+  }
+
+  private generateCardNumber(): string {
+    const digits = Array.from({ length: 16 }, () => Math.floor(Math.random() * 10)).join("");
+    return digits;
+  }
+
+  private generateExpiryDate(): string {
+    const now = new Date();
+    const expYear = now.getFullYear() + 4;
+    const expMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+    return `${expMonth}/${expYear.toString().slice(-2)}`;
+  }
+
+  private generateCVV(): string {
+    return Math.floor(100 + Math.random() * 900).toString();
   }
 }
 
-function generateCardNumber(): string {
-  const digits = Array.from({ length: 16 }, () => Math.floor(Math.random() * 10)).join("");
-  return digits;
-}
-
-function generateExpiryDate(): string {
-  const now = new Date();
-  const expYear = now.getFullYear() + 4;
-  const expMonth = (now.getMonth() + 1).toString().padStart(2, '0');
-  return `${expMonth}/${expYear.toString().slice(-2)}`;
-}
-
-function generateCVV(): string {
-  return Math.floor(100 + Math.random() * 900).toString();
-}
+// Export singleton instance
+export const storage = new DatabaseStorage();
