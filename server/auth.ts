@@ -54,8 +54,8 @@ export function setupAuth(app: Express) {
 
   app.use(session({
     secret: sessionSecret,
-    resave: false, // Оптимизируем для serverless
-    saveUninitialized: false, // Не создаем пустые сессии
+    resave: true, // Принудительно пересохраняем для serverless
+    saveUninitialized: true, // Создаем сессию для каждого запроса
     store: storage.sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === 'production', // HTTPS только для продакшен
@@ -269,12 +269,17 @@ export function setupAuth(app: Express) {
         }
         if (user) {
           console.log(`User ${user.id} registered and logged in successfully`);
-          // Убедимся, что сессия сохранена перед ответом
+          // Принудительно сохраняем сессию и ждем завершения
           req.session.save((saveErr) => {
             if (saveErr) {
-              console.error('Session save error after registration:', saveErr);
+              console.error('❌ Session save error after registration:', saveErr);
+              return res.status(500).json({ message: "Ошибка сохранения сессии" });
             }
-            return res.status(201).json(user);
+            console.log('✅ Session saved successfully for new user:', user?.username);
+            // Дополнительно ждем немного для Vercel serverless
+            setTimeout(() => {
+              return res.status(201).json(user);
+            }, 100);
           });
         } else {
           return res.status(500).json({
@@ -317,12 +322,17 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ message: "Ошибка создания сессии" });
         }
         console.log("User logged in successfully:", user.username);
-        // Убедимся, что сессия сохранена перед ответом
+        // Принудительно сохраняем сессию и ждем завершения
         req.session.save((saveErr) => {
           if (saveErr) {
-            console.error('Session save error after login:', saveErr);
+            console.error('❌ Session save error after login:', saveErr);
+            return res.status(500).json({ message: "Ошибка сохранения сессии" });
           }
-          res.json(user);
+          console.log('✅ Session saved successfully for user:', user.username);
+          // Дополнительно ждем немного для Vercel serverless
+          setTimeout(() => {
+            res.json(user);
+          }, 100);
         });
       });
     })(req, res, next);
