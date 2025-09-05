@@ -54,15 +54,15 @@ export function setupAuth(app: Express) {
 
   app.use(session({
     secret: sessionSecret,
-    resave: true, // Для Vercel принудительно пересохраняем
-    saveUninitialized: true, // Создаем сессию даже для неаутентифицированных
+    resave: false, // Оптимизируем для serverless
+    saveUninitialized: false, // Не создаем пустые сессии
     store: storage.sessionStore,
     cookie: {
-      secure: process.env.VERCEL ? true : false, // HTTPS для Vercel
-      sameSite: process.env.VERCEL ? 'none' : 'lax', // Для кросс-доменности
+      secure: process.env.NODE_ENV === 'production', // HTTPS только для продакшен
+      sameSite: 'lax', // Более совместимая настройка
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
       path: '/',
-      httpOnly: false // Отключаем httpOnly для отладки сессий
+      httpOnly: true // Безопасность - включаем httpOnly
     },
     name: 'bnal.sid',
     rolling: true, // Продлевать сессию при каждом запросе
@@ -127,16 +127,22 @@ export function setupAuth(app: Express) {
     try {
       console.log('🔄 Deserializing user ID:', id);
       
+      // Проверяем валидность ID
+      if (!id || typeof id !== 'number') {
+        console.log('❌ Invalid user ID during deserialization:', id);
+        return done(null, false);
+      }
+      
       // Увеличиваем таймаут и добавляем попытки повторного подключения
       const user = await Promise.race([
         storage.getUser(id).catch(async (error) => {
           console.log('🔄 First attempt failed, retrying...', error.message);
           // Повторная попытка через короткую задержку
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise(resolve => setTimeout(resolve, 300));
           return storage.getUser(id);
         }),
         new Promise<undefined>((_, reject) => 
-          setTimeout(() => reject(new Error('Deserialization timeout')), 5000)
+          setTimeout(() => reject(new Error('Deserialization timeout')), 8000)
         )
       ]);
       
@@ -284,18 +290,41 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.get("/api/user", (req, res) => {
-    console.log('GET /api/user - Session details:', {
-      id: req.sessionID,
-      isAuthenticated: req.isAuthenticated(),
-      user: req.user?.username
-    });
+  app.get("/api/user", async (req, res) => {
+    try {
+      console.log('GET /api/user - Session details:', {
+        id: req.sessionID,
+        isAuthenticated: req.isAuthenticated(),
+        user: req.user?.username,
+        hasSession: !!req.session,
+        sessionCookie: req.headers.cookie?.includes('bnal.sid')
+      });
 
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
+      if (!req.isAuthenticated() || !req.user) {
+        console.log('❌ Authentication failed - returning 401');
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      // Убедимся, что данные пользователя актуальны
+      const userId = (req.user as any).id;
+      if (userId) {
+        try {
+          const currentUser = await storage.getUser(userId);
+          if (currentUser) {
+            console.log("✅ User session active and verified:", currentUser.username);
+            return res.json(currentUser);
+          }
+        } catch (error) {
+          console.error('Error fetching current user data:', error);
+        }
+      }
+
+      console.log("✅ User session active (cached):", req.user.username);
+      res.json(req.user);
+    } catch (error) {
+      console.error('Error in /api/user endpoint:', error);
+      res.status(500).json({ message: "Internal server error" });
     }
-    console.log("User session active:", req.user.username);
-    res.json(req.user);
   });
 
   app.post("/api/logout", (req, res) => {

@@ -68,7 +68,7 @@ export class DatabaseStorage implements IStorage {
     this.sessionStore = new PostgresStore({
       conObject: {
         connectionString: DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        ssl: { rejectUnauthorized: false } // Всегда используем SSL для внешних БД
       },
       tableName: 'session',
       createTableIfMissing: true,
