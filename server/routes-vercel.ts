@@ -38,10 +38,23 @@ import { setupDebugRoutes } from "./debug.js";
 
 // Auth middleware
 function ensureAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (req.isAuthenticated()) {
-    return next();
+  try {
+    console.log('🔐 [VERCEL] Auth check - Session ID:', req.sessionID);
+    console.log('🔐 [VERCEL] isAuthenticated:', req.isAuthenticated());
+    console.log('🔐 [VERCEL] User:', req.user ? `${req.user.username} (ID: ${req.user.id})` : 'none');
+    console.log('🔐 [VERCEL] Session user:', (req.session as any)?.passport?.user || 'none');
+    
+    if (req.isAuthenticated() && req.user) {
+      console.log('✅ [VERCEL] Authentication successful for user:', req.user.username);
+      return next();
+    }
+    
+    console.log('❌ [VERCEL] Authentication failed - isAuthenticated:', req.isAuthenticated(), 'user:', !!req.user);
+    res.status(401).json({ message: "Необходима авторизация" });
+  } catch (error) {
+    console.error('❌ [VERCEL] Authentication middleware error:', error);
+    res.status(500).json({ message: "Ошибка авторизации" });
   }
-  res.status(401).json({ message: "Необходима авторизация" });
 }
 
 // Vercel-совместимая версия registerRoutes

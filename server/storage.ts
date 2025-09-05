@@ -68,13 +68,19 @@ export class DatabaseStorage implements IStorage {
     this.sessionStore = new PostgresStore({
       conObject: {
         connectionString: DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
       },
       tableName: 'session',
-      createTableIfMissing: true
+      createTableIfMissing: true,
+      // Дополнительные настройки для Vercel serverless
+      schemaName: 'public',
+      ttl: 7 * 24 * 60 * 60, // 7 дней в секундах
+      disableTouch: false, // Разрешить обновление TTL
+      pruneSessionInterval: 60 * 15, // Очистка каждые 15 минут
+      errorLog: (error: any) => console.error('PostgreSQL session error:', error)
     });
     
-    console.log('Session store initialized with PostgreSQL');
+    console.log('Session store initialized with PostgreSQL for', process.env.NODE_ENV || 'development');
   }
 
   async getUser(id: number): Promise<User | undefined> {
