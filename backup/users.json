@@ -27,24 +27,6 @@
     "nft_generation_count": 0
   },
   {
-    "id": 3,
-    "username": "regulator",
-    "password": "Regulator123",
-    "is_regulator": true,
-    "regulator_balance": "500000.00000003",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
-    "id": 2,
-    "username": "admin",
-    "password": "admin123",
-    "is_regulator": true,
-    "regulator_balance": "45684744.35841934",
-    "last_nft_generation": null,
-    "nft_generation_count": 0
-  },
-  {
     "id": 6,
     "username": "testuser",
     "password": "TestPass123",
@@ -68,6 +50,51 @@
     "password": "%yKfZ()p$-k7$n$",
     "is_regulator": false,
     "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 11,
+    "username": "hlihlighuigui",
+    "password": "DJFEmi87G4nDCZV",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 12,
+    "username": "kyrikko",
+    "password": "Gujgtftfd76",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 13,
+    "username": "hlihlighuigui8",
+    "password": "Ykjtign48504",
+    "is_regulator": false,
+    "regulator_balance": "0.00000000",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 3,
+    "username": "regulator",
+    "password": "Regulator123",
+    "is_regulator": true,
+    "regulator_balance": "500000.02000003",
+    "last_nft_generation": null,
+    "nft_generation_count": 0
+  },
+  {
+    "id": 2,
+    "username": "admin",
+    "password": "admin123",
+    "is_regulator": true,
+    "regulator_balance": "45684744.38841934",
     "last_nft_generation": null,
     "nft_generation_count": 0
   }
