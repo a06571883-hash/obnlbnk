@@ -1,12 +1,12 @@
 import session from "express-session";
 import { MemoryStore } from 'express-session';
 import { db, client } from "./db.js";
-import { cards, users, transactions, exchangeRates, nftCollections, nfts, nftTransfers } from "@shared/schema";
+import { cards, users, transactions, exchangeRates, nftCollections, nfts, nftTransfers } from "../shared/schema.js";
 import type { 
   User, Card, InsertUser, Transaction, ExchangeRate,
   NftCollection, Nft, InsertNftCollection, InsertNft,
   NftTransfer, InsertNftTransfer
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { eq, and, or, desc, inArray, sql } from "drizzle-orm";
 import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
@@ -74,33 +74,16 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     // Используем PostgreSQL для хранения сессий
-    try {
-      this.sessionStore = new PostgresStore({
-        conObject: {
-          connectionString: DATABASE_URL,
-          ssl: { rejectUnauthorized: false },
-          // Добавляем настройки для Vercel
-          max: 5, // Максимальное количество соединений для сессий
-          idleTimeoutMillis: 30000,
-          connectionTimeoutMillis: 10000
-        },
-        tableName: 'session',
-        createTableIfMissing: true,
-        // Настройки для продакшена
-        pruneSessionInterval: 60000 // Очистка сессий каждую минуту
-      });
-      
-      console.log('✅ Session store initialized with PostgreSQL');
-    } catch (error) {
-      console.error('❌ Failed to initialize PostgreSQL session store:', error);
-      // Fallback to memory store only in development
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn('⚠️ Falling back to MemoryStore in development');
-        this.sessionStore = new MemoryStore();
-      } else {
-        throw error;
-      }
-    }
+    this.sessionStore = new PostgresStore({
+      conObject: {
+        connectionString: DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      },
+      tableName: 'session',
+      createTableIfMissing: true
+    });
+    
+    console.log('Session store initialized with PostgreSQL');
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -807,25 +790,6 @@ export class DatabaseStorage implements IStorage {
     throw lastError || new Error(`Транзакция ${context} не удалась после ${maxAttempts} попыток`);
   }
 
-  // Timeout wrapper для операций базы данных
-  private withTimeout<T>(operation: () => Promise<T>, timeoutMs = 10000): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error(`Database operation timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-      
-      operation()
-        .then(result => {
-          clearTimeout(timeoutId);
-          resolve(result);
-        })
-        .catch(error => {
-          clearTimeout(timeoutId);
-          reject(error);
-        });
-    });
-  }
-
   private async withRetry<T>(operation: () => Promise<T>, context: string, maxAttempts = 5): Promise<T> {
     let lastError: Error | undefined;
     const MAX_DELAY = 30000; // Максимальная задержка между попытками (30 секунд)
@@ -837,8 +801,7 @@ export class DatabaseStorage implements IStorage {
           console.log(`🔄 ${context}: повторная попытка ${attempt + 1}/${maxAttempts}`);
         }
         
-        // Добавляем timeout для каждой операции
-        return await this.withTimeout(operation, 15000); // 15 секунд timeout
+        return await operation();
       } catch (error: any) {
         lastError = error as Error;
         
@@ -849,10 +812,7 @@ export class DatabaseStorage implements IStorage {
           error.code === 'ECONNREFUSED' ||
           error.message.includes('connection') ||
           error.message.includes('timeout') ||
-          error.message.includes('timed out') ||
-          error.code === '40P01' || // Deadlock detected
-          error.code === '57P01' || // Admin shutdown
-          error.code === '53300'; // Too many connections
+          error.code === '40P01'; // Deadlock detected
         
         // Для временных ошибок делаем больше попыток
         if (isTransientError && attempt < maxAttempts - 1) {

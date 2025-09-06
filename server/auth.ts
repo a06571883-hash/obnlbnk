@@ -3,7 +3,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import { storage } from "./storage.js";
-import { User as SelectUser, newUserRegistrationSchema } from "@shared/schema";
+import { User as SelectUser, newUserRegistrationSchema } from "../shared/schema.js";
 import { ZodError } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -51,31 +51,19 @@ export function setupAuth(app: Express) {
   const sessionSecret = process.env.SESSION_SECRET || 'default_secret';
   console.log("Setting up auth with session secret length:", sessionSecret.length);
 
-  // Специальная конфигурация для Vercel
-  const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
-  const isProduction = process.env.NODE_ENV === 'production';
-
-  console.log('Session configuration:', {
-    isVercel,
-    isProduction,
-    vercelEnv: process.env.VERCEL_ENV
-  });
-
   app.use(session({
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false, // Отключаем secure для всех сред для упрощения
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       path: '/',
       httpOnly: true
     },
-    name: 'bnal.sid',
-    // Принудительное сохранение сессии для serverless
-    rolling: true
+    name: 'bnal.sid'
   }));
 
   app.use(passport.initialize());
@@ -246,47 +234,23 @@ export function setupAuth(app: Express) {
 
   app.post("/api/login", (req, res, next) => {
     console.log("Login attempt for username:", req.body.username);
-    console.log('Session before login:', {
-      id: req.sessionID,
-      exists: !!req.session
-    });
 
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
         console.error("Login error:", err);
-        return res.status(500).json({ 
-          success: false,
-          message: "Ошибка входа в систему" 
-        });
+        return next(err);
       }
       if (!user) {
         console.log("Login failed for user:", req.body.username);
-        return res.status(401).json({ 
-          success: false,
-          message: "Неверное имя пользователя или пароль" 
-        });
+        return res.status(401).json({ message: "Неверное имя пользователя или пароль" });
       }
       req.logIn(user, (err) => {
         if (err) {
           console.error("Login session error:", err);
-          return res.status(500).json({ 
-            success: false,
-            message: "Ошибка создания сессии" 
-          });
+          return next(err);
         }
-        console.log("✅ User logged in successfully:", user.username);
-        
-        // Принудительно сохраняем сессию для serverless
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error('Session save error:', saveErr);
-          }
-          console.log('✅ [VERCEL] Authentication successful for user:', user.username);
-          res.json({
-            success: true,
-            ...user
-          });
-        });
+        console.log("User logged in successfully:", user.username);
+        res.json(user);
       });
     })(req, res, next);
   });
@@ -295,17 +259,13 @@ export function setupAuth(app: Express) {
     console.log('GET /api/user - Session details:', {
       id: req.sessionID,
       isAuthenticated: req.isAuthenticated(),
-      user: req.user?.username,
-      sessionExists: !!req.session,
-      cookies: Object.keys(req.cookies || {}),
-      vercelEnv: process.env.VERCEL_ENV
+      user: req.user?.username
     });
 
     if (!req.isAuthenticated()) {
-      console.log('❌ Authentication failed - returning 401');
       return res.status(401).json({ message: "Not authenticated" });
     }
-    console.log("✅ User session active:", req.user.username);
+    console.log("User session active:", req.user.username);
     res.json(req.user);
   });
 

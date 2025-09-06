@@ -1,37 +1,41 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
-import path from "path";
+import path, { dirname } from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { fileURLToPath } from "url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 export default defineConfig({
-  // Корень фронтенда
-  root: path.resolve(__dirname, "client"),
-
-  // Относительные пути для продакшена
-  base: "./",
-
   plugins: [
-    react(), // React с Fast Refresh
-    runtimeErrorOverlay({ hmr: { overlay: false } }), // ошибки во время dev
-    themePlugin(), // твоя тема shadcn
+    react({
+      fastRefresh: true
+    }),
+    runtimeErrorOverlay({
+      hmr: {
+        overlay: false
+      }
+    }),
+    themePlugin(),
+    ...(process.env.NODE_ENV !== "production" &&
+    process.env.REPL_ID !== undefined
+      ? [
+          await import("@replit/vite-plugin-cartographer").then((m) =>
+            m.cartographer(),
+          ),
+        ]
+      : []),
   ],
-
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "client/src"),
+      "@": path.resolve(__dirname, "client", "src"),
       "@shared": path.resolve(__dirname, "shared"),
     },
   },
-
+  root: path.resolve(__dirname, "client"),
   build: {
-    // Папка для Express (dist/public)
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
-
-    rollupOptions: {
-      // Важно: путь к index.html **относительно root**
-      input: "index.html",
-    },
   },
 });

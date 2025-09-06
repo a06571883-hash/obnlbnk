@@ -28,7 +28,7 @@ export default function AnimatedBackground() {
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted transition-colors duration-300" />
 
       {/* Матричная сетка */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:14px_24px] opacity-[0.02]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:14px_24px] opacity-[0.08]" />
 
       {/* Анимированные градиентные линии */}
       <div className="absolute inset-0">
