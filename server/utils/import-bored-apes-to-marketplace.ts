@@ -177,11 +177,7 @@ async function getNFTCollectionForUser(userId: number) {
   const collections = await db.select()
     .from(nftCollections)
     .where(eq(nftCollections.userId, userId));
-<<<<<<< HEAD
-
-=======
   
->>>>>>> 3889c04a3638827fb63cbaa89d90e977d79a2804
   if (collections.length > 0) {
     return collections[0];
   }
@@ -214,11 +210,7 @@ async function createNFTCollectionForUser(userId: number) {
     const existingCollections = await db.select()
       .from(nftCollections)
       .where(eq(nftCollections.userId, userId));
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 3889c04a3638827fb63cbaa89d90e977d79a2804
     if (existingCollections.length > 0) {
       console.log(`Найдена существующая коллекция для пользователя ${userId}, используем её`);
       return existingCollections[0];
@@ -452,8 +444,3 @@ export async function countBoredApeImages(): Promise<{ total: number, png: numbe
     return { total: 0, png: 0, avif: 0 };
   }
 }
-
-<<<<<<< HEAD
-
-=======
->>>>>>> 3889c04a3638827fb63cbaa89d90e977d79a2804
