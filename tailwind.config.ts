@@ -43,9 +43,9 @@ const config: Config = {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        border: "hsl(var(--border))",
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -64,16 +64,37 @@ const config: Config = {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+
+      // 👇 Генерация утилитарных классов
+      borderColor: theme => ({
+        ...theme("colors"),
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+      }),
+      ringColor: {
+        ring: "hsl(var(--ring))",
+      },
+      divideColor: {
+        border: "hsl(var(--border))",
+      },
+
       spacing: {
-        'safe': 'env(safe-area-inset-bottom)',
-        'safe-top': 'env(safe-area-inset-top)',
-        'safe-bottom': 'env(safe-area-inset-bottom)',
+        safe: "env(safe-area-inset-bottom)",
+        "safe-top": "env(safe-area-inset-top)",
+        "safe-bottom": "env(safe-area-inset-bottom)",
       },
       minHeight: {
+<<<<<<< HEAD
         screen: '100dvh',
       },
       height: {
         screen: '100dvh',
+=======
+        screen: ["100vh", "100dvh"],
+      },
+      height: {
+        screen: ["100vh", "100dvh"],
+>>>>>>> 3889c04a3638827fb63cbaa89d90e977d79a2804
       },
       keyframes: {
         "accordion-down": {
@@ -84,7 +105,7 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "shimmer": {
+        shimmer: {
           "0%": { backgroundPosition: "0 0" },
           "50%": { backgroundPosition: "100% 0" },
           "100%": { backgroundPosition: "0 0" },
@@ -98,7 +119,7 @@ const config: Config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "shimmer": "shimmer 3s linear infinite",
+        shimmer: "shimmer 3s linear infinite",
         "gradient-slow": "gradient-shift 6s ease infinite",
         "gradient-fast": "gradient-shift 3s ease infinite",
       },
@@ -107,7 +128,12 @@ const config: Config = {
       },
     },
   },
+<<<<<<< HEAD
   plugins: [tailwindcssAnimate, typography],
 };
 
 export default config;
+=======
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+} satisfies Config;
+>>>>>>> 3889c04a3638827fb63cbaa89d90e977d79a2804

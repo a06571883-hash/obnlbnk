@@ -3,7 +3,11 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import { storage } from "./storage.js";
+<<<<<<< HEAD
 import { User as SelectUser, newUserRegistrationSchema } from "../shared/schema.js";
+=======
+import { User as SelectUser, newUserRegistrationSchema } from "@shared/schema";
+>>>>>>> 3889c04a3638827fb63cbaa89d90e977d79a2804
 import { ZodError } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";

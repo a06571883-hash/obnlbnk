@@ -165,4 +165,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 }
 
 // Default export для Vercel API
+<<<<<<< HEAD
 export default registerRoutes;
+=======
+export default registerRoutes;
+>>>>>>> 3889c04a3638827fb63cbaa89d90e977d79a2804

@@ -75,7 +75,11 @@
   }
 
   * {
+<<<<<<< HEAD
     border-color: hsl(var(--border));
+=======
+    @apply border;
+>>>>>>> 3889c04a3638827fb63cbaa89d90e977d79a2804
   }
 
   body {

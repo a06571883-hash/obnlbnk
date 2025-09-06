@@ -1,19 +1,12 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction } from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic } from "./vite";
 import { db } from "./database/connection";
-import { scheduleBackups } from "./database/backup";
-import { startBot } from "./telegram-bot";
-import * as NodeJS from 'node:process';
-import { setupDebugRoutes } from "./debug";
 import { setupGlobalErrorHandlers, logError, errorHandler, notFoundHandler } from "./utils/error-handler";
-import { spawn } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
 
-// Получаем текущую директорию для правильного расчета пути к NFT-серверу
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+<<<<<<< HEAD
 
 // Функция для запуска запасного NFT сервера на отдельном порту
 function startNFTFallbackServer(port: number = 8082) {
@@ -184,56 +177,50 @@ process.on('SIGINT', () => {
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
+=======
+>>>>>>> 3889c04a3638827fb63cbaa89d90e977d79a2804
 const app = express();
 
-// Минимальная конфигурация для free tier
-app.use(express.json({ limit: '128kb' }));
-app.use(express.urlencoded({ extended: false, limit: '128kb' }));
+// Настройка JSON body parser
+app.use(express.json({ limit: "128kb" }));
+app.use(express.urlencoded({ extended: false, limit: "128kb" }));
 
-// Настраиваем статическую раздачу файлов из папки public
-// ВАЖНО: Это должно идти ДО других middleware для корректной обработки изображений
-app.use(express.static('public', {
-  index: false, // Не использовать index.html
-  etag: true,   // Включить ETag для кеширования
-  lastModified: true, // Включить Last-Modified для кеширования
-  setHeaders: (res, path) => {
-    // Устанавливаем правильные mime-типы для изображений
-    if (path.endsWith('.png')) {
-      res.setHeader('Content-Type', 'image/png');
-    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/jpeg');
-    } else if (path.endsWith('.avif')) {
-      res.setHeader('Content-Type', 'image/avif');
-    }
-  }
-}));
-
-// Специальный обработчик для BAYC NFT изображений
-app.use('/bayc_official', (req, res, next) => {
-  // Отправляем запрос к прокси NFT сервера
-  console.log(`BAYC request: ${req.path}, перенаправление на NFT прокси сервер`);
-  res.redirect(`/nft-proxy/bayc_official${req.path}`);
-});
-
-app.use('/nft_assets', express.static(path.join(__dirname, '../nft_assets')));
-
-// Минимальный CORS для Replit
+// Минимальный CORS
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
 
-// Добавляем функцию для запуска сервера, которую можно экспортировать
-export interface ServerOptions {
-  port?: number;
-  host?: string;
-  nftServerPort?: number;
-  environment?: 'development' | 'production';
-  logLevel?: 'debug' | 'info' | 'warn' | 'error';
-  forcePostgres?: boolean;
+// API маршруты
+registerRoutes(app);
+
+// Централизованная обработка ошибок
+setupGlobalErrorHandlers();
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+// Статика фронта (после сборки Vite)
+const clientDist = path.join(__dirname, "../client/dist");
+app.use(express.static(clientDist));
+
+// SPA fallback для React Router
+app.get("*", (req: Request, res: Response) => {
+  res.sendFile(path.join(clientDist, "index.html"));
+});
+
+// Экспорт для Vercel Serverless
+export default app;
+
+// Если нужно локально запускать (для разработки)
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Сервер запущен локально на http://localhost:${PORT}`);
+  });
 }
+<<<<<<< HEAD
 
 // Экспортируем функцию создания сервера для использования из других модулей
 export async function createServer(options?: ServerOptions) {
@@ -373,3 +360,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log('🌟 Запуск сервера напрямую через index.ts');
   createServer();
 }
+=======
+>>>>>>> 3889c04a3638827fb63cbaa89d90e977d79a2804
